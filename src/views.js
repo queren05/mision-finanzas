@@ -65,7 +65,7 @@ function render(scrollTop) {
   const r = UI.route; const [main, sub] = r.split('/');
   $$('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.tab === main ? 'page' : 'false'));
   $('#backBtn').hidden = !sub; $('#top').classList.toggle('sub', !!sub);
-  $('#viewTitle').textContent = TITLES[r] || 'Misión';
+  $('#viewTitle').textContent = TITLES[r] || 'Caudal';
   $('#fab').hidden = !['home', 'txs', 'stats'].includes(r);
   $('#demoBanner').hidden = !S.demo;
   const v = $('#view');
@@ -704,7 +704,7 @@ VIEWS['more/settings'] = () => {
     <button class="row" data-action="load-demo">${ico(svg('refresh'), 'var(--muted)')}<div class="row-m"><div class="row-t">Cargar datos de ejemplo</div><div class="row-s">Sustituye lo que tengas ahora</div></div></button>
   </div>
   <button class="btn danger block" data-action="wipe" data-confirm="Toca otra vez para borrarlo TODO">Borrar todos los datos</button></section>
-  <p class="note">Misión Finanzas · versión 2.0 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
+  <p class="note">Caudal · versión 2.1 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
 };
 AFTER['more/settings'] = () => {
   $('#stBase').addEventListener('change', e => { S.settings.base = e.target.value; nfCache.clear(); save(); toast('Moneda principal: ' + e.target.value); render(); });
@@ -791,7 +791,7 @@ VIEWS['more/install'] = () => `
     <li>Abre la web en <b>Safari</b> (no desde otra app).</li>
     <li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li>
     <li>Baja y elige <b>Añadir a pantalla de inicio</b>.</li>
-    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Misión como una app más, a pantalla completa.</li></ol></section>
+    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Caudal como una app más, a pantalla completa.</li></ol></section>
   <section class="card stack"><b>Cosas a saber</b>
     <p class="note" style="margin:0">Los datos de la app instalada viven dentro de ella. Si antes la usabas en Safari, pásalos con Copia de seguridad → Exportar y luego Restaurar dentro de la app.</p>
     <p class="note" style="margin:0">Haz una copia de seguridad de vez en cuando: si borras la app o los datos de Safari, se pierden.</p></section>`;

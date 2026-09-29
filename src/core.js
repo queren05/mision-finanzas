@@ -501,6 +501,21 @@ function nwSeries(days = 30) {
 }
 
 /* ---------- datos de ejemplo ---------- */
+// Datos reales de David (30/09/2026): saldos actuales, sin histórico de gastos ni ingresos.
+// Los fondos de Trade Republic van con precio manual para que salgan tal cual en su app
+// (valor actual y rentabilidad desde la compra); se actualizan a mano en cada activo.
+function myState() {
+  const s = blankState(); s.seeded = 1;
+  const acc = (name, type, initial, color, cardAlias) => { const a = { id: 'a_' + uid(), name, type, currency: 'EUR', initial, color, icon: ACC_ICONS[type], includeInTotal: true, archived: false, order: s.accounts.length, cardAlias: cardAlias || '', note: '' }; s.accounts.push(a); return a; };
+  acc('Revolut', 'corriente', 115.10, PALETTE[1], 'Revolut');
+  const tr = acc('Trade Republic', 'broker', 500.00, PALETTE[0], 'Trade Republic');
+  const t = today();
+  const fund = (symbol, name, cost, value) => s.assets.push({ id: 's_' + uid(), kind: 'stock', symbol, name, quoteCcy: 'EUR', accountId: tr.id, provider: 'manual', manualPrice: value, manualAt: t, archived: false, color: PALETTE[s.assets.length + 2], ops: [{ id: uid(), side: 'buy', qty: 1, price: cost, fee: 0, ccy: 'EUR', date: t }] });
+  fund('S&P 500', 'S&P 500 EUR (Acc)', 300.99, 310.56);   // +3,18 %
+  fund('MSCI ACWI', 'MSCI ACWI USD (Acc)', 100.00, 101.74); // +1,74 %
+  return s;
+}
+
 function demoState() {
   const s = blankState(); s.demo = true;
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

@@ -327,7 +327,7 @@ async function scheduleNotifs(force) {
     if (mine.length) await LN.cancel({ notifications: mine.map(n => ({ id: n.id })) });
     if (!S.settings.notifyRecurring || !S.recurring.some(r => r.active)) return;
     let perm = await LN.checkPermissions();
-    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } }
+    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } }
     const out = []; const lim = addDays(today(), 60); let id = 1000;
     for (const r of S.recurring.filter(x => x.active)) {
       let d = r.next, g = 0;
@@ -437,7 +437,7 @@ Object.assign(ACT, {
   'pin-set': () => startSetPin(),
   'pin-off': () => { S.settings.pinHash = ''; save(); render(); toast('PIN desactivado'); },
   'lock-now': () => lockNow(),
-  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Misión', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
+  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Caudal', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
   'sc-mode': el => { S.settings.shortcutMode = el.dataset.k; save(); render(); },
   'sc-copy': async el => { const txt = $('#' + el.dataset.src).textContent; try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#' + el.dataset.src)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Seleccionado: cópialo'); } },
   'sc-test': () => { const u = buildLink(); try { localStorage.removeItem('mision.lastLink'); } catch (e) { } handleLink(u); },
