@@ -158,7 +158,7 @@ function blankState() {
       favCcy: ['USD', 'GBP', 'CHF', 'BTC'],
       home: Object.keys(HOME_SECTIONS).map(k => ({ k, on: true })),
       period: 'month',
-      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false,
+      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false, glass: true,
       weekStart: 1, monthStart: 1, startTab: 'home', recentCount: 6,
       pinHash: '', lockAfter: 0, notifyRecurring: true, notifyHour: 9,
       budgetTotal: 0, budgetAlerts: true, shortcutMode: 'auto',

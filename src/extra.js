@@ -262,6 +262,7 @@ function applyLook() {
   else { const a = ACCENTS[st.accent] || ACCENTS.malva; dark = a[1]; light = a[2]; }
   const ink = h => lum(h) > .4 ? '#140d12' : '#ffffff';
   const z = { s: .92, m: 1, l: 1.1, xl: 1.22 }[st.textSize] || 1;
+  document.documentElement.classList.toggle('glass', st.glass !== false);
   let el = $('#lookCss'); if (!el) { el = document.createElement('style'); el.id = 'lookCss'; document.head.appendChild(el); }
   el.textContent = `:root{--accent:${dark};--accent-soft:${rgba(dark, .14)};--accent-ink:${ink(dark)};--z:${z}}
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]):not([data-theme="black"]){--accent:${light};--accent-soft:${rgba(light, .10)};--accent-ink:${ink(light)}}}

@@ -722,6 +722,7 @@ VIEWS['more/look'] = () => {
   return `<section class="card form">
     <div class="field"><span>Tema</span><div class="seg">${[['auto', 'Auto'], ['light', 'Claro'], ['dark', 'Oscuro'], ['black', 'Negro']].map(([k, l]) => `<button data-action="theme" data-k="${k}" aria-pressed="${st.theme === k}">${l}</button>`).join('')}</div></div>
     <p class="note" style="margin:-6px 0 0">«Negro» es negro puro: gasta menos batería en pantallas OLED como la del iPhone.</p>
+    <label class="check"><input type="checkbox" id="lkGlass" ${st.glass !== false ? 'checked' : ''}><span>Liquid Glass (cristal translúcido, barra flotante)</span></label>
     <div class="field"><span>Color de acento</span><div class="swatches">${Object.entries(ACCENTS).map(([k, [l, d, li]]) => `<button type="button" data-action="accent" data-k="${k}" style="--c:${d};box-shadow:inset 0 0 0 2px var(--surface),inset 0 0 0 16px ${li}" aria-label="${l}" aria-pressed="${st.accent === k}"></button>`).join('')}<label class="custom-color" aria-label="Color personalizado"><input type="color" id="lkCustom" value="${esc(st.customAccent || '#e4b3cb')}"><span>${st.accent === 'custom' ? '✓ ' : ''}Otro</span></label></div></div>
     <div class="field"><span>Tamaño de letra</span><div class="seg">${[['s', 'Pequeño'], ['m', 'Normal'], ['l', 'Grande'], ['xl', 'Enorme']].map(([k, l]) => `<button data-action="textsize" data-k="${k}" aria-pressed="${st.textSize === k}">${l}</button>`).join('')}</div></div>
     <label class="check"><input type="checkbox" id="lkCents" ${st.hideCents ? 'checked' : ''}><span>Ocultar los céntimos (1.234 € en vez de 1.234,56 €)</span></label>
@@ -735,6 +736,7 @@ VIEWS['more/look'] = () => {
 };
 AFTER['more/look'] = () => {
   $('#lkCustom').addEventListener('change', e => { S.settings.customAccent = e.target.value; S.settings.accent = 'custom'; applyLook(); save(); render(); });
+  $('#lkGlass').addEventListener('change', e => { S.settings.glass = e.target.checked; applyLook(); save(); });
   $('#lkCents').addEventListener('change', e => { S.settings.hideCents = e.target.checked; nfCache.clear(); save(); });
   $('#lkName').addEventListener('change', e => { S.settings.name = e.target.value.trim(); save(); });
   $('#lkStart').addEventListener('change', e => { S.settings.startTab = e.target.value; save(); });
