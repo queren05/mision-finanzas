@@ -1,0 +1,80 @@
+# Genera un .ipa SIN FIRMAR (para firmarlo después con Sideloadly, AltStore, TrollStore, etc.).
+# No necesita cuenta ni secrets de Apple. Lánzalo desde Actions → "IPA sin firmar" → Run workflow.
+name: IPA sin firmar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BUNDLE_ID: ${{ vars.BUNDLE_ID || 'es.david.mision' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Construir la web
+        run: sh build.sh
+
+      - name: Crear el proyecto iOS (Capacitor)
+        working-directory: ios-app
+        run: |
+          sed -i '' "s/es.david.mision/${BUNDLE_ID}/" capacitor.config.json
+          npm install
+          npx cap add ios
+          npx --yes @capacitor/assets generate --ios --iconBackgroundColor '#0e0c11' || echo "Iconos: se usa el por defecto"
+          npx cap sync ios
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Misión" ios/App/App/Info.plist || true
+          # Enlaces mision:// para Atajos de iPhone
+          PL=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" $PL 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string ${BUNDLE_ID}" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" $PL
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string mision" $PL
+          /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" $PL || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" $PL
+
+      - name: Compilar sin firma
+        run: |
+          cd ios-app/ios/App
+          if [ -d App.xcworkspace ]; then SRC="-workspace App.xcworkspace"; else SRC="-project App.xcodeproj"; fi
+          xcodebuild $SRC -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            MARKETING_VERSION=2.0 CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build | tail -40
+
+      - name: Empaquetar el .ipa
+        run: |
+          APP=$(find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 2 -name 'App.app' -type d | head -1)
+          test -d "$APP"
+          mkdir -p "$RUNNER_TEMP/pkg/Payload" out
+          cp -R "$APP" "$RUNNER_TEMP/pkg/Payload/"
+          (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Mision-sin-firmar.ipa" Payload)
+          ls -la out
+
+      - name: Guardar el .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mision-ipa-sin-firmar
+          path: out/Mision-sin-firmar.ipa
+
+      - name: Publicar el .ipa como descarga directa
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ipa-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create ipa-latest out/Mision-sin-firmar.ipa --title "IPA sin firmar" --notes "Build ${{ github.run_number }}"

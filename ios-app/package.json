@@ -1,0 +1,21 @@
+{
+  "name": "mision-finanzas-ios",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "sync": "cp ../dist/index.html ../dist/manifest.webmanifest ../dist/icon-192.png ../dist/icon-512.png ../dist/apple-touch-icon.png www/ && npx cap sync ios",
+    "open": "npx cap open ios",
+    "icons": "npx @capacitor/assets generate --ios --iconBackgroundColor '#0e0c11'"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

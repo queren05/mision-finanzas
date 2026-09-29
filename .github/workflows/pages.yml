@@ -1,0 +1,44 @@
+# Publica la web (carpeta dist) en GitHub Pages en cada push a main.
+# Requisito: Settings → Pages → Source: "GitHub Actions".
+# Ojo: en cuentas gratuitas, Pages solo funciona con repositorios PÚBLICOS (privado = GitHub Pro/Team).
+name: Web en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'dist/**', 'build.sh', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Construir la web
+        run: sh build.sh
+      - name: Preparar la carpeta publicada
+        run: |
+          mkdir -p _site
+          cp dist/index.html dist/manifest.webmanifest dist/sw.js dist/icon-192.png dist/icon-512.png dist/apple-touch-icon.png _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

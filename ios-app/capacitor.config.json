@@ -1,0 +1,15 @@
+{
+  "appId": "es.david.mision",
+  "appName": "Misión",
+  "webDir": "www",
+  "backgroundColor": "#0e0c11",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0e0c11",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "LocalNotifications": { "iconColor": "#e4b3cb" }
+  }
+}
