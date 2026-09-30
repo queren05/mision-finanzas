@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.bolita",
+  "appName": "Bolita",
+  "webDir": "www",
+  "backgroundColor": "#1b1830",
+  "ios": { "contentInset": "never", "backgroundColor": "#1b1830", "scrollEnabled": false }
+}

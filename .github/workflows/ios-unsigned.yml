@@ -115,3 +115,7 @@ jobs:
           gh release view ipa-latest >/dev/null 2>&1 || gh release create ipa-latest --title "Caudal" --notes "Última compilación"
           gh release upload ipa-latest out/Mision-sin-firmar.ipa out/repo.json out/icon.png --clobber
           gh release edit ipa-latest --title "Caudal 2.1.${{ github.run_number }}" --notes "Fuente para KSign: https://github.com/${{ github.repository }}/releases/download/ipa-latest/repo.json"
+          # también en la fuente común (todas las apps en una sola fuente de KSign)
+          BASE="https://github.com/${{ github.repository }}/releases/download/ipa-latest"
+          sh scripts/fuente.sh caudal "Caudal" "$BUNDLE_ID" "2.1.${{ github.run_number }}" "${{ github.run_number }}" \
+            "$BASE/Mision-sin-firmar.ipa" "$(stat -f%z out/Mision-sin-firmar.ipa)" "$BASE/icon.png" "Cuentas, objetivos, ETF y cripto en tiempo real"
