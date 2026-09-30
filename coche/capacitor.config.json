@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.micorsa",
+  "appName": "Mi Corsa",
+  "webDir": "www",
+  "backgroundColor": "#0b1020",
+  "ios": { "contentInset": "never", "backgroundColor": "#0b1020" }
+}

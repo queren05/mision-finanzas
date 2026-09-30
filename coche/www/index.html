@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mi Corsa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<style>
+/* Mi Corsa: seguimiento del mantenimiento. Una página con cinco pestañas (Inicio, Piezas, Historial,
+   Averías, Más), hoja inferior para detalles y formularios, y un asistente inicial que pregunta
+   cuándo se cambió cada pieza. Datos en localStorage; conocimiento en datos.js. */
+:root{
+  --bg:#0b1020; --bg2:#121a30; --card:#151d35; --card2:#1c2644; --line:rgba(255,255,255,.09);
+  --fg:#f3f5fb; --muted:#9aa4c0; --faint:#5d6788; --acc:#ffd23c; --acc-ink:#221a00;
+  --ok:#4fd18b; --soon:#ffb23c; --bad:#ff6b6b; --info:#7aa7ff; --r:20px;
+  --f:-apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:15px/1.4 var(--f);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+a{color:var(--info)}
+input,select,textarea{font:inherit;color:var(--fg)}
+#view{position:fixed;inset:0;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px calc(96px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 0}
+h2{font-size:17px;font-weight:700;margin:0}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:-6px}
+.sec-h span{color:var(--muted);font-size:13px}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.num{font-variant-numeric:tabular-nums}
+
+/* hero */
+.hero{position:relative;border-radius:26px;overflow:hidden;background:radial-gradient(120% 90% at 50% 20%,#24345e 0%,#101830 60%,#0b1020 100%);border:1px solid var(--line);padding:16px 16px 14px}
+.hero::after{content:"";position:absolute;left:10%;right:10%;bottom:74px;height:30px;background:radial-gradient(closest-side,rgba(255,210,60,.18),transparent);pointer-events:none}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2}
+.hero-top b{font-size:20px;letter-spacing:-.01em}
+.hero-top small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.badge{padding:5px 10px;border-radius:999px;background:rgba(255,210,60,.14);color:var(--acc);font-size:12px;font-weight:700;white-space:nowrap}
+.car{position:relative;margin:4px -6px 0;container-type:inline-size;animation:carIn .8s cubic-bezier(.2,.8,.2,1)}
+@keyframes carIn{from{opacity:0;transform:translateX(30px) scale(.96)}}
+.car img{width:100%;display:block;filter:drop-shadow(0 18px 18px rgba(0,0,0,.5))}
+.plate{position:absolute;left:71.2%;top:63.4%;width:14.8%;height:7%;background:#fff;border:.25cqw solid #111;border-radius:.4cqw;display:flex;overflow:hidden;
+  transform:perspective(40cqw) rotateY(-14deg) skewY(-2.2deg);transform-origin:left center;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.plate .eu{width:13%;background:#1f47a8;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font:700 2.2cqw/1 system-ui;padding-bottom:4%}
+.plate .eu i{font-style:normal;font-size:1.2cqw;color:#ffd500;margin-bottom:auto;margin-top:6%}
+.plate .n{flex:1;display:grid;place-items:center;font:600 3.05cqw/1 "DIN Alternate","Arial Narrow",Arial,sans-serif;letter-spacing:.08cqw;color:#111;padding-left:3%;white-space:nowrap}
+.km-row{position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:2px}
+.km-row .btn{flex:none;min-height:40px;padding:0 14px;font-size:14px}
+.km{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.km small{font-size:15px;color:var(--muted);font-weight:600;margin-left:4px}
+.km-sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-weight:650;white-space:nowrap}
+.btn.acc{background:var(--acc);color:var(--acc-ink);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad);background:transparent;border-color:rgba(255,107,107,.35)}
+.btn.block{width:100%}
+.btn:active{transform:scale(.97)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:26px;font-weight:800;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.bad b{color:var(--bad)} .stat.soon b{color:var(--soon)} .stat.ok b{color:var(--ok)}
+
+/* lista de piezas */
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row:active{background:var(--card2)}
+.ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--card2);flex:none}
+.row-m{flex:1;min-width:0}
+.row-t{display:block;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-s{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.pill{font-size:11.5px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap;flex:none}
+.pill.bad{background:rgba(255,107,107,.15);color:var(--bad)} .pill.soon{background:rgba(255,178,60,.15);color:var(--soon)}
+.pill.ok{background:rgba(79,209,139,.13);color:var(--ok)} .pill.unk{background:rgba(122,167,255,.15);color:var(--info)} .pill.watch{background:rgba(255,255,255,.08);color:var(--muted)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:8px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13.5px;font-weight:600;white-space:nowrap;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--acc);color:var(--acc-ink);border-color:transparent}
+
+/* averías y consejos */
+.fault{display:flex;flex-direction:column;gap:6px}
+.fault h3{margin:0;font-size:15.5px;display:flex;align-items:center;gap:8px}
+.sev{width:9px;height:9px;border-radius:50%;flex:none}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.src{font-size:12px;color:var(--faint)}
+.src a{color:var(--muted)}
+
+/* pestañas */
+.tabs{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:20;max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding:6px;border-radius:999px;
+  background:rgba(21,29,53,.72);border:1px solid rgba(255,255,255,.12);-webkit-backdrop-filter:saturate(1.6) blur(22px);backdrop-filter:saturate(1.6) blur(22px);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.tab{height:50px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:10px;font-weight:650}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{background:rgba(255,255,255,.1);color:var(--acc)}
+
+/* hoja */
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(3,6,15,.6);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-wrap.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;max-width:640px;max-height:90vh;overflow-y:auto;background:var(--bg2);border-radius:26px 26px 0 0;padding:8px 16px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(40px);transition:transform .28s cubic-bezier(.2,.8,.2,1);border:1px solid var(--line)}
+.sheet-wrap.open .sheet{transform:none}
+.grip{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:4px auto 10px}
+.sheet h2{font-size:20px;display:flex;align-items:center;gap:10px}
+.sheet .stack{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field span{font-size:12.5px;color:var(--muted);font-weight:600}
+.inp{width:100%;min-height:48px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:16px;outline:none;-webkit-appearance:none}
+.inp:focus{border-color:var(--acc)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.ivl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ivl div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.ivl div.use{border-color:rgba(255,210,60,.5)}
+.ivl b{font-size:14px} .ivl span{font-size:11px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:999px;font-weight:700;z-index:60;transition:all .25s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* asistente inicial */
+#wiz{position:fixed;inset:0;z-index:40;background:var(--bg);display:none;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 12px) 20px calc(20px + env(safe-area-inset-bottom,0px))}
+#wiz.on{display:flex}
+.wiz-top{display:flex;align-items:center;gap:10px}
+.wiz-prog{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.wiz-prog i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.wiz-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;max-width:520px;width:100%;margin:0 auto}
+.wiz-body .big-ico{font-size:52px}
+.wiz-body h1{font-size:26px;margin:0}
+.wiz-body p{margin:0;color:var(--muted)}
+.wiz-actions{display:flex;flex-direction:column;gap:10px;max-width:520px;width:100%;margin:0 auto}
+.opt{display:flex;gap:10px}
+.opt .btn{flex:1}
+.opt .btn[aria-pressed="true"]{border-color:var(--acc);color:var(--acc)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main id="view"></main>
+<nav class="tabs" id="tabs">
+  <button class="tab" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 4l8.5 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-6v6H4.5a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+  <button class="tab" data-tab="parts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5 6.5 20.5l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.4-.4-2.6z"/></svg>Piezas</button>
+  <button class="tab" data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/></svg>Historial</button>
+  <button class="tab" data-tab="faults"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4M12 17h.01"/></svg>Averías</button>
+  <button class="tab" data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>Más</button>
+</nav>
+<div class="sheet-wrap" id="sheetWrap"><div class="sheet" id="sheet"></div></div>
+<div id="wiz"></div>
+<div class="toast" id="toast"></div>
+<script src="datos.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nf = new Intl.NumberFormat('es-ES');
+const fk = n => nf.format(Math.round(n)) + ' km';
+const today = () => new Date().toISOString().slice(0, 10);
+const addYears = (d, y) => { const t = new Date(d + 'T12:00:00'); t.setMonth(t.getMonth() + Math.round(y * 12)); return t.toISOString().slice(0, 10); };
+const daysTo = d => Math.round((new Date(d + 'T12:00:00') - new Date(today() + 'T12:00:00')) / 864e5);
+const fdate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmonth = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : '—';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const byId = id => PIEZAS.find(p => p.id === id);
+
+/* ---------- estado ---------- */
+const KEY = 'micorsa.v1';
+const blank = () => ({ v: 1, km: 180000, kmLog: [], matric: '2019-06-01', itv: '', parts: {}, logs: [], done: false });
+let S; try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch (e) { S = blank(); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
+let tab = 'home', filter = 'todas';
+
+/* ---------- cálculo del estado de cada pieza ---------- */
+// info: { st: 'bad'|'soon'|'ok'|'unk'|'watch', label, pct, dueKm, dueDate, left }
+function status(p) {
+  const d = S.parts[p.id] || {};
+  if (!p.use) return { st: 'watch', label: 'Vigilar', pct: 0, txt: 'Sin intervalo: se cambia cuando falla' };
+  if (d.unknown || (!d.never && !d.km && !d.date)) return { st: 'unk', label: 'Sin datos', pct: 0, txt: 'No se sabe cuándo se cambió: revísalo' };
+  const baseKm = d.never ? 0 : d.km ?? null;
+  const baseDate = d.never ? S.matric : d.date || null;
+  let dueKm = null, dueDate = null, fk_ = 1, fd = 1;
+  if (p.use.km && baseKm != null) { dueKm = baseKm + p.use.km; fk_ = (S.km - baseKm) / p.use.km; }
+  if (p.use.y && baseDate) { dueDate = addYears(baseDate, p.use.y); fd = (new Date() - new Date(baseDate)) / (p.use.y * 365.25 * 864e5); }
+  if (p.use.km && baseKm == null && !(p.use.y && baseDate)) return { st: 'unk', label: 'Sin datos', pct: 0, txt: 'Falta el kilometraje del último cambio' };
+  const pct = Math.max(p.use.km && baseKm != null ? fk_ : 0, p.use.y && baseDate ? fd : 0);
+  const leftKm = dueKm != null ? dueKm - S.km : null, leftD = dueDate ? daysTo(dueDate) : null;
+  const parts = [];
+  if (leftKm != null) parts.push(leftKm < 0 ? `pasado ${fk(-leftKm)}` : leftKm === 0 ? `toca justo ahora` : `quedan ${fk(leftKm)}`);
+  if (leftD != null) parts.push(leftD <= 0 ? `caducó ${fdate(dueDate)}` : `hasta ${fmonth(dueDate)}`);
+  const st = pct >= 1 ? 'bad' : pct >= .85 || (leftKm != null && leftKm < 2000) || (leftD != null && leftD < 45) ? 'soon' : 'ok';
+  return { st, label: { bad: 'Toca ya', soon: 'Pronto', ok: 'Al día' }[st], pct: Math.min(1, pct), dueKm, dueDate, txt: parts.join(' · ') };
+}
+const ORDER = { bad: 0, unk: 1, soon: 2, ok: 3, watch: 4 };
+const COL = { bad: 'var(--bad)', soon: 'var(--soon)', ok: 'var(--ok)', unk: 'var(--info)', watch: 'var(--faint)' };
+const sorted = () => PIEZAS.map(p => ({ p, s: status(p) })).sort((a, b) => ORDER[a.s.st] - ORDER[b.s.st] || b.s.pct - a.s.pct);
+
+function nextItv() {
+  const m = S.matric; if (!m) return null;
+  const age = y => addYears(m, y);
+  let d = S.itv ? addYears(S.itv, (new Date(S.itv) - new Date(m)) / 31557600000 >= 10 ? 1 : 2) : age(4);
+  while (daysTo(d) < -400) d = addYears(d, 2);   // sin fecha de última ITV: la siguiente teórica
+  if (d > age(10)) { const t10 = age(10); if (!S.itv || S.itv < t10) d = t10 < d ? t10 : d; }
+  return d;
+}
+function kmPerMonth() {
+  const L = S.kmLog; if (L.length < 2) return null;
+  const a = L[0], b = L[L.length - 1], days = (new Date(b.d) - new Date(a.d)) / 864e5;
+  return days > 20 ? (b.km - a.km) / days * 30.4 : null;
+}
+
+/* ---------- piezas de interfaz ---------- */
+const plateHtml = () => "";
+function partRow({ p, s }) {
+  return `<button class="row" data-part="${p.id}"><span class="ico">${p.ic}</span><span class="row-m"><span class="row-t">${esc(p.n)}</span><span class="row-s">${esc(s.txt || '')}</span>
+    ${s.st !== 'watch' && s.st !== 'unk' ? `<span class="bar"><i style="width:${Math.round(s.pct * 100)}%;background:${COL[s.st]}"></i></span>` : ''}</span><span class="pill ${s.st}">${s.label}</span></button>`;
+}
+const src = ids => ids && ids.length ? `<p class="src">Fuentes: ${ids.map(i => FUENTES[i] ? `<a href="${FUENTES[i].u}">${esc(FUENTES[i].n)}</a>` : '').join(' · ')}</p>` : '';
+
+/* ---------- pantallas ---------- */
+const VIEWS = {
+  home() {
+    const all = sorted(), c = { bad: 0, soon: 0, ok: 0, unk: 0 }; all.forEach(x => { if (c[x.s.st] != null) c[x.s.st]++; });
+    const itv = nextItv(), kpm = kmPerMonth();
+    return `<div class="hero"><div class="hero-top"><div><b>Opel Corsa E</b><small>1.4 GLP · 90 CV · Selective Pro</small></div><span class="badge">GLP</span></div>
+        <div class="car"><img src="corsa.png" alt="Opel Corsa E blanco">${plateHtml()}</div>
+        <div class="km-row"><div><div class="km num">${nf.format(S.km)}<small>km</small></div><div class="km-sub">${kpm ? `≈ ${fk(kpm)}/mes · ` : ''}actualizado ${S.kmLog.length ? fdate(S.kmLog[S.kmLog.length - 1].d) : 'nunca'}</div></div>
+        <button class="btn acc" data-act="km">Actualizar km</button></div></div>
+      <div class="stats"><div class="stat bad"><b>${c.bad}</b><span>Toca ya</span></div><div class="stat soon"><b>${c.soon + c.unk}</b><span>Pronto / sin datos</span></div><div class="stat ok"><b>${c.ok}</b><span>Al día</span></div></div>
+      ${itv ? `<div class="card" style="display:flex;align-items:center;gap:12px"><span class="ico">📋</span><div class="row-m"><div class="row-t">Próxima ITV</div><div class="row-s">${fmonth(itv)} · ${daysTo(itv) < 0 ? 'pasada: compruébala' : `en ${daysTo(itv)} días`}</div></div><button class="btn ghost" data-act="itv">Editar</button></div>` : ''}
+      <div class="sec-h"><h2>Lo próximo</h2><span>ordenado por urgencia</span></div>
+      <div class="list">${all.filter(x => x.s.st !== 'watch').slice(0, 6).map(partRow).join('')}</div>
+      <button class="btn block" data-act="log-new">＋ Registrar un cambio</button>`;
+  },
+  parts() {
+    const all = sorted().filter(x => filter === 'todas' || x.p.cat === filter);
+    return `<h1>Piezas</h1><div class="chips">${[['todas', 'Todas'], ...Object.entries(CATS)].map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${filter === k}">${l}</button>`).join('')}</div>
+      <div class="list">${all.map(partRow).join('') || '<p class="muted" style="padding:14px">Nada en esta categoría.</p>'}</div>`;
+  },
+  log() {
+    const L = [...S.logs].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.km - a.km);
+    const total = L.reduce((t, l) => t + (+l.cost || 0), 0), year = new Date().getFullYear().toString();
+    const ty = L.filter(l => (l.date || '').startsWith(year)).reduce((t, l) => t + (+l.cost || 0), 0);
+    return `<h1>Historial</h1><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b class="num">${nf.format(ty)} €</b><span>Gastado en ${year}</span></div><div class="stat"><b class="num">${nf.format(total)} €</b><span>Total registrado</span></div></div>
+      <button class="btn acc block" data-act="log-new">＋ Registrar un cambio</button>
+      ${L.length ? `<div class="list">${L.map(l => { const p = byId(l.part); return `<button class="row" data-log="${l.id}"><span class="ico">${p ? p.ic : '🧾'}</span><span class="row-m"><span class="row-t">${esc(p ? p.n : l.title || 'Otro')}</span><span class="row-s">${fdate(l.date)} · ${fk(l.km)}${l.where ? ' · ' + esc(l.where) : ''}</span></span><span class="num">${l.cost ? nf.format(l.cost) + ' €' : ''}</span></button>`; }).join('')}</div>`
+        : '<div class="card muted">Aún no has registrado ningún cambio. Cada vez que hagas algo al coche, apúntalo aquí: la app recalcula el próximo cambio.</div>'}`;
+  },
+  faults() {
+    return `<h1>Averías típicas</h1><p class="muted" style="margin:-8px 0 0">Lo que más falla en este coche según talleres y foros. Toca los síntomas para saber por dónde empezar.</p>
+      ${AVERIAS.map(a => `<div class="card fault"><h3><i class="sev" style="background:${a.sev === 3 ? 'var(--bad)' : a.sev === 2 ? 'var(--soon)' : 'var(--info)'}"></i>${esc(a.n)}</h3>
+        <dl class="kv"><dt>Síntoma</dt><dd>${esc(a.sint)}</dd><dt>Causa</dt><dd>${esc(a.causa)}</dd><dt>Solución</dt><dd>${esc(a.sol)}</dd><dt>Coste</dt><dd>${esc(a.coste)}</dd></dl>${src(a.f)}</div>`).join('')}`;
+  },
+  more() {
+    return `<h1>Más</h1>
+      <div class="sec-h"><h2>Consejos</h2></div>${CONSEJOS.map(c => `<div class="card"><b>${esc(c.t)}</b><p class="muted" style="margin:6px 0 0">${esc(c.d)}</p></div>`).join('')}
+      <div class="sec-h"><h2>Ficha del coche</h2></div><div class="card"><dl class="kv">${FICHA.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+      <div class="sec-h"><h2>Fuentes consultadas</h2></div><div class="card"><ul class="ul small">${Object.values(FUENTES).map(f => `<li><a href="${f.u}">${esc(f.n)}</a></li>`).join('')}</ul>
+        <p class="src" style="margin-top:10px">Los precios son orientativos (taller independiente en España). Ante la duda manda el manual de tu coche y el criterio de un taller de confianza.</p></div>
+      <div class="sec-h"><h2>Datos</h2></div>
+      <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn block" data-act="wizard">Volver a hacer el cuestionario inicial</button>
+        <button class="btn block" data-act="matric">Fecha de matriculación: ${fmonth(S.matric)}</button>
+        <div class="row2"><button class="btn" data-act="export">Copiar copia de seguridad</button><button class="btn" data-act="import">Restaurar</button></div>
+        <button class="btn danger block" data-act="reset">Borrar todo</button></div>`;
+  },
+};
+
+function render() {
+  $('#view').innerHTML = `<div class="wrap">${VIEWS[tab]()}</div>`;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.tab === tab ? 'page' : 'false'));
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; tab = b.dataset.tab; render(); $('#view').scrollTop = 0; });
+
+/* ---------- hoja inferior ---------- */
+function sheet(html, mount) { $('#sheet').innerHTML = `<div class="grip"></div>${html}`; $('#sheetWrap').classList.add('open'); mount && mount($('#sheet')); }
+const closeSheet = () => $('#sheetWrap').classList.remove('open');
+$('#sheetWrap').addEventListener('click', e => { if (e.target.id === 'sheetWrap' || e.target.closest('[data-close]')) closeSheet(); });
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); }
+
+const ivl = (label, o, cls = '') => `<div class="${cls}"><span>${label}</span><b>${o ? [o.km ? fk(o.km) : '', o.y ? `${o.y} año${o.y > 1 ? 's' : ''}` : ''].filter(Boolean).join(' / ') || 'Sin intervalo' : 'No indicado'}</b></div>`;
+function openPart(id) {
+  const p = byId(id), s = status(p), d = S.parts[id] || {};
+  const logs = S.logs.filter(l => l.part === id).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const desg = { si: '✅ Se puede comprar en desguace', no: '⛔ Mejor nueva (no de desguace)', cuidado: '⚠️ De desguace solo si viene probada y con garantía' }[p.des];
+  sheet(`<div class="stack"><h2><span class="ico">${p.ic}</span>${esc(p.n)}</h2>
+    <div class="card" style="display:flex;align-items:center;gap:12px"><span class="pill ${s.st}">${s.label}</span><span class="small muted">${esc(s.txt || '')}</span></div>
+    <div class="ivl">${ivl('Opel', p.opel)}${ivl('Foros y talleres', p.rec)}${ivl('La app avisa a', p.use, 'use')}</div>
+    <div><b>Por qué</b><p class="muted" style="margin:6px 0 0">${esc(p.why)}</p></div>
+    <div><b>Qué lleva</b><p class="muted" style="margin:6px 0 0">${esc(p.spec)}</p></div>
+    ${p.sint.length ? `<div><b>Síntomas de que toca</b><ul class="ul muted" style="margin-top:6px">${p.sint.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+    ${p.tips.length ? `<div><b>Consejos</b><ul class="ul muted" style="margin-top:6px">${p.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+    <dl class="kv"><dt>Precio</dt><dd>${esc(p.precio)}</dd><dt>Hacerlo tú</dt><dd>${['', 'Fácil', 'Con herramientas', 'Mejor en taller'][p.dif]}</dd><dt>Desguace</dt><dd>${desg}</dd>
+      <dt>Último cambio</dt><dd>${d.never ? 'Nunca (de fábrica)' : d.unknown ? 'No se sabe' : [d.km != null ? fk(d.km) : '', d.date ? fdate(d.date) : ''].filter(Boolean).join(' · ') || '—'}</dd></dl>
+    ${src(p.f)}
+    ${logs.length ? `<div><b>Historial</b><div class="list" style="margin-top:8px">${logs.map(l => `<div class="row"><span class="row-m"><span class="row-t">${fdate(l.date)} · ${fk(l.km)}</span><span class="row-s">${esc([l.where, l.note].filter(Boolean).join(' · '))}</span></span><span class="num">${l.cost ? nf.format(l.cost) + ' €' : ''}</span></div>`).join('')}</div></div>` : ''}
+    <button class="btn acc block" data-new="${id}">Lo he cambiado</button><button class="btn block" data-edit="${id}">Corregir último cambio</button></div>`,
+    sh => { sh.querySelector('[data-new]').onclick = () => logForm(id); sh.querySelector('[data-edit]').onclick = () => lastForm(id); });
+}
+function logForm(partId, log) {
+  const l = log || { date: today(), km: S.km, part: partId || '' };
+  sheet(`<div class="stack"><h2>${log ? 'Editar cambio' : 'Registrar un cambio'}</h2>
+    <label class="field"><span>Qué se ha hecho</span><select class="inp" id="lp"><option value="">Otro (escríbelo abajo)</option>${Object.entries(CATS).map(([k, c]) => `<optgroup label="${c}">${PIEZAS.filter(p => p.cat === k).map(p => `<option value="${p.id}" ${p.id === l.part ? 'selected' : ''}>${esc(p.n)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+    <label class="field" id="ltW"><span>Descripción</span><input class="inp" id="lt" value="${esc(l.title || '')}" placeholder="Ej.: cambio de luneta"></label>
+    <div class="row2"><label class="field"><span>Fecha</span><input class="inp" type="date" id="ld" value="${l.date}"></label><label class="field"><span>Kilómetros</span><input class="inp" inputmode="numeric" id="lk" value="${l.km}"></label></div>
+    <div class="row2"><label class="field"><span>Coste (€)</span><input class="inp" inputmode="decimal" id="lc" value="${l.cost || ''}" placeholder="0"></label><label class="field"><span>Dónde</span><input class="inp" id="lw" value="${esc(l.where || '')}" placeholder="Taller, yo…"></label></div>
+    <label class="field"><span>Notas</span><input class="inp" id="ln" value="${esc(l.note || '')}" placeholder="Marca, referencia…"></label>
+    <button class="btn acc block" id="lsave">Guardar</button>${log ? '<button class="btn danger block" id="ldel">Borrar</button>' : ''}<button class="btn ghost block" data-close>Cancelar</button></div>`, sh => {
+    const sync = () => { sh.querySelector('#ltW').style.display = sh.querySelector('#lp').value ? 'none' : ''; }; sync(); sh.querySelector('#lp').onchange = sync;
+    sh.querySelector('#lsave').onclick = () => {
+      const o = { id: log ? log.id : uid(), part: sh.querySelector('#lp').value, title: sh.querySelector('#lt').value.trim(), date: sh.querySelector('#ld').value || today(),
+        km: parseInt(sh.querySelector('#lk').value.replace(/\D/g, '')) || S.km, cost: parseFloat(sh.querySelector('#lc').value.replace(',', '.')) || 0, where: sh.querySelector('#lw').value.trim(), note: sh.querySelector('#ln').value.trim() };
+      if (!o.part && !o.title) { toast('Elige una pieza o escribe qué se hizo'); return; }
+      if (log) S.logs = S.logs.map(x => x.id === log.id ? o : x); else S.logs.push(o);
+      if (o.part) { const cur = S.parts[o.part] || {}; if (!cur.km || o.km >= cur.km) S.parts[o.part] = { km: o.km, date: o.date }; }
+      if (o.km > S.km) setKm(o.km, o.date);
+      save(); closeSheet(); render(); toast('Guardado ✓');
+    };
+    const del = sh.querySelector('#ldel'); if (del) del.onclick = () => { S.logs = S.logs.filter(x => x.id !== log.id); save(); closeSheet(); render(); toast('Borrado'); };
+  });
+}
+function lastForm(id) {
+  const p = byId(id), d = S.parts[id] || {};
+  sheet(`<div class="stack"><h2>${p.ic} Último cambio</h2><p class="muted" style="margin:0">${esc(p.n)}</p>
+    <div class="row2"><label class="field"><span>Kilómetros</span><input class="inp" inputmode="numeric" id="ek" value="${d.km ?? ''}"></label><label class="field"><span>Fecha (aprox.)</span><input class="inp" type="month" id="ed" value="${(d.date || '').slice(0, 7)}"></label></div>
+    <div class="opt"><button class="btn" id="eu">No lo sé</button><button class="btn" id="en">Nunca</button></div><button class="btn acc block" id="es">Guardar</button></div>`, sh => {
+    const done = v => { S.parts[id] = v; save(); closeSheet(); render(); openPart(id); };
+    sh.querySelector('#eu').onclick = () => done({ unknown: true });
+    sh.querySelector('#en').onclick = () => done({ never: true });
+    sh.querySelector('#es').onclick = () => { const k = parseInt(sh.querySelector('#ek').value.replace(/\D/g, '')); const m = sh.querySelector('#ed').value; done({ km: isNaN(k) ? null : k, date: m ? m + '-15' : null }); };
+  });
+}
+function setKm(km, d = today()) { S.km = km; const L = S.kmLog; if (L.length && L[L.length - 1].d === d) L[L.length - 1].km = km; else L.push({ d, km }); save(); }
+function kmForm() {
+  sheet(`<div class="stack"><h2>🚗 Kilómetros actuales</h2><p class="muted" style="margin:0">Míralos en el cuadro. Con cada actualización la app calcula cuántos haces al mes.</p>
+    <input class="inp num" inputmode="numeric" id="km" value="${S.km}" style="font-size:28px;font-weight:800;text-align:center">
+    <button class="btn acc block" id="kms">Guardar</button></div>`, sh => {
+    const i = sh.querySelector('#km'); setTimeout(() => { i.focus(); i.select(); }, 300);
+    sh.querySelector('#kms').onclick = () => { const k = parseInt(i.value.replace(/\D/g, '')); if (!k) return; if (k < S.km && !confirm('Es menos de lo que tenías. ¿Guardar igualmente?')) return; setKm(k); closeSheet(); render(); const n = sorted().filter(x => x.s.st === 'bad').length; toast(n ? `${n} cosa${n > 1 ? 's' : ''} por hacer` : 'Todo al día ✓'); };
+  });
+}
+
+/* ---------- acciones ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-part],[data-act],[data-filter],[data-log]'); if (!t) return;
+  if (t.dataset.part) return openPart(t.dataset.part);
+  if (t.dataset.filter) { filter = t.dataset.filter; return render(); }
+  if (t.dataset.log) return logForm(null, S.logs.find(l => l.id === t.dataset.log));
+  const a = t.dataset.act;
+  if (a === 'km') kmForm();
+  else if (a === 'log-new') logForm('');
+  else if (a === 'wizard') wizard(0);
+  else if (a === 'itv' || a === 'matric') sheet(`<div class="stack"><h2>📋 ITV y matriculación</h2>
+      <label class="field"><span>Fecha de matriculación</span><input class="inp" type="month" id="mm" value="${S.matric.slice(0, 7)}"></label>
+      <label class="field"><span>Última ITV pasada (si la sabes)</span><input class="inp" type="date" id="iv" value="${S.itv}"></label>
+      <button class="btn acc block" id="ivs">Guardar</button></div>`, sh => sh.querySelector('#ivs').onclick = () => { const m = sh.querySelector('#mm').value; if (m) S.matric = m + '-01'; S.itv = sh.querySelector('#iv').value; save(); closeSheet(); render(); });
+  else if (a === 'export') { const txt = JSON.stringify(S); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copia en el portapapeles: pégala en Notas')).catch(() => sheet(`<div class="stack"><h2>Copia de seguridad</h2><textarea class="inp" rows="8">${esc(txt)}</textarea></div>`)); }
+  else if (a === 'import') sheet(`<div class="stack"><h2>Restaurar copia</h2><textarea class="inp" id="imp" rows="8" placeholder="Pega aquí la copia"></textarea><button class="btn acc block" id="impb">Restaurar</button></div>`, sh => sh.querySelector('#impb').onclick = () => { try { S = Object.assign(blank(), JSON.parse(sh.querySelector('#imp').value)); save(); closeSheet(); render(); toast('Restaurado ✓'); } catch (e) { toast('La copia no es válida'); } });
+  else if (a === 'reset') { if (confirm('¿Borrar todos los datos de la app?')) { S = blank(); save(); wizard(0); } }
+});
+
+/* ---------- cuestionario inicial ---------- */
+const ASK = PIEZAS.filter(p => p.use);
+function wizard(i) {
+  const W = $('#wiz'); W.classList.add('on'); const total = ASK.length + 2;
+  const top = `<div class="wiz-top">${i > 0 ? '<button class="btn ghost" id="wb">‹</button>' : ''}<div class="wiz-prog"><i style="width:${i / total * 100}%"></i></div><button class="btn ghost small" id="wx">Saltar</button></div>`;
+  let body, actions;
+  if (i === 0) {
+    body = `<div class="car" style="margin:0 -10px"><img src="corsa.png" alt="">${plateHtml()}</div><h1>Pongamos al día tu Corsa</h1>
+      <p>Te voy a preguntar a cuántos kilómetros se cambió por última vez cada cosa del mantenimiento. Si no lo sabes, dilo y la app te recomendará revisarlo.</p>`;
+    actions = `<button class="btn acc block" id="wn">Empezar</button>`;
+  } else if (i === 1) {
+    body = `<div class="big-ico">🚗</div><h1>¿Cuántos kilómetros tiene ahora?</h1><p>Míralos en el cuadro.</p>
+      <input class="inp num" inputmode="numeric" id="wk" value="${S.km}" style="font-size:30px;font-weight:800;text-align:center">
+      <label class="field"><span>Mes de matriculación</span><input class="inp" type="month" id="wm" value="${S.matric.slice(0, 7)}"></label>`;
+    actions = `<button class="btn acc block" id="wn">Siguiente</button>`;
+  } else if (i < total) {
+    const p = ASK[i - 2], d = S.parts[p.id] || {}, byKm = !!p.use.km;
+    body = `<div class="big-ico">${p.ic}</div><div class="small muted">${CATS[p.cat]} · ${i - 1} de ${ASK.length}</div><h1>${esc(p.n)}</h1>
+      <p>${byKm ? '¿A cuántos kilómetros se cambió por última vez?' : '¿Cuándo se cambió por última vez?'}</p>
+      ${byKm ? `<input class="inp num" inputmode="numeric" id="wk" placeholder="Ej.: 150.000" value="${d.km ?? ''}" style="font-size:24px;font-weight:700;text-align:center">` : ''}
+      <label class="field"><span>${byKm ? 'Fecha aproximada (opcional)' : 'Mes y año'}</span><input class="inp" type="month" id="wd" value="${(d.date || '').slice(0, 7)}"></label>
+      <p class="small">Recomendado: ${[p.use.km ? 'cada ' + fk(p.use.km) : '', p.use.y ? `cada ${p.use.y} año${p.use.y > 1 ? 's' : ''}` : ''].filter(Boolean).join(' o ')}.</p>`;
+    actions = `<div class="opt"><button class="btn" id="wu" aria-pressed="${!!d.unknown}">No lo sé</button><button class="btn" id="wv" aria-pressed="${!!d.never}">Nunca se ha cambiado</button></div><button class="btn acc block" id="wn">Siguiente</button>`;
+  } else {
+    const c = sorted(); const bad = c.filter(x => x.s.st === 'bad').length, unk = c.filter(x => x.s.st === 'unk').length;
+    body = `<div class="big-ico">✅</div><h1>¡Listo!</h1><p>${bad ? `Hay <b style="color:var(--bad)">${bad} cosa${bad > 1 ? 's' : ''}</b> que ya tocan` : 'No hay nada vencido'}${unk ? ` y <b style="color:var(--info)">${unk}</b> sin datos que conviene revisar` : ''}. Lo verás ordenado por urgencia en Inicio.</p>
+      <p>Actualiza los kilómetros de vez en cuando y registra cada cambio para que los avisos sean exactos.</p>`;
+    actions = `<button class="btn acc block" id="wn">Ver mi coche</button>`;
+  }
+  W.innerHTML = `${top}<div class="wiz-body">${body}</div><div class="wiz-actions">${actions}</div>`;
+  const next = () => { if (i >= total) { W.classList.remove('on'); S.done = true; save(); tab = 'home'; render(); } else wizard(i + 1); };
+  const store = () => {
+    if (i === 1) { const k = parseInt($('#wk').value.replace(/\D/g, '')); if (k) setKm(k); const m = $('#wm').value; if (m) S.matric = m + '-01'; }
+    else if (i >= 2 && i < total) {
+      const p = ASK[i - 2], k = $('#wk') ? parseInt($('#wk').value.replace(/\D/g, '')) : NaN, m = $('#wd').value;
+      if (!isNaN(k) || m) S.parts[p.id] = { km: isNaN(k) ? null : k, date: m ? m + '-15' : null };
+    }
+    save();
+  };
+  $('#wn').onclick = () => { store(); next(); };
+  const wb = $('#wb'); if (wb) wb.onclick = () => wizard(i - 1);
+  $('#wx').onclick = () => { store(); W.classList.remove('on'); S.done = true; save(); render(); };
+  const wu = $('#wu'), wv = $('#wv');
+  if (wu) wu.onclick = () => { S.parts[ASK[i - 2].id] = { unknown: true }; save(); next(); };
+  if (wv) wv.onclick = () => { S.parts[ASK[i - 2].id] = { never: true }; save(); next(); };
+}
+
+/* ---------- arranque ---------- */
+if (!S.kmLog.length) setKm(S.km);
+render();
+if (!S.done) wizard(0);
+else if (S.kmLog.length && daysTo(S.kmLog[S.kmLog.length - 1].d) < -30) setTimeout(() => { toast('Hace más de un mes que no actualizas los km'); }, 900);
+</script>
+</body>
+</html>
