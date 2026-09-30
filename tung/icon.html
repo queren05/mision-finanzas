@@ -1,26 +1,41 @@
-<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:1024px;height:1024px;overflow:hidden}canvas{display:block}</style></head><body><canvas id="c" width="1024" height="1024"></canvas><script>
-function drawTung(c, x, y, sc, t, angry = true) {
-  c.save(); c.translate(x, y); c.scale(sc, sc);
-  const bob = Math.sin(t * 10) * 4;
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(-14, -8); c.lineTo(-18 - Math.sin(t * 10) * 8, 30); c.moveTo(14, -8); c.lineTo(18 + Math.sin(t * 10) * 8, 30); c.stroke();
-  const g = c.createLinearGradient(-38, 0, 38, 0); g.addColorStop(0, '#6b3e1c'); g.addColorStop(.45, '#b8804a'); g.addColorStop(1, '#5a3216');
-  c.fillStyle = g; c.beginPath(); c.roundRect ? c.roundRect(-36, -150 + bob, 72, 145, 30) : c.rect(-36, -150 + bob, 72, 145); c.fill();
-  c.strokeStyle = 'rgba(60,30,10,.45)'; c.lineWidth = 2.5; for (const gx of [-20, -4, 14, 26]) { c.beginPath(); c.moveTo(gx, -135 + bob); c.bezierCurveTo(gx + 6, -100 + bob, gx - 6, -60 + bob, gx + 3, -18 + bob); c.stroke(); }
-  c.fillStyle = '#d9a86c'; c.beginPath(); c.ellipse(0, -146 + bob, 30, 8, 0, 0, 7); c.fill(); c.strokeStyle = '#a87440'; c.lineWidth = 2; for (const r of [8, 16, 24]) { c.beginPath(); c.ellipse(0, -146 + bob, r, r * .27, 0, 0, 7); c.stroke(); }
-  for (const ex of [-14, 14]) { c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, -108 + bob, 11, 0, 7); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(ex + (angry ? 0 : 2), -106 + bob, 5.5, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + 2, -109 + bob, 1.8, 0, 7); c.fill(); }
-  if (angry) { c.strokeStyle = '#2a1405'; c.lineWidth = 5; c.beginPath(); c.moveTo(-26, -126 + bob); c.lineTo(-6, -118 + bob); c.moveTo(26, -126 + bob); c.lineTo(6, -118 + bob); c.stroke(); }
-  c.fillStyle = '#3a0d05'; c.beginPath(); c.ellipse(0, -80 + bob, 12, angry ? 8 : 4, 0, 0, 7); c.fill();
-  // brazo con bate
-  const sw = Math.sin(t * 12) * .6;
-  c.save(); c.translate(32, -70 + bob); c.rotate(-.6 + sw);
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(0, 0); c.lineTo(22, 0); c.stroke();
-  c.fillStyle = '#d8b07a'; c.beginPath(); c.moveTo(18, -4); c.lineTo(80, -11); c.quadraticCurveTo(90, 0, 80, 11); c.lineTo(18, 4); c.fill(); c.strokeStyle = '#9a6a38'; c.lineWidth = 2; c.stroke();
-  c.restore();
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(-34, -70 + bob); c.lineTo(-50, -48 + bob + Math.sin(t * 10) * 8); c.stroke();
-  c.restore();
-}
-
-const c=document.getElementById('c').getContext('2d');const g=c.createLinearGradient(0,0,0,1024);g.addColorStop(0,'#2a1650');g.addColorStop(.55,'#c2466a');g.addColorStop(1,'#ffb05a');c.fillStyle=g;c.fillRect(0,0,1024,1024);
-c.fillStyle='#ffe3a0';c.beginPath();c.arc(760,560,170,Math.PI,0);c.fill();c.fillStyle='#1e4a2c';c.fillRect(0,560,1024,464);c.fillStyle='#c9b089';c.beginPath();c.moveTo(430,560);c.lineTo(594,560);c.lineTo(1000,1024);c.lineTo(24,1024);c.fill();
-drawTung(c,470,1010,5.2,0.35,true);</script></body></html>
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas,img{display:block;position:fixed;left:0;top:0}#i{position:fixed;left:0;bottom:0;font:11px monospace;background:#fff;color:#000;z-index:9}</style></head><body>
+<script>onerror=(m)=>{document.getElementById('i').textContent='ERR '+m}</script>
+<script type="module">
+import * as THREE from './www/lib/three.module.min.js';
+import { GLTFLoader } from './www/lib/GLTFLoader.js';
+import * as M from './www/modelos.js';
+const S = 1024, q = new URLSearchParams(location.search.replace(/^\?/, '').length ? location.search : '?fov=30&cx=.3&cy=1.85&cz=-3.6&lx=0&ly=1.85');
+M.BEND.y.value = 0;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(S, S); document.body.appendChild(r.domElement);
+const sc = new THREE.Scene();
+// fondo: atardecer de selva
+sc.background = M.canvasTex(S, S, (c, w, h) => {
+  const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#1d0f45'); g.addColorStop(.35, '#7a2a6b'); g.addColorStop(.62, '#e0566a'); g.addColorStop(.82, '#ffb35a'); g.addColorStop(1, '#3a1a2c');
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  const sx = w * .5, sy = h * .55;
+  const glow = c.createRadialGradient(sx, sy, 0, sx, sy, w * .55); glow.addColorStop(0, 'rgba(255,240,170,.95)'); glow.addColorStop(.25, 'rgba(255,200,110,.6)'); glow.addColorStop(1, 'rgba(255,140,60,0)');
+  c.fillStyle = glow; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#fff2b8'; c.beginPath(); c.arc(sx, sy, w * .2, 0, 7); c.fill();
+  // colinas de selva en capas
+  for (const [col, base, amp, fq, ph] of [['#3b1a48', .72, 60, 2.3, 1], ['#26103a', .8, 50, 3.7, 3], ['#170a26', .88, 40, 5.1, 5]]) {
+    c.fillStyle = col; c.beginPath(); c.moveTo(0, h);
+    for (let x = 0; x <= w; x += 8) c.lineTo(x, h * base - amp * (.5 + .5 * Math.sin(x / w * Math.PI * fq + ph)) - amp * .4 * Math.sin(x / w * 17 + ph * 2));
+    c.lineTo(w, h); c.fill();
+  }
+  c.fillStyle = '#0f0818'; c.fillRect(0, h * .9, w, h * .1);
+}, false);
+sc.add(new THREE.HemisphereLight(0xffe2c0, 0x40204a, 1.5));
+const key = new THREE.DirectionalLight(0xfff0d8, 2.6); key.position.set(-2, 2.5, -3); sc.add(key);
+const rim = new THREE.DirectionalLight(0xff8a4a, 2.2); rim.position.set(2.5, 2, 3); sc.add(rim);
+const gl = await new Promise((ok, ko) => new GLTFLoader().load('./www/models/tung.glb', ok, undefined, ko));
+const t = new M.Tung(gl); sc.add(t.root); t.root.rotation.y = Math.PI;
+t.pose(0, 'idle', +(q.get('t') || .6), .016);
+t.root.updateMatrixWorld(true);
+const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 43), 1, .1, 50);
+cam.position.set(+(q.get('cx') || .35), +(q.get('cy') || 1.6), +(q.get('cz') || -3.7));
+cam.lookAt(+(q.get('lx') || .1), +(q.get('ly') || 1.55), 0);
+r.render(sc, cam);
+const im = new Image(); im.src = r.domElement.toDataURL('image/png'); document.body.appendChild(im);
+document.getElementById('i').textContent = 'LISTO';
+</script></body></html>
