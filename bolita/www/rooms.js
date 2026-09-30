@@ -72,4 +72,12 @@ const SLOTS = {
 
 // Fondos pintados (ilustraciones de Gemini). Si una habitación tiene imagen aquí, sustituye al dibujo SVG.
 // p. ej. kitchen: 'rooms/cocina.jpg' (vertical, 1080x1920 o similar).
-const ROOM_IMG = {};
+const ROOM_IMG = { kitchen: 'rooms/cocina.jpg', bath: 'rooms/bano.jpg', bed: 'rooms/dormitorio.jpg', play: 'rooms/juegos.jpg', closet: 'rooms/armario.jpg' };
+// Huecos de decoración para los fondos pintados: suelo a los lados de la mascota, techo y una esquina de pared libre.
+const IMG_SLOTS = {
+  kitchen: { techo: [322, 222, 40], pared: [345, 300, 40], estante: [52, 170, 34], sueloI: [80, 470, 66], sueloD: [322, 470, 62] },
+  bath: { techo: [322, 222, 40], pared: [80, 330, 40], estante: [335, 200, 34], sueloI: [80, 470, 66], sueloD: [322, 470, 62] },
+  bed: { techo: [322, 222, 40], pared: [345, 300, 40], estante: [52, 110, 34], sueloI: [80, 470, 66], sueloD: [322, 470, 62] },
+  play: { techo: [322, 222, 40], pared: [60, 300, 40], estante: [335, 170, 34], sueloI: [80, 470, 66], sueloD: [322, 470, 62] },
+  closet: { techo: [322, 222, 40], pared: [60, 300, 40], estante: [340, 290, 34], sueloI: [80, 470, 66], sueloD: [322, 470, 62] },
+};

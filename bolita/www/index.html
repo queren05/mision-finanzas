@@ -424,10 +424,11 @@ function squish(k = 'sq') { const s = $('#petS'); s.classList.remove('sq', 'hop'
 
 /* ---------- habitaciones y decoración ---------- */
 function roomHtml(r) {
-  const deco = Object.entries(SLOTS[r]).map(([slot, [x, y, s]]) => { const id = (S.place[r] || {})[slot]; const d = id && byId(DECOR, id); if (!d) return '';
+  const useImg = typeof ROOM_IMG !== 'undefined' && ROOM_IMG[r];
+  const deco = Object.entries((useImg ? IMG_SLOTS : SLOTS)[r]).map(([slot, [x, y, s]]) => { const id = (S.place[r] || {})[slot]; const d = id && byId(DECOR, id); if (!d) return '';
     const cord = slot === 'techo' ? `<path d="M${x} 0 V${y - s * .45}" stroke="#8a6f93" stroke-width="2.5"/>` : '';
     return `${cord}<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle" dominant-baseline="middle" style="filter:drop-shadow(0 6px 5px rgba(0,0,0,.2))">${d.e}</text>`; }).join('');
-  const bg = (typeof ROOM_IMG !== 'undefined' && ROOM_IMG[r]) ? `<image href="${ROOM_IMG[r]}" x="0" y="0" width="400" height="700" preserveAspectRatio="xMidYMax slice"/>` : ROOM_SVG[r];
+  const bg = useImg ? `<image href="${ROOM_IMG[r]}" x="0" y="0" width="400" height="700" preserveAspectRatio="xMidYMax slice"/>` : ROOM_SVG[r];
   return `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">${bg}${deco}</svg>`;
 }
 function goRoom(r) {
