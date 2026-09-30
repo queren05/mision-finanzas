@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.cuentas",
+  "appName": "Cuentas Claras",
+  "webDir": "www",
+  "backgroundColor": "#0d0f17",
+  "ios": { "contentInset": "never", "backgroundColor": "#0d0f17" }
+}

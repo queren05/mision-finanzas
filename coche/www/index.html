@@ -324,6 +324,7 @@ const VIEWS = {
         <p class="src" style="margin-top:10px">Los precios son orientativos (taller independiente en España). Ante la duda manda el manual de tu coche y el criterio de un taller de confianza.</p></div>
       <div class="sec-h"><h2>Datos</h2></div>
       <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn block" data-act="code">Importar código (facturas, km…)</button>
         <button class="btn block" data-act="wizard">Volver a hacer el cuestionario inicial</button>
         <button class="btn block" data-act="matric">Fecha de matriculación: ${fmonth(S.matric)}</button>
         <div class="row2"><button class="btn" data-act="export">Copiar copia de seguridad</button><button class="btn" data-act="import">Restaurar</button></div>
@@ -420,9 +421,27 @@ document.addEventListener('click', e => {
       <label class="field"><span>Última ITV pasada (si la sabes)</span><input class="inp" type="date" id="iv" value="${S.itv}"></label>
       <button class="btn acc block" id="ivs">Guardar</button></div>`, sh => sh.querySelector('#ivs').onclick = () => { const m = sh.querySelector('#mm').value; if (m) S.matric = m + '-01'; S.itv = sh.querySelector('#iv').value; save(); closeSheet(); render(); });
   else if (a === 'export') { const txt = JSON.stringify(S); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copia en el portapapeles: pégala en Notas')).catch(() => sheet(`<div class="stack"><h2>Copia de seguridad</h2><textarea class="inp" rows="8">${esc(txt)}</textarea></div>`)); }
+  else if (a === 'code') sheet(`<div class="stack"><h2>Importar código</h2><p class="muted" style="margin:0">Pega el código que te han pasado. Se añaden los cambios y los kilómetros sin borrar nada de lo que ya tienes.</p><textarea class="inp" id="cd" rows="6" placeholder="Pega aquí el código"></textarea><button class="btn acc block" id="cdb">Importar</button></div>`, sh => sh.querySelector('#cdb').onclick = () => { try { const r = importCode(sh.querySelector('#cd').value); closeSheet(); render(); toast(r); } catch (e) { toast('El código no es válido'); } });
   else if (a === 'import') sheet(`<div class="stack"><h2>Restaurar copia</h2><textarea class="inp" id="imp" rows="8" placeholder="Pega aquí la copia"></textarea><button class="btn acc block" id="impb">Restaurar</button></div>`, sh => sh.querySelector('#impb').onclick = () => { try { S = Object.assign(blank(), JSON.parse(sh.querySelector('#imp').value)); save(); closeSheet(); render(); toast('Restaurado ✓'); } catch (e) { toast('La copia no es válida'); } });
   else if (a === 'reset') { if (confirm('¿Borrar todos los datos de la app?')) { S = blank(); save(); wizard(0); } }
 });
+
+/* ---------- importar código ----------
+   Código = JSON en base64url: { km, d, logs:[{id, part, title, date, km, cost, where, note}] }.
+   Añade los registros que no estén (por id), actualiza el último cambio de cada pieza si es más reciente
+   y sube los km si son mayores. Así los datos personales (facturas) no tienen que ir en el código de la app. */
+function importCode(txt) {
+  const b = txt.trim().replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  const json = new TextDecoder().decode(Uint8Array.from(atob(b.padEnd(Math.ceil(b.length / 4) * 4, '=')), c => c.charCodeAt(0)));
+  const P = JSON.parse(json); let n = 0;
+  for (const l of P.logs || []) {
+    if (S.logs.some(x => x.id === l.id)) continue;
+    S.logs.push(l); n++;
+    for (const part of [l.part, ...(l.parts || [])].filter(Boolean)) { const cur = S.parts[part] || {}; if (cur.unknown || cur.never || cur.km == null || l.km >= cur.km) S.parts[part] = { km: l.km, date: l.date }; }
+  }
+  if (P.km && P.km > S.km) setKm(P.km, P.d || today());
+  save(); return n ? `Importado: ${n} registro${n > 1 ? 's' : ''}${P.km ? ' · ' + fk(Math.max(S.km, P.km)) : ''}` : 'Ya estaba todo importado';
+}
 
 /* ---------- cuestionario inicial ---------- */
 const ASK = PIEZAS.filter(p => p.use);
