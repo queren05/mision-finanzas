@@ -511,14 +511,17 @@ function nwSeries(days = 30) {
 // Datos reales de David (30/09/2026): saldos actuales, sin histórico de gastos ni ingresos.
 // ETF de Trade Republic con cotización en vivo (Yahoo). Participaciones = posición / precio de TR
 // ese día, y coste = posición / (1 + rentabilidad), para que cuadre con lo que muestra TR.
-const SEED_V = 2;
+// El efectivo de TR y sus ETF van en cuentas separadas, para que un objetivo sobre el efectivo no cuente los ETF.
+const SEED_V = 3;
+const etfAccount = (s, order) => ({ id: 'a_' + uid(), name: 'Trade Republic · ETF', type: 'broker', currency: 'EUR', initial: 0, color: PALETTE[5], icon: ACC_ICONS.broker, includeInTotal: true, archived: false, order, cardAlias: '', note: 'ETF a largo plazo (jubilación). El plan mensual se paga con el efectivo de Trade Republic.' });
 function myState() {
   const s = blankState(); s.seeded = SEED_V;
   const acc = (name, type, initial, color, cardAlias) => { const a = { id: 'a_' + uid(), name, type, currency: 'EUR', initial, color, icon: ACC_ICONS[type], includeInTotal: true, archived: false, order: s.accounts.length, cardAlias: cardAlias || '', note: '' }; s.accounts.push(a); return a; };
   acc('Revolut', 'corriente', 115.10, PALETTE[1], 'Revolut');
-  const tr = acc('Trade Republic', 'broker', 500.00, PALETTE[0], 'Trade Republic');
+  const tr = acc('Trade Republic', 'ahorro', 500.00, PALETTE[0], 'Trade Republic');
+  const etf = etfAccount(s, s.accounts.length); s.accounts.push(etf);
   const t = today();
-  const fund = (ySymbol, name, isin, trPrice, position, cost) => { const a = { id: 's_' + uid(), kind: 'stock', symbol: ySymbol, ySymbol, name, isin, quoteCcy: 'EUR', accountId: tr.id, provider: 'auto', manualPrice: trPrice, manualAt: t, archived: false, color: PALETTE[s.assets.length + 2], ops: [] };
+  const fund = (ySymbol, name, isin, trPrice, position, cost) => { const a = { id: 's_' + uid(), kind: 'stock', symbol: ySymbol, ySymbol, name, isin, quoteCcy: 'EUR', accountId: etf.id, provider: 'auto', manualPrice: trPrice, manualAt: t, archived: false, color: PALETTE[s.assets.length + 2], ops: [] };
     const qty = position / trPrice; a.ops.push({ id: uid(), side: 'buy', qty, price: cost / qty, fee: 0, ccy: 'EUR', date: t }); s.assets.push(a); return a; };
   fund('500.PA', 'S&P 500 EUR (Acc)', 'LU1681048804', 135.265, 310.56, 310.56 / 1.0318); // Amundi S&P 500 Swap · +3,18 %
   const acwi = fund('IUSQ.DE', 'MSCI ACWI USD (Acc)', 'IE00B6R52259', 108.46, 101.74, 100); // iShares MSCI ACWI · +1,74 %
@@ -526,6 +529,17 @@ function myState() {
   let next = t.slice(0, 8) + '02'; if (next <= t) next = nextDate(next, 'monthly', 1, 2);
   s.recurring.push({ id: 'r_' + uid(), name: 'Plan MSCI ACWI', tpl: { type: 'invest', amount: 100, accountId: tr.id, assetId: acwi.id, note: 'Plan MSCI ACWI', tags: [] }, freq: 'monthly', interval: 1, day: 2, next, end: '', active: true });
   return s;
+}
+// v2 → v3 sin perder lo que haya añadido el usuario (objetivos, movimientos…): mueve los ETF a su propia cuenta.
+function splitTrEtf(s) {
+  const tr = s.accounts.find(a => a.name === 'Trade Republic');
+  if (tr && !s.accounts.some(a => a.name === 'Trade Republic · ETF')) {
+    const etf = etfAccount(s, tr.order + 0.5); s.accounts.push(etf);
+    s.accounts.sort((a, b) => a.order - b.order).forEach((a, i) => { a.order = i; });
+    if (tr.type === 'broker') { tr.type = 'ahorro'; tr.icon = ACC_ICONS.ahorro; }
+    s.assets.forEach(a => { if (a.accountId === tr.id) a.accountId = etf.id; });
+  }
+  s.seeded = SEED_V;
 }
 
 function demoState() {
