@@ -9,20 +9,23 @@ const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true
 r.setPixelRatio(1); r.setSize(S, S); document.body.appendChild(r.domElement);
 const sc = new THREE.Scene();
 sc.background = M.canvasTex(S, S, (c, w, h) => {
-  const g = c.createRadialGradient(w / 2, h * .45, 0, w / 2, h * .5, w * .75); g.addColorStop(0, '#ffe3ef'); g.addColorStop(.55, '#ff9cc4'); g.addColorStop(1, '#b8468a');
+  const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#4fd8ff'); g.addColorStop(.55, '#1a8fd6'); g.addColorStop(1, '#0b3f86');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
-  c.fillStyle = 'rgba(255,255,255,.35)'; for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) { c.beginPath(); c.arc(x * 128 + (y % 2 ? 64 : 0), y * 128 + 40, 12, 0, 7); c.fill(); }
-  c.fillStyle = 'rgba(120,20,80,.25)'; c.beginPath(); c.ellipse(w / 2, h * .8, w * .34, h * .06, 0, 0, 7); c.fill();
+  const l = c.createRadialGradient(w * .5, -h * .1, 0, w * .5, -h * .1, w * .9); l.addColorStop(0, 'rgba(255,255,255,.45)'); l.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = l; c.fillRect(0, 0, w, h);
+  c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 7;
+  for (const [x, y, r] of [[150, 200, 38], [210, 110, 22], [860, 260, 44], [800, 150, 24], [900, 420, 18], [120, 420, 20]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.18)'; c.fill(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(x - r * .35, y - r * .35, r * .2, 0, 7); c.fill(); }
+  c.fillStyle = '#f2d99a'; c.beginPath(); c.moveTo(0, h); c.lineTo(0, h * .84); for (let x = 0; x <= w; x += 16) c.lineTo(x, h * .84 + Math.sin(x / w * 7) * 14); c.lineTo(w, h); c.fill();
+  c.fillStyle = 'rgba(10,40,90,.28)'; c.beginPath(); c.ellipse(w / 2, h * .88, w * .3, h * .04, 0, 0, 7); c.fill();
 }, false);
-sc.add(new THREE.HemisphereLight(0xffffff, 0xb07aa0, 1.8));
+sc.add(new THREE.HemisphereLight(0xffffff, 0x6aa0c8, 1.8));
 const dl = new THREE.DirectionalLight(0xffffff, 1.6); dl.position.set(2, 3, 4); sc.add(dl);
 const A = await M.loadAll({ gamba: './www/models/gamba.glb', hood: './www/models/gorro_tiburon.glb' }, () => { });
 const p = new M.Shrimp(A); sc.add(p.root);
-await p.use('gamba'); p.setHat('fiesta');
+await p.use('gamba');
 for (let i = 0; i < 3; i++) p.pose(1.2, 'idle', 1.4 + i * .3, .3);
 p.root.rotation.y = 2.35;
-const cam = new THREE.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, .75, 3.1); cam.lookAt(0, .38, 0);
+const cam = new THREE.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, .7, 3.1); cam.lookAt(0, .3, 0);
 r.render(sc, cam);
 const im = new Image(); im.src = r.domElement.toDataURL('image/png'); document.body.appendChild(im);
-document.getElementById('i').textContent = 'LISTO';
+document.getElementById('i').remove(); document.title = 'LISTO';
 </script></body></html>
