@@ -9,6 +9,26 @@ const BOX = {
   'fuego:1': [794, 22, 172, 156], 'fuego:2': [798, 176, 182, 168], 'fuego:3': [764, 342, 224, 214],
 };
 const SPRITES = {};
+// Amplía x3 con suavizado de alta calidad (en dos pasos) y aplica un filtro de enfoque suave (unsharp 3x3)
+// para que en pantallas Retina no se vea borroso. La lámina original es pequeña: con una de más resolución
+// basta con sustituir criaturas.jpg y ajustar BOX multiplicando por la escala.
+function upscale(src, k) {
+  const w = src.width * k, h = src.height * k;
+  const mid = document.createElement('canvas'); mid.width = src.width * 2; mid.height = src.height * 2;
+  const m = mid.getContext('2d'); m.imageSmoothingEnabled = true; m.imageSmoothingQuality = 'high'; m.drawImage(src, 0, 0, mid.width, mid.height);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mid, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h), p = d.data, o = new Uint8ClampedArray(p), a = .55;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = (y * w + x) * 4; if (!p[i + 3]) continue;
+    for (let ch = 0; ch < 3; ch++) {
+      const v = p[i + ch], blur = (p[i - 4 + ch] + p[i + 4 + ch] + p[i - w * 4 + ch] + p[i + w * 4 + ch]) / 4;
+      o[i + ch] = v + (v - blur) * a * 2;
+    }
+  }
+  g.putImageData(new ImageData(o, w, h), 0, 0);
+  return c.toDataURL('image/png');
+}
 function loadSprites(src = 'criaturas.jpg') {
   return new Promise((ok, ko) => {
     const img = new Image();
@@ -35,7 +55,7 @@ function loadSprites(src = 'criaturas.jpg') {
           const n = (!p[(i - 1) * 4 + 3]) + (!p[(i + 1) * 4 + 3]) + (!p[(i - bw) * 4 + 3]) + (!p[(i + bw) * 4 + 3]);
           if (n && Math.min(p[i * 4], p[i * 4 + 1], p[i * 4 + 2]) > 190) p[i * 4 + 3] = 120; }
         g.putImageData(d, 0, 0);
-        SPRITES[id] = c.toDataURL('image/png');
+        SPRITES[id] = upscale(c, 3);
       }
       ok();
     };
