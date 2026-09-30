@@ -1,0 +1,8 @@
+{
+  "name": "gambi-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cuida a tu gamba en 3D: aliméntala, báñala, juega con ella y mira cómo crece",
+  "dependencies": { "@capacitor/core": "^7.0.0", "@capacitor/ios": "^7.0.0", "@capacitor/haptics": "^7.0.0" },
+  "devDependencies": { "@capacitor/cli": "^7.0.0" }
+}

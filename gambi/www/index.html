@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Gambi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a1f4d">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="gambi.css">
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="loading" class="screen solid">
+  <div class="logo"><b>GAMBI</b><small>TU GAMBA DE COMPAÑÍA</small></div>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="muted" id="loadTxt">Preparando la casa…</div>
+</div>
+
+<!-- Interfaz principal -->
+<div id="hud" hidden>
+  <div class="hudTop">
+    <div class="glass pill" id="coinPill"><span class="coin"></span><b id="hCoins">0</b></div>
+    <div class="glass lvl" id="lvlBox"><div class="lvTop"><b id="hName">Gambi</b><small id="hLv">Nv 1</small></div><div class="xp"><i id="hXp"></i></div></div>
+    <span class="sp"></span>
+    <button class="glass round" id="giftBtn" aria-label="Premio diario"><span data-i="gift"></span><i class="dot" id="giftDot"></i></button>
+    <button class="glass round" id="shopBtn" aria-label="Tienda"><span data-i="shop"></span></button>
+    <button class="glass round" id="setBtn" aria-label="Ajustes"><span data-i="gear"></span></button>
+  </div>
+  <div class="glass needs" id="stats">
+    <div class="stat" data-k="food"><span class="si" data-i="food"></span><span class="sb"><i></i></span></div>
+    <div class="stat" data-k="fun"><span class="si" data-i="fun"></span><span class="sb"><i></i></span></div>
+    <div class="stat" data-k="energy"><span class="si" data-i="energy"></span><span class="sb"><i></i></span></div>
+    <div class="stat" data-k="hyg"><span class="si" data-i="clean"></span><span class="sb"><i></i></span></div>
+  </div>
+</div>
+<div id="hint" class="hint" hidden></div>
+
+<!-- Acciones de cada habitación -->
+<div id="tray" class="tray" hidden></div>
+<nav id="nav" class="glass nav" hidden>
+  <button data-room="salon"><span data-i="home"></span><em>Salón</em></button>
+  <button data-room="cocina"><span data-i="food"></span><em>Cocina</em></button>
+  <button data-room="bano"><span data-i="bath"></span><em>Baño</em></button>
+  <button data-room="dormitorio"><span data-i="moon"></span><em>Dormir</em></button>
+  <button data-room="juegos"><span data-i="games"></span><em>Juegos</em></button>
+</nav>
+<div id="toast"></div>
+<div id="dragItem" hidden></div>
+
+<!-- Huevo y nombre -->
+<div id="egg" class="screen clear" hidden>
+  <div class="glass eggTxt"><b>¡Hay un huevo!</b><span id="eggSub">Tócalo para que nazca</span></div>
+</div>
+<div id="nameDlg" class="screen dim" hidden>
+  <div class="glass card wide">
+    <div class="cardTitle">¡Ha nacido!</div>
+    <div class="muted" style="text-align:center">¿Cómo quieres llamar a tu gamba?</div>
+    <input id="nameIn" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Nombre">
+    <button class="btn" id="nameOk">¡Empezar!</button>
+  </div>
+</div>
+
+<!-- Minijuegos -->
+<div id="miniHud" hidden>
+  <div class="glass pill" id="mScore">0</div>
+  <div class="glass pill sm" id="mInfo"></div>
+  <span class="sp"></span>
+  <button class="glass round" id="mQuit" aria-label="Salir"><span data-i="close"></span></button>
+</div>
+<div id="miniMsg" class="miniMsg" hidden></div>
+<div id="miniEnd" class="screen dim" hidden>
+  <div class="glass card">
+    <div class="cardTitle" id="meTitle">¡Fin!</div>
+    <div class="newRec" id="meRec" hidden>NUEVO RÉCORD</div>
+    <small class="muted">PUNTOS</small>
+    <div class="big" id="meScore">0</div>
+    <div class="stats3"><div><small>Monedas</small><b id="meCoins">0</b></div><div><small>Experiencia</small><b id="meXp">0</b></div><div><small>Récord</small><b id="meBest">0</b></div></div>
+  </div>
+  <button class="btn" id="meAgain">OTRA VEZ</button>
+  <button class="btn sec" id="meExit">Volver a casa</button>
+</div>
+
+<!-- Tienda -->
+<div id="shop" class="panel" hidden>
+  <div class="shopHead">
+    <button class="glass round" id="shopClose" aria-label="Cerrar"><span data-i="back"></span></button>
+    <div class="shopTitle">Tienda</div>
+    <span class="sp"></span>
+    <div class="glass pill"><span class="coin"></span><b id="sCoins">0</b></div>
+  </div>
+  <div class="sheet glass" id="sheet">
+    <button class="grab" id="grab" aria-label="Plegar o desplegar el panel"><i></i><span id="grabTxt">Ver a Gambi</span></button>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+    <div class="detail">
+      <div class="dTxt"><b id="dName">—</b><span id="dDesc"></span></div>
+      <button class="btn buy" id="dBtn">—</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div id="settings" class="screen dim" hidden>
+  <div class="glass card wide">
+    <div class="cardTitle">Ajustes</div>
+    <label class="row"><span>Efectos de sonido</span><input type="checkbox" id="optSfx"><i class="sw"></i></label>
+    <label class="row"><span>Música</span><input type="checkbox" id="optMusic"><i class="sw"></i></label>
+    <label class="row"><span>Vibración</span><input type="checkbox" id="optHaptic"><i class="sw"></i></label>
+    <label class="row"><span>Calidad alta</span><input type="checkbox" id="optHQ"><i class="sw"></i></label>
+    <div class="row"><span>Nombre</span><input id="renameIn" maxlength="14" autocomplete="off" spellcheck="false"></div>
+    <div class="credits">Modelos 3D de Sketchfab (licencias Creative Commons): «Chumbud Shrimp», «Cheering Chumbud Shrimp», «Gawr Gura Shark Hat», «Shrimp low poly» y «Mysis shrimp». Gracias a sus autores.</div>
+    <button class="btn" id="setClose">Listo</button>
+  </div>
+</div>
+<img id="shotImg" alt="">
+<script type="module" src="game.js"></script>
+</body>
+</html>

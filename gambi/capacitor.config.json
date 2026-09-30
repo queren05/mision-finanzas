@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.gambi",
+  "appName": "Gambi",
+  "webDir": "www",
+  "backgroundColor": "#2a1f4d",
+  "ios": { "contentInset": "never", "backgroundColor": "#2a1f4d", "scrollEnabled": false }
+}
