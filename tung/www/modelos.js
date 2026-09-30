@@ -122,11 +122,11 @@ function hatMesh(id, gltfs) {
       add(new THREE.SphereGeometry(.009, 8, 6), std(0xffffff), 0, .058, 0);
       break;
     }
-    case 'gafas': {
+    case 'gafas': {   // la parte de delante mira hacia -z (hacia el hocico)
       const lens = std(0x111318, { roughness: .1, metalness: .6 }), frame = std(0x222222);
-      for (const s of [-1, 1]) add(new THREE.CylinderGeometry(.024, .024, .008, 20), lens, s * .03, -.035, .062, Math.PI / 2);
-      add(new THREE.BoxGeometry(.02, .006, .006), frame, 0, -.03, .064);
-      for (const s of [-1, 1]) add(new THREE.BoxGeometry(.005, .006, .07), frame, s * .055, -.032, .03);
+      for (const s of [-1, 1]) add(new THREE.CylinderGeometry(.022, .022, .008, 20), lens, s * .034, -.05, -.052, Math.PI / 2);
+      add(new THREE.BoxGeometry(.02, .006, .006), frame, 0, -.046, -.052);
+      for (const s of [-1, 1]) add(new THREE.BoxGeometry(.005, .006, .09), frame, s * .057, -.05, -.005);
       break;
     }
     case 'auris': {
@@ -253,8 +253,9 @@ export class Shrimp {
     if (this.skin) this.#skinModel(M, this.skin);
     return M;
   }
-  async use(id) {
-    const M = await this.ensure(id);
+  async use(id) { await this.ensure(id); this.useNow(id); }
+  useNow(id) {   // síncrono: el modelo tiene que estar ya cargado
+    const M = this.models[id];
     for (const m of Object.values(this.models)) m.wrap.visible = m === M;
     this.cur = M; this.curId = id;
     this.setHat(this.hatId);
@@ -488,6 +489,68 @@ export function flower() {
   const g = new THREE.Group(), c = [0xff5a7a, 0xffd84a, 0xffffff, 0xb45aff, 0xff9d2a][Math.floor(Math.random() * 5)];
   const st = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, .3, 4), bend(std(0x2f7a2a))); st.position.y = .15; g.add(st);
   const f = new THREE.Mesh(new THREE.IcosahedronGeometry(.07, 0), bend(std(c, { flatShading: true }))); f.position.y = .32; g.add(f);
+  return g;
+}
+
+/* ---------- potenciadores en 3D (formas simples; origen en el suelo, unos 0,9 m de alto) ---------- */
+export const POWER_COL = { iman: 0xff4d6d, escudo: 0x4fb2ff, x2: 0xffc21d, salto: 0x4fe37a, turbo: 0xb45aff, vida: 0xff6f91 };
+function shieldShape(k) {
+  const s = new THREE.Shape(), q = v => v * k;
+  s.moveTo(q(-.3), q(.34)); s.lineTo(q(.3), q(.34)); s.lineTo(q(.3), q(.05));
+  s.bezierCurveTo(q(.3), q(-.2), q(.12), q(-.34), 0, q(-.44)); s.bezierCurveTo(q(-.12), q(-.34), q(-.3), q(-.2), q(-.3), q(.05));
+  s.closePath(); return s;
+}
+export function powerModel(id) {
+  const g = new THREE.Group();
+  const add = (geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  const metal = c => bend(new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .22, metalness: .15, roughness: .35 }));
+  const glow = (c, i = .4) => bend(new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: .45 }));
+  const flat = c => bend(new THREE.MeshBasicMaterial({ color: c }));
+  switch (id) {
+    case 'iman': {   // imán de herradura rojo con las puntas plateadas
+      const red = glow(0xe8243c, .3), tip = metal(0xe9eef5);
+      add(new THREE.TorusGeometry(.26, .09, 16, 36, Math.PI), red, 0, .62, 0);
+      for (const s of [-1, 1]) { add(new THREE.CylinderGeometry(.09, .09, .26, 18), red, s * .26, .49, 0); add(new THREE.CylinderGeometry(.094, .094, .14, 18), tip, s * .26, .29, 0); }
+      break;
+    }
+    case 'escudo': {   // escudo con borde plateado, cara azul y estrella
+      const ext = (shape, depth, bev) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: bev, bevelThickness: bev, bevelSegments: 2, curveSegments: 18 });
+      add(ext(shieldShape(1), .08, .03), metal(0xdfe6ee), 0, .58, -.04);
+      add(ext(shieldShape(.78), .02, .01), glow(0x2f7cff, .3), 0, .58 - .02, .075);
+      const st = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? .05 : .12; i ? st.lineTo(Math.cos(a) * r, Math.sin(a) * r) : st.moveTo(Math.cos(a) * r, Math.sin(a) * r); } st.closePath();
+      add(new THREE.ExtrudeGeometry(st, { depth: .02, bevelEnabled: false }), glow(0xfff2a8, .8), 0, .62, .105);
+      break;
+    }
+    case 'x2': {   // moneda de oro grande con «×2» en las dos caras
+      const tex = canvasTex(256, 256, (c, w) => { c.font = '700 150px Fredoka, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 14; c.strokeStyle = '#8a5200'; c.strokeText('×2', w / 2, w / 2 + 8); c.fillStyle = '#fff4c2'; c.fillText('×2', w / 2, w / 2 + 8); }, false);
+      add(new THREE.CylinderGeometry(.36, .36, .09, 44), metal(0xffc21d), 0, .56, 0, Math.PI / 2);
+      for (const z of [.046, -.046]) add(new THREE.TorusGeometry(.35, .035, 10, 44), metal(0xffe27a), 0, .56, z);
+      for (const s of [1, -1]) add(new THREE.PlaneGeometry(.52, .52), bend(new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })), 0, .56, s * .05, 0, s > 0 ? 0 : Math.PI);
+      break;
+    }
+    case 'salto': {   // muelle verde con flecha hacia arriba
+      const pts = []; for (let i = 0; i <= 70; i++) { const a = i / 70 * Math.PI * 2 * 4.5; pts.push(new THREE.Vector3(Math.cos(a) * .15, .24 + i / 70 * .44, Math.sin(a) * .15)); }
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 200, .038, 8), metal(0x4fe37a));
+      for (const y of [.2, .7]) add(new THREE.CylinderGeometry(.22, .22, .05, 28), glow(0xffd23f, .3), 0, y, 0);
+      add(new THREE.ConeGeometry(.13, .22, 18), glow(0xffffff, .7), 0, .9, 0);
+      break;
+    }
+    case 'turbo': {   // cohete con llama
+      add(new THREE.CylinderGeometry(.17, .17, .5, 26), metal(0xf2f4f8), 0, .52, 0);
+      add(new THREE.ConeGeometry(.17, .3, 26), glow(0xff3b5c, .35), 0, .92, 0);
+      add(new THREE.CylinderGeometry(.176, .176, .07, 26), glow(0xb45aff, .4), 0, .42, 0);
+      add(new THREE.SphereGeometry(.07, 14, 10), glow(0x7fd6ff, .8), 0, .64, .15);
+      for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; add(new THREE.BoxGeometry(.03, .22, .2), glow(0xb45aff, .35), Math.sin(a) * .2, .36, Math.cos(a) * .2, 0, a, 0); }
+      add(new THREE.ConeGeometry(.13, .34, 18), flat(0xffb020), 0, .13, 0, Math.PI, 0, 0);
+      add(new THREE.ConeGeometry(.07, .22, 14), flat(0xfff3a8), 0, .17, 0, Math.PI, 0, 0);
+      break;
+    }
+    case 'vida': {   // flotador a rayas
+      const n = 8; for (let i = 0; i < n; i++) add(new THREE.TorusGeometry(.3, .11, 14, 12, Math.PI * 2 / n), i % 2 ? glow(0xffffff, .15) : glow(0xe8303e, .2), 0, .56, 0, 0, 0, i * Math.PI * 2 / n);
+      break;
+    }
+  }
+  g.userData.col = POWER_COL[id];
   return g;
 }
 export { std, rnd };

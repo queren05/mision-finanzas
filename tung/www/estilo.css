@@ -105,16 +105,22 @@ svg{width:22px;height:22px;fill:currentColor}
 .panel>*{pointer-events:auto}
 .shopHead{display:flex;align-items:center;gap:10px;padding:calc(var(--safeT) + 12px) 14px 0}
 .shopTitle{font-size:26px;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.35)}
-.sheet{margin-top:auto;height:60%;border-radius:30px 30px 0 0;border-bottom:0;display:flex;flex-direction:column;padding:12px 0 calc(var(--safeB) + 10px);background:linear-gradient(170deg,rgba(30,45,70,.72),rgba(12,20,34,.86));animation:up .35s cubic-bezier(.2,.8,.2,1)}
+.grab{flex:none;align-self:stretch;height:30px;margin:-6px 0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.grab i{width:44px;height:5px;border-radius:9px;background:rgba(255,255,255,.4)}
+.grab span{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.sheet.min{height:auto}
+.sheet.min .grid{display:none}
+.sheet{margin-top:auto;height:50%;border-radius:30px 30px 0 0;border-bottom:0;display:flex;flex-direction:column;padding:12px 0 calc(var(--safeB) + 10px);background:linear-gradient(170deg,rgba(30,45,70,.72),rgba(12,20,34,.86));animation:up .35s cubic-bezier(.2,.8,.2,1)}
 @keyframes up{from{transform:translateY(40%);opacity:0}to{transform:none;opacity:1}}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 14px 10px;flex:none;scrollbar-width:none}
 .tab{flex:none;padding:8px 14px;border-radius:999px;font-size:14.5px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);white-space:nowrap}
 .tab.on{background:linear-gradient(180deg,#ffe58a,#ffb21d);color:#3b1d00;border-color:transparent}
 .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 14px 12px;align-content:start;-webkit-overflow-scrolling:touch;touch-action:pan-y}
-.it{position:relative;border-radius:20px;padding:10px 6px 9px;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);min-height:112px;transition:transform .1s}
+.it{position:relative;border-radius:20px;padding:6px 6px 9px;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);transition:transform .1s}
 .it:active{transform:scale(.95)}
 .it.sel{border-color:#ffd24a;background:rgba(255,210,74,.14);box-shadow:0 0 0 1px #ffd24a inset,0 6px 18px rgba(255,190,40,.2)}
-.it .ic{font-size:34px;height:44px;display:grid;place-items:center;line-height:1}
+.th{width:100%;aspect-ratio:4/3;border-radius:14px;background:#0003 center/cover no-repeat;display:grid;place-items:center;font-size:34px;line-height:1;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.th.ph{background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04))}
 .it .swc{width:40px;height:40px;border-radius:50%;box-shadow:inset 0 -4px 8px rgba(0,0,0,.25),inset 0 3px 6px rgba(255,255,255,.5),0 3px 8px rgba(0,0,0,.3)}
 .it .nm{font-size:13px;font-weight:600;line-height:1.1;text-align:center}
 .it .pr{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:4px;color:#ffe07a}
@@ -125,7 +131,7 @@ svg{width:22px;height:22px;fill:currentColor}
 .it .lv i{width:10px;height:5px;border-radius:3px;background:rgba(255,255,255,.2)}
 .it .lv i.f{background:#4fe3a0}
 .it .cnt{position:absolute;top:6px;right:8px;font-size:12px;font-weight:700;background:#ff4d6d;border-radius:99px;padding:1px 7px}
-.it.lock .ic,.it.lock .swc{filter:saturate(.6) brightness(.85)}
+.it.lock .th{filter:saturate(.65) brightness(.8)}
 .detail{display:flex;align-items:center;gap:12px;padding:10px 14px 0;border-top:1px solid rgba(255,255,255,.1);flex:none}
 .dTxt{flex:1;display:flex;flex-direction:column;gap:2px;text-align:left;min-width:0}
 .dTxt b{font-size:17px}
@@ -134,4 +140,4 @@ svg{width:22px;height:22px;fill:currentColor}
 .btn.buy .coin{width:18px;height:18px}
 
 #shotImg{position:fixed;inset:0;width:100%;height:100%;z-index:4;display:none;pointer-events:none}
-@media (max-height:680px){.logo b{font-size:60px}.logo span{font-size:36px}.mlogo small{display:none}.sheet{height:64%}}
+@media (max-height:680px){.logo b{font-size:60px}.logo span{font-size:36px}.mlogo small{display:none}.sheet{height:58%}}
