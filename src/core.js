@@ -466,7 +466,14 @@ function runRecurring() {
     while (r.next && r.next <= t && guard++ < 500) {
       if (r.end && r.next > r.end) { r.active = false; break; }
       const acc = accById(r.tpl.accountId);
-      if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
+      if (r.tpl.type === 'invest') {
+        // plan de inversión: compra por importe fijo al precio conocido (en vivo o el último guardado)
+        const a = assetById(r.tpl.assetId), px = a && priceOf(a);
+        if (!a || !px || !px.p) break;   // sin precio aún: se reintenta en el próximo arranque
+        const amt = conv(r.tpl.amount, acc ? acc.currency : 'EUR', px.ccy);
+        a.ops.push({ id: uid(), side: 'buy', qty: amt / px.p, price: px.p, fee: 0, ccy: px.ccy, date: r.next, cashAccountId: acc ? acc.id : '', recId: r.id });
+        n++;
+      } else if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
       r.next = nextDate(r.next, r.freq, r.interval || 1, r.day);
     }
   }
@@ -502,17 +509,22 @@ function nwSeries(days = 30) {
 
 /* ---------- datos de ejemplo ---------- */
 // Datos reales de David (30/09/2026): saldos actuales, sin histórico de gastos ni ingresos.
-// Los fondos de Trade Republic van con precio manual para que salgan tal cual en su app
-// (valor actual y rentabilidad desde la compra); se actualizan a mano en cada activo.
+// ETF de Trade Republic con cotización en vivo (Yahoo). Participaciones = posición / precio de TR
+// ese día, y coste = posición / (1 + rentabilidad), para que cuadre con lo que muestra TR.
+const SEED_V = 2;
 function myState() {
-  const s = blankState(); s.seeded = 1;
+  const s = blankState(); s.seeded = SEED_V;
   const acc = (name, type, initial, color, cardAlias) => { const a = { id: 'a_' + uid(), name, type, currency: 'EUR', initial, color, icon: ACC_ICONS[type], includeInTotal: true, archived: false, order: s.accounts.length, cardAlias: cardAlias || '', note: '' }; s.accounts.push(a); return a; };
   acc('Revolut', 'corriente', 115.10, PALETTE[1], 'Revolut');
   const tr = acc('Trade Republic', 'broker', 500.00, PALETTE[0], 'Trade Republic');
   const t = today();
-  const fund = (symbol, name, cost, value) => s.assets.push({ id: 's_' + uid(), kind: 'stock', symbol, name, quoteCcy: 'EUR', accountId: tr.id, provider: 'manual', manualPrice: value, manualAt: t, archived: false, color: PALETTE[s.assets.length + 2], ops: [{ id: uid(), side: 'buy', qty: 1, price: cost, fee: 0, ccy: 'EUR', date: t }] });
-  fund('S&P 500', 'S&P 500 EUR (Acc)', 300.99, 310.56);   // +3,18 %
-  fund('MSCI ACWI', 'MSCI ACWI USD (Acc)', 100.00, 101.74); // +1,74 %
+  const fund = (ySymbol, name, isin, trPrice, position, cost) => { const a = { id: 's_' + uid(), kind: 'stock', symbol: ySymbol, ySymbol, name, isin, quoteCcy: 'EUR', accountId: tr.id, provider: 'auto', manualPrice: trPrice, manualAt: t, archived: false, color: PALETTE[s.assets.length + 2], ops: [] };
+    const qty = position / trPrice; a.ops.push({ id: uid(), side: 'buy', qty, price: cost / qty, fee: 0, ccy: 'EUR', date: t }); s.assets.push(a); return a; };
+  fund('500.PA', 'S&P 500 EUR (Acc)', 'LU1681048804', 135.265, 310.56, 310.56 / 1.0318); // Amundi S&P 500 Swap · +3,18 %
+  const acwi = fund('IUSQ.DE', 'MSCI ACWI USD (Acc)', 'IE00B6R52259', 108.46, 101.74, 100); // iShares MSCI ACWI · +1,74 %
+  // plan de inversión de TR: 100 € el día 2 de cada mes, del efectivo de Trade Republic
+  let next = t.slice(0, 8) + '02'; if (next <= t) next = nextDate(next, 'monthly', 1, 2);
+  s.recurring.push({ id: 'r_' + uid(), name: 'Plan MSCI ACWI', tpl: { type: 'invest', amount: 100, accountId: tr.id, assetId: acwi.id, note: 'Plan MSCI ACWI', tags: [] }, freq: 'monthly', interval: 1, day: 2, next, end: '', active: true });
   return s;
 }
 

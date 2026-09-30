@@ -725,7 +725,7 @@ try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () =
 function init() {
   S = load();
   if (!S) { S = myState(); saveNow(); }
-  else if (S.demo && !S.seeded) { const keep = S.settings; S = myState(); S.settings = Object.assign(S.settings, { theme: keep.theme, accent: keep.accent, customAccent: keep.customAccent, textSize: keep.textSize, name: keep.name }); saveNow(); }
+  else if ((S.demo && !S.seeded) || (S.seeded && S.seeded < SEED_V)) { const keep = S.settings; S = myState(); S.settings = Object.assign(S.settings, { theme: keep.theme, accent: keep.accent, customAccent: keep.customAccent, textSize: keep.textSize, name: keep.name }); saveNow(); }
   applyTheme(); runRecurring();
   UI.txF.month = curMk(); UI.statsMonth = curMk();
   UI.route = TITLES[S.settings.startTab] ? S.settings.startTab : 'home';

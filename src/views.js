@@ -266,7 +266,11 @@ HOME.budgets = P => {
   return `<section><div class="sec-h"><h2>Presupuestos</h2><button class="link" data-go="more/budgets">Editar</button></div><div class="list">${rows}</div><div class="note">La marca vertical indica en qué punto del periodo estás.</div></section>`;
 };
 function recRow(r) {
-  const t = r.tpl; const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
+  const t = r.tpl;
+  if (t.type === 'invest') {
+    const a = assetById(t.assetId), acc = accById(t.accountId);
+    return `<button class="row" data-action="asset-open" data-id="${t.assetId}">${ico(svg('repeat'), a && a.color)}<div class="row-m"><div class="row-t">${esc(r.name || 'Plan de inversión')}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]} · compra de ${esc(a ? a.name : '?')}</div></div><div class="row-r"><span class="num amt">${fmt(t.amount, acc?.currency)}</span></div></button>`;
+  } const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
   const icon = t.type === 'transfer' ? svg('swap') : esc(c ? c.icon : '•');
   const v = t.type === 'income' ? fmt(t.amount, acc?.currency, { sign: true }) : t.type === 'expense' ? fmt(-t.amount, acc?.currency, { sign: true }) : fmt(t.amount, acc?.currency);
   return `<button class="row" data-action="rec-edit" data-id="${r.id}">${ico(icon, c ? c.color : 'var(--muted)')}<div class="row-m"><div class="row-t">${esc(r.name || t.note || (c ? c.name : 'Recurrente'))}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]}${(r.interval || 1) > 1 ? ` (x${r.interval})` : ''}</div></div><div class="row-r"><span class="num amt ${t.type === 'income' ? 'pos' : ''}">${v}</span></div></button>`;
