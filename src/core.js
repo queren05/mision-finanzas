@@ -158,7 +158,7 @@ function blankState() {
       favCcy: ['USD', 'GBP', 'CHF', 'BTC'],
       home: Object.keys(HOME_SECTIONS).map(k => ({ k, on: true })),
       period: 'month',
-      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false,
+      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false, glass: true,
       weekStart: 1, monthStart: 1, startTab: 'home', recentCount: 6,
       pinHash: '', lockAfter: 0, notifyRecurring: true, notifyHour: 9,
       budgetTotal: 0, budgetAlerts: true, shortcutMode: 'auto',
@@ -466,7 +466,14 @@ function runRecurring() {
     while (r.next && r.next <= t && guard++ < 500) {
       if (r.end && r.next > r.end) { r.active = false; break; }
       const acc = accById(r.tpl.accountId);
-      if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
+      if (r.tpl.type === 'invest') {
+        // plan de inversión: compra por importe fijo al precio conocido (en vivo o el último guardado)
+        const a = assetById(r.tpl.assetId), px = a && priceOf(a);
+        if (!a || !px || !px.p) break;   // sin precio aún: se reintenta en el próximo arranque
+        const amt = conv(r.tpl.amount, acc ? acc.currency : 'EUR', px.ccy);
+        a.ops.push({ id: uid(), side: 'buy', qty: amt / px.p, price: px.p, fee: 0, ccy: px.ccy, date: r.next, cashAccountId: acc ? acc.id : '', recId: r.id });
+        n++;
+      } else if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
       r.next = nextDate(r.next, r.freq, r.interval || 1, r.day);
     }
   }
@@ -501,6 +508,22 @@ function nwSeries(days = 30) {
 }
 
 /* ---------- datos de ejemplo ---------- */
+// Migración de datos ya guardados en el dispositivo. Los datos personales nunca van en el código
+// (el repositorio es público): se cargan una vez con un enlace mision://importar (ver extra.js).
+const SEED_V = 3;
+const etfAccount = (s, order) => ({ id: 'a_' + uid(), name: 'Trade Republic · ETF', type: 'broker', currency: 'EUR', initial: 0, color: PALETTE[5], icon: ACC_ICONS.broker, includeInTotal: true, archived: false, order, cardAlias: '', note: 'ETF a largo plazo. El plan mensual se paga con el efectivo de Trade Republic.' });
+// v2 → v3 sin perder lo que haya añadido el usuario (objetivos, movimientos…): mueve los ETF a su propia cuenta.
+function splitTrEtf(s) {
+  const tr = s.accounts.find(a => a.name === 'Trade Republic');
+  if (tr && !s.accounts.some(a => a.name === 'Trade Republic · ETF')) {
+    const etf = etfAccount(s, tr.order + 0.5); s.accounts.push(etf);
+    s.accounts.sort((a, b) => a.order - b.order).forEach((a, i) => { a.order = i; });
+    if (tr.type === 'broker') { tr.type = 'ahorro'; tr.icon = ACC_ICONS.ahorro; }
+    s.assets.forEach(a => { if (a.accountId === tr.id) a.accountId = etf.id; });
+  }
+  s.seeded = SEED_V;
+}
+
 function demoState() {
   const s = blankState(); s.demo = true;
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

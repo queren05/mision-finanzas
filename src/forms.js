@@ -700,7 +700,7 @@ const ACT = {
   'export-json': () => { download(`mision-finanzas-${today()}.json`, exportJson(), 'application/json'); toast('Copia descargada'); },
   'export-csv': () => { download(`movimientos-${today()}.csv`, exportCsv(), 'text/csv;charset=utf-8'); toast('CSV descargado'); },
   'copy-json': async () => { try { await navigator.clipboard.writeText(exportJson()); toast('Copiado al portapapeles'); } catch (e) { toast('No se pudo copiar en este navegador'); } },
-  'import-json': () => pickFile('.json,application/json', async f => { try { const o = JSON.parse(await f.text()); if (!o || !Array.isArray(o.accounts) || !Array.isArray(o.txs)) throw new Error('no parece una copia de Misión'); confirmSheet('Restaurar copia', `El archivo tiene ${o.accounts.length} cuentas y ${o.txs.length} movimientos. Sustituirá todo lo que hay ahora en este dispositivo.`, 'Restaurar', () => { S = migrate(o); saveNow(); closeSheet(); applyTheme(); go('home', { reset: true }); restartFeeds(); toast('Copia restaurada'); }); } catch (e) { toast('Archivo no válido: ' + e.message); } }),
+  'import-json': () => pickFile('.json,application/json', async f => { try { const o = JSON.parse(await f.text()); if (!o || !Array.isArray(o.accounts) || !Array.isArray(o.txs)) throw new Error('no parece una copia de Caudal'); confirmSheet('Restaurar copia', `El archivo tiene ${o.accounts.length} cuentas y ${o.txs.length} movimientos. Sustituirá todo lo que hay ahora en este dispositivo.`, 'Restaurar', () => { S = migrate(o); saveNow(); closeSheet(); applyTheme(); go('home', { reset: true }); restartFeeds(); toast('Copia restaurada'); }); } catch (e) { toast('Archivo no válido: ' + e.message); } }),
   'imp-file': () => pickFile('.csv,.txt,.xlsx,.xls,.ods,text/csv', startImport),
   'imp-reset': () => { UI.imp = null; render(); },
   'imp-go': () => doImport(),
@@ -725,6 +725,7 @@ try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () =
 function init() {
   S = load();
   if (!S) { S = demoState(); saveNow(); }
+  else if (S.seeded === 2) { splitTrEtf(S); saveNow(); }
   applyTheme(); runRecurring();
   UI.txF.month = curMk(); UI.statsMonth = curMk();
   UI.route = TITLES[S.settings.startTab] ? S.settings.startTab : 'home';

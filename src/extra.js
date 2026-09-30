@@ -68,7 +68,34 @@ function parseLink(raw) {
   const q = new URLSearchParams(qi < 0 ? '' : m.slice(qi + 1));
   return { path, q, get: (...k) => { for (const x of k) { const v = q.get(x); if (v != null && String(v).trim() !== '') return String(v).trim(); } return ''; } };
 }
-const LINK_PATHS = ['nuevo', 'gasto', 'ingreso', 'transferencia', 'add', 'new', 'rapido', 'quick', 'plantilla', 'template', 'abrir', 'open'];
+const LINK_PATHS = ['nuevo', 'gasto', 'ingreso', 'transferencia', 'add', 'new', 'rapido', 'quick', 'plantilla', 'template', 'abrir', 'open', 'importar'];
+// mision://importar?d=<JSON en base64url>: añade cuentas, activos y recurrentes sin tocar lo que ya hay.
+// Sirve para cargar datos personales sin meterlos en el código (el repositorio es público).
+// Cuentas: se emparejan por nombre (si existe, no se toca su saldo). Activos: por símbolo dentro de su cuenta.
+function importPatch(d) {
+  const json = new TextDecoder().decode(Uint8Array.from(atob(d.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(d.length / 4) * 4, '=')), c => c.charCodeAt(0)));
+  const P = JSON.parse(json); let na = 0, ns = 0, nr = 0;
+  const accByName = n => S.accounts.find(a => norm(a.name) === norm(n));
+  for (const a of P.accounts || []) {
+    if (accByName(a.name)) continue;
+    S.accounts.push(Object.assign({ id: 'a_' + uid(), currency: 'EUR', initial: 0, color: PALETTE[S.accounts.length % PALETTE.length], icon: ACC_ICONS[a.type] || ACC_ICONS.otro, includeInTotal: true, archived: false, order: S.accounts.length, cardAlias: '', note: '' }, a)); na++;
+  }
+  for (const x of P.assets || []) {
+    const acc = accByName(x.account); if (!acc) continue;
+    if (S.assets.some(a => a.accountId === acc.id && a.symbol === x.symbol)) continue;
+    const a = Object.assign({ id: 's_' + uid(), provider: 'auto', quoteCcy: 'EUR', archived: false, color: PALETTE[(S.assets.length + 3) % PALETTE.length] }, x, { accountId: acc.id });
+    delete a.account; a.ops = (x.ops || []).map(o => Object.assign({ id: uid(), fee: 0, ccy: 'EUR', date: today() }, o));
+    S.assets.push(a); ns++;
+  }
+  for (const r of P.recurring || []) {
+    const acc = accByName(r.account), asset = r.asset && S.assets.find(a => a.symbol === r.asset);
+    if (!acc || S.recurring.some(x => x.name === r.name)) continue;
+    const tpl = Object.assign({ tags: [] }, r.tpl, { accountId: acc.id }, asset ? { assetId: asset.id } : {});
+    S.recurring.push({ id: 'r_' + uid(), name: r.name, tpl, freq: r.freq, interval: r.interval || 1, day: r.day, next: r.next, end: '', active: true }); nr++;
+  }
+  S.demo = false; saveNow(); go('home', { reset: true }); if (typeof restartFeeds === 'function') restartFeeds();
+  toast(na + ns + nr ? `Importado: ${na} cuenta${na === 1 ? '' : 's'}, ${ns} activo${ns === 1 ? '' : 's'}${nr ? `, ${nr} recurrente${nr === 1 ? '' : 's'}` : ''}` : 'Ya lo tenías todo, no se ha cambiado nada');
+}
 const isAppLink = raw => LINK_PATHS.includes(parseLink(raw).path.split('/')[0]);
 function handleLink(raw) {
   if (!S || !raw) return false;
@@ -76,6 +103,10 @@ function handleLink(raw) {
   if (!LINK_PATHS.includes(p)) return false;
   // evita apuntar dos veces el mismo enlace (iOS a veces lo entrega doble al arrancar)
   try { const last = JSON.parse(localStorage.getItem('mision.lastLink') || 'null'); if (last && last.u === raw && Date.now() - last.t < 90000) return true; localStorage.setItem('mision.lastLink', JSON.stringify({ u: raw, t: Date.now() })); } catch (e) { }
+  if (p === 'importar') {
+    try { importPatch(L.q.get('d') || ''); } catch (e) { console.warn(e); toast('El enlace de importación no es válido'); }
+    return true;
+  }
   if (p === 'abrir' || p === 'open') {
     const scr = norm(L.get('pantalla', 'screen') || L.path.split('/')[1] || 'resumen');
     const map = { resumen: 'home', inicio: 'home', movimientos: 'txs', inversiones: 'inv', cartera: 'inv', analisis: 'stats', mas: 'more', presupuestos: 'more/budgets', objetivos: 'more/goals', cuentas: 'more/accounts', divisas: 'more/fx' };
@@ -262,6 +293,7 @@ function applyLook() {
   else { const a = ACCENTS[st.accent] || ACCENTS.malva; dark = a[1]; light = a[2]; }
   const ink = h => lum(h) > .4 ? '#140d12' : '#ffffff';
   const z = { s: .92, m: 1, l: 1.1, xl: 1.22 }[st.textSize] || 1;
+  document.documentElement.classList.toggle('glass', st.glass !== false);
   let el = $('#lookCss'); if (!el) { el = document.createElement('style'); el.id = 'lookCss'; document.head.appendChild(el); }
   el.textContent = `:root{--accent:${dark};--accent-soft:${rgba(dark, .14)};--accent-ink:${ink(dark)};--z:${z}}
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]):not([data-theme="black"]){--accent:${light};--accent-soft:${rgba(light, .10)};--accent-ink:${ink(light)}}}
@@ -326,7 +358,7 @@ async function scheduleNotifs(force) {
     if (mine.length) await LN.cancel({ notifications: mine.map(n => ({ id: n.id })) });
     if (!S.settings.notifyRecurring || !S.recurring.some(r => r.active)) return;
     let perm = await LN.checkPermissions();
-    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } }
+    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } }
     const out = []; const lim = addDays(today(), 60); let id = 1000;
     for (const r of S.recurring.filter(x => x.active)) {
       let d = r.next, g = 0;
@@ -436,7 +468,7 @@ Object.assign(ACT, {
   'pin-set': () => startSetPin(),
   'pin-off': () => { S.settings.pinHash = ''; save(); render(); toast('PIN desactivado'); },
   'lock-now': () => lockNow(),
-  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Misión', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
+  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Caudal', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
   'sc-mode': el => { S.settings.shortcutMode = el.dataset.k; save(); render(); },
   'sc-copy': async el => { const txt = $('#' + el.dataset.src).textContent; try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#' + el.dataset.src)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Seleccionado: cópialo'); } },
   'sc-test': () => { const u = buildLink(); try { localStorage.removeItem('mision.lastLink'); } catch (e) { } handleLink(u); },

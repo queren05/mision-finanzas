@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Misión Finanzas</title>
+<title>Caudal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e0c11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Misión">
+<meta name="apple-mobile-web-app-title" content="Caudal">
 <meta name="description" content="Finanzas personales: cuentas, gastos, objetivos, cripto y acciones en tiempo real.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -285,7 +285,7 @@ code{font:12.5px var(--f-num);background:var(--surface-2);padding:1px 5px;border
   .tabs{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.3) blur(16px);-webkit-backdrop-filter:saturate(1.3) blur(16px)}
 }
 .tabs-in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
-.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;background:none;border:0;color:var(--muted);font-size:10.5px;font-weight:550}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;background:none;border:0;color:var(--muted);font-size:0;gap:0;padding:12px 0;font-weight:550}
 .tab svg{width:23px;height:23px}
 .tab[aria-current="page"]{color:var(--accent)}
 .fab{position:fixed;right:max(16px,calc(50% - 364px));bottom:calc(74px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:19px;background:var(--accent);color:var(--accent-ink);border:0;box-shadow:var(--shadow);z-index:25;display:grid;place-items:center}
@@ -356,6 +356,112 @@ html.locked body > :not(#lock){visibility:hidden}
 .keypad button{height:64px;border-radius:50%;border:0;background:var(--surface-2);color:var(--fg);font:500 24px var(--f-num);aspect-ratio:1;justify-self:center;width:64px}
 .keypad button[data-k="x"],.keypad button[data-k="del"]{background:none;font:600 14px var(--f-body);color:var(--muted)}
 
+/* ---------- Liquid Glass (estilo iOS 26), activo con html.glass ----------
+   Superficies translúcidas con desenfoque, borde de luz y brillo arriba.
+   Barra de pestañas y botón + flotantes; la hoja inferior flota separada de los bordes.
+   Un fondo de color difuminado detrás da algo que "refractar" al cristal. */
+:root{
+  --g-fill:rgba(255,255,255,.06); --g-fill-2:rgba(255,255,255,.10); --g-strong:rgba(28,24,34,.52);
+  --g-edge:rgba(255,255,255,.14); --g-hi:rgba(255,255,255,.22); --g-lo:rgba(255,255,255,.04);
+  --g-blur:saturate(1.8) blur(22px); --g-blur-strong:saturate(1.9) blur(34px);
+  --g-shadow:0 10px 30px rgba(0,0,0,.35); --g-glow-1:30%; --g-glow-2:18%;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]):not([data-theme="black"]){
+    --g-fill:rgba(255,255,255,.55); --g-fill-2:rgba(255,255,255,.72); --g-strong:rgba(255,255,255,.62);
+    --g-edge:rgba(255,255,255,.85); --g-hi:rgba(255,255,255,.95); --g-lo:rgba(120,70,100,.08);
+    --g-shadow:0 10px 30px rgba(70,25,55,.12); --g-glow-1:22%; --g-glow-2:14%;
+  }
+}
+:root[data-theme="light"]{
+  --g-fill:rgba(255,255,255,.55); --g-fill-2:rgba(255,255,255,.72); --g-strong:rgba(255,255,255,.62);
+  --g-edge:rgba(255,255,255,.85); --g-hi:rgba(255,255,255,.95); --g-lo:rgba(120,70,100,.08);
+  --g-shadow:0 10px 30px rgba(70,25,55,.12); --g-glow-1:22%; --g-glow-2:14%;
+}
+:root[data-theme="black"]{--g-fill:rgba(255,255,255,.05); --g-strong:rgba(10,9,12,.58); --g-edge:rgba(255,255,255,.11); --g-glow-1:20%; --g-glow-2:10%}
+
+html.glass{--r:22px; --r-sm:16px}
+html.glass body{background:transparent}
+html.glass body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(60% 40% at 12% 6%,color-mix(in srgb,var(--accent) var(--g-glow-1),transparent),transparent 70%),
+  radial-gradient(55% 38% at 95% 42%,color-mix(in srgb,#7a8cff var(--g-glow-2),transparent),transparent 70%),
+  radial-gradient(60% 40% at 25% 96%,color-mix(in srgb,var(--accent) var(--g-glow-2),transparent),transparent 70%),
+  var(--bg)}
+
+/* material base */
+html.glass :is(.card,.list,.kpi,.gcard,.qchip,.results,.tbl-wrap){
+  background:linear-gradient(180deg,var(--g-fill-2),var(--g-fill) 42%);
+  border:1px solid var(--g-edge);
+  box-shadow:inset 0 1px 0 var(--g-hi),inset 0 -1px 0 var(--g-lo),var(--g-shadow);
+  -webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass .row{border-top-color:color-mix(in srgb,var(--g-edge) 60%,transparent)}
+html.glass button.row:hover,html.glass .row.tap:hover{background:var(--g-fill-2)}
+html.glass :is(.row,.gcard,.kpi,.qchip):active{transform:scale(.985);transition:transform .15s}
+html.glass :is(.gcard.add,.qchip.add){background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-style:dashed}
+
+/* controles */
+html.glass .seg{background:var(--g-fill);border:1px solid var(--g-edge);border-radius:999px;box-shadow:inset 0 1px 0 var(--g-lo);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass .seg button{border-radius:999px;transition:background .25s,color .25s}
+html.glass .seg button[aria-pressed="true"]{background:var(--g-fill-2);box-shadow:inset 0 1px 0 var(--g-hi),0 2px 10px rgba(0,0,0,.18)}
+html.glass .btn{border-radius:999px;background:var(--g-fill-2);border-color:var(--g-edge);box-shadow:inset 0 1px 0 var(--g-hi);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass .btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 85%,#fff),var(--accent));border-color:color-mix(in srgb,var(--accent) 70%,#fff);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent)}
+html.glass :is(.btn.danger,.btn.ghost){background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+html.glass .btn.armed{background:var(--neg);border-color:var(--neg)}
+html.glass :is(.btn,.icon-btn,.tab,.fab,.seg button):active{transform:scale(.94);transition:transform .12s}
+html.glass :is(.inp,.form input[type=text],.form input[type=date],.form input[type=url],.form input[type=password],.form input[type=search],.form textarea,.sel select){background:var(--g-fill);border-color:var(--g-edge);border-radius:14px}
+html.glass :is(.catbtn,.emojis button,.code-box,.month-nav .icon-btn,.reorder button,.keypad button){background:var(--g-fill-2)}
+html.glass .catbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+html.glass .chip{background:var(--g-fill-2);box-shadow:inset 0 0 0 1px var(--g-edge)}
+html.glass :is(.chip.pos,.chip.neg,.chip.warn,.chip.acc){box-shadow:none}
+html.glass :is(.bar,.alloc){background:var(--g-fill-2)}
+html.glass .cday{background:color-mix(in srgb,var(--neg) var(--k,0%),var(--g-fill-2))}
+html.glass thead th{background:var(--g-fill-2)}
+
+/* cabecera: transparente; al hacer scroll, cristal */
+html.glass .top{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:0}
+html.glass .top.scrolled{background:color-mix(in srgb,var(--bg) 45%,transparent);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass :is(.top .icon-btn,.live){background:var(--g-fill-2);border:1px solid var(--g-edge);border-radius:999px;box-shadow:inset 0 1px 0 var(--g-hi);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass .top .icon-btn{width:38px;height:38px}
+
+/* barra de pestañas flotante (cápsula) + botón + circular al lado */
+html.glass .tabs{bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:0 16px;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none}
+html.glass .tabs-in{pointer-events:auto;max-width:420px;margin:0 76px 0 auto;padding:5px;border-radius:999px;
+  background:var(--g-strong);border:1px solid var(--g-edge);
+  box-shadow:inset 0 1px 0 var(--g-hi),inset 0 -1px 0 var(--g-lo),0 14px 40px rgba(0,0,0,.35);
+  -webkit-backdrop-filter:var(--g-blur-strong);backdrop-filter:var(--g-blur-strong)}
+@media (min-width:560px){html.glass .tabs-in{margin:0 auto}}
+html.glass .tab{border-radius:999px;padding:11px 0;font-size:0;gap:0;min-width:0;transition:background .3s,color .3s}
+html.glass .tab svg{width:24px;height:24px}
+html.glass .tab[aria-current="page"]{background:var(--g-fill-2);box-shadow:inset 0 1px 0 var(--g-hi),inset 0 0 0 1px var(--g-edge)}
+html.glass .fab{right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--accent) 65%,#fff) 0%,var(--accent) 55%,color-mix(in srgb,var(--accent) 82%,#000) 100%);
+  border:1px solid color-mix(in srgb,var(--accent) 60%,#fff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 10px 28px color-mix(in srgb,var(--accent) 40%,transparent),0 4px 12px rgba(0,0,0,.3)}
+@media (min-width:560px){html.glass .fab{right:max(16px,calc(50% - 290px))}}
+html.glass main{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+html.glass #toast{bottom:calc(86px + env(safe-area-inset-bottom,0px));border-radius:999px;background:var(--g-strong);color:var(--fg);border:1px solid var(--g-edge);
+  box-shadow:inset 0 1px 0 var(--g-hi),var(--g-shadow);-webkit-backdrop-filter:var(--g-blur-strong);backdrop-filter:var(--g-blur-strong)}
+html.glass .toast-btn{color:var(--accent)}
+
+/* hoja inferior flotante */
+html.glass .scrim{background:color-mix(in srgb,var(--scrim) 75%,transparent)}
+html.glass #sheetWrap{padding:0 8px calc(8px + env(safe-area-inset-bottom,0px))}
+html.glass .sheet{border-radius:32px;padding-bottom:20px;background:var(--g-strong);border:1px solid var(--g-edge);
+  box-shadow:inset 0 1px 0 var(--g-hi),0 20px 60px rgba(0,0,0,.45);-webkit-backdrop-filter:var(--g-blur-strong);backdrop-filter:var(--g-blur-strong);
+  max-height:calc(92dvh - env(safe-area-inset-bottom,0px))}
+html.glass .sheet-head{background:transparent;margin:0 -16px;padding-left:16px;padding-right:16px;-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+html.glass .sheet-head .icon-btn{background:var(--g-fill-2);border:1px solid var(--g-edge);border-radius:999px;width:36px;height:36px}
+html.glass .sheet-grip{background:var(--g-edge)}
+html.glass .sheet :is(.card,.list,.kpi,.results){-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:inset 0 1px 0 var(--g-hi)}
+
+/* PIN */
+html.glass #lock{background:color-mix(in srgb,var(--bg) 55%,transparent);-webkit-backdrop-filter:blur(40px);backdrop-filter:blur(40px)}
+html.glass .keypad button:not([data-k="x"]):not([data-k="del"]){border:1px solid var(--g-edge);box-shadow:inset 0 1px 0 var(--g-hi)}
+
+@media (prefers-reduced-transparency:reduce){
+  html.glass :is(.card,.list,.kpi,.gcard,.qchip,.tabs-in,.sheet,#toast,.btn,.seg){background:var(--surface)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -383,11 +489,11 @@ html.locked body > :not(#lock){visibility:hidden}
 </button>
 <nav class="tabs" aria-label="Secciones">
   <div class="tabs-in">
-    <button class="tab" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="4.5" rx="1.8"/><rect x="13.5" y="11" width="7" height="9.5" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/></svg>Resumen</button>
-    <button class="tab" data-tab="txs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>Movimientos</button>
-    <button class="tab" data-tab="inv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Inversiones</button>
-    <button class="tab" data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>Análisis</button>
-    <button class="tab" data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>Más</button>
+    <button class="tab" data-tab="home" aria-label="Resumen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="4.5" rx="1.8"/><rect x="13.5" y="11" width="7" height="9.5" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/></svg>Resumen</button>
+    <button class="tab" data-tab="txs" aria-label="Movimientos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>Movimientos</button>
+    <button class="tab" data-tab="inv" aria-label="Inversiones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Inversiones</button>
+    <button class="tab" data-tab="stats" aria-label="Análisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>Análisis</button>
+    <button class="tab" data-tab="more" aria-label="Más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>Más</button>
   </div>
 </nav>
 <div id="sheetWrap" hidden>
@@ -563,7 +669,7 @@ function blankState() {
       favCcy: ['USD', 'GBP', 'CHF', 'BTC'],
       home: Object.keys(HOME_SECTIONS).map(k => ({ k, on: true })),
       period: 'month',
-      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false,
+      name: '', accent: 'malva', customAccent: '#e4b3cb', textSize: 'm', hideCents: false, glass: true,
       weekStart: 1, monthStart: 1, startTab: 'home', recentCount: 6,
       pinHash: '', lockAfter: 0, notifyRecurring: true, notifyHour: 9,
       budgetTotal: 0, budgetAlerts: true, shortcutMode: 'auto',
@@ -871,7 +977,14 @@ function runRecurring() {
     while (r.next && r.next <= t && guard++ < 500) {
       if (r.end && r.next > r.end) { r.active = false; break; }
       const acc = accById(r.tpl.accountId);
-      if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
+      if (r.tpl.type === 'invest') {
+        // plan de inversión: compra por importe fijo al precio conocido (en vivo o el último guardado)
+        const a = assetById(r.tpl.assetId), px = a && priceOf(a);
+        if (!a || !px || !px.p) break;   // sin precio aún: se reintenta en el próximo arranque
+        const amt = conv(r.tpl.amount, acc ? acc.currency : 'EUR', px.ccy);
+        a.ops.push({ id: uid(), side: 'buy', qty: amt / px.p, price: px.p, fee: 0, ccy: px.ccy, date: r.next, cashAccountId: acc ? acc.id : '', recId: r.id });
+        n++;
+      } else if (acc) { S.txs.push(Object.assign({}, r.tpl, { id: uid(), date: r.next, recId: r.id })); n++; }
       r.next = nextDate(r.next, r.freq, r.interval || 1, r.day);
     }
   }
@@ -906,6 +1019,22 @@ function nwSeries(days = 30) {
 }
 
 /* ---------- datos de ejemplo ---------- */
+// Migración de datos ya guardados en el dispositivo. Los datos personales nunca van en el código
+// (el repositorio es público): se cargan una vez con un enlace mision://importar (ver extra.js).
+const SEED_V = 3;
+const etfAccount = (s, order) => ({ id: 'a_' + uid(), name: 'Trade Republic · ETF', type: 'broker', currency: 'EUR', initial: 0, color: PALETTE[5], icon: ACC_ICONS.broker, includeInTotal: true, archived: false, order, cardAlias: '', note: 'ETF a largo plazo. El plan mensual se paga con el efectivo de Trade Republic.' });
+// v2 → v3 sin perder lo que haya añadido el usuario (objetivos, movimientos…): mueve los ETF a su propia cuenta.
+function splitTrEtf(s) {
+  const tr = s.accounts.find(a => a.name === 'Trade Republic');
+  if (tr && !s.accounts.some(a => a.name === 'Trade Republic · ETF')) {
+    const etf = etfAccount(s, tr.order + 0.5); s.accounts.push(etf);
+    s.accounts.sort((a, b) => a.order - b.order).forEach((a, i) => { a.order = i; });
+    if (tr.type === 'broker') { tr.type = 'ahorro'; tr.icon = ACC_ICONS.ahorro; }
+    s.assets.forEach(a => { if (a.accountId === tr.id) a.accountId = etf.id; });
+  }
+  s.seeded = SEED_V;
+}
+
 function demoState() {
   const s = blankState(); s.demo = true;
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -1421,7 +1550,7 @@ function render(scrollTop) {
   const r = UI.route; const [main, sub] = r.split('/');
   $$('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.tab === main ? 'page' : 'false'));
   $('#backBtn').hidden = !sub; $('#top').classList.toggle('sub', !!sub);
-  $('#viewTitle').textContent = TITLES[r] || 'Misión';
+  $('#viewTitle').textContent = TITLES[r] || 'Caudal';
   $('#fab').hidden = !['home', 'txs', 'stats'].includes(r);
   $('#demoBanner').hidden = !S.demo;
   const v = $('#view');
@@ -1622,7 +1751,11 @@ HOME.budgets = P => {
   return `<section><div class="sec-h"><h2>Presupuestos</h2><button class="link" data-go="more/budgets">Editar</button></div><div class="list">${rows}</div><div class="note">La marca vertical indica en qué punto del periodo estás.</div></section>`;
 };
 function recRow(r) {
-  const t = r.tpl; const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
+  const t = r.tpl;
+  if (t.type === 'invest') {
+    const a = assetById(t.assetId), acc = accById(t.accountId);
+    return `<button class="row" data-action="asset-open" data-id="${t.assetId}">${ico(svg('repeat'), a && a.color)}<div class="row-m"><div class="row-t">${esc(r.name || 'Plan de inversión')}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]} · compra de ${esc(a ? a.name : '?')}</div></div><div class="row-r"><span class="num amt">${fmt(t.amount, acc?.currency)}</span></div></button>`;
+  } const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
   const icon = t.type === 'transfer' ? svg('swap') : esc(c ? c.icon : '•');
   const v = t.type === 'income' ? fmt(t.amount, acc?.currency, { sign: true }) : t.type === 'expense' ? fmt(-t.amount, acc?.currency, { sign: true }) : fmt(t.amount, acc?.currency);
   return `<button class="row" data-action="rec-edit" data-id="${r.id}">${ico(icon, c ? c.color : 'var(--muted)')}<div class="row-m"><div class="row-t">${esc(r.name || t.note || (c ? c.name : 'Recurrente'))}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]}${(r.interval || 1) > 1 ? ` (x${r.interval})` : ''}</div></div><div class="row-r"><span class="num amt ${t.type === 'income' ? 'pos' : ''}">${v}</span></div></button>`;
@@ -2060,7 +2193,7 @@ VIEWS['more/settings'] = () => {
     <button class="row" data-action="load-demo">${ico(svg('refresh'), 'var(--muted)')}<div class="row-m"><div class="row-t">Cargar datos de ejemplo</div><div class="row-s">Sustituye lo que tengas ahora</div></div></button>
   </div>
   <button class="btn danger block" data-action="wipe" data-confirm="Toca otra vez para borrarlo TODO">Borrar todos los datos</button></section>
-  <p class="note">Misión Finanzas · versión 2.0 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
+  <p class="note">Caudal · versión 2.1 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
 };
 AFTER['more/settings'] = () => {
   $('#stBase').addEventListener('change', e => { S.settings.base = e.target.value; nfCache.clear(); save(); toast('Moneda principal: ' + e.target.value); render(); });
@@ -2078,6 +2211,7 @@ VIEWS['more/look'] = () => {
   return `<section class="card form">
     <div class="field"><span>Tema</span><div class="seg">${[['auto', 'Auto'], ['light', 'Claro'], ['dark', 'Oscuro'], ['black', 'Negro']].map(([k, l]) => `<button data-action="theme" data-k="${k}" aria-pressed="${st.theme === k}">${l}</button>`).join('')}</div></div>
     <p class="note" style="margin:-6px 0 0">«Negro» es negro puro: gasta menos batería en pantallas OLED como la del iPhone.</p>
+    <label class="check"><input type="checkbox" id="lkGlass" ${st.glass !== false ? 'checked' : ''}><span>Liquid Glass (cristal translúcido, barra flotante)</span></label>
     <div class="field"><span>Color de acento</span><div class="swatches">${Object.entries(ACCENTS).map(([k, [l, d, li]]) => `<button type="button" data-action="accent" data-k="${k}" style="--c:${d};box-shadow:inset 0 0 0 2px var(--surface),inset 0 0 0 16px ${li}" aria-label="${l}" aria-pressed="${st.accent === k}"></button>`).join('')}<label class="custom-color" aria-label="Color personalizado"><input type="color" id="lkCustom" value="${esc(st.customAccent || '#e4b3cb')}"><span>${st.accent === 'custom' ? '✓ ' : ''}Otro</span></label></div></div>
     <div class="field"><span>Tamaño de letra</span><div class="seg">${[['s', 'Pequeño'], ['m', 'Normal'], ['l', 'Grande'], ['xl', 'Enorme']].map(([k, l]) => `<button data-action="textsize" data-k="${k}" aria-pressed="${st.textSize === k}">${l}</button>`).join('')}</div></div>
     <label class="check"><input type="checkbox" id="lkCents" ${st.hideCents ? 'checked' : ''}><span>Ocultar los céntimos (1.234 € en vez de 1.234,56 €)</span></label>
@@ -2091,6 +2225,7 @@ VIEWS['more/look'] = () => {
 };
 AFTER['more/look'] = () => {
   $('#lkCustom').addEventListener('change', e => { S.settings.customAccent = e.target.value; S.settings.accent = 'custom'; applyLook(); save(); render(); });
+  $('#lkGlass').addEventListener('change', e => { S.settings.glass = e.target.checked; applyLook(); save(); });
   $('#lkCents').addEventListener('change', e => { S.settings.hideCents = e.target.checked; nfCache.clear(); save(); });
   $('#lkName').addEventListener('change', e => { S.settings.name = e.target.value.trim(); save(); });
   $('#lkStart').addEventListener('change', e => { S.settings.startTab = e.target.value; save(); });
@@ -2145,7 +2280,7 @@ VIEWS['more/install'] = () => `
     <li>Abre la web en <b>Safari</b> (no desde otra app).</li>
     <li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li>
     <li>Baja y elige <b>Añadir a pantalla de inicio</b>.</li>
-    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Misión como una app más, a pantalla completa.</li></ol></section>
+    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Caudal como una app más, a pantalla completa.</li></ol></section>
   <section class="card stack"><b>Cosas a saber</b>
     <p class="note" style="margin:0">Los datos de la app instalada viven dentro de ella. Si antes la usabas en Safari, pásalos con Copia de seguridad → Exportar y luego Restaurar dentro de la app.</p>
     <p class="note" style="margin:0">Haz una copia de seguridad de vez en cuando: si borras la app o los datos de Safari, se pierden.</p></section>`;
@@ -3002,7 +3137,7 @@ const ACT = {
   'export-json': () => { download(`mision-finanzas-${today()}.json`, exportJson(), 'application/json'); toast('Copia descargada'); },
   'export-csv': () => { download(`movimientos-${today()}.csv`, exportCsv(), 'text/csv;charset=utf-8'); toast('CSV descargado'); },
   'copy-json': async () => { try { await navigator.clipboard.writeText(exportJson()); toast('Copiado al portapapeles'); } catch (e) { toast('No se pudo copiar en este navegador'); } },
-  'import-json': () => pickFile('.json,application/json', async f => { try { const o = JSON.parse(await f.text()); if (!o || !Array.isArray(o.accounts) || !Array.isArray(o.txs)) throw new Error('no parece una copia de Misión'); confirmSheet('Restaurar copia', `El archivo tiene ${o.accounts.length} cuentas y ${o.txs.length} movimientos. Sustituirá todo lo que hay ahora en este dispositivo.`, 'Restaurar', () => { S = migrate(o); saveNow(); closeSheet(); applyTheme(); go('home', { reset: true }); restartFeeds(); toast('Copia restaurada'); }); } catch (e) { toast('Archivo no válido: ' + e.message); } }),
+  'import-json': () => pickFile('.json,application/json', async f => { try { const o = JSON.parse(await f.text()); if (!o || !Array.isArray(o.accounts) || !Array.isArray(o.txs)) throw new Error('no parece una copia de Caudal'); confirmSheet('Restaurar copia', `El archivo tiene ${o.accounts.length} cuentas y ${o.txs.length} movimientos. Sustituirá todo lo que hay ahora en este dispositivo.`, 'Restaurar', () => { S = migrate(o); saveNow(); closeSheet(); applyTheme(); go('home', { reset: true }); restartFeeds(); toast('Copia restaurada'); }); } catch (e) { toast('Archivo no válido: ' + e.message); } }),
   'imp-file': () => pickFile('.csv,.txt,.xlsx,.xls,.ods,text/csv', startImport),
   'imp-reset': () => { UI.imp = null; render(); },
   'imp-go': () => doImport(),
@@ -3027,6 +3162,7 @@ try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () =
 function init() {
   S = load();
   if (!S) { S = demoState(); saveNow(); }
+  else if (S.seeded === 2) { splitTrEtf(S); saveNow(); }
   applyTheme(); runRecurring();
   UI.txF.month = curMk(); UI.statsMonth = curMk();
   UI.route = TITLES[S.settings.startTab] ? S.settings.startTab : 'home';
@@ -3112,7 +3248,34 @@ function parseLink(raw) {
   const q = new URLSearchParams(qi < 0 ? '' : m.slice(qi + 1));
   return { path, q, get: (...k) => { for (const x of k) { const v = q.get(x); if (v != null && String(v).trim() !== '') return String(v).trim(); } return ''; } };
 }
-const LINK_PATHS = ['nuevo', 'gasto', 'ingreso', 'transferencia', 'add', 'new', 'rapido', 'quick', 'plantilla', 'template', 'abrir', 'open'];
+const LINK_PATHS = ['nuevo', 'gasto', 'ingreso', 'transferencia', 'add', 'new', 'rapido', 'quick', 'plantilla', 'template', 'abrir', 'open', 'importar'];
+// mision://importar?d=<JSON en base64url>: añade cuentas, activos y recurrentes sin tocar lo que ya hay.
+// Sirve para cargar datos personales sin meterlos en el código (el repositorio es público).
+// Cuentas: se emparejan por nombre (si existe, no se toca su saldo). Activos: por símbolo dentro de su cuenta.
+function importPatch(d) {
+  const json = new TextDecoder().decode(Uint8Array.from(atob(d.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(d.length / 4) * 4, '=')), c => c.charCodeAt(0)));
+  const P = JSON.parse(json); let na = 0, ns = 0, nr = 0;
+  const accByName = n => S.accounts.find(a => norm(a.name) === norm(n));
+  for (const a of P.accounts || []) {
+    if (accByName(a.name)) continue;
+    S.accounts.push(Object.assign({ id: 'a_' + uid(), currency: 'EUR', initial: 0, color: PALETTE[S.accounts.length % PALETTE.length], icon: ACC_ICONS[a.type] || ACC_ICONS.otro, includeInTotal: true, archived: false, order: S.accounts.length, cardAlias: '', note: '' }, a)); na++;
+  }
+  for (const x of P.assets || []) {
+    const acc = accByName(x.account); if (!acc) continue;
+    if (S.assets.some(a => a.accountId === acc.id && a.symbol === x.symbol)) continue;
+    const a = Object.assign({ id: 's_' + uid(), provider: 'auto', quoteCcy: 'EUR', archived: false, color: PALETTE[(S.assets.length + 3) % PALETTE.length] }, x, { accountId: acc.id });
+    delete a.account; a.ops = (x.ops || []).map(o => Object.assign({ id: uid(), fee: 0, ccy: 'EUR', date: today() }, o));
+    S.assets.push(a); ns++;
+  }
+  for (const r of P.recurring || []) {
+    const acc = accByName(r.account), asset = r.asset && S.assets.find(a => a.symbol === r.asset);
+    if (!acc || S.recurring.some(x => x.name === r.name)) continue;
+    const tpl = Object.assign({ tags: [] }, r.tpl, { accountId: acc.id }, asset ? { assetId: asset.id } : {});
+    S.recurring.push({ id: 'r_' + uid(), name: r.name, tpl, freq: r.freq, interval: r.interval || 1, day: r.day, next: r.next, end: '', active: true }); nr++;
+  }
+  S.demo = false; saveNow(); go('home', { reset: true }); if (typeof restartFeeds === 'function') restartFeeds();
+  toast(na + ns + nr ? `Importado: ${na} cuenta${na === 1 ? '' : 's'}, ${ns} activo${ns === 1 ? '' : 's'}${nr ? `, ${nr} recurrente${nr === 1 ? '' : 's'}` : ''}` : 'Ya lo tenías todo, no se ha cambiado nada');
+}
 const isAppLink = raw => LINK_PATHS.includes(parseLink(raw).path.split('/')[0]);
 function handleLink(raw) {
   if (!S || !raw) return false;
@@ -3120,6 +3283,10 @@ function handleLink(raw) {
   if (!LINK_PATHS.includes(p)) return false;
   // evita apuntar dos veces el mismo enlace (iOS a veces lo entrega doble al arrancar)
   try { const last = JSON.parse(localStorage.getItem('mision.lastLink') || 'null'); if (last && last.u === raw && Date.now() - last.t < 90000) return true; localStorage.setItem('mision.lastLink', JSON.stringify({ u: raw, t: Date.now() })); } catch (e) { }
+  if (p === 'importar') {
+    try { importPatch(L.q.get('d') || ''); } catch (e) { console.warn(e); toast('El enlace de importación no es válido'); }
+    return true;
+  }
   if (p === 'abrir' || p === 'open') {
     const scr = norm(L.get('pantalla', 'screen') || L.path.split('/')[1] || 'resumen');
     const map = { resumen: 'home', inicio: 'home', movimientos: 'txs', inversiones: 'inv', cartera: 'inv', analisis: 'stats', mas: 'more', presupuestos: 'more/budgets', objetivos: 'more/goals', cuentas: 'more/accounts', divisas: 'more/fx' };
@@ -3306,6 +3473,7 @@ function applyLook() {
   else { const a = ACCENTS[st.accent] || ACCENTS.malva; dark = a[1]; light = a[2]; }
   const ink = h => lum(h) > .4 ? '#140d12' : '#ffffff';
   const z = { s: .92, m: 1, l: 1.1, xl: 1.22 }[st.textSize] || 1;
+  document.documentElement.classList.toggle('glass', st.glass !== false);
   let el = $('#lookCss'); if (!el) { el = document.createElement('style'); el.id = 'lookCss'; document.head.appendChild(el); }
   el.textContent = `:root{--accent:${dark};--accent-soft:${rgba(dark, .14)};--accent-ink:${ink(dark)};--z:${z}}
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]):not([data-theme="black"]){--accent:${light};--accent-soft:${rgba(light, .10)};--accent-ink:${ink(light)}}}
@@ -3370,7 +3538,7 @@ async function scheduleNotifs(force) {
     if (mine.length) await LN.cancel({ notifications: mine.map(n => ({ id: n.id })) });
     if (!S.settings.notifyRecurring || !S.recurring.some(r => r.active)) return;
     let perm = await LN.checkPermissions();
-    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } }
+    if (perm.display !== 'granted') { if (perm.display === 'denied' && !force) return; perm = await LN.requestPermissions(); if (perm.display !== 'granted') { if (force) toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } }
     const out = []; const lim = addDays(today(), 60); let id = 1000;
     for (const r of S.recurring.filter(x => x.active)) {
       let d = r.next, g = 0;
@@ -3480,7 +3648,7 @@ Object.assign(ACT, {
   'pin-set': () => startSetPin(),
   'pin-off': () => { S.settings.pinHash = ''; save(); render(); toast('PIN desactivado'); },
   'lock-now': () => lockNow(),
-  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Misión en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Misión', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
+  'notif-test': async () => { const LN = NATIVE && window.Capacitor.Plugins.LocalNotifications; if (!LN) return; try { let p = await LN.checkPermissions(); if (p.display !== 'granted') p = await LN.requestPermissions(); if (p.display !== 'granted') { toast('Activa las notificaciones de Caudal en Ajustes del iPhone'); return; } await LN.schedule({ notifications: [{ id: 1999, title: 'Caudal', body: 'Así te avisaré de tus próximos cargos.', schedule: { at: new Date(Date.now() + 5000) } }] }); toast('Te llegará en 5 segundos (sal de la app para verla)'); } catch (e) { toast('No se pudo programar: ' + e.message); } },
   'sc-mode': el => { S.settings.shortcutMode = el.dataset.k; save(); render(); },
   'sc-copy': async el => { const txt = $('#' + el.dataset.src).textContent; try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#' + el.dataset.src)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Seleccionado: cópialo'); } },
   'sc-test': () => { const u = buildLink(); try { localStorage.removeItem('mision.lastLink'); } catch (e) { } handleLink(u); },

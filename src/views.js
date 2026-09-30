@@ -65,7 +65,7 @@ function render(scrollTop) {
   const r = UI.route; const [main, sub] = r.split('/');
   $$('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.tab === main ? 'page' : 'false'));
   $('#backBtn').hidden = !sub; $('#top').classList.toggle('sub', !!sub);
-  $('#viewTitle').textContent = TITLES[r] || 'Misión';
+  $('#viewTitle').textContent = TITLES[r] || 'Caudal';
   $('#fab').hidden = !['home', 'txs', 'stats'].includes(r);
   $('#demoBanner').hidden = !S.demo;
   const v = $('#view');
@@ -266,7 +266,11 @@ HOME.budgets = P => {
   return `<section><div class="sec-h"><h2>Presupuestos</h2><button class="link" data-go="more/budgets">Editar</button></div><div class="list">${rows}</div><div class="note">La marca vertical indica en qué punto del periodo estás.</div></section>`;
 };
 function recRow(r) {
-  const t = r.tpl; const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
+  const t = r.tpl;
+  if (t.type === 'invest') {
+    const a = assetById(t.assetId), acc = accById(t.accountId);
+    return `<button class="row" data-action="asset-open" data-id="${t.assetId}">${ico(svg('repeat'), a && a.color)}<div class="row-m"><div class="row-t">${esc(r.name || 'Plan de inversión')}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]} · compra de ${esc(a ? a.name : '?')}</div></div><div class="row-r"><span class="num amt">${fmt(t.amount, acc?.currency)}</span></div></button>`;
+  } const acc = accById(t.accountId); const c = t.type === 'transfer' ? null : catById(t.categoryId);
   const icon = t.type === 'transfer' ? svg('swap') : esc(c ? c.icon : '•');
   const v = t.type === 'income' ? fmt(t.amount, acc?.currency, { sign: true }) : t.type === 'expense' ? fmt(-t.amount, acc?.currency, { sign: true }) : fmt(t.amount, acc?.currency);
   return `<button class="row" data-action="rec-edit" data-id="${r.id}">${ico(icon, c ? c.color : 'var(--muted)')}<div class="row-m"><div class="row-t">${esc(r.name || t.note || (c ? c.name : 'Recurrente'))}</div><div class="row-s">${r.active ? dayLabel(r.next) : 'En pausa'} · ${FREQ_L[r.freq]}${(r.interval || 1) > 1 ? ` (x${r.interval})` : ''}</div></div><div class="row-r"><span class="num amt ${t.type === 'income' ? 'pos' : ''}">${v}</span></div></button>`;
@@ -704,7 +708,7 @@ VIEWS['more/settings'] = () => {
     <button class="row" data-action="load-demo">${ico(svg('refresh'), 'var(--muted)')}<div class="row-m"><div class="row-t">Cargar datos de ejemplo</div><div class="row-s">Sustituye lo que tengas ahora</div></div></button>
   </div>
   <button class="btn danger block" data-action="wipe" data-confirm="Toca otra vez para borrarlo TODO">Borrar todos los datos</button></section>
-  <p class="note">Misión Finanzas · versión 2.0 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
+  <p class="note">Caudal · versión 2.1 · ${NATIVE ? 'app de iPhone' : 'web'}.</p>`;
 };
 AFTER['more/settings'] = () => {
   $('#stBase').addEventListener('change', e => { S.settings.base = e.target.value; nfCache.clear(); save(); toast('Moneda principal: ' + e.target.value); render(); });
@@ -722,6 +726,7 @@ VIEWS['more/look'] = () => {
   return `<section class="card form">
     <div class="field"><span>Tema</span><div class="seg">${[['auto', 'Auto'], ['light', 'Claro'], ['dark', 'Oscuro'], ['black', 'Negro']].map(([k, l]) => `<button data-action="theme" data-k="${k}" aria-pressed="${st.theme === k}">${l}</button>`).join('')}</div></div>
     <p class="note" style="margin:-6px 0 0">«Negro» es negro puro: gasta menos batería en pantallas OLED como la del iPhone.</p>
+    <label class="check"><input type="checkbox" id="lkGlass" ${st.glass !== false ? 'checked' : ''}><span>Liquid Glass (cristal translúcido, barra flotante)</span></label>
     <div class="field"><span>Color de acento</span><div class="swatches">${Object.entries(ACCENTS).map(([k, [l, d, li]]) => `<button type="button" data-action="accent" data-k="${k}" style="--c:${d};box-shadow:inset 0 0 0 2px var(--surface),inset 0 0 0 16px ${li}" aria-label="${l}" aria-pressed="${st.accent === k}"></button>`).join('')}<label class="custom-color" aria-label="Color personalizado"><input type="color" id="lkCustom" value="${esc(st.customAccent || '#e4b3cb')}"><span>${st.accent === 'custom' ? '✓ ' : ''}Otro</span></label></div></div>
     <div class="field"><span>Tamaño de letra</span><div class="seg">${[['s', 'Pequeño'], ['m', 'Normal'], ['l', 'Grande'], ['xl', 'Enorme']].map(([k, l]) => `<button data-action="textsize" data-k="${k}" aria-pressed="${st.textSize === k}">${l}</button>`).join('')}</div></div>
     <label class="check"><input type="checkbox" id="lkCents" ${st.hideCents ? 'checked' : ''}><span>Ocultar los céntimos (1.234 € en vez de 1.234,56 €)</span></label>
@@ -735,6 +740,7 @@ VIEWS['more/look'] = () => {
 };
 AFTER['more/look'] = () => {
   $('#lkCustom').addEventListener('change', e => { S.settings.customAccent = e.target.value; S.settings.accent = 'custom'; applyLook(); save(); render(); });
+  $('#lkGlass').addEventListener('change', e => { S.settings.glass = e.target.checked; applyLook(); save(); });
   $('#lkCents').addEventListener('change', e => { S.settings.hideCents = e.target.checked; nfCache.clear(); save(); });
   $('#lkName').addEventListener('change', e => { S.settings.name = e.target.value.trim(); save(); });
   $('#lkStart').addEventListener('change', e => { S.settings.startTab = e.target.value; save(); });
@@ -789,7 +795,7 @@ VIEWS['more/install'] = () => `
     <li>Abre la web en <b>Safari</b> (no desde otra app).</li>
     <li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li>
     <li>Baja y elige <b>Añadir a pantalla de inicio</b>.</li>
-    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Misión como una app más, a pantalla completa.</li></ol></section>
+    <li>Pulsa <b>Añadir</b>. Tendrás el icono de Caudal como una app más, a pantalla completa.</li></ol></section>
   <section class="card stack"><b>Cosas a saber</b>
     <p class="note" style="margin:0">Los datos de la app instalada viven dentro de ella. Si antes la usabas en Safari, pásalos con Copia de seguridad → Exportar y luego Restaurar dentro de la app.</p>
     <p class="note" style="margin:0">Haz una copia de seguridad de vez en cuando: si borras la app o los datos de Safari, se pierden.</p></section>`;
