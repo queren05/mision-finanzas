@@ -462,6 +462,36 @@ html.glass .keypad button:not([data-k="x"]):not([data-k="del"]){border:1px solid
   html.glass :is(.card,.list,.kpi,.gcard,.qchip,.tabs-in,.sheet,#toast,.btn,.seg){background:var(--surface)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 }
 
+/* ---------- pulido v2.2 ---------- */
+/* sin barras de scroll */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
+/* confirmación en el propio botón */
+.btn.armed{position:relative;overflow:hidden;white-space:nowrap;animation:armPulse .5s ease}
+/* hojas: cristal, pero legible (antes se transparentaba el contenido de detrás) */
+html.glass .sheet{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 97%,transparent),var(--surface))!important}
+html.glass .sheet-head{background:var(--surface)!important}
+.btn.armed .arm-t{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn.armed .arm-t svg{width:18px;height:18px;flex:none}
+.btn.armed .arm-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:rgba(255,255,255,.75);transform-origin:left;animation:armBar 3.5s linear forwards}
+@keyframes armBar{to{transform:scaleX(0)}}
+@keyframes armPulse{30%{transform:scale(1.03)}}
+/* transiciones entre pantallas */
+#view.in-r{animation:inR .32s cubic-bezier(.2,.8,.2,1)}
+#view.in-l{animation:inL .32s cubic-bezier(.2,.8,.2,1)}
+#view.in-f{animation:inF .26s ease-out}
+@keyframes inR{from{opacity:0;transform:translateX(34px)}}
+@keyframes inL{from{opacity:0;transform:translateX(-34px)}}
+@keyframes inF{from{opacity:0;transform:translateY(10px) scale(.99)}}
+/* filas que se pueden deslizar */
+[data-swipe-l],[data-swipe-r]{touch-action:pan-y}
+:root{--swipe-row:var(--surface)}
+.list .swipe-bg:first-child{border-top-left-radius:var(--r);border-top-right-radius:var(--r)}
+/* toques con respuesta */
+.row,.btn,.tab,.icon-btn,.chip,.seg button{transition:transform .12s,background .15s,filter .15s}
+.row:active{transform:scale(.985)}
+.btn:active,.icon-btn:active,.tab:active{transform:scale(.95)}
+.sheet{will-change:transform}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }

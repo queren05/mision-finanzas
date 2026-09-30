@@ -479,3 +479,63 @@ Object.assign(ACT, {
   'sc-copy': async el => { const txt = $('#' + el.dataset.src).textContent; try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('#' + el.dataset.src)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Seleccionado: cópialo'); } },
   'sc-test': () => { const u = buildLink(); try { localStorage.removeItem('mision.lastLink'); } catch (e) { } handleLink(u); },
 });
+
+/* ---------- Deslizar filas (estilo iOS) ----------
+   Cualquier elemento con data-swipe-l="Texto" (deslizar a la izquierda) o data-swipe-r="Texto" (a la derecha)
+   se puede arrastrar con el dedo. La acción va pegada a la propia fila (un hijo fuera de su caja) y aparece
+   con su color (data-swipe-lc / data-swipe-rc) según se desliza. Al soltar pasado el umbral se lanza el evento
+   «swipe» (detail: 'l' o 'r') sobre la fila y se anula el toque. */
+(function () {
+  const TH = 88;
+  let el = null, x0 = 0, y0 = 0, dx = 0, lock = null, act = null, armed = false, side = '';
+  const buzz = () => { try { const H = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics; if (H) H.impact({ style: 'MEDIUM' }); } catch (e) { } };
+  const clean = (e, a) => { e.style.transition = ''; e.style.transform = ''; e.style.position = ''; e.style.overflow = ''; if (a) a.remove(); };
+  const reset = () => { if (!el) return; const e = el, a = act; e.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1)'; e.style.transform = ''; setTimeout(() => clean(e, a), 290); el = null; act = null; };
+  document.addEventListener('touchstart', e => {
+    const r = e.target.closest('[data-swipe-l],[data-swipe-r]'); if (!r || e.touches.length > 1) return;
+    el = r; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; lock = null; armed = false; side = '';
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!el) return; const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+    if (lock === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) lock = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
+    if (lock !== 'x') { if (lock === 'y') el = null; return; }
+    e.preventDefault();
+    const s = mx < 0 ? 'l' : 'r', key = 'swipe' + s.toUpperCase(), ok = !!el.dataset[key];
+    dx = ok ? mx : mx * .12;
+    if (s !== side) {
+      side = s; if (act) act.remove(); act = null;
+      if (ok) {
+        el.style.position = 'relative'; el.style.overflow = 'visible';
+        act = document.createElement('span'); act.className = 'swipe-act';
+        const col = el.dataset[key + 'c'] || (s === 'l' ? '#ff5f6d' : '#2ecc9a');
+        act.style.cssText = `position:absolute;top:0;bottom:0;width:100vw;${s === 'r' ? 'right:100%;justify-content:flex-end' : 'left:100%;justify-content:flex-start'};display:flex;align-items:center;padding:0 22px;background:${col};color:#fff;font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none;transition:font-size .15s`;
+        act.textContent = el.dataset[key]; el.appendChild(act);
+      }
+    }
+    const now = ok && Math.abs(dx) > TH; if (now !== armed) { armed = now; if (now) buzz(); if (act) act.style.fontSize = now ? '16.5px' : '15px'; }
+    el.style.transform = `translateX(${dx}px)`;
+  }, { passive: false });
+  document.addEventListener('touchend', () => {
+    if (!el) return; const r = el;
+    if (lock === 'x') r._swiped = Date.now();
+    if (lock === 'x' && armed) {
+      const s = dx < 0 ? 'l' : 'r', a = act; r.style.transition = 'transform .22s ease-in'; r.style.transform = `translateX(${s === 'l' ? '-100%' : '100%'})`;
+      el = null; act = null;
+      setTimeout(() => { clean(r, a); r.dispatchEvent(new CustomEvent('swipe', { detail: s, bubbles: true })); }, 220);
+    } else reset();
+  });
+  // un deslizamiento no debe abrir la fila
+  document.addEventListener('click', e => { const r = e.target.closest('[data-swipe-l],[data-swipe-r]'); if (r && r._swiped && Date.now() - r._swiped < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
+})();
+
+document.addEventListener('swipe', e => {
+  const el = e.target; if (el.dataset.action !== 'tx-edit') return;
+  const t = S.txs.find(x => x.id === el.dataset.id); if (!t) return;
+  if (e.detail === 'l') {
+    const i = S.txs.indexOf(t); S.txs.splice(i, 1); save(); render();
+    toast('Movimiento eliminado', { label: 'Deshacer', fn: () => { S.txs.splice(i, 0, t); save(); render(); } });
+  } else {
+    const c = Object.assign({}, t, { id: uid(), date: today() }); delete c.recId; delete c.imp; S.txs.push(c); save(); render();
+    toast('Duplicado con fecha de hoy', { label: 'Deshacer', fn: () => { S.txs = S.txs.filter(x => x.id !== c.id); save(); render(); } });
+  }
+});

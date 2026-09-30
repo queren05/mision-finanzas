@@ -65,6 +65,7 @@ jobs:
           npx cap add ios
           npx --yes @capacitor/assets generate --ios --iconBackgroundColor "$(jq -r .backgroundColor capacitor.config.json)" || echo "Iconos: se usa el por defecto"
           npx cap sync ios
+          sh ../scripts/sin-barra-scroll.sh
           PL=ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $NAME" $PL || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $NAME" $PL
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" $PL || true

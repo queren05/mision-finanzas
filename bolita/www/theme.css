@@ -104,3 +104,7 @@ html,body{font-family:var(--f);color:var(--ink)}
 .ghud{background:var(--panel)!important;color:#fff;font-family:var(--fd)}
 .gstart{background:var(--panel)!important;color:#fff;font-family:var(--fd)}
 input.name-in{font-family:var(--fd);border:2px solid #e2daf7;background:#f7f4ff}
+
+/* sin barras de scroll */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}

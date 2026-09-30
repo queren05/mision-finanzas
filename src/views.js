@@ -2,6 +2,7 @@
    Vistas
    ===================================================================== */
 const ICONS = {
+  trash: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5M14 11v5"/>',
   bank: '<path d="M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20.5h18M12 3l9 5H3z"/>',
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
@@ -69,6 +70,11 @@ function render(scrollTop) {
   $('#fab').hidden = !['home', 'txs', 'stats'].includes(r);
   $('#demoBanner').hidden = !S.demo;
   const v = $('#view');
+  if (UI._last !== r) {
+    const was = UI._last || '', [wm, ws] = was.split('/');
+    const cls = wm === main ? (sub && !ws ? 'in-r' : !sub && ws ? 'in-l' : sub && ws ? 'in-r' : 'in-f') : 'in-f';
+    UI._last = r; v.classList.remove('in-r', 'in-l', 'in-f'); void v.offsetWidth; v.classList.add(cls);
+  }
   v.innerHTML = (VIEWS[r] || VIEWS.home)(P);
   if (AFTER[r]) AFTER[r]();
   for (const id in PX.flash) PX.flash[id].shown = true;
@@ -126,7 +132,7 @@ function txRow(t, ctxAcc) {
     if (t.type === 'income') { val = fmt(t.amount, cur, { sign: true }); cls = 'pos'; } else val = fmt(-t.amount, cur, { sign: true });
   }
   const baseEq = cur !== S.settings.base && t.type !== 'transfer' ? `<span class="row-s amt">${fmt(conv(t.amount, cur))}</span>` : '';
-  return `<button class="row" data-action="tx-edit" data-id="${t.id}">${ico(icon, color)}<div class="row-m"><div class="row-t">${title}</div><div class="row-s">${sub}</div></div><div class="row-r"><span class="num amt ${cls}">${val}</span>${baseEq}</div></button>`;
+  return `<button class="row" data-action="tx-edit" data-id="${t.id}" data-swipe-l="Eliminar" data-swipe-r="Duplicar hoy" data-swipe-rc="#4d9dff">${ico(icon, color)}<div class="row-m"><div class="row-t">${title}</div><div class="row-s">${sub}</div></div><div class="row-r"><span class="num amt ${cls}">${val}</span>${baseEq}</div></button>`;
 }
 function linkRow(route, icon, title, sub, color) {
   return `<button class="row" data-go="${route}">${ico(svg(icon), color || 'var(--accent)')}<div class="row-m"><div class="row-t">${title}</div>${sub ? `<div class="row-s">${sub}</div>` : ''}</div>${svg('chev', 'chev')}</button>`;

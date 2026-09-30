@@ -196,6 +196,13 @@ h1{font:700 30px/1.1 var(--f);letter-spacing:-.025em;margin-top:14px}
 .health{display:flex;align-items:center;gap:14px}
 .health svg{width:64px;height:64px;flex:none;transform:rotate(-90deg)}
 .health .pc{font:600 22px/1 var(--f-num);font-stretch:87.5%}
+*{scrollbar-width:none}*::-webkit-scrollbar{display:none;width:0;height:0}
+[data-swipe-l],[data-swipe-r]{touch-action:pan-y}
+:root{--swipe-row:#172040}
+.wrap.in-r{animation:inR .32s cubic-bezier(.2,.8,.2,1)}.wrap.in-l{animation:inL .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes inR{from{opacity:0;transform:translateX(30px)}}@keyframes inL{from{opacity:0;transform:translateX(-30px)}}
+.row,.btn,.tab,.chip{transition:transform .12s,background .15s}.row:active{transform:scale(.985)}
+.toast .undo{margin-left:12px;font-weight:700;color:#3d5bd9;text-decoration:underline;pointer-events:auto}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -274,7 +281,7 @@ function kmPerMonth() {
 /* ---------- piezas de interfaz ---------- */
 const plateHtml = () => "";
 function partRow({ p, s }) {
-  return `<button class="row" data-part="${p.id}"><span class="ico">${p.ic}</span><span class="row-m"><span class="row-t">${esc(p.n)}</span><span class="row-s">${esc(s.txt || '')}</span>
+  return `<button class="row" data-part="${p.id}" ${p.use ? 'data-swipe-r="✅ Cambiado hoy"' : ''}><span class="ico">${p.ic}</span><span class="row-m"><span class="row-t">${esc(p.n)}</span><span class="row-s">${esc(s.txt || '')}</span>
     ${s.st !== 'watch' && s.st !== 'unk' ? `<span class="bar"><i style="width:${Math.round(s.pct * 100)}%;background:${COL[s.st]}"></i></span>` : ''}</span><span class="pill ${s.st}">${s.label}</span></button>`;
 }
 const src = ids => ids && ids.length ? `<p class="src">Fuentes: ${ids.map(i => FUENTES[i] ? `<a href="${FUENTES[i].u}">${esc(FUENTES[i].n)}</a>` : '').join(' · ')}</p>` : '';
@@ -308,7 +315,7 @@ const VIEWS = {
     const ty = L.filter(l => (l.date || '').startsWith(year)).reduce((t, l) => t + (+l.cost || 0), 0);
     return `<h1>Historial</h1><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b class="num">${nf.format(ty)} €</b><span>Gastado en ${year}</span></div><div class="stat"><b class="num">${nf.format(total)} €</b><span>Total registrado</span></div></div>
       <button class="btn acc block" data-act="log-new">＋ Registrar un cambio</button>
-      ${L.length ? `<div class="list">${L.map(l => { const p = byId(l.part); return `<button class="row" data-log="${l.id}"><span class="ico">${p ? p.ic : '🧾'}</span><span class="row-m"><span class="row-t">${esc(p ? p.n : l.title || 'Otro')}</span><span class="row-s">${fdate(l.date)} · ${fk(l.km)}${l.where ? ' · ' + esc(l.where) : ''}</span></span><span class="num">${l.cost ? nf.format(l.cost) + ' €' : ''}</span></button>`; }).join('')}</div>`
+      ${L.length ? `<div class="list">${L.map(l => { const p = byId(l.part); return `<button class="row" data-log="${l.id}" data-swipe-l="🗑 Borrar"><span class="ico">${p ? p.ic : '🧾'}</span><span class="row-m"><span class="row-t">${esc(p ? p.n : l.title || 'Otro')}</span><span class="row-s">${fdate(l.date)} · ${fk(l.km)}${l.where ? ' · ' + esc(l.where) : ''}</span></span><span class="num">${l.cost ? nf.format(l.cost) + ' €' : ''}</span></button>`; }).join('')}</div>`
         : '<div class="card muted">Aún no has registrado ningún cambio. Cada vez que hagas algo al coche, apúntalo aquí: la app recalcula el próximo cambio.</div>'}`;
   },
   faults() {
@@ -332,8 +339,10 @@ const VIEWS = {
   },
 };
 
+const TAB_ORDER = ['home', 'parts', 'log', 'faults', 'more']; let lastTab = 'home';
 function render() {
-  $('#view').innerHTML = `<div class="wrap">${VIEWS[tab]()}</div>`;
+  const anim = tab !== lastTab, dir = TAB_ORDER.indexOf(tab) >= TAB_ORDER.indexOf(lastTab) ? 'in-r' : 'in-l'; lastTab = tab;
+  $('#view').innerHTML = `<div class="wrap ${anim ? dir : ''}">${VIEWS[tab]()}</div>`;
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.tab === tab ? 'page' : 'false'));
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; tab = b.dataset.tab; render(); $('#view').scrollTop = 0; });
@@ -491,6 +500,67 @@ function wizard(i) {
 }
 
 /* ---------- arranque ---------- */
+/* ---------- Deslizar filas (estilo iOS) ----------
+   Cualquier elemento con data-swipe-l="Texto" (deslizar a la izquierda) o data-swipe-r="Texto" (a la derecha)
+   se puede arrastrar con el dedo. La acción va pegada a la propia fila (un hijo fuera de su caja) y aparece
+   con su color (data-swipe-lc / data-swipe-rc) según se desliza. Al soltar pasado el umbral se lanza el evento
+   «swipe» (detail: 'l' o 'r') sobre la fila y se anula el toque. */
+(function () {
+  const TH = 88;
+  let el = null, x0 = 0, y0 = 0, dx = 0, lock = null, act = null, armed = false, side = '';
+  const buzz = () => { try { const H = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics; if (H) H.impact({ style: 'MEDIUM' }); } catch (e) { } };
+  const clean = (e, a) => { e.style.transition = ''; e.style.transform = ''; e.style.position = ''; e.style.overflow = ''; if (a) a.remove(); };
+  const reset = () => { if (!el) return; const e = el, a = act; e.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1)'; e.style.transform = ''; setTimeout(() => clean(e, a), 290); el = null; act = null; };
+  document.addEventListener('touchstart', e => {
+    const r = e.target.closest('[data-swipe-l],[data-swipe-r]'); if (!r || e.touches.length > 1) return;
+    el = r; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; lock = null; armed = false; side = '';
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!el) return; const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+    if (lock === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) lock = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
+    if (lock !== 'x') { if (lock === 'y') el = null; return; }
+    e.preventDefault();
+    const s = mx < 0 ? 'l' : 'r', key = 'swipe' + s.toUpperCase(), ok = !!el.dataset[key];
+    dx = ok ? mx : mx * .12;
+    if (s !== side) {
+      side = s; if (act) act.remove(); act = null;
+      if (ok) {
+        el.style.position = 'relative'; el.style.overflow = 'visible';
+        act = document.createElement('span'); act.className = 'swipe-act';
+        const col = el.dataset[key + 'c'] || (s === 'l' ? '#ff5f6d' : '#2ecc9a');
+        act.style.cssText = `position:absolute;top:0;bottom:0;width:100vw;${s === 'r' ? 'right:100%;justify-content:flex-end' : 'left:100%;justify-content:flex-start'};display:flex;align-items:center;padding:0 22px;background:${col};color:#fff;font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none;transition:font-size .15s`;
+        act.textContent = el.dataset[key]; el.appendChild(act);
+      }
+    }
+    const now = ok && Math.abs(dx) > TH; if (now !== armed) { armed = now; if (now) buzz(); if (act) act.style.fontSize = now ? '16.5px' : '15px'; }
+    el.style.transform = `translateX(${dx}px)`;
+  }, { passive: false });
+  document.addEventListener('touchend', () => {
+    if (!el) return; const r = el;
+    if (lock === 'x') r._swiped = Date.now();
+    if (lock === 'x' && armed) {
+      const s = dx < 0 ? 'l' : 'r', a = act; r.style.transition = 'transform .22s ease-in'; r.style.transform = `translateX(${s === 'l' ? '-100%' : '100%'})`;
+      el = null; act = null;
+      setTimeout(() => { clean(r, a); r.dispatchEvent(new CustomEvent('swipe', { detail: s, bubbles: true })); }, 220);
+    } else reset();
+  });
+  // un deslizamiento no debe abrir la fila
+  document.addEventListener('click', e => { const r = e.target.closest('[data-swipe-l],[data-swipe-r]'); if (r && r._swiped && Date.now() - r._swiped < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
+})();
+
+function undoToast(msg, fn) { toast(msg); const t = $('#toast'), b = document.createElement('button'); b.className = 'undo'; b.textContent = 'Deshacer'; t.appendChild(b); t.style.pointerEvents = 'auto';
+  b.onclick = () => { fn(); t.classList.remove('show'); }; clearTimeout(toast.t); toast.t = setTimeout(() => { t.classList.remove('show'); t.style.pointerEvents = 'none'; }, 5000); }
+document.addEventListener('swipe', e => {
+  const r = e.target;
+  if (r.dataset.part) {
+    const id = r.dataset.part, prev = S.parts[id], o = { id: uid(), part: id, title: '', date: today(), km: S.km, cost: 0, where: '', note: 'Apuntado deslizando' };
+    S.logs.push(o); S.parts[id] = { km: S.km, date: today() }; save(); render();
+    undoToast(`${byId(id).n}: cambiado a ${fk(S.km)}`, () => { S.logs = S.logs.filter(x => x.id !== o.id); if (prev) S.parts[id] = prev; else delete S.parts[id]; save(); render(); });
+  } else if (r.dataset.log) {
+    const l = S.logs.find(x => x.id === r.dataset.log); if (!l) return; const i = S.logs.indexOf(l);
+    S.logs.splice(i, 1); save(); render(); undoToast('Registro borrado', () => { S.logs.splice(i, 0, l); save(); render(); });
+  }
+});
 if (!S.kmLog.length) setKm(S.km);
 render();
 if (!S.done) wizard(0);

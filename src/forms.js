@@ -626,7 +626,12 @@ function pickFile(accept, cb) { const f = $('#fileIn'); f.value = ''; f.accept =
 
 /* ---------- acciones ---------- */
 function arm(el) {
-  const html = el.innerHTML; el.classList.add('armed'); el.textContent = el.dataset.confirm;
+  // Primer toque: el botón pasa a rojo con «Pulsa otra vez para confirmar» y una barra de cuenta atrás.
+  // El texto largo de data-confirm ya no se mete en el botón (no cabía): se muestra como aviso.
+  const html = el.innerHTML; el.classList.add('armed');
+  const lbl = el.offsetWidth < 150 ? '¿Seguro?' : el.offsetWidth < 230 ? 'Pulsa para confirmar' : 'Pulsa otra vez para confirmar';
+  el.innerHTML = `<span class="arm-t">${svg('trash')}${lbl}</span><i class="arm-bar"></i>`;
+  try { const H = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics; if (H) H.impact({ style: 'MEDIUM' }); } catch (e) { }
   clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.innerHTML = html; }, 3500);
 }
 function confirmSheet(title, text, btn, fn, danger = true) {
