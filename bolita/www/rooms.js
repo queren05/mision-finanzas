@@ -69,3 +69,7 @@ const SLOTS = {
   play: { techo: [200, 190, 50], pared: [100, 330, 60], estante: [296, 208, 40], sueloI: [78, 440, 78], sueloD: [322, 450, 70] },
   closet: { techo: [200, 190, 50], pared: [300, 380, 58], estante: [110, 100, 38], sueloI: [78, 440, 78], sueloD: [322, 450, 70] },
 };
+
+// Fondos pintados (ilustraciones de Gemini). Si una habitación tiene imagen aquí, sustituye al dibujo SVG.
+// p. ej. kitchen: 'rooms/cocina.jpg' (vertical, 1080x1920 o similar).
+const ROOM_IMG = {};

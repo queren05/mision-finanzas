@@ -1,0 +1,106 @@
+/* Tema «juego» de Chibimon: sustituye el aspecto pastel por el de un juego de móvil acabado.
+   - HUD flotante en paneles oscuros translúcidos (se leen sobre cualquier fondo).
+   - Botones "gorditos" con relieve (sombra dura inferior) que se hunden al pulsar.
+   - Tipografía de juego: Fredoka (títulos, cifras, botones) + Nunito (texto).
+   - Colores intensos: naranja (acción), azul, verde, morado, dorado (monedas).
+   Se carga después del <style> de index.html y lo sobrescribe. */
+:root{
+  --ink:#2a1a4a; --ink2:#6f5f92; --panel:rgba(34,22,74,.74); --panel-b:rgba(255,255,255,.16);
+  --orange:#ff8a1f; --orange-d:#d45f00; --blue:#2f8cff; --blue-d:#1a5fd1; --green:#2ec27e; --green-d:#1b8f5a;
+  --purple:#8b5cff; --purple-d:#5b33c9; --pink:#ff4f9a; --pink-d:#c92a6f; --gold:#ffc21a;
+  --grad:linear-gradient(180deg,#ffb347,#ff7a00);
+  --f:"Nunito",ui-rounded,system-ui,-apple-system,sans-serif; --fd:"Fredoka","Nunito",ui-rounded,system-ui,sans-serif;
+}
+html,body{font-family:var(--f);color:var(--ink)}
+#room svg{filter:saturate(1.35) contrast(1.06)}
+.ic{width:24px;height:24px;display:block}
+.coin-ic{width:22px;height:22px;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+
+/* ---------- HUD ---------- */
+.top{margin:0 10px;padding:6px;border-radius:24px;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:8px}
+.idcard{flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border-radius:22px;background:var(--panel);border:1.5px solid var(--panel-b);box-shadow:0 8px 20px rgba(20,10,50,.3);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:#fff;text-align:left}
+.avatar{width:50px;height:50px;background:radial-gradient(circle at 50% 35%,#fff,#e7ddff);box-shadow:0 0 0 3px #fff,0 4px 10px rgba(0,0,0,.3)}
+.avatar img{inset:3px;width:44px;height:44px}
+.avatar .lv{background:linear-gradient(180deg,#ffd24a,#ff9a00);color:#4a2500;font:700 12px/1 var(--fd);border:2px solid #fff;right:-8px;bottom:-6px;min-width:28px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.who b{font:600 18px/1.1 var(--fd);color:#fff;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.who small{color:rgba(255,255,255,.72);font-weight:700}
+.xp{height:8px;background:rgba(0,0,0,.35);border-radius:5px;box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+.xp i{background:linear-gradient(180deg,#9df06a,#2ec27e);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.coins{background:var(--panel)!important;border:1.5px solid var(--panel-b);color:#fff;font:600 17px/1 var(--fd);padding:5px 5px 5px 10px;gap:6px;box-shadow:0 8px 20px rgba(20,10,50,.3)!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.coins .plus{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#6fe06f,#22a84a);box-shadow:0 3px 0 #16783a;color:#fff;font:700 20px/1 var(--fd)}
+
+/* necesidades: insignias redondas que se llenan como un vaso */
+.needs{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;margin:4px 12px 0;padding:0;gap:10px}
+.need{color:#fff;font:600 11px/1 var(--fd);text-shadow:0 1px 2px rgba(0,0,0,.6);gap:4px}
+.badge{position:relative;width:52px;height:52px;border-radius:50%;overflow:hidden;background:var(--panel);border:3px solid #fff;box-shadow:0 5px 12px rgba(20,10,50,.35);display:grid;place-items:center;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.badge .lvl{position:absolute;left:0;right:0;bottom:0;transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.badge .lvl::before{content:"";position:absolute;left:-10%;right:-10%;top:-4px;height:8px;border-radius:50%;background:rgba(255,255,255,.35)}
+.badge .ic{position:relative;width:26px;height:26px;color:#fff;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35))}
+.need.low .badge{animation:wig 1.2s infinite;border-color:#ff5d6c}
+
+/* ---------- escena ---------- */
+.bubble{background:#fff!important;border:0!important;color:var(--ink);font:600 15px/1.2 var(--fd);box-shadow:0 8px 20px rgba(0,0,0,.2)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:10px 16px}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#fff}
+.pet .shadowE{background:radial-gradient(closest-side,rgba(30,10,40,.38),transparent)}
+
+/* ---------- bandeja ---------- */
+.tray{background:#fff!important;border:0!important;border-radius:28px;box-shadow:0 -2px 0 rgba(255,255,255,.6) inset,0 14px 30px rgba(20,10,50,.28)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:12px}
+.tray-h b{font:600 18px/1.1 var(--fd);color:var(--ink);display:flex;align-items:center;gap:7px}
+.tray-h b .ic{width:22px;height:22px;color:var(--purple)}
+.item{background:linear-gradient(180deg,#f7f3ff,#ebe4ff);border:0;box-shadow:0 4px 0 #d4c9f2,0 6px 10px rgba(60,30,120,.12);border-radius:18px}
+.item .p{color:var(--ink2);font:600 11px/1 var(--fd)}
+.item .q{background:linear-gradient(180deg,#ff6f6f,#e23d5b);font:700 11px/1.3 var(--fd);border:2px solid #fff;top:-6px;right:-6px;padding:1px 6px}
+.item:active{transform:translateY(3px);box-shadow:0 1px 0 #d4c9f2}
+
+/* ---------- botones con relieve ---------- */
+.btn{font:600 16px/1 var(--fd);letter-spacing:.01em;border:0;border-radius:18px;background:linear-gradient(180deg,#ffffff,#eee9fb);color:var(--ink);box-shadow:0 5px 0 #cfc5ea,0 8px 14px rgba(40,20,90,.16);transition:transform .08s,box-shadow .08s}
+.btn .ic{width:22px;height:22px}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #cfc5ea,0 2px 6px rgba(40,20,90,.16)}
+.btn.acc{background:linear-gradient(180deg,#ffb347,#ff7a00);color:#fff;text-shadow:0 2px 0 rgba(160,60,0,.45);box-shadow:0 5px 0 var(--orange-d),0 10px 18px rgba(255,120,0,.35)}
+.btn.acc:active{box-shadow:0 1px 0 var(--orange-d)}
+.btn.blue{background:linear-gradient(180deg,#5fb0ff,#2f8cff);color:#fff;text-shadow:0 2px 0 rgba(0,60,160,.4);box-shadow:0 5px 0 var(--blue-d),0 10px 18px rgba(47,140,255,.3)}
+.btn.green{background:linear-gradient(180deg,#5de39a,#2ec27e);color:#fff;text-shadow:0 2px 0 rgba(0,100,50,.4);box-shadow:0 5px 0 var(--green-d),0 10px 18px rgba(46,194,126,.3)}
+.btn.purple{background:linear-gradient(180deg,#a98bff,#8b5cff);color:#fff;text-shadow:0 2px 0 rgba(60,20,160,.4);box-shadow:0 5px 0 var(--purple-d),0 10px 18px rgba(139,92,255,.3)}
+.btn.pink{background:linear-gradient(180deg,#ff7fb8,#ff4f9a);color:#fff;text-shadow:0 2px 0 rgba(160,20,80,.4);box-shadow:0 5px 0 var(--pink-d),0 10px 18px rgba(255,79,154,.3)}
+.btn.sm{font-size:14px;min-height:40px;border-radius:14px}
+.btn.big{min-height:56px;font-size:18px}
+.game{background:linear-gradient(180deg,#fff,#f4efff);border:0;box-shadow:0 4px 0 #ddd3f5,0 6px 12px rgba(60,30,120,.1);border-radius:20px}
+.game b{font:600 14.5px/1.1 var(--fd)}
+.game .e{border-radius:14px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08)}
+
+/* ---------- barra de habitaciones ---------- */
+.nav{background:var(--panel)!important;border:1.5px solid var(--panel-b)!important;box-shadow:0 10px 26px rgba(20,10,50,.35)!important;padding:7px;border-radius:30px;gap:4px}
+.nav button{height:56px;border-radius:20px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:600 10px/1 var(--fd);opacity:.75;transition:transform .2s,opacity .2s,background .2s}
+.nav button .disc{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.nav button .ic{width:21px;height:21px;color:#fff}
+.nav button[aria-current="true"]{opacity:1;background:rgba(255,255,255,.14)!important;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25)!important;transform:translateY(-2px)}
+.nav .dot{top:4px;right:18%;border-color:var(--panel)}
+
+/* ---------- hojas ---------- */
+.sheet{background:#fff!important;border:0!important;box-shadow:0 20px 50px rgba(20,10,50,.35)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-top:0;overflow-x:hidden}
+.sheet h2{margin:0 -16px 12px;padding:16px 16px 14px;background:linear-gradient(180deg,#8b5cff,#6a3ee8);color:#fff;font:600 21px/1.1 var(--fd);border-radius:0;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.sheet h2 .hint{color:rgba(255,255,255,.85)}
+.sheet h2 .coins{box-shadow:none!important}
+.tabsx button{background:#f1ecff;border:0;font:600 14px/1 var(--fd);color:var(--ink2);box-shadow:0 3px 0 #d8cff3}
+.tabsx button[aria-pressed="true"]{background:linear-gradient(180deg,#ffb347,#ff7a00);color:#fff;box-shadow:0 3px 0 var(--orange-d)}
+.shop{background:linear-gradient(180deg,#faf8ff,#efe9ff);border:0;box-shadow:0 4px 0 #d9cff4;border-radius:18px}
+.shop .p{color:var(--orange-d);font:700 13px/1 var(--fd)}
+.shop.eq{background:linear-gradient(180deg,#e9fff2,#c9f5dc);box-shadow:0 4px 0 #8fdcb2}
+.shop.own{box-shadow:0 4px 0 #b8e6cc}
+.sec{font:600 14px/1 var(--fd);color:var(--purple);text-transform:uppercase;letter-spacing:.06em}
+.rw{background:#f7f4ff;box-shadow:0 3px 0 #e2daf7}
+.rw .l{background:linear-gradient(180deg,#ffb347,#ff7a00);font-family:var(--fd)}
+.toast{background:rgba(34,22,74,.92)!important;color:#fff;font:600 15px/1.2 var(--fd);border:1.5px solid rgba(255,255,255,.2)!important}
+.chip{background:#f1ecff;font-family:var(--fd);font-weight:600}
+#stage h1{font-family:var(--fd);font-weight:700;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#fff;text-shadow:0 3px 0 rgba(90,40,160,.55),0 0 24px rgba(139,92,255,.5)}
+#stage{background:radial-gradient(100% 60% at 50% 0%,#b58cff 0%,transparent 70%),radial-gradient(90% 60% at 50% 100%,#ff9ec8 0%,transparent 70%),linear-gradient(180deg,#6a3ee8,#3a1f8f)!important}
+#stage .sub,#stage .hint{color:rgba(255,255,255,.85)}
+.ln{background:rgba(255,255,255,.95)!important;box-shadow:0 5px 0 rgba(0,0,0,.18)!important}
+.ln b{font:600 17px/1.2 var(--fd)}
+.ln[aria-pressed="true"]{box-shadow:0 0 0 4px var(--gold),0 5px 0 rgba(0,0,0,.18)!important}
+.gover .card{background:#fff!important}
+.gover .big{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--orange);font-family:var(--fd)}
+.gover h3{font-family:var(--fd)}
+.ghud{background:var(--panel)!important;color:#fff;font-family:var(--fd)}
+.gstart{background:var(--panel)!important;color:#fff;font-family:var(--fd)}
+input.name-in{font-family:var(--fd);border:2px solid #e2daf7;background:#f7f4ff}

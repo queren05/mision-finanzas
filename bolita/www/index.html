@@ -218,15 +218,18 @@ input.name-in{width:100%;font:900 20px var(--f);padding:13px 16px;border-radius:
 .pad.lit{transform:scale(1.07);filter:brightness(1.25) saturate(1.3);box-shadow:0 0 0 6px rgba(255,255,255,.8),0 0 40px rgba(255,255,255,.9)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div id="room"></div>
 <div class="dark" id="dark"></div>
 <div id="app">
   <header class="top glass">
-    <button class="avatar" id="avatarBtn" aria-label="Ficha"><span id="avatar"></span><span class="lv" id="lvl">1</span></button>
-    <button class="who" id="whoBtn"><b id="name">—</b><small id="kind"></small><div class="xp"><i id="xpBar"></i></div></button>
-    <div class="coins" id="coins">🪙 <span id="coinN">0</span></div>
+    <div class="idcard"><button class="avatar" id="avatarBtn" aria-label="Ficha"><span id="avatar"></span><span class="lv" id="lvl">1</span></button>
+    <button class="who" id="whoBtn"><b id="name">—</b><small id="kind"></small><div class="xp"><i id="xpBar"></i></div></button></div>
+    <div class="coins" id="coins"><span id="coinIc"></span><span id="coinN">0</span><button class="plus" id="coinPlus" aria-label="Tienda">+</button></div>
   </header>
   <div class="needs glass" id="needs"></div>
   <div class="scene" id="scene">
@@ -235,13 +238,8 @@ input.name-in{width:100%;font:900 20px var(--f);padding:13px 16px;border-radius:
     <div class="bubble glass" id="bubble"></div>
   </div>
   <div class="tray glass" id="tray"></div>
-  <nav class="nav glass" id="nav">
-    <button data-room="kitchen" aria-label="Cocina">🍽️<i class="dot"></i></button>
-    <button data-room="bath" aria-label="Baño">🛁<i class="dot"></i></button>
-    <button data-room="bed" aria-label="Dormitorio">🌙<i class="dot"></i></button>
-    <button data-room="play" aria-label="Juegos">🎮<i class="dot"></i></button>
-    <button data-room="closet" aria-label="Armario">🎀<i class="dot"></i></button>
-  </nav>
+  <nav class="nav glass" id="nav"></nav>
+
 </div>
 <div class="fx" id="fx"></div>
 <div class="sheet-wrap" id="sheetWrap"><div class="sheet glass" id="sheet"></div></div>
@@ -255,6 +253,7 @@ input.name-in{width:100%;font:900 20px var(--f);padding:13px 16px;border-radius:
   <div class="gstart glass" id="gStart"></div>
   <div class="gover" id="gOver"><div class="card glass"><div class="art" id="goArt"></div><h3 id="goTitle">¡Fin!</h3><div class="big" id="goScore">0</div><div id="goInfo" class="hint"></div><div class="row" style="width:100%"><button class="btn" id="goExit">Salir</button><button class="btn acc" id="goAgain">Otra vez</button></div></div></div>
 </div>
+<script src="icons.js"></script>
 <script src="chars.js"></script>
 <script src="sprites.js"></script>
 <script src="rooms.js"></script>
@@ -367,11 +366,16 @@ document.addEventListener('pointermove', e => {
 /* ---------- HUD ---------- */
 const NEEDS = [['food', '🍔', 'Comida'], ['energy', '⚡', 'Energía'], ['fun', '🎈', 'Diversión'], ['clean', '🫧', 'Higiene']];
 const NCOL = { food: '#ff8a4c', energy: '#ffc93c', fun: '#ff5fa2', clean: '#4db8ff' };
-$('#needs').innerHTML = NEEDS.map(([k, e, l]) => `<div class="need" id="n_${k}"><div class="ring"><svg viewBox="0 0 44 44"><circle class="bg" cx="22" cy="22" r="18.5"/><circle class="fg" cx="22" cy="22" r="18.5" stroke-dasharray="116.2"/></svg>${e}</div>${l}</div>`).join('');
+const NICO = { food: 'food', energy: 'energy', fun: 'fun', clean: 'clean' };
+const NGRAD = { food: ['#ffb347', '#ff7a00'], energy: ['#ffe066', '#f5b800'], fun: ['#ff85c0', '#ff3d8f'], clean: ['#7cc8ff', '#2f8cff'] };
+$('#needs').innerHTML = NEEDS.map(([k, e, l]) => `<div class="need" id="n_${k}"><div class="badge"><i class="lvl" style="background:linear-gradient(180deg,${NGRAD[k][0]},${NGRAD[k][1]})"></i>${ico(NICO[k])}</div>${l}</div>`).join('');
+const ROOMS_NAV = [['kitchen', 'kitchen', 'Cocina', '#ff8a1f'], ['bath', 'bath', 'Baño', '#2f8cff'], ['bed', 'bed', 'Dormir', '#8b5cff'], ['play', 'play', 'Juegos', '#2ec27e'], ['closet', 'closet', 'Armario', '#ff4f9a']];
+$('#nav').innerHTML = ROOMS_NAV.map(([r, i, l, c]) => `<button data-room="${r}" aria-label="${l}"><span class="disc" style="background:${c}">${ico(i)}</span>${l}<i class="dot"></i></button>`).join('');
+$('#coinIc').innerHTML = COIN;
 const xpNeed = () => 30 + S.lvl * 12;
 function nextEvo() { return S.lvl < STAGE[1] ? STAGE[1] : S.lvl < STAGE[2] ? STAGE[2] : null; }
 function renderHud() {
-  for (const [k] of NEEDS) { const v = S[k], el = $('#n_' + k), c = el.querySelector('.fg'); c.style.strokeDashoffset = 116.2 * (1 - v / 100); c.style.stroke = v > 25 ? NCOL[k] : '#ff5d6c'; el.classList.toggle('low', v < 20); }
+  for (const [k] of NEEDS) { const v = S[k], el = $('#n_' + k); el.querySelector('.lvl').style.height = Math.max(4, v) + '%'; el.classList.toggle('low', v < 20); }
   $('#coinN').textContent = Math.floor(S.coins); $('#lvl').textContent = S.lvl; $('#name').textContent = nameNow();
   const ne = nextEvo();
   $('#kind').textContent = `${LINES[S.line || 'hoja'].e} ${CH().t} · ${ne ? 'evoluciona al nv. ' + ne : S.lvl >= MAX_LV ? '¡nivel máximo!' : 'forma final'}`;
@@ -423,7 +427,8 @@ function roomHtml(r) {
   const deco = Object.entries(SLOTS[r]).map(([slot, [x, y, s]]) => { const id = (S.place[r] || {})[slot]; const d = id && byId(DECOR, id); if (!d) return '';
     const cord = slot === 'techo' ? `<path d="M${x} 0 V${y - s * .45}" stroke="#8a6f93" stroke-width="2.5"/>` : '';
     return `${cord}<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle" dominant-baseline="middle" style="filter:drop-shadow(0 6px 5px rgba(0,0,0,.2))">${d.e}</text>`; }).join('');
-  return `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">${ROOM_SVG[r]}${deco}</svg>`;
+  const bg = (typeof ROOM_IMG !== 'undefined' && ROOM_IMG[r]) ? `<image href="${ROOM_IMG[r]}" x="0" y="0" width="400" height="700" preserveAspectRatio="xMidYMax slice"/>` : ROOM_SVG[r];
+  return `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">${bg}${deco}</svg>`;
 }
 function goRoom(r) {
   S.room = r; save(); $('#room').innerHTML = roomHtml(r);
@@ -438,28 +443,28 @@ function renderTray() {
   const T = $('#tray');
   if (S.room === 'kitchen') {
     const own = EDIBLE.filter(f => S.inv[f.id] > 0);
-    T.innerHTML = `<div class="tray-h"><b>🧺 Nevera</b><button class="btn sm acc" id="shopBtn">🛍️ Tienda</button></div>
+    T.innerHTML = `<div class="tray-h"><b>${ico('food')}Nevera</b><button class="btn sm acc" id="shopBtn">${ico('shop')}Tienda</button></div>
       <div class="scroller">${own.length ? own.map(f => `<div class="item" data-food="${f.id}"><span class="q">${S.inv[f.id]}</span><span class="e">${f.e}</span><span class="p">${esc(f.n)}</span></div>`).join('') : '<div class="hint" style="width:100%;padding:18px 0">La nevera está vacía. ¡A la tienda! 🛍️</div>'}</div>`;
     $('#shopBtn').onclick = () => openShop('food'); T.querySelectorAll('.item').forEach(bindFood);
   } else if (S.room === 'bath') {
-    T.innerHTML = `<div class="tray-h"><b>🛁 Baño</b><span>${tool === 'soap' ? 'Frota con el dedo' : 'Coge el jabón y frota'}</span></div>
-      <div class="row"><button class="btn big ${tool === 'soap' ? 'acc' : ''}" id="soapBtn">🧼 Jabón</button><button class="btn big" id="showerBtn">🚿 Aclarar</button></div>`;
+    T.innerHTML = `<div class="tray-h"><b>${ico('bath')}Baño</b><span>${tool === 'soap' ? 'Frota con el dedo' : 'Coge el jabón y frota'}</span></div>
+      <div class="row"><button class="btn big ${tool === 'soap' ? 'pink' : ''}" id="soapBtn">${ico('soap')}Jabón</button><button class="btn big blue" id="showerBtn">${ico('shower')}Aclarar</button></div>`;
     $('#soapBtn').onclick = () => { tool = tool === 'soap' ? null : 'soap'; SFX.tap(); renderTray(); }; $('#showerBtn').onclick = shower;
   } else if (S.room === 'bed') {
-    T.innerHTML = `<div class="tray-h"><b>🌙 Dormitorio</b><span>${S.sleep ? 'Recuperando energía…' : 'Apaga la luz para dormir'}</span></div>
-      <button class="btn big ${S.sleep ? '' : 'acc'}" id="lampBtn">${S.sleep ? '💡 Encender la luz' : '🌙 Apagar la luz'}</button>`;
+    T.innerHTML = `<div class="tray-h"><b>${ico('bed')}Dormitorio</b><span>${S.sleep ? 'Recuperando energía…' : 'Apaga la luz para dormir'}</span></div>
+      <button class="btn big ${S.sleep ? 'acc' : 'purple'}" id="lampBtn">${S.sleep ? ico('lamp') + 'Encender la luz' : ico('moonf') + 'Apagar la luz'}</button>`;
     $('#lampBtn').onclick = toggleSleep;
   } else if (S.room === 'play') {
     const toys = TOYS.filter(t => S.toys.includes(t.id));
-    T.innerHTML = `<div class="tray-h"><b>🎮 Sala de juegos</b><button class="btn sm" id="toyShop">🧸 Juguetes</button></div>
+    T.innerHTML = `<div class="tray-h"><b>${ico('play')}Sala de juegos</b><button class="btn sm" id="toyShop">${ico('shop')}Juguetes</button></div>
       <div class="scroller">${toys.map(t => { const cd = (S.toyT[t.id] || 0) > Date.now(); return `<div class="item ${cd ? 'cool' : ''}" data-toy="${t.id}"><span class="e">${t.e}</span><span class="p">${esc(t.n)}</span></div>`; }).join('') || '<div class="hint" style="width:100%;padding:8px 0">Compra juguetes y juega con ellos aquí 🧸</div>'}</div>
-      <button class="btn big acc" id="gamesBtn">🕹️ Minijuegos</button>`;
+      <button class="btn big green" id="gamesBtn">${ico('games')}Minijuegos</button>`;
     T.querySelectorAll('[data-toy]').forEach(b => b.onclick = () => playToy(b.dataset.toy));
     $('#toyShop').onclick = () => openShop('toys'); $('#gamesBtn').onclick = openGames;
   } else {
-    T.innerHTML = `<div class="tray-h"><b>🎀 Armario</b><span>Todo sobre ${esc(nameNow())}</span></div>
-      <div class="row"><button class="btn sm" id="infoBtn">📋 Ficha</button><button class="btn sm" id="rwBtn">🎁 Premios</button><button class="btn sm" id="decBtn">🪴 Decorar</button></div>
-      <div class="row"><button class="btn sm ${S.lvl >= MAX_LV ? 'acc' : ''}" id="eggBtn" ${S.lvl >= MAX_LV ? '' : 'disabled'}>🥚 ${S.lvl >= MAX_LV ? 'Huevo nuevo' : 'Huevo al nv. ' + MAX_LV}</button><button class="btn sm" id="dexBtn">📖 Álbum</button><button class="btn sm" id="sndBtn" style="flex:.5">${S.sound ? '🔊' : '🔇'}</button></div>`;
+    T.innerHTML = `<div class="tray-h"><b>${ico('closet')}Armario</b><span>Todo sobre ${esc(nameNow())}</span></div>
+      <div class="row"><button class="btn sm blue" id="infoBtn">${ico('info')}Ficha</button><button class="btn sm acc" id="rwBtn">${ico('gift')}Premios</button><button class="btn sm green" id="decBtn">${ico('sofa')}Decorar</button></div>
+      <div class="row"><button class="btn sm ${S.lvl >= MAX_LV ? 'acc' : ''}" id="eggBtn" ${S.lvl >= MAX_LV ? '' : 'disabled'}>🥚 ${S.lvl >= MAX_LV ? 'Huevo nuevo' : 'Huevo al nv. ' + MAX_LV}</button><button class="btn sm purple" id="dexBtn">${ico('book')}Álbum</button><button class="btn sm" id="sndBtn" style="flex:.45">${ico(S.sound ? 'sound' : 'mute')}</button></div>`;
     $('#infoBtn').onclick = openInfo; $('#rwBtn').onclick = openRewards; $('#decBtn').onclick = openDecorate; $('#dexBtn').onclick = openDex;
     $('#sndBtn').onclick = () => { S.sound = !S.sound; save(); renderTray(); };
     $('#eggBtn').onclick = () => { if (S.lvl < MAX_LV) return; openSheet(`<h2>🥚 Huevo nuevo</h2><p class="hint" style="font-size:14px">${esc(nameNow())} se irá a vivir a tu álbum (podrás verlo siempre) y empezarás con un huevo nuevo. Tus monedas, comida, juguetes y decoración se quedan.</p><div class="row"><button class="btn big" data-close>Todavía no</button><button class="btn big acc" id="egGo">¡Vamos!</button></div>`, s => s.querySelector('#egGo').onclick = () => { S.team.push({ form: cur(), name: nameNow(), lvl: S.lvl, d: today() }); closeSheet(); openChoose(true); }); };
@@ -546,7 +551,7 @@ function openShop(tab = 'food') {
     if (tab === 'decor') return `<p class="hint">Se coloca en la habitación en la que estés (${{ kitchen: 'cocina', bath: 'baño', bed: 'dormitorio', play: 'sala de juegos', closet: 'armario' }[S.room]}). Luego puedes moverla en Armario → Decorar.</p><div class="grid">${DECOR.filter(d => !d.reward).map(d => { const own = S.decor.includes(d.id); return `<button class="shop ${own ? 'own' : ''}" data-dec="${d.id}"><span class="e">${d.e}</span><span class="s">${esc(d.n)}</span><span class="p">${own ? 'Tuyo' : '🪙 ' + d.p}</span></button>`; }).join('')}</div>`;
     return `<div class="grid">${TOYS.map(t => { const own = S.toys.includes(t.id); return `<button class="shop ${own ? 'own' : ''}" data-toy="${t.id}"><span class="e">${t.e}</span><span class="s">${esc(t.n)} · +${t.fun} 🎈</span><span class="p">${own ? 'Tuyo' : '🪙 ' + t.p}</span></button>`; }).join('')}</div><p class="hint">Los juguetes aparecen en la sala de juegos 🎮</p>`;
   };
-  const draw = () => openSheet(`<h2>🛍️ Tienda <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2><div class="tabsx">${T.map(([k, l]) => `<button data-t="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>${body()}<button class="btn big" style="width:100%;margin-top:14px" data-close>Listo</button>`, s => {
+  const draw = () => openSheet(`<h2>🛍️ Tienda <span class="coins">${COIN}${Math.floor(S.coins)}</span></h2><div class="tabsx">${T.map(([k, l]) => `<button data-t="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>${body()}<button class="btn big" style="width:100%;margin-top:14px" data-close>Listo</button>`, s => {
     s.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     s.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const f = byId(EDIBLE, b.dataset.buy); if (!buy(f.p)) return; S.inv[f.id] = (S.inv[f.id] || 0) + 1; save(); renderHud(); renderTray(); draw(); });
     s.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const d = byId(DECOR, b.dataset.dec); if (!S.decor.includes(d.id)) { if (!buy(d.p)) return; S.decor.push(d.id); confetti(); }
@@ -611,7 +616,7 @@ function rename() {
     <div class="row" style="margin-top:14px"><button class="btn big" data-close>Cancelar</button><button class="btn big acc" id="rnOk">Guardar</button></div>`,
     s => { const i = s.querySelector('#rn'); s.querySelector('#rnOk').onclick = () => { const v = i.value.trim(); S.name = v; S.named = !!v && v !== CH().n; save(); renderHud(); renderTray(); closeSheet(); say('¡Me encanta mi nombre! 💕'); hearts(); }; });
 }
-$('#avatarBtn').onclick = openInfo; $('#whoBtn').onclick = openInfo;
+$('#avatarBtn').onclick = openInfo; $('#whoBtn').onclick = openInfo; $('#coinPlus').onclick = () => openShop('food');
 
 /* ---------- elegir huevo y eclosionar ---------- */
 let chosen = '';

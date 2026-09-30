@@ -9,6 +9,27 @@ const BOX = {
   'fuego:1': [794, 22, 172, 156], 'fuego:2': [798, 176, 182, 168], 'fuego:3': [764, 342, 224, 214],
 };
 const SPRITES = {};
+// Criaturas en alta resolución (una imagen por criatura, fondo blanco liso). Si están aquí, se usan
+// en lugar del recorte de la lámina. p. ej. 'fuego:1': 'criaturas/fuego1.png'
+const HIRES = {};
+function loadHires(id, src) {
+  return new Promise(ok => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 900 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+      g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, w, h);
+      const d = g.getImageData(0, 0, w, h), p = d.data, seen = new Uint8Array(w * h), q = [];
+      const bg = i => { const r = p[i * 4], gg = p[i * 4 + 1], b = p[i * 4 + 2]; return Math.min(r, gg, b) > 225 && Math.max(r, gg, b) - Math.min(r, gg, b) < 22; };
+      for (let x = 0; x < w; x++) q.push(x, (h - 1) * w + x);
+      for (let y = 0; y < h; y++) q.push(y * w, y * w + w - 1);
+      while (q.length) { const i = q.pop(); if (seen[i]) continue; seen[i] = 1; if (!bg(i)) continue; p[i * 4 + 3] = 0; const x = i % w, y = (i / w) | 0;
+        if (x > 0) q.push(i - 1); if (x < w - 1) q.push(i + 1); if (y > 0) q.push(i - w); if (y < h - 1) q.push(i + w); }
+      g.putImageData(d, 0, 0); SPRITES[id] = c.toDataURL('image/png'); ok();
+    };
+    img.onerror = () => ok(); img.src = src;
+  });
+}
 // Amplía x3 con suavizado de alta calidad (en dos pasos) y aplica un filtro de enfoque suave (unsharp 3x3)
 // para que en pantallas Retina no se vea borroso. La lámina original es pequeña: con una de más resolución
 // basta con sustituir criaturas.jpg y ajustar BOX multiplicando por la escala.
@@ -57,7 +78,7 @@ function loadSprites(src = 'criaturas.jpg') {
         g.putImageData(d, 0, 0);
         SPRITES[id] = upscale(c, 3);
       }
-      ok();
+      Promise.all(Object.entries(HIRES).map(([id, f]) => loadHires(id, f))).then(ok);
     };
     img.onerror = ko; img.src = src;
   });
