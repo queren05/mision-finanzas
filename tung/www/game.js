@@ -15,16 +15,27 @@ const cv = $('#cv');
 const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: Q.has('shot') });
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(62, 1, .1, 700);
+// Resolución adaptativa: si el móvil no llega a ~40 fps, baja la resolución de dibujo un escalón (2 → 1,6 → 1,3 → 1).
+const PR_STEPS = [2, 1.6, 1.3, 1];
+let prLevel = 0;
+const pixelRatio = () => Math.min(devicePixelRatio || 1, save.opt.hq ? PR_STEPS[prLevel] : Math.min(1.25, PR_STEPS[prLevel]));
 function resize() {
-  if (typeof PN !== 'undefined' && PN) { PN.mat.uniforms.k.value = PA.mat.uniforms.k.value = 300 * Math.min(devicePixelRatio || 1, save.opt.hq ? 2 : 1.25); }
-  const w = innerWidth, h = innerHeight;
-  R.setPixelRatio(Math.min(devicePixelRatio || 1, save.opt.hq ? 2 : 1.25));
+  const w = innerWidth, h = innerHeight, pr = pixelRatio();
+  if (typeof PN !== 'undefined' && PN) { PN.mat.uniforms.k.value = PA.mat.uniforms.k.value = 300 * pr; }
+  R.setPixelRatio(pr);
   R.setSize(w, h, false);
   cam.aspect = w / h;
   // que los tres carriles quepan siempre de ancho: ~4,6 m visibles a la altura del jugador
   const hf = 2 * Math.atan(2.45 / 6.6), vf = 2 * Math.atan(Math.tan(hf / 2) / cam.aspect);
   cam.fov = clamp(THREE.MathUtils.radToDeg(vf), 55, 80);
   cam.updateProjectionMatrix();
+}
+let emaDt = 1 / 60, slowN = 0, warm = 0;
+function adapt(raw) {
+  if (Q.has('shot') || raw > .25 || raw <= 0) return;           // pruebas, pausas y cambios de pestaña no cuentan
+  if (++warm < 120) return;                                      // los primeros segundos (carga de modelos) tampoco
+  emaDt = emaDt * .94 + raw * .06;
+  if (emaDt > 1 / 38 && prLevel < PR_STEPS.length - 1) { if (++slowN > 50) { prLevel++; slowN = 0; emaDt = 1 / 50; warm = 60; resize(); } } else slowN = 0;
 }
 addEventListener('resize', resize);
 
@@ -143,25 +154,27 @@ const C = h => new THREE.Color(h);
 
 /* ---------- decorado instanciado que se recicla al pasar ---------- */
 class Scatter {
+  // Decorado repetido con mallas instanciadas. El grupo avanza entero (una sola transformación por frame) y solo se
+  // recalcula y se vuelve a subir a la GPU lo que sale por detrás y pasa delante.
   constructor(protos, count, place, span = 175, zMax = 14) {
-    this.group = new THREE.Group(); this.span = span; this.zMax = zMax; this.place = place;
-    this.kinds = protos.map(p => { p.updateMatrixWorld(true); const subs = []; p.traverse(o => { if (o.isMesh) subs.push({ o, rel: o.matrixWorld.clone() }); }); return { subs, items: [] }; });
-    this.items = [];
-    for (let i = 0; i < count; i++) { const kind = i % this.kinds.length, it = { kind, z: zMax - rnd(0, span) }; place(it, true); this.items.push(it); this.kinds[kind].items.push(it); }
+    this.group = new THREE.Group(); this.span = span; this.zMax = zMax; this.place = place; this.off = 0;
+    this.kinds = protos.map(p => { const b = M.bake(p); b.updateMatrixWorld(true); const subs = []; b.traverse(o => { if (o.isMesh) subs.push({ o, rel: o.matrixWorld.clone() }); }); return { subs, items: [] }; });
+    for (let i = 0; i < count; i++) { const kind = i % this.kinds.length, it = { kind, z: zMax - rnd(0, span) }; place(it, true); this.kinds[kind].items.push(it); }
     for (const k of this.kinds) k.meshes = k.subs.map(s => { const im = new THREE.InstancedMesh(s.o.geometry, M.bend(s.o.material), Math.max(1, k.items.length)); im.frustumCulled = false; this.group.add(im); return im; });
     this.tmp = new THREE.Matrix4(); this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); this.v = new THREE.Vector3(); this.s = new THREE.Vector3();
-    this.update(0);
+    this.kinds.forEach(k => { k.items.forEach((it, i) => this.write(k, it, i)); k.meshes.forEach(im => { im.instanceMatrix.needsUpdate = true; }); });
+  }
+  write(k, it, idx) {
+    const { m, q, e, v, s } = this;
+    e.set(0, it.ry || 0, 0); q.setFromEuler(e); v.set(it.x, it.y || 0, it.z); s.setScalar(it.s || 1); m.compose(v, q, s);
+    k.subs.forEach((sub, j) => k.meshes[j].setMatrixAt(idx, this.tmp.multiplyMatrices(m, sub.rel)));
   }
   update(d) {
-    const { m, q, e, v, s } = this;
+    this.off += d; this.group.position.z = this.off;
     for (const k of this.kinds) {
-      k.items.forEach((it, idx) => {
-        it.z += d; if (it.z > this.zMax) { it.z -= this.span; this.place(it, false); }
-        e.set(0, it.ry || 0, 0); q.setFromEuler(e); v.set(it.x, it.y || 0, it.z); s.setScalar(it.s || 1);
-        m.compose(v, q, s);
-        k.subs.forEach((sub, j) => { k.meshes[j].setMatrixAt(idx, this.tmp.multiplyMatrices(m, sub.rel)); });
-      });
-      for (const im of k.meshes) im.instanceMatrix.needsUpdate = true;
+      let dirty = false;
+      k.items.forEach((it, idx) => { if (it.z + this.off > this.zMax) { it.z -= this.span; this.place(it, false); this.write(k, it, idx); dirty = true; } });
+      if (dirty) for (const im of k.meshes) im.instanceMatrix.needsUpdate = true;
     }
   }
 }
@@ -214,23 +227,23 @@ function buildProps() {
   P.log = (len, h) => { const g = tg.clone(); g.scale.set(len / sz.x, h / sz.y, (h * 1.1) / sz.z); return g; };
   // árboles
   P.trees = [
-    ...treeProtos(A.arbA, 'RootNode', n => !/007/.test(n), [4.5, 7]),
-    ...treeProtos(A.arbB, 'RootNode', () => true, [4, 6.5]),
+    ...treeProtos(A.arbA, 'RootNode', n => !/007/.test(n), [4.5, 7]).slice(0, 6),
+    ...treeProtos(A.arbB, 'RootNode', () => true, [4, 6.5]).filter((_, i) => i % 3 === 0).slice(0, 5),
   ];
-  P.toon = treeProtos(A.arbC, 'RootNode', n => /^(Tree|FirTree)/.test(n), [3.5, 5.5]);
+  P.toon = treeProtos(A.arbC, 'RootNode', n => /^(Tree|FirTree)/.test(n), [3.5, 5.5]).filter((_, i) => i % 3 === 0).slice(0, 4);
   P.stumps = treeProtos(A.arbC, 'RootNode', n => /^Log/.test(n), [.6, .8]);
-  P.rocks = [0, 1, 2, 3].map(() => M.rock(1));
-  P.cars = [0, 1, 2, 3, 4, 5].map(i => M.car(undefined, false));
-  P.bus = M.car(0x2f7cff, true);
-  P.barrier3 = M.barrier(4.0); P.barrier1 = M.barrier(1.2);
-  P.over3 = M.overhead(3.9, .74);
-  P.cone = M.cone();
+  P.rocks = [0, 1, 2].map(() => M.bake(M.rock(1)));
+  P.cars = [0, 1, 2, 3, 4, 5].map(i => M.bake(M.car(undefined, false)));
+  P.bus = M.bake(M.car(0x2f7cff, true));
+  P.barrier3 = M.bake(M.barrier(4.0)); P.barrier1 = M.bake(M.barrier(1.2));
+  P.over3 = M.bake(M.overhead(3.9, .74));
+  P.cone = M.bake(M.cone());
   // barra alta de la selva: tronco sobre dos postes con lianas
   const bar = new THREE.Group(); const beam = P.log(4.8, .42); beam.position.y = .74; bar.add(beam);
   for (const s of [-1, 1]) { const post = P.log(1.2, .34); post.rotation.z = Math.PI / 2; post.position.set(s * 2.35, .6, 0); bar.add(post); }
   const vine = M.bend(M.std(0x2f8a3a, { roughness: .8 }));
   for (let i = 0; i < 7; i++) { const v = new THREE.Mesh(new THREE.CylinderGeometry(.025, .02, rnd(.25, .5), 5), vine); v.position.set(-1.9 + i * .63 + rnd(-.1, .1), .74 - .12, rnd(-.1, .1)); v.geometry.translate(0, -v.geometry.parameters.height / 2, 0); bar.add(v); const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(.07, 0), vine); lf.position.copy(v.position); lf.position.y -= v.geometry.parameters.height; bar.add(lf); }
-  P.jungleBar = bar;
+  P.jungleBar = M.bake(bar);
   // potenciadores: modelo 3D que gira y flota, con un aro de luz en el suelo
   P.orb = {};
   for (const u of UPGRADES) {
@@ -294,7 +307,7 @@ function buildSelva() {
     new Scatter(P.rocks.map(r => { const g = r.clone(); g.scale.setScalar(.45); return g; }), 70, (it) => { it.x = side() * rnd(2.55, 2.9); it.ry = rnd(0, 6); it.s = rnd(.6, 1.2); }),
     new Scatter([...P.trees, ...P.toon], 110, (it) => { it.x = side() * rnd(3.6, 22); it.ry = rnd(0, 6); it.s = rnd(.8, 1.35); }),
     new Scatter([0, 1, 2].map(i => M.bush([0x3f8f3a, 0x2f7a33, 0x5aa03a][i])), 60, (it) => { it.x = side() * rnd(3, 9); it.ry = rnd(0, 6); it.s = rnd(.7, 1.4); }),
-    new Scatter([0, 1, 2, 3, 4].map(() => M.flower()), 90, (it) => { it.x = side() * rnd(2.9, 8); it.ry = rnd(0, 6); it.s = rnd(.8, 1.5); }),
+    new Scatter([0, 1, 2].map(() => M.flower()), 90, (it) => { it.x = side() * rnd(2.9, 8); it.ry = rnd(0, 6); it.s = rnd(.8, 1.5); }),
   ];
   E.scatters.forEach((s, i) => { if (!Q.has('solo') || +Q.get('solo') === i) E.group.add(s.group); });
   // montañas al fondo
@@ -311,7 +324,7 @@ function buildSelva() {
     jump3: () => ({ mesh: P.log(4.6, .58), dz: .35 }),
     jump1: () => ({ mesh: P.log(1.3, .5), dz: .3 }),
     slide3: () => ({ mesh: P.jungleBar.clone(), dz: .25 }),
-    block: () => { const r = Math.random(); if (r < .65) { const g = P.rocks[Math.floor(rnd(0, 4))].clone(); g.scale.set(1.05, rnd(1.1, 1.5), 1); g.rotation.y = rnd(0, 6); return { mesh: g, dz: .55 }; } const s = P.stumps.length ? P.stumps[Math.floor(rnd(0, P.stumps.length))].clone() : P.rocks[0].clone(); s.scale.multiplyScalar(1.6); return { mesh: s, dz: .5 }; },
+    block: () => { const r = Math.random(); if (r < .65) { const g = P.rocks[Math.floor(rnd(0, P.rocks.length))].clone(); g.scale.set(1.05, rnd(1.1, 1.5), 1); g.rotation.y = rnd(0, 6); return { mesh: g, dz: .55 }; } const s = P.stumps.length ? P.stumps[Math.floor(rnd(0, P.stumps.length))].clone() : P.rocks[0].clone(); s.scale.multiplyScalar(1.6); return { mesh: s, dz: .5 }; },
   };
   scene.add(E.group); far.add(E.far);
   return E;
@@ -679,7 +692,7 @@ function frame(dt) {
 }
 function loop() {
   requestAnimationFrame(loop);
-  const dt = Math.min(1 / 30, clock.getDelta());
+  const raw = clock.getDelta(), dt = Math.min(1 / 30, raw); adapt(raw);
   if (mode === 'run' && G && !G.paused) { if (Q.has('auto')) autopilot(); step(dt); }
   if (!(G && G.paused)) frame(dt);
   R.render(scene, cam);
@@ -840,6 +853,19 @@ function hatShot(model, id) {
   });
 }
 // prueba: cuadrícula con cada gorro en cada gamba (?hatgrid=gafas,fiesta,...)
+// prueba: dónde están los ojos de cada modelo respecto a su centro (z negativo = hacia delante en el mundo)
+async function eyeCheck() {
+  const out = [];
+  for (const ch of CHARS) {
+    await player.ensure(ch.model); player.useNow(ch.model); posePlayer(); player.root.position.set(0, 0, 0); player.root.rotation.y = 0; player.root.updateMatrixWorld(true);
+    const body = new THREE.Box3().setFromObject(player.cur.sc, true), bc = body.getCenter(new THREE.Vector3()), eb = new THREE.Box3(); let n = 0;
+    player.cur.sc.traverse(o => { if (o.isMesh && /eye/i.test((o.material.name || '') + o.name)) { eb.expandByObject(o); n++; } });
+    const ec = eb.getCenter(new THREE.Vector3());
+    out.push(`${ch.model}: ojos(${n}) z=${ec.z.toFixed(2)} centro z=${bc.z.toFixed(2)} largo z=${(body.max.z - body.min.z).toFixed(2)}`);
+  }
+  document.title = 'LISTO ' + out.join(' | ');
+  const d = document.createElement('pre'); d.style.cssText = 'position:fixed;inset:0;z-index:99;background:#fff;color:#000;font:13px monospace;padding:10px;margin:0;white-space:pre-wrap'; d.textContent = out.join('\n'); document.body.appendChild(d);
+}
 async function hatGrid() {
   const hats = Q.get('hatgrid').split(','), box = document.createElement('div');
   box.style.cssText = 'position:fixed;inset:0;z-index:99;background:#222;display:grid;gap:2px;grid-template-columns:repeat(' + hats.length + ',1fr);align-content:start';
@@ -980,6 +1006,7 @@ function autopilot() {
   else if (ahead.type === 'slide' && ahead.z > -lead - .6 && g.slideT <= 0) slide();
 }
 function testShot() {
+  if (Q.has('eyes')) return eyeCheck();
   if (Q.has('hatgrid')) return hatGrid();
   const sim = +(Q.get('sim') || 0), wait = +(Q.get('shot') || 1);
   document.head.insertAdjacentHTML('beforeend', '<style>*{animation:none!important;transition:none!important}' + (Q.has('noui') ? '.panel,.screen,#hud{display:none!important}' : '') + '</style>');
@@ -987,11 +1014,14 @@ function testShot() {
     if (sim && G) { for (let i = 0; i < sim * 60 && mode === 'run'; i++) { if (Q.has('auto')) autopilot(); step(1 / 60); } for (let i = 0; i < 20; i++) frame(1 / 60); }
     if (Q.has('pwnear') && G) ['iman', 'salto', 'turbo'].forEach((id, i) => { const o = P.orb[id].clone(); o.position.set(LX[i], 0, -6); scene.add(o); G.obs.push({ type: 'pw', id, lanes: [i], z: -6, dz: .5, mesh: o, vz: 0 }); });
     if (Q.has('tungnear') && G) { G.stumble = 3; G.chase = 3.1; tung.root.position.x = G.px - 1.15; }
+    if (Q.has('noobs') && G) { G.obs.forEach(o => scene.remove(o.mesh)); G.obs = []; coins.length = 0; }
+    for (let i = 0; i < (+(Q.get('skip')) || 0); i++) env[curMap].update(1);
     for (let i = 0; i < (+(Q.get('frames')) || 120); i++) frame(1 / 60);
-    R.render(scene, cam);
+    R.render(scene, cam); const ri = R.info.render, rinfo = `calls=${ri.calls} tris=${ri.triangles} geo=${R.info.memory.geometries} tex=${R.info.memory.textures} `;
     const im = $('#shotImg'); im.src = cv.toDataURL('image/png'); im.style.display = 'block';
     if (Q.has('bbox')) { const bb = new THREE.Box3().setFromObject(player.cur.sc, true); document.title = `k=${player.cur.k.toFixed(3)} min=${bb.min.toArray().map(v => v.toFixed(2))} max=${bb.max.toArray().map(v => v.toFixed(2))} | `; if (player.hat) { const hb = new THREE.Box3().setFromObject(player.hat); document.title += `hat ${hb.min.toArray().map(v => v.toFixed(2))} ${hb.max.toArray().map(v => v.toFixed(2))} rel ${player.hoodRel.toArray().map(v => v.toFixed(3))} vis ${player.hat.parent && player.hat.parent.parent && player.hat.parent.parent.visible} | `; } }
     document.title = (document.title.startsWith('k=') ? document.title : '') + 'LISTO ' + (G ? `d=${Math.floor(G.dist)} ${mode} c=${G.coins}${G.log || ''}` : mode);
+    document.title = rinfo + document.title;
     const info = document.createElement('div'); info.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99;background:#fff;color:#000;font:11px monospace;padding:2px 4px'; info.textContent = document.title; document.body.appendChild(info);
   }, wait * 1000);
 }

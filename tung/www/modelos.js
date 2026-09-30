@@ -73,6 +73,35 @@ export function childrenOf(gltf, parentName) {
   return p ? p.children.map(c => c.name) : [];
 }
 
+/* ---------- fundir objetos en pocas mallas (menos llamadas de dibujo) ----------
+   Junta todas las piezas de un grupo que solo tienen color (sin textura) en una única malla con color por vértice.
+   Las piezas con textura o transparencia se quedan aparte. El grupo debe estar ya colocado (sin padres). */
+const BAKED = { front: null, double: null };
+const f32 = (a, n) => { const r = new Float32Array(a.count * n); for (let i = 0; i < a.count; i++) { r[i * n] = a.getX(i); r[i * n + 1] = a.getY(i); r[i * n + 2] = a.getZ(i); } return new THREE.BufferAttribute(r, n); };
+export function bake(root) {
+  BAKED.front = BAKED.front || bend(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .75 }));
+  BAKED.double = BAKED.double || bend(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .75, side: THREE.DoubleSide }));
+  root.updateMatrixWorld(true);
+  const out = new THREE.Group(), parts = { front: [], double: [] }, c = new THREE.Color();
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material], m0 = mats[0];
+    if (o.isSkinnedMesh || o.isInstancedMesh || mats.length > 1 || m0.map || m0.transparent || m0.vertexColors) {
+      const k = new THREE.Mesh(o.geometry.clone().applyMatrix4(o.matrixWorld), o.material); k.frustumCulled = o.frustumCulled; out.add(k); return;
+    }
+    let g = o.geometry.clone().applyMatrix4(o.matrixWorld); if (g.index) g = g.toNonIndexed();
+    const pos = f32(g.attributes.position, 3), ng = new THREE.BufferGeometry(); ng.setAttribute('position', pos);
+    if (g.attributes.normal) ng.setAttribute('normal', f32(g.attributes.normal, 3)); else ng.computeVertexNormals();
+    c.copy(m0.color); if (m0.emissive && m0.emissiveIntensity) { c.r = Math.min(1, c.r + m0.emissive.r * m0.emissiveIntensity * .6); c.g = Math.min(1, c.g + m0.emissive.g * m0.emissiveIntensity * .6); c.b = Math.min(1, c.b + m0.emissive.b * m0.emissiveIntensity * .6); }
+    if (m0.isMeshBasicMaterial) c.multiplyScalar(1.2);
+    const col = new Float32Array(pos.count * 3); for (let i = 0; i < pos.count; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+    ng.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    parts[m0.side === THREE.DoubleSide ? 'double' : 'front'].push(ng);
+  });
+  for (const k of ['front', 'double']) if (parts[k].length) out.add(new THREE.Mesh(mergeGeometries(parts[k]), BAKED[k]));
+  return out;
+}
+
 /* ---------- tono de la piel de la gamba ---------- */
 export const SKIN = { h: { value: 0 }, s: { value: 1 }, v: { value: 1 }, glow: { value: 0 }, rain: { value: 0 }, shine: { value: 0 }, t: { value: 0 } };
 const SKIN_GLSL = `uniform float uH; uniform float uS; uniform float uV; uniform float uGlow; uniform float uRain; uniform float uShine; uniform float uT;
@@ -106,55 +135,89 @@ function skinPatch(m) {
 
 /* ---------- gorros (se construyen en el espacio original de la gamba: la cabeza mide ~0,1) ---------- */
 const std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .55, metalness: 0 }, o));
+// Los gorros usan sombreado «toon» y un contorno negro, igual que el dibujo de las gambas.
+let TOON_G = null;
+const toon = (c, o = {}) => {
+  if (!TOON_G) { TOON_G = new THREE.DataTexture(new Uint8Array([125, 190, 255]), 3, 1, THREE.RedFormat); TOON_G.minFilter = TOON_G.magFilter = THREE.NearestFilter; TOON_G.needsUpdate = true; }
+  return new THREE.MeshToonMaterial(Object.assign({ color: c, gradientMap: TOON_G }, o));
+};
+const OUTLINE = new THREE.MeshBasicMaterial({ color: 0x150b1f, side: THREE.BackSide });
 function hatMesh(id, gltfs) {
   const g = new THREE.Group();
-  const add = (geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  // piv: todo el gorro se puede inclinar junto; ol: grosor del contorno (0 = sin contorno)
+  let piv = g;
+  const add = (geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, ol = .0042) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); piv.add(m);
+    if (ol) { geo.computeBoundingSphere(); const o = new THREE.Mesh(geo, OUTLINE); o.position.copy(m.position); o.rotation.copy(m.rotation); o.scale.setScalar(1 + ol / Math.max(.012, geo.boundingSphere.radius)); piv.add(o); }
+    return m;
+  };
+  const tilt = (rx, rz = 0) => { piv = new THREE.Group(); piv.rotation.set(rx, 0, rz); g.add(piv); };
   switch (id) {
     case 'fiesta': {
-      add(new THREE.ConeGeometry(.045, .12, 24), std(0xff4fa3), 0, .06, 0);
-      add(new THREE.SphereGeometry(.014, 12, 8), std(0xffe14d), 0, .125, 0);
-      for (let i = 0; i < 3; i++) add(new THREE.TorusGeometry(.036 - i * .011, .005, 6, 24), std([0xffe14d, 0x4fd1ff, 0x7cf07c][i]), 0, .018 + i * .03, 0, Math.PI / 2);
+      tilt(-.22);
+      add(new THREE.ConeGeometry(.046, .14, 28), toon(0xff4fa3), 0, .06, 0);
+      for (let i = 0; i < 3; i++) add(new THREE.TorusGeometry(.037 - i * .0115, .0045, 8, 28), toon([0xffe14d, 0x4fd1ff, 0x7cf07c][i]), 0, .02 + i * .032, 0, Math.PI / 2, 0, 0, 0);
+      add(new THREE.SphereGeometry(.017, 14, 10), toon(0xffe14d), 0, .135, 0);
       break;
     }
     case 'gorra': {
-      add(new THREE.SphereGeometry(.058, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), std(0xe8302e), 0, 0, 0);
-      add(new THREE.CylinderGeometry(.06, .06, .008, 24, 1, false, -Math.PI / 2, Math.PI), std(0xe8302e), 0, .002, .03).scale.set(1, 1, 1.25);
-      add(new THREE.SphereGeometry(.009, 8, 6), std(0xffffff), 0, .058, 0);
+      tilt(-.1);
+      const red = toon(0xe8302e);
+      add(new THREE.SphereGeometry(.056, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), red, 0, -.004, 0).scale.set(1, .9, 1.05);
+      add(new THREE.CylinderGeometry(.066, .066, .011, 28, 1, false, -Math.PI / 2, Math.PI), toon(0xc2221f), 0, -.004, .034, .14, 0, 0).scale.set(1, 1, 1.55);
+      add(new THREE.SphereGeometry(.009, 10, 8), toon(0xffffff), 0, .046, 0);
+      add(new THREE.TorusGeometry(.055, .004, 6, 28), toon(0xffffff), 0, .004, 0, Math.PI / 2, 0, 0, 0);
       break;
     }
-    case 'gafas': {   // la parte de delante mira hacia -z (hacia el hocico)
-      const lens = std(0x111318, { roughness: .1, metalness: .6 }), frame = std(0x222222);
-      for (const s of [-1, 1]) add(new THREE.CylinderGeometry(.022, .022, .008, 20), lens, s * .034, -.05, -.052, Math.PI / 2);
-      add(new THREE.BoxGeometry(.02, .006, .006), frame, 0, -.046, -.052);
-      for (const s of [-1, 1]) add(new THREE.BoxGeometry(.005, .006, .09), frame, s * .057, -.05, -.005);
+    case 'gafas': {   // lentes redondas pegadas a los dos lados de la cabeza, a la altura del ojo; las patillas van hacia atrás (+z)
+      const lens = new THREE.MeshStandardMaterial({ color: 0x0c0f1c, roughness: .12, metalness: .5 }), frame = toon(0x1c1c24);
+      for (const s of [-1, 1]) {
+        add(new THREE.CylinderGeometry(.03, .03, .012, 24), lens, s * .043, -.055, .05, 0, 0, Math.PI / 2, .0035);
+        add(new THREE.TorusGeometry(.03, .0055, 8, 24), frame, s * .049, -.055, .05, 0, Math.PI / 2, 0, 0);
+        add(new THREE.SphereGeometry(.007, 8, 6), toon(0xffffff), s * .052, -.045, .06, 0, 0, 0, 0);
+      }
+      add(new THREE.TorusGeometry(.044, .0045, 8, 24, Math.PI), frame, 0, -.055, .05, 0, 0, 0, .002);
       break;
     }
     case 'auris': {
-      add(new THREE.TorusGeometry(.062, .008, 8, 32, Math.PI), std(0x1c1c22), 0, -.02, 0);
-      for (const s of [-1, 1]) add(new THREE.CylinderGeometry(.026, .026, .022, 20), std(0x31e0c4), s * .064, -.03, 0, 0, 0, Math.PI / 2);
+      tilt(0);
+      add(new THREE.TorusGeometry(.052, .0075, 10, 32, Math.PI), toon(0x26262e), 0, -.022, 0, 0, 0, 0, .003);
+      for (const s of [-1, 1]) {
+        add(new THREE.CylinderGeometry(.025, .025, .02, 24), toon(0x31e0c4), s * .055, -.028, 0, 0, 0, Math.PI / 2);
+        add(new THREE.CylinderGeometry(.016, .016, .006, 20), toon(0xffffff), s * .066, -.028, 0, 0, 0, Math.PI / 2, 0);
+      }
       break;
     }
     case 'chistera': {
-      const black = std(0x16161c, { roughness: .4 });
-      add(new THREE.CylinderGeometry(.075, .075, .008, 32), black, 0, .004, 0);
-      add(new THREE.CylinderGeometry(.045, .045, .09, 32), black, 0, .05, 0);
-      add(new THREE.CylinderGeometry(.0455, .0455, .016, 32), std(0xd12d3a), 0, .018, 0);
+      tilt(-.05, .06);
+      const black = toon(0x22222b);
+      add(new THREE.CylinderGeometry(.078, .078, .009, 36), black, 0, .0, 0);
+      add(new THREE.CylinderGeometry(.046, .047, .095, 32), black, 0, .052, 0);
+      add(new THREE.CylinderGeometry(.0475, .0475, .02, 32), toon(0xd12d3a), 0, .02, 0, 0, 0, 0, 0);
+      add(new THREE.CylinderGeometry(.04, .04, .004, 24), toon(0x3a3a46), 0, .1, 0, 0, 0, 0, 0);
       break;
     }
     case 'vikingo': {
-      add(new THREE.SphereGeometry(.058, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), std(0x9aa3ad, { metalness: .7, roughness: .3 }));
-      add(new THREE.TorusGeometry(.057, .007, 8, 32), std(0x8a5a2b), 0, .004, 0, Math.PI / 2);
-      for (const s of [-1, 1]) { const h = add(new THREE.ConeGeometry(.016, .07, 12), std(0xf3ead6), s * .06, .045, 0, 0, 0, -s * .9); h.scale.set(1, 1, 1); }
+      tilt(0);
+      add(new THREE.SphereGeometry(.057, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), toon(0xb9c2cc), 0, -.004, 0).scale.set(1, .9, 1.05);
+      add(new THREE.TorusGeometry(.057, .008, 8, 32), toon(0x8a5a2b), 0, -.002, 0, Math.PI / 2, 0, 0);
+      add(new THREE.BoxGeometry(.012, .05, .012), toon(0x8a5a2b), 0, .03, .02, -.15, 0, 0, .003);
+      for (const s of [-1, 1]) {
+        add(new THREE.ConeGeometry(.017, .075, 14), toon(0xf6ecd2), s * .064, .04, 0, 0, 0, -s * .75);
+        add(new THREE.SphereGeometry(.014, 10, 8), toon(0xf6ecd2), s * .054, .004, 0, 0, 0, 0, 0);
+      }
       break;
     }
     case 'halo': {
-      const m = add(new THREE.TorusGeometry(.05, .008, 10, 40), new THREE.MeshBasicMaterial({ color: 0xfff1a6 }), 0, .06, 0, Math.PI / 2);
+      const m = add(new THREE.TorusGeometry(.05, .009, 10, 40), new THREE.MeshBasicMaterial({ color: 0xfff1a6 }), 0, .07, 0, Math.PI / 2, 0, 0, .0035);
       m.userData.spin = 1; break;
     }
     case 'corona': {
-      const gold = std(0xffc93a, { metalness: .8, roughness: .25, emissive: 0x3a2400 });
-      add(new THREE.CylinderGeometry(.05, .052, .028, 32, 1, true), gold, 0, .014, 0).material.side = THREE.DoubleSide;
-      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; add(new THREE.ConeGeometry(.012, .03, 8), gold, Math.sin(a) * .05, .042, Math.cos(a) * .05); add(new THREE.SphereGeometry(.007, 8, 6), std([0xff3355, 0x3fa9ff, 0x4fe37a][i % 3], { roughness: .2 }), Math.sin(a) * .052, .016, Math.cos(a) * .052); }
+      tilt(-.08);
+      const gold = toon(0xffc93a, { emissive: 0x3a2400 });
+      add(new THREE.CylinderGeometry(.05, .053, .03, 32, 1, true), Object.assign(gold.clone(), { side: THREE.DoubleSide }), 0, .012, 0, 0, 0, 0, 0);
+      add(new THREE.TorusGeometry(.052, .005, 8, 32), gold, 0, .0, 0, Math.PI / 2, 0, 0);
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; add(new THREE.ConeGeometry(.0115, .036, 8), gold, Math.sin(a) * .051, .04, Math.cos(a) * .051, 0, 0, 0, .002); add(new THREE.SphereGeometry(.0075, 10, 8), toon([0xff3355, 0x3fa9ff, 0x4fe37a][i % 3]), Math.sin(a) * .054, .012, Math.cos(a) * .054, 0, 0, 0, 0); }
       break;
     }
     case 'tiburon': {
@@ -168,15 +231,13 @@ function hatMesh(id, gltfs) {
 }
 
 /* ---------- las gambas jugables ---------- */
-// rig: 'chumbud' (esqueleto con patas, antenas y cola), 'ebi' (esqueleto propio), 'clip' (animación incluida), 'static' (sin huesos)
+// rig: 'chumbud' (esqueleto con patas, antenas y cola), 'clip' (animación incluida), 'static' (sin huesos)
 // len: largo en metros; hat: [altura, avance] del punto donde va el gorro (metros, con la cabeza hacia -z)
 export const PLAYERS = {
   gamba: { file: 'models/gamba.glb', rig: 'chumbud', len: 1.45 },
   chaqueta: { file: 'models/gamba_chaqueta.glb', rig: 'chumbud', len: 1.45, cheer: true },
-  gafas: { file: 'models/gamba_gafas.glb', rig: 'static', len: 1.5, hat: [.4, -.46] },
-  ebi: { file: 'models/gamba_ebi.glb', rig: 'ebi', len: 1.45, hat: [.38, -.46] },
   langostino: { file: 'models/langostino.glb', rig: 'static', len: 1.25, hat: [.52, -.2] },
-  mysis: { file: 'models/gamba_mysis.glb', rig: 'clip', len: 1.7, walk: 'walk1', idle: 'idle1', hat: [.5, -.62] },
+  mysis: { file: 'models/gamba_mysis.glb', rig: 'clip', len: 1.7, walk: 'walk1', idle: 'idle1', hat: [.42, -.52] },
 };
 const NOT_SKIN = /outline|eye|glass|heart/i;
 export class Shrimp {
@@ -208,7 +269,7 @@ export class Shrimp {
       if (o.isMesh) {
         o.frustumCulled = false;
         const m = o.material;
-        if (!NOT_SKIN.test(m.name || '') && !NOT_SKIN.test(o.name || '')) { skinPatch(m); bodies.push(m); m.userData.op0 = m.opacity; m.userData.tr0 = m.transparent; }
+        if (!NOT_SKIN.test(m.name || '') && !NOT_SKIN.test(o.name || '')) { skinPatch(m); bodies.push(m); m.userData.op0 = m.opacity; m.userData.tr0 = m.transparent; m.forceSinglePass = true; }
         bend(m);
       }
     });

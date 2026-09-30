@@ -2,9 +2,7 @@
 
 export const CHARS = [
   { id: 'gambita', name: 'Gambita', icon: '🦐', price: 0, model: 'gamba', desc: 'La gamba original. Pequeña, rápida y con muchas patas.' },
-  { id: 'ebi', name: 'Ebi', icon: '🍤', price: 800, model: 'ebi', desc: 'Suave, redondita y con unas antenas que no se acaban nunca.' },
   { id: 'langostino', name: 'Langostino', icon: '🦞', price: 1200, model: 'langostino', desc: 'Recién salido de la plancha. Corre enroscado, a saltitos.' },
-  { id: 'gafitas', name: 'Gamba Gafitas', icon: '🤓', price: 1800, model: 'gafas', desc: 'Con sus gafas verdes de empollona. Ve venir los troncos de lejos.' },
   { id: 'chulita', name: 'Gamba Chulita', icon: '🧥', price: 2500, model: 'chaqueta', desc: 'Chaqueta de llamas y barritas de luz. Celebra a lo grande.' },
   { id: 'limpiadora', name: 'Gamba Limpiadora', icon: '🦐', price: 4000, model: 'mysis', desc: 'Una gamba de verdad, realista, con sus veinte patitas corriendo.' },
 ];
@@ -113,6 +111,13 @@ if (save.bank === null) {
   try { const ob = JSON.parse(localStorage.getItem('tung.best')) || 0; save.bestD = Math.max(save.bestD, ob); } catch (e) { }
 }
 save.eq = Object.assign({ chars: 'gambita', skins: 'natural', hats: 'nada', trails: 'polvo', maps: 'selva' }, save.eq);
+// Personajes retirados (Ebi y Gamba Gafitas): si alguien los había comprado se le devuelven las monedas
+{
+  const RETIRED = { ebi: 800, gafitas: 1800 }; let refund = 0;
+  for (const [id, price] of Object.entries(RETIRED)) { if (save.owned['chars:' + id]) { refund += price; delete save.owned['chars:' + id]; } if (save.eq.chars === id) save.eq.chars = 'gambita'; }
+  if (refund) { save.bank += refund; try { localStorage.setItem(K + 'bank', JSON.stringify(save.bank)); localStorage.setItem(K + 'owned', JSON.stringify(save.owned)); localStorage.setItem(K + 'eq', JSON.stringify(save.eq)); } catch (e) { } }
+  if (!CHARS.some(c => c.id === save.eq.chars)) save.eq.chars = 'gambita';
+}
 save.opt = Object.assign({ sfx: true, music: true, haptic: true, hq: true }, save.opt);
 for (const t of TABS) for (const it of t.list) if (it.price === 0) save.owned[t.id + ':' + it.id] = true;
 
