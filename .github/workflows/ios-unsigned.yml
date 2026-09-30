@@ -53,7 +53,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/dd" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            MARKETING_VERSION=2.1 CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            MARKETING_VERSION=2.1.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             build | tail -40
 
       - name: Empaquetar el .ipa
@@ -65,15 +65,53 @@ jobs:
           (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Mision-sin-firmar.ipa" Payload)
           ls -la out
 
-      - name: Guardar el .ipa
-        uses: actions/upload-artifact@v4
-        with:
-          name: Mision-ipa-sin-firmar
-          path: out/Mision-sin-firmar.ipa
+      - name: Fuente para KSign (formato AltStore)
+        # KSign lee este repo.json y avisa de actualización cuando cambia "version".
+        # URL fija de la fuente: https://github.com/<usuario>/<repo>/releases/download/ipa-latest/repo.json
+        env:
+          RUN: ${{ github.run_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp dist/icon-512.png out/icon.png
+          BASE="https://github.com/$REPO/releases/download/ipa-latest"
+          SIZE=$(stat -f%z out/Mision-sin-firmar.ipa)
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          MSG=$(git log -1 --pretty=%s | tr -d '"\\')
+          cat > out/repo.json <<JSON
+          {
+            "name": "Caudal",
+            "identifier": "${BUNDLE_ID}.repo",
+            "subtitle": "Tus finanzas",
+            "iconURL": "$BASE/icon.png",
+            "tintColor": "e4b3cb",
+            "apps": [{
+              "name": "Caudal",
+              "bundleIdentifier": "${BUNDLE_ID}",
+              "developerName": "David",
+              "subtitle": "Cuentas, objetivos, ETF y cripto en tiempo real",
+              "localizedDescription": "App de finanzas personales.",
+              "iconURL": "$BASE/icon.png",
+              "tintColor": "e4b3cb",
+              "category": "utilities",
+              "versions": [{
+                "version": "2.1.$RUN",
+                "buildVersion": "$RUN",
+                "date": "$DATE",
+                "downloadURL": "$BASE/Mision-sin-firmar.ipa",
+                "size": $SIZE,
+                "localizedDescription": "$MSG",
+                "minOSVersion": "14.0"
+              }]
+            }]
+          }
+          JSON
+          python3 -m json.tool out/repo.json > /dev/null
+          cat out/repo.json
 
-      - name: Publicar el .ipa como descarga directa
+      - name: Publicar el .ipa y la fuente
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete ipa-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create ipa-latest out/Mision-sin-firmar.ipa --title "IPA sin firmar" --notes "Build ${{ github.run_number }}"
+          gh release view ipa-latest >/dev/null 2>&1 || gh release create ipa-latest --title "Caudal" --notes "Última compilación"
+          gh release upload ipa-latest out/Mision-sin-firmar.ipa out/repo.json out/icon.png --clobber
+          gh release edit ipa-latest --title "Caudal 2.1.${{ github.run_number }}" --notes "Fuente para KSign: https://github.com/${{ github.repository }}/releases/download/ipa-latest/repo.json"
