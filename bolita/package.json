@@ -2,7 +2,7 @@
   "name": "bolita-ios",
   "version": "1.0.0",
   "private": true,
-  "description": "Tu mascota virtual: dale de comer, báñala, acuéstala y juega con ella",
+  "description": "Cría a tu Chibimon desde el huevo, cuídalo, juega y haz que evolucione",
   "dependencies": {
     "@capacitor/core": "^7.0.0",
     "@capacitor/ios": "^7.0.0",

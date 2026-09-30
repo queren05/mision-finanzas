@@ -2,821 +2,668 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Bolita</title>
+<title>Chibimon</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1b1830">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#fff1dd">
 <style>
-/* Bolita: mascota virtual estilo Pou. Una sola página: cabecera con nivel y monedas, necesidades,
-   escena con la mascota (SVG), bandeja de acciones de la habitación y barra de habitaciones.
-   Los minijuegos van en un <canvas> a pantalla completa. Todo se guarda en localStorage. */
+/* Chibimon: mascota virtual que evoluciona. Capas: habitación ilustrada (rooms.js) → criatura (chars.js)
+   → interfaz de cristal líquido. Capas a pantalla completa aparte para el huevo/evolución (#stage) y
+   los minijuegos (#game). Todo se guarda en localStorage. */
 :root{
-  --bg:#1b1830; --bg2:#26223f; --card:rgba(255,255,255,.08); --card2:rgba(255,255,255,.14);
-  --line:rgba(255,255,255,.14); --fg:#fbf8ff; --muted:#b9b2d6; --accent:#ffd36e; --good:#7ee0a3; --bad:#ff8a8a;
-  --r:22px; --f:"Nunito","SF Pro Rounded",ui-rounded,system-ui,-apple-system,sans-serif;
+  --ink:#4a3226; --ink2:#8a6e5e; --acc:#ff7f66; --acc2:#ffb347; --good:#5fc98a; --bad:#ff6b6b;
+  --glass:rgba(255,255,255,.42); --glass2:rgba(255,255,255,.64); --edge:rgba(255,255,255,.78); --shade:rgba(120,80,50,.16);
+  --blur:saturate(1.8) blur(22px); --f:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font:600 15px/1.3 var(--f);overscroll-behavior:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#fff1dd;color:var(--ink);font:700 15px/1.3 var(--f);overscroll-behavior:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
-#app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
-
-/* cabecera */
-.top{display:flex;align-items:center;gap:10px;padding:8px 16px 4px}
-.lvl{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-.lvl-badge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--card2);font-weight:900;font-size:16px;position:relative;flex:none}
-.lvl-badge svg{position:absolute;inset:0;transform:rotate(-90deg)}
-.name{font-weight:900;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.name small{display:block;font-size:11.5px;font-weight:700;color:var(--muted)}
-.coins{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--card2);font-weight:900;font-variant-numeric:tabular-nums}
-.coins i{font-style:normal}
+.glass{background:linear-gradient(180deg,var(--glass2),var(--glass));border:1px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(255,255,255,.3),0 10px 30px var(--shade);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+#room{position:fixed;inset:0}
+#room svg{width:100%;height:100%;display:block}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:calc(env(safe-area-inset-top,0px) + 6px)}
+.top{display:flex;align-items:center;gap:10px;margin:0 12px;padding:8px 10px 8px 8px;border-radius:26px}
+.avatar{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.75);position:relative;flex:none}
+.avatar span:first-child svg{position:absolute;inset:-3px;width:52px;height:52px}
+.avatar .lv{position:absolute;right:-5px;bottom:-5px;min-width:24px;height:22px;padding:0 5px;border-radius:11px;background:var(--acc);color:#fff;font-size:12px;display:grid;place-items:center;border:2px solid #fff}
+.who{flex:1;min-width:0;text-align:left}
+.who b{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who small{display:block;font-size:11px;color:var(--ink2);margin-top:1px}
+.xp{height:6px;border-radius:3px;background:rgba(74,50,38,.12);margin-top:4px;overflow:hidden}
+.xp i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:3px;transition:width .5s}
+.coins{display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:999px;font-weight:900;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.65)}
 .coins.bump{animation:bump .35s}
 @keyframes bump{50%{transform:scale(1.18)}}
-
-/* necesidades */
-.needs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:6px 16px 0}
-.need{display:flex;flex-direction:column;align-items:center;gap:3px}
-.ring{position:relative;width:52px;height:52px;display:grid;place-items:center;font-size:22px}
+.needs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 12px 0;padding:8px;border-radius:24px}
+.need{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--ink2)}
+.ring{position:relative;width:44px;height:44px;display:grid;place-items:center;font-size:19px}
 .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:5}
-.ring .bg{stroke:rgba(255,255,255,.12)}
+.ring circle{fill:none;stroke-width:4.5}
+.ring .bg{stroke:rgba(74,50,38,.1)}
 .ring .fg{stroke-linecap:round;transition:stroke-dashoffset .6s,stroke .6s}
-.need span{font-size:11px;color:var(--muted)}
-.need.low .ring{animation:wiggle 1.2s infinite}
-@keyframes wiggle{0%,100%{transform:rotate(0)}10%{transform:rotate(-8deg)}20%{transform:rotate(8deg)}30%{transform:rotate(0)}}
-
-/* escena */
-.scene{position:relative;flex:1;min-height:0;overflow:hidden}
-.room-bg{position:absolute;inset:0;transition:background .5s}
-.floor{position:absolute;left:0;right:0;bottom:0;height:30%;transition:background .5s}
-.deco{position:absolute;font-size:34px;opacity:.9;pointer-events:none;transition:opacity .4s}
-.pet-wrap{position:absolute;left:50%;top:52%;width:min(70vw,300px);aspect-ratio:1;transform:translate(-50%,-50%);touch-action:none}
-.pet-float{width:100%;height:100%;animation:float 3.2s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.pet-squish{width:100%;height:100%;transform-origin:50% 90%;transition:transform .12s}
-.pet-squish.sq{transform:scale(1.12,.86)}
-.pet-squish.jump{animation:hop .5s}
-@keyframes hop{30%{transform:translateY(-22%) scale(.95,1.06)}60%{transform:translateY(0) scale(1.1,.9)}100%{transform:none}}
-.pet-wrap.sleeping .pet-float{animation-duration:5s}
-.shadow{position:absolute;left:50%;top:93%;width:66%;height:10%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent);animation:shadow 3.2s ease-in-out infinite}
-@keyframes shadow{50%{transform:translateX(-50%) scale(.85);opacity:.7}}
-.bubble{position:absolute;left:50%;top:9%;transform:translate(-50%,-10px) scale(.8);opacity:0;background:#fff;color:#2a2440;padding:8px 14px;border-radius:18px;font-weight:800;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:none;z-index:5;max-width:88%;overflow:hidden;text-overflow:ellipsis}
+.need.low .ring{animation:wig 1.2s infinite}
+@keyframes wig{0%,100%{transform:rotate(0)}10%{transform:rotate(-9deg)}20%{transform:rotate(9deg)}30%{transform:rotate(0)}}
+.scene{position:relative;flex:1;min-height:0}
+.pet{position:absolute;left:50%;bottom:4%;width:min(78vw,340px);aspect-ratio:1;transform:translateX(-50%);touch-action:none}
+.pet-b{width:100%;height:100%;animation:breathe 3.4s ease-in-out infinite;transform-origin:50% 94%}
+@keyframes breathe{50%{transform:scale(1.03,.97)}}
+.pet-s{width:100%;height:100%;transform-origin:50% 94%}
+.pet-s.sq{animation:sq .28s}
+@keyframes sq{40%{transform:scale(1.16,.84)}100%{transform:none}}
+.pet-s.hop{animation:hop .55s}
+@keyframes hop{30%{transform:translateY(-22%) scale(.94,1.08)}60%{transform:scale(1.1,.9)}100%{transform:none}}
+.pet.sleep .pet-b{animation-duration:6s}
+.bubble{position:absolute;left:50%;top:3%;transform:translate(-50%,-6px) scale(.85);opacity:0;padding:9px 16px;border-radius:20px;font-weight:800;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:none;z-index:5;max-width:88%;overflow:hidden;text-overflow:ellipsis}
 .bubble.show{opacity:1;transform:translate(-50%,0) scale(1)}
-.bubble::after{content:"";position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-bottom:0;border-top-color:#fff}
-.dark{position:absolute;inset:0;background:rgba(5,4,20,.78);opacity:0;pointer-events:none;transition:opacity .6s;z-index:3}
+.dark{position:fixed;inset:0;background:radial-gradient(60% 40% at 50% 70%,rgba(30,20,60,.4),rgba(20,14,45,.78));opacity:0;pointer-events:none;transition:opacity .6s;z-index:1}
 .dark.on{opacity:1}
-.zzz{position:absolute;left:62%;top:22%;font-weight:900;font-size:22px;color:#cfc8ff;z-index:4;pointer-events:none;opacity:0}
-.sleeping ~ .zzz,.zzz.on{animation:zzz 2.4s infinite}
-@keyframes zzz{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(30px,-60px) scale(1.3)}}
-.fx{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:hidden}
-.pop{position:absolute;font-size:22px;font-weight:900;animation:rise 1s forwards;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+#app>*:not(.scene){position:relative;z-index:2}
+.scene{z-index:2}
+.zzz{position:absolute;left:62%;top:24%;font-weight:900;font-size:24px;color:#fff;z-index:4;pointer-events:none;opacity:0;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.zzz.on{animation:zzz 2.6s infinite}
+@keyframes zzz{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(30px,-70px) scale(1.3)}}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden}
+.pop{position:absolute;font-size:22px;font-weight:900;animation:rise 1s forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff}
 @keyframes rise{to{transform:translateY(-70px);opacity:0}}
-.foam{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e9f4ff 55%,#bcd9f5);box-shadow:inset -2px -3px 5px rgba(120,160,210,.35);pointer-events:none;animation:foamIn .25s}
+.heart{position:absolute;font-size:22px;animation:heart 1.2s forwards}
+@keyframes heart{to{transform:translate(var(--dx),-110px) scale(1.4);opacity:0}}
+.foam{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#eef7ff 55%,#c9e2f7);box-shadow:inset -2px -3px 5px rgba(120,160,210,.35);pointer-events:none;animation:foamIn .25s}
 @keyframes foamIn{from{transform:scale(0)}}
-.drop{position:absolute;width:4px;height:16px;border-radius:2px;background:linear-gradient(#bfe6ff,#6fb8ff);animation:fall .7s linear forwards}
-@keyframes fall{to{transform:translateY(420px);opacity:.2}}
-.drag-food{position:fixed;font-size:54px;pointer-events:none;z-index:50;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.drop{position:absolute;width:4px;height:16px;border-radius:2px;background:linear-gradient(#cfeeff,#7cc0ff);animation:fall .8s linear forwards}
+@keyframes fall{to{transform:translateY(460px);opacity:.2}}
+.drag-food{position:fixed;font-size:56px;pointer-events:none;z-index:50;transform:translate(-50%,-50%);filter:drop-shadow(0 8px 10px rgba(0,0,0,.25))}
 .confetti{position:absolute;width:9px;height:14px;border-radius:2px;animation:conf 1.6s ease-in forwards}
 @keyframes conf{to{transform:translate(var(--dx),110vh) rotate(720deg)}}
-
-/* bandeja */
-.tray{padding:8px 12px 6px;min-height:118px;display:flex;flex-direction:column;gap:8px}
-.tray-title{display:flex;justify-content:space-between;align-items:center;padding:0 4px;font-size:13px;color:var(--muted)}
-.tray-title b{color:var(--fg);font-size:15px}
-.scroller{display:flex;gap:10px;overflow-x:auto;padding:2px 4px 6px;scrollbar-width:none;scroll-snap-type:x proximity}
+.tray{margin:0 12px 8px;padding:10px;border-radius:28px;display:flex;flex-direction:column;gap:8px}
+.tray-h{display:flex;justify-content:space-between;align-items:center;padding:0 4px;font-size:12.5px;color:var(--ink2)}
+.tray-h b{color:var(--ink);font-size:15.5px}
+.scroller{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
 .scroller::-webkit-scrollbar{display:none}
-.item{flex:none;width:74px;height:84px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;scroll-snap-align:start;touch-action:none}
-.item .e{font-size:34px;line-height:1.1}
-.item .q{position:absolute;top:5px;right:7px;font-size:11.5px;font-weight:900;background:var(--accent);color:#3a2a00;border-radius:999px;padding:1px 6px}
-.item .p{font-size:11.5px;color:var(--muted);font-weight:800}
-.item.none{opacity:.45}
-.item.sel{border-color:var(--accent);background:rgba(255,211,110,.16)}
-.item:active{transform:scale(.95)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-weight:900;font-size:15.5px}
-.btn.big{min-height:56px;font-size:17px}
-.btn.primary{background:var(--accent);color:#3a2a00;border-color:transparent}
-.btn:active{transform:scale(.96)}
-.row{display:flex;gap:10px;align-items:center}
+.item{flex:none;width:72px;height:80px;border-radius:20px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;touch-action:none;box-shadow:0 4px 10px var(--shade)}
+.item .e{font-size:32px;line-height:1.1}
+.item .q{position:absolute;top:4px;right:5px;font-size:11px;font-weight:900;background:var(--acc);color:#fff;border-radius:999px;padding:1px 6px}
+.item .p{font-size:11px;color:var(--ink2);font-weight:800}
+.item:active{transform:scale(.94)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:999px;background:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.95);font-weight:900;box-shadow:0 4px 12px var(--shade),inset 0 1px 0 #fff}
+.btn.big{min-height:54px;font-size:16.5px}
+.btn.acc{background:linear-gradient(180deg,#ff9a80,var(--acc));color:#fff;border-color:rgba(255,255,255,.5);box-shadow:0 8px 20px rgba(255,127,102,.4),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn.sm{min-height:36px;padding:0 14px;font-size:13px}
+.btn[disabled]{opacity:.45}
+.btn:active{transform:scale(.95)}
+.row{display:flex;gap:9px}
 .row > *{flex:1}
-.games{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.game{border-radius:20px;padding:12px;background:var(--card);border:1px solid var(--line);text-align:left;display:flex;flex-direction:column;gap:4px}
-.game .e{font-size:30px}
-.game b{font-size:15px}
-.game span{font-size:12px;color:var(--muted)}
-.hint{font-size:12.5px;color:var(--muted);text-align:center;padding:0 8px}
-
-/* barra de habitaciones */
-.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 12px calc(8px + env(safe-area-inset-bottom,0px));padding:6px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
-.nav button{height:50px;border-radius:999px;font-size:25px;display:grid;place-items:center;transition:background .25s,transform .15s;position:relative}
-.nav button[aria-current="true"]{background:rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
-.nav button .dot{position:absolute;top:8px;right:22%;width:9px;height:9px;border-radius:50%;background:var(--bad);display:none}
+.games{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.game{border-radius:22px;padding:10px 11px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.95);text-align:left;display:flex;align-items:center;gap:9px;box-shadow:0 4px 12px var(--shade)}
+.game .e{font-size:26px;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none}
+.game b{display:block;font-size:13.5px}
+.game span{font-size:11px;color:var(--ink2)}
+.game:active{transform:scale(.96)}
+.hint{font-size:12.5px;color:var(--ink2);text-align:center;padding:4px 8px}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);margin:0 12px calc(8px + env(safe-area-inset-bottom,0px));padding:6px;border-radius:999px}
+.nav button{height:52px;border-radius:999px;font-size:24px;display:grid;place-items:center;transition:background .25s;position:relative}
+.nav button[aria-current="true"]{background:rgba(255,255,255,.88);box-shadow:0 4px 12px var(--shade),inset 0 1px 0 #fff}
+.nav .dot{position:absolute;top:7px;right:20%;width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid #fff;display:none}
 .nav button.alert .dot{display:block}
-
-/* hojas y avisos */
-.sheet-wrap{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;background:rgba(10,8,25,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-wrap{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;background:rgba(74,50,38,.22);opacity:0;pointer-events:none;transition:opacity .2s}
 .sheet-wrap.open{opacity:1;pointer-events:auto}
-.sheet{width:100%;max-height:82vh;overflow:auto;background:#2a2547;border-radius:28px 28px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(30px);transition:transform .25s}
+.sheet{width:calc(100% - 16px);margin:0 8px calc(8px + env(safe-area-inset-bottom,0px));max-height:84vh;overflow:auto;border-radius:32px;padding:14px 16px 18px;transform:translateY(30px);transition:transform .28s cubic-bezier(.2,.8,.2,1);background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,248,240,.8))}
 .sheet-wrap.open .sheet{transform:none}
-.sheet h2{margin:4px 0 12px;font-size:20px;font-weight:900;display:flex;justify-content:space-between;align-items:center}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.shop-item{border-radius:18px;padding:10px 4px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:4px}
-.shop-item .e{font-size:32px}
-.shop-item .p{font-size:12px;font-weight:900;color:var(--accent)}
-.shop-item .s{font-size:10.5px;color:var(--muted);text-align:center}
-.shop-item.own{border-color:var(--good)}
-.shop-item.eq{background:rgba(126,224,163,.16);border-color:var(--good)}
-.swatch{width:40px;height:40px;border-radius:50%;box-shadow:inset -4px -6px 10px rgba(0,0,0,.18),inset 4px 5px 8px rgba(255,255,255,.35)}
-.sec{font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:800}
-.toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,-80px);background:#fff;color:#2a2440;padding:10px 16px;border-radius:999px;font-weight:900;z-index:80;transition:transform .3s;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.sheet h2{margin:2px 0 12px;font-size:21px;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.shop{border-radius:18px;padding:10px 4px;background:rgba(255,255,255,.78);border:1.5px solid rgba(255,255,255,.95);display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 3px 8px var(--shade)}
+.shop .e{font-size:30px}
+.shop .p{font-size:12px;font-weight:900;color:var(--acc)}
+.shop .s{font-size:10.5px;color:var(--ink2);text-align:center}
+.shop.own{border-color:#bfe8cf}
+.shop.eq{border-color:var(--good);background:#effbf3}
+.shop .art{width:84px;height:84px}
+.shop.locked .art{filter:brightness(0) opacity(.18)}
+.sec{font-size:13px;color:var(--ink2);margin:14px 0 8px;font-weight:900}
+.toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translate(-50%,-90px);padding:11px 18px;border-radius:999px;font-weight:900;z-index:95;transition:transform .3s;white-space:nowrap}
 .toast.show{transform:translate(-50%,0)}
-input.rename{width:100%;font:800 18px var(--f);padding:12px 16px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--fg);outline:none;-webkit-user-select:text;user-select:text}
+input.name-in{width:100%;font:900 20px var(--f);padding:13px 16px;border-radius:18px;border:1.5px solid rgba(255,255,255,.95);background:rgba(255,255,255,.82);color:var(--ink);outline:none;text-align:center;-webkit-user-select:text;user-select:text}
+
+/* huevo, selector y evolución */
+#stage{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;background:radial-gradient(90% 60% at 20% 10%,#ffd9e6 0%,transparent 60%),radial-gradient(80% 60% at 90% 30%,#d9ecff 0%,transparent 60%),radial-gradient(90% 70% at 50% 100%,#e2f7d9 0%,transparent 60%),#fff4e6;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+#stage.on{display:flex}
+#stage h1{margin:4px 0 0;font-size:32px;font-weight:900;text-align:center;letter-spacing:-.01em}
+#stage .sub{text-align:center;color:var(--ink2);margin:4px 0 14px}
+.lines{flex:1;width:100%;max-width:520px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 2px 10px;align-content:start}
+.ln{border-radius:28px;padding:10px 8px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;transition:transform .2s}
+.ln .pair{display:flex;align-items:flex-end;justify-content:center;width:100%}
+.ln .pair div{width:48%;aspect-ratio:1}
+.ln b{font-size:16px}
+.ln span{font-size:11.5px;color:var(--ink2)}
+.ln[aria-pressed="true"]{box-shadow:0 0 0 3px var(--acc),0 10px 26px rgba(255,127,102,.35);transform:translateY(-2px)}
+.stage-go{width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px;padding-top:8px}
+.egg-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;width:100%}
+.egg{width:min(62vw,260px);aspect-ratio:1;touch-action:manipulation;transition:transform .15s;position:relative}
+.egg.wob{animation:wob .5s}
+@keyframes wob{20%{transform:rotate(-10deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
+.egg.idle{animation:idle 2.4s ease-in-out infinite}
+@keyframes idle{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-5deg)}95%{transform:rotate(5deg)}}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:85}
+.flash.go{animation:flash 1s}
+@keyframes flash{30%{opacity:1}100%{opacity:0}}
+.born{animation:born .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes born{from{transform:scale(.2);opacity:0}}
+.rays{position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg,rgba(255,220,120,.35) 0 10deg,transparent 10deg 20deg);border-radius:50%;animation:spin 8s linear infinite;-webkit-mask:radial-gradient(closest-side,#000 40%,transparent);mask:radial-gradient(closest-side,#000 40%,transparent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.evo-art{position:relative;width:min(66vw,280px);aspect-ratio:1}
+.evo-art .a{position:absolute;inset:0}
+.evo-art.glow .a{animation:evo 2.6s ease-in forwards}
+@keyframes evo{0%{filter:brightness(1)}20%,100%{filter:brightness(0) invert(1) drop-shadow(0 0 20px #fff)}}
+.evo-art .a.swap{animation:swapA 2.6s steps(1) forwards}
 
 /* minijuegos */
-#game{position:fixed;inset:0;z-index:70;background:#141128;display:none;touch-action:none}
+#game{position:fixed;inset:0;z-index:70;display:none;touch-action:none;background:#fff4e6}
 #game.on{display:block}
 #game canvas{position:absolute;inset:0;width:100%;height:100%}
-.ghud{position:absolute;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;display:flex;align-items:center;gap:10px;pointer-events:none;font-weight:900;font-size:18px}
+.ghud{position:absolute;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top,0px));padding:8px 8px 8px 16px;border-radius:999px;display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;z-index:3}
 .ghud .sp{flex:1}
-.ghud button{pointer-events:auto;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);font-size:20px}
-.gover{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,8,25,.6)}
+.ghud button{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.85);font-size:18px}
+.gstart{position:absolute;left:50%;top:60%;transform:translateX(-50%);text-align:center;padding:10px 18px;border-radius:999px;pointer-events:none;font-weight:900;animation:pulse 1.4s infinite;white-space:nowrap;z-index:3;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+@keyframes pulse{50%{opacity:.45}}
+.gover{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(74,50,38,.25);z-index:5}
 .gover.on{display:flex}
-.gover .card{width:min(86vw,340px);background:#2a2547;border-radius:28px;padding:22px;text-align:center;display:flex;flex-direction:column;gap:12px}
+.gover .card{width:min(88vw,340px);border-radius:32px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
 .gover h3{margin:0;font-size:24px;font-weight:900}
-.gover .big{font-size:44px;font-weight:900;color:var(--accent)}
-.gstart{position:absolute;left:50%;top:58%;transform:translateX(-50%);text-align:center;color:var(--muted);pointer-events:none;font-weight:800;animation:pulse 1.4s infinite}
-@keyframes pulse{50%{opacity:.4}}
+.gover .big{font-size:46px;font-weight:900;color:var(--acc);line-height:1}
+.gover .art{width:120px;height:120px}
+#dom{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:90px 14px 30px}
+#dom.on{display:flex}
+.mem{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;width:min(94vw,440px)}
+.card3d{aspect-ratio:3/4;perspective:600px}
+.card3d .in{position:relative;width:100%;height:100%;transition:transform .35s;transform-style:preserve-3d}
+.card3d.up .in{transform:rotateY(180deg)}
+.card3d .fa,.card3d .ba{position:absolute;inset:0;border-radius:16px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+.card3d .fa{background:linear-gradient(135deg,#ffb4a2,#ff8f7a);border:3px solid #fff;box-shadow:0 4px 10px var(--shade);font-size:22px;color:#fff}
+.card3d .ba{transform:rotateY(180deg);background:#fff;border:3px solid #fff;box-shadow:0 4px 10px var(--shade);padding:2px}
+.card3d.done .ba{background:#effbf3;border-color:#bfe8cf}
+.holes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:min(92vw,400px)}
+.hole{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 70%,#7a5a44 0%,#a07e62 60%,#c9a88a 100%);position:relative;overflow:hidden;box-shadow:inset 0 6px 12px rgba(0,0,0,.35)}
+.hole .who2{position:absolute;left:6%;right:6%;bottom:-86%;height:90%;transition:bottom .16s;display:grid;place-items:center;font-size:46px}
+.hole.up .who2{bottom:4%}
+.hole.hit .who2{filter:brightness(1.3);transform:scale(.9)}
+.art-img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none}
+.pet .art-img{transition:transform .3s,filter .4s;filter:drop-shadow(0 10px 12px rgba(74,50,38,.22))}
+.pet.sleep .art-img{filter:brightness(.8) saturate(.8) drop-shadow(0 10px 12px rgba(74,50,38,.22))}
+.pet.dirty .art-img{filter:sepia(.4) brightness(.93) drop-shadow(0 10px 12px rgba(74,50,38,.22))}
+.pet .flies{position:absolute;right:6%;top:8%;font-size:22px;animation:wig 1.4s infinite}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
 </style>
 </head>
 <body>
+<div id="room"></div>
+<div class="dark" id="dark"></div>
 <div id="app">
-  <header class="top">
-    <div class="lvl">
-      <div class="lvl-badge"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="3"/><circle id="xpRing" cx="20" cy="20" r="18" fill="none" stroke="#ffd36e" stroke-width="3" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1"/></svg><span id="lvl">1</span></div>
-      <button class="name" id="nameBtn" aria-label="Cambiar nombre"><span id="name">Bolita</span><small id="mood">Contenta</small></button>
-    </div>
-    <div class="coins" id="coins"><i>🪙</i><span id="coinN">0</span></div>
+  <header class="top glass">
+    <button class="avatar" id="avatarBtn" aria-label="Cambiar nombre"><span id="avatar"></span><span class="lv" id="lvl">1</span></button>
+    <button class="who" id="whoBtn"><b id="name">—</b><small id="kind"></small><div class="xp"><i id="xpBar"></i></div></button>
+    <div class="coins" id="coins">🪙 <span id="coinN">0</span></div>
   </header>
-  <div class="needs" id="needs"></div>
+  <div class="needs glass" id="needs"></div>
   <div class="scene" id="scene">
-    <div class="room-bg" id="roomBg"></div>
-    <div class="floor" id="floor"></div>
-    <div id="decos"></div>
-    
-    <div class="pet-wrap" id="petWrap"><div class="shadow" id="shadow"></div><div class="pet-float"><div class="pet-squish" id="squish"><svg id="pet" viewBox="0 0 200 200" width="100%" height="100%"></svg></div></div></div>
+    <div class="pet" id="pet"><div class="pet-b"><div class="pet-s" id="petS"><div id="petArt" style="width:100%;height:100%"></div></div></div></div>
     <div class="zzz" id="zzz">z z Z</div>
-    <div class="bubble" id="bubble"></div>
-    <div class="dark" id="dark"></div>
-    <div class="fx" id="fx"></div>
+    <div class="bubble glass" id="bubble"></div>
   </div>
-  <div class="tray" id="tray"></div>
-  <nav class="nav" id="nav">
+  <div class="tray glass" id="tray"></div>
+  <nav class="nav glass" id="nav">
     <button data-room="kitchen" aria-label="Cocina">🍽️<i class="dot"></i></button>
     <button data-room="bath" aria-label="Baño">🛁<i class="dot"></i></button>
     <button data-room="bed" aria-label="Dormitorio">🌙<i class="dot"></i></button>
     <button data-room="play" aria-label="Juegos">🎮<i class="dot"></i></button>
-    <button data-room="closet" aria-label="Armario">👕</button>
+    <button data-room="closet" aria-label="Armario">🎀</button>
   </nav>
 </div>
-<div class="sheet-wrap" id="sheetWrap"><div class="sheet" id="sheet"></div></div>
-<div class="toast" id="toast"></div>
+<div class="fx" id="fx"></div>
+<div class="sheet-wrap" id="sheetWrap"><div class="sheet glass" id="sheet"></div></div>
+<div class="toast glass" id="toast"></div>
+<div id="stage"></div>
+<div class="flash" id="flash"></div>
 <div id="game">
   <canvas id="cv"></canvas>
-  <div class="ghud"><span id="gScore">0</span><span class="sp"></span><span id="gLives"></span><span id="gCoins">🪙 0</span><button id="gClose" aria-label="Salir">✕</button></div>
-  <div class="gstart" id="gStart">Arrastra para moverte</div>
-  <div class="gover" id="gOver"><div class="card"><h3 id="goTitle">¡Fin!</h3><div class="big" id="goScore">0</div><div id="goInfo" class="hint"></div><div class="row"><button class="btn" id="goExit">Salir</button><button class="btn primary" id="goAgain">Otra vez</button></div></div></div>
+  <div id="dom"></div>
+  <div class="ghud glass"><span id="gScore">0</span><span class="sp"></span><span id="gLives"></span><span id="gCoins">🪙 0</span><button id="gClose" aria-label="Salir">✕</button></div>
+  <div class="gstart glass" id="gStart"></div>
+  <div class="gover" id="gOver"><div class="card glass"><div class="art" id="goArt"></div><h3 id="goTitle">¡Fin!</h3><div class="big" id="goScore">0</div><div id="goInfo" class="hint"></div><div class="row" style="width:100%"><button class="btn" id="goExit">Salir</button><button class="btn acc" id="goAgain">Otra vez</button></div></div></div>
 </div>
-
+<script src="chars.js"></script>
+<script src="sprites.js"></script>
+<script src="rooms.js"></script>
 <script>
 'use strict';
-/* ================= utilidades ================= */
 const $ = s => document.querySelector(s);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const today = () => new Date().toISOString().slice(0, 10);
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const Cap = window.Capacitor && window.Capacitor.Plugins;
-function haptic(kind) { try { if (Cap && Cap.Haptics) { kind === 'heavy' ? Cap.Haptics.impact({ style: 'HEAVY' }) : kind === 'ok' ? Cap.Haptics.notification({ type: 'SUCCESS' }) : Cap.Haptics.impact({ style: 'LIGHT' }); } else if (navigator.vibrate) navigator.vibrate(kind === 'heavy' ? 30 : 12); } catch (e) { } }
-
-/* sonidos sintetizados (sin archivos) */
+function haptic(k) { try { if (Cap && Cap.Haptics) { k === 'heavy' ? Cap.Haptics.impact({ style: 'HEAVY' }) : k === 'ok' ? Cap.Haptics.notification({ type: 'SUCCESS' }) : Cap.Haptics.impact({ style: 'LIGHT' }); } } catch (e) { } }
 let AC = null;
-function tone(freq, dur = .12, type = 'sine', vol = .15, slide = 0) {
+function tone(f, d = .12, type = 'sine', v = .14, slide = 0) {
   if (!S.sound) return;
-  try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
-    o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02);
-  } catch (e) { }
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), t + d);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .02); } catch (e) { }
 }
 const SFX = {
-  tap: () => { tone(620, .08, 'sine', .12, 300); },
-  eat: () => { tone(220, .07, 'square', .08); setTimeout(() => tone(180, .07, 'square', .08), 90); setTimeout(() => tone(240, .08, 'square', .07), 180); },
-  coin: () => { tone(988, .07, 'square', .07); setTimeout(() => tone(1319, .12, 'square', .07), 70); },
-  pop: () => tone(rnd(700, 1100), .05, 'sine', .08, -300),
-  jump: () => tone(420, .12, 'sine', .1, 500),
-  bad: () => tone(200, .25, 'sawtooth', .08, -120),
-  up: () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .1), i * 90)); },
+  tap: () => tone(660, .08, 'sine', .12, 320), eat: () => { tone(260, .06, 'triangle', .12); setTimeout(() => tone(200, .06, 'triangle', .12), 90); setTimeout(() => tone(300, .08, 'triangle', .1), 180); },
+  coin: () => { tone(988, .07, 'square', .06); setTimeout(() => tone(1319, .12, 'square', .06), 70); }, pop: () => tone(rnd(700, 1100), .05, 'sine', .08, -300),
+  jump: () => tone(440, .12, 'sine', .1, 520), bad: () => tone(220, .25, 'triangle', .12, -120), flip: () => tone(820, .05, 'sine', .07, 200), crack: () => tone(180, .06, 'square', .1, -60),
+  up: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .1), i * 90)),
+  evo: () => [392, 440, 494, 523, 587, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .18, 'triangle', .1), i * 160)),
 };
 
-/* ================= catálogo ================= */
 const FOODS = [
-  { id: 'apple', e: '🍎', n: 'Manzana', p: 4, food: 10, fun: 0 },
-  { id: 'banana', e: '🍌', n: 'Plátano', p: 5, food: 12, fun: 0 },
-  { id: 'carrot', e: '🥕', n: 'Zanahoria', p: 3, food: 8, fun: 0 },
-  { id: 'bread', e: '🥐', n: 'Cruasán', p: 8, food: 16, fun: 2 },
-  { id: 'pizza', e: '🍕', n: 'Pizza', p: 14, food: 28, fun: 4 },
-  { id: 'burger', e: '🍔', n: 'Hamburguesa', p: 16, food: 32, fun: 4 },
-  { id: 'sushi', e: '🍣', n: 'Sushi', p: 18, food: 26, fun: 6 },
-  { id: 'ramen', e: '🍜', n: 'Ramen', p: 15, food: 30, fun: 3 },
-  { id: 'cake', e: '🍰', n: 'Tarta', p: 12, food: 14, fun: 10 },
-  { id: 'ice', e: '🍦', n: 'Helado', p: 9, food: 8, fun: 10 },
-  { id: 'donut', e: '🍩', n: 'Dónut', p: 7, food: 10, fun: 6 },
-  { id: 'milk', e: '🥛', n: 'Leche', p: 5, food: 6, fun: 0, energy: 6 },
-  { id: 'coffee', e: '☕', n: 'Café', p: 10, food: 2, fun: 2, energy: 22 },
-  { id: 'potion', e: '🧪', n: 'Poción', p: 40, food: 30, fun: 30, energy: 30, clean: 30 },
+  { id: 'apple', e: '🍎', n: 'Manzana', p: 4, food: 10 }, { id: 'banana', e: '🍌', n: 'Plátano', p: 5, food: 12 }, { id: 'carrot', e: '🥕', n: 'Zanahoria', p: 3, food: 8 },
+  { id: 'bread', e: '🥐', n: 'Cruasán', p: 8, food: 16, fun: 2 }, { id: 'pizza', e: '🍕', n: 'Pizza', p: 14, food: 28, fun: 4 }, { id: 'burger', e: '🍔', n: 'Hamburguesa', p: 16, food: 32, fun: 4 },
+  { id: 'sushi', e: '🍣', n: 'Sushi', p: 18, food: 26, fun: 6 }, { id: 'ramen', e: '🍜', n: 'Ramen', p: 15, food: 30, fun: 3 }, { id: 'cake', e: '🍰', n: 'Tarta', p: 12, food: 14, fun: 10 },
+  { id: 'ice', e: '🍦', n: 'Helado', p: 9, food: 8, fun: 10 }, { id: 'donut', e: '🍩', n: 'Dónut', p: 7, food: 10, fun: 6 }, { id: 'milk', e: '🥛', n: 'Leche', p: 5, food: 6, energy: 6 },
+  { id: 'boba', e: '🧋', n: 'Bubble tea', p: 11, food: 6, fun: 8, energy: 12 }, { id: 'candy', e: '🍬', n: 'Caramelo raro', p: 120, xp: 60 }, { id: 'potion', e: '🧪', n: 'Poción', p: 40, food: 30, fun: 30, energy: 30, clean: 30 },
 ];
-// Colores del pelo: [claro, medio, oscuro]
-const SKINS = [
-  { id: 'sun', n: 'Sol', c: ['#fff3a8', '#ffd84a', '#e8a91c'], p: 0 },
-  { id: 'tang', n: 'Mandarina', c: ['#ffd2a6', '#ff9f4a', '#e0661c'], p: 60 },
-  { id: 'grape', n: 'Uva', c: ['#e3d0ff', '#a97cff', '#6c43d6'], p: 60 },
-  { id: 'kiwi', n: 'Kiwi', c: ['#dcf7b8', '#8fdc5a', '#4a9f2a'], p: 80 },
-  { id: 'gum', n: 'Chicle', c: ['#ffe0f0', '#ff94c8', '#e0558f'], p: 80 },
-  { id: 'sky', n: 'Cielo', c: ['#d6efff', '#78c2ff', '#3a86e0'], p: 100 },
-  { id: 'cloud', n: 'Nube', c: ['#ffffff', '#eef0f7', '#b9bfd3'], p: 120 },
-  { id: 'night', n: 'Noche', c: ['#8d93c9', '#4a4f8a', '#262a5a'], p: 150 },
-  { id: 'rainbow', n: 'Arcoíris', c: ['#fff', '#ff9ecf', '#7ab8ff'], p: 300, rainbow: true },
-];
-// Complementos por hueco: cabeza, cara y cuello (se combinan)
 const ACCS = [
-  { id: 'party', slot: 'head', e: '🥳', n: 'Gorro de fiesta', p: 40 },
-  { id: 'bow', slot: 'head', e: '🎀', n: 'Lazo', p: 50 },
-  { id: 'flower', slot: 'head', e: '🌸', n: 'Flor', p: 50 },
-  { id: 'cap', slot: 'head', e: '🧢', n: 'Gorra', p: 70 },
-  { id: 'phones', slot: 'head', e: '🎧', n: 'Auriculares', p: 120 },
-  { id: 'crown', slot: 'head', e: '👑', n: 'Corona', p: 200 },
-  { id: 'round', slot: 'face', e: '👓', n: 'Gafas redondas', p: 0 },
-  { id: 'sun', slot: 'face', e: '🕶️', n: 'Gafas de sol', p: 90 },
-  { id: 'bowtie', slot: 'neck', e: '🎩', n: 'Pajarita', p: 0 },
-  { id: 'scarf', slot: 'neck', e: '🧣', n: 'Bufanda', p: 80 },
-  { id: 'medal', slot: 'neck', e: '🏅', n: 'Medalla', p: 150 },
+  { id: 'party', slot: 'head', e: '🥳', n: 'Gorro de fiesta', p: 40 }, { id: 'bow', slot: 'head', e: '🎀', n: 'Lazo', p: 50 }, { id: 'flower', slot: 'head', e: '🌸', n: 'Flor', p: 50 },
+  { id: 'cap', slot: 'head', e: '🧢', n: 'Gorra', p: 70 }, { id: 'crown', slot: 'head', e: '👑', n: 'Corona', p: 200 },
+  { id: 'round', slot: 'face', e: '👓', n: 'Gafas redondas', p: 60 }, { id: 'sun', slot: 'face', e: '🕶️', n: 'Gafas de sol', p: 90 },
+  { id: 'bowtie', slot: 'neck', e: '🎀', n: 'Pajarita', p: 40 }, { id: 'scarf', slot: 'neck', e: '🧣', n: 'Bufanda', p: 80 }, { id: 'medal', slot: 'neck', e: '🏅', n: 'Medalla', p: 150 },
 ];
 const SLOT_L = { head: 'Cabeza', face: 'Cara', neck: 'Cuello' };
 
-/* ================= estado ================= */
-const KEY = 'bolita.v1';
-const RATE = { food: 7, energy: 5, fun: 6, clean: 4 };   // puntos que baja cada hora (despierta)
-function fresh() {
-  return { v: 1, name: 'Bolita', coins: 60, xp: 0, lvl: 1, food: 80, energy: 90, fun: 75, clean: 90, sleep: false, t: Date.now(),
-    inv: { apple: 3, banana: 2, pizza: 1, cake: 1 }, skin: 'sun', skins: ['sun'], acc: { head: '', face: 'round', neck: 'bowtie' }, accs: ['round', 'bowtie'], day: '', best: { catch: 0, jump: 0 }, sound: true, room: 'kitchen', born: today() };
-}
+/* estado */
+const KEY = 'chibimon.v2', RATE = { food: 7, energy: 5, fun: 6, clean: 4 };
+const fresh = () => ({ v: 2, line: '', name: '', named: false, coins: 80, xp: 0, lvl: 1, food: 80, energy: 90, fun: 75, clean: 90, sleep: false, t: Date.now(),
+  inv: { apple: 3, banana: 2, pizza: 1, cake: 1 }, acc: { head: '', face: '', neck: '' }, accs: [], day: '', best: { catch: 0, jump: 0, mem: 0, whack: 0 }, sound: true, room: 'kitchen', seen: [], team: [] });
 let S;
 try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch (e) { S = fresh(); }
-let saveT;
-const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 150); };
-
-/* avance del tiempo (también lo que pasó con la app cerrada, con tope para no castigar demasiado) */
+try { const old = JSON.parse(localStorage.getItem('bolita.v1') || 'null'); if (old && !S.migrated) { S.coins = Math.max(S.coins, old.coins || 0); S.inv = old.inv || S.inv; S.migrated = 1; } } catch (e) { }
+let saveT; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 150); };
+const cur = () => formOf(S.line || 'hoja', S.lvl);
+const art = id => `<img class="art-img" src="${SPRITES[id] || ''}" alt="" draggable="false">`;
+const CH = () => CHARS[cur()];
+const nameNow = () => S.named && S.name ? S.name : CH().n;
 function tick() {
-  const now = Date.now(); let h = (now - S.t) / 3600000; S.t = now;
-  if (h <= 0) return; h = Math.min(h, 36);
+  const now = Date.now(); let h = (now - S.t) / 3600000; S.t = now; if (h <= 0) return; h = Math.min(h, 36);
   const k = S.sleep ? .35 : 1;
-  S.food = clamp(S.food - RATE.food * h * k, 0, 100);
-  S.fun = clamp(S.fun - RATE.fun * h * k, 0, 100);
-  S.clean = clamp(S.clean - RATE.clean * h * k, 0, 100);
+  S.food = clamp(S.food - RATE.food * h * k, 0, 100); S.fun = clamp(S.fun - RATE.fun * h * k, 0, 100); S.clean = clamp(S.clean - RATE.clean * h * k, 0, 100);
   S.energy = clamp(S.energy + (S.sleep ? 28 : -RATE.energy) * h, 0, 100);
-  if (S.sleep && S.energy >= 100 && h > .01) { /* se despierta sola al estar descansada */ S.sleep = false; say('¡Buenos días! ☀️', 2500); }
+  if (S.sleep && S.energy >= 100 && h > .01) { S.sleep = false; setTimeout(() => say('¡Buenos días! ☀️', 2500), 600); }
 }
-
-/* ================= mascota (SVG) ================= */
-const skin = () => SKINS.find(s => s.id === S.skin) || SKINS[0];
-if (!S.acc) { S.acc = { head: '', face: 'round', neck: 'bowtie' }; S.accs = ['round', 'bowtie']; }
 function mood() {
-  const m = Math.min(S.food, S.energy, S.fun, S.clean);
-  if (S.sleep) return 'sleep';
-  if (S.food < 20) return 'hungry';
-  if (S.energy < 15) return 'tired';
-  if (S.clean < 20) return 'dirty';
-  if (S.fun < 20) return 'bored';
-  return m > 55 ? 'happy' : 'ok';
+  if (S.sleep) return 'sleep'; if (S.food < 20) return 'hungry'; if (S.energy < 15) return 'tired'; if (S.clean < 20) return 'dirty'; if (S.fun < 20) return 'bored';
+  return Math.min(S.food, S.energy, S.fun, S.clean) > 55 ? 'happy' : 'ok';
 }
-const MOOD_L = { happy: 'Feliz', ok: 'Tranquila', hungry: 'Hambrienta', tired: 'Cansada', dirty: 'Pegajosa', bored: 'Aburrida', sleep: 'Durmiendo' };
-let face = { look: [0, 0], blink: false, mouth: null, squint: false };
-// Forma de gominola (más ancha abajo, punta redondeada arriba) en una caja de 200x200
-const BODY = 'M100 16 C128 16 146 44 158 76 C172 112 186 146 176 170 C166 192 132 198 100 198 C68 198 34 192 24 170 C14 146 28 112 42 76 C54 44 72 16 100 16 Z';
-function accSvg(id) {
-  switch (id) {
-    case 'party': return '<g transform="translate(100 22)"><path d="M-22 18 L0 -38 L22 18 Z" fill="#ff7ab8"/><path d="M-16 4 L16 4 M-10 -12 L10 -12" stroke="#ffe36e" stroke-width="5"/><circle cy="-40" r="7" fill="#ffe36e"/></g>';
-    case 'bow': return '<g transform="translate(138 40) rotate(20)"><path d="M0 0 L-24 -15 Q-30 0 -24 15 Z M0 0 L24 -15 Q30 0 24 15 Z" fill="#ff5c9a"/><circle r="7" fill="#ff86b6"/></g>';
-    case 'flower': return '<g transform="translate(134 38)">' + [0, 72, 144, 216, 288].map(a => `<ellipse rx="8" ry="13" transform="rotate(${a}) translate(0 -11)" fill="#ffc2dc"/>`).join('') + '<circle r="7" fill="#ffb02e"/></g>';
-    case 'cap': return '<g transform="translate(100 34)"><path d="M-40 12 Q-40 -26 0 -26 Q40 -26 40 12 Z" fill="#ff6f61"/><path d="M-4 12 L60 16 Q62 25 52 25 L-4 21 Z" fill="#e0483c"/><circle cy="-26" r="5" fill="#e0483c"/></g>';
-    case 'phones': return '<g><path d="M34 100 Q34 22 100 22 Q166 22 166 100" fill="none" stroke="#2c2a44" stroke-width="9" stroke-linecap="round"/><rect x="20" y="86" width="24" height="38" rx="10" fill="#ff6f91"/><rect x="156" y="86" width="24" height="38" rx="10" fill="#ff6f91"/></g>';
-    case 'crown': return '<g transform="translate(100 22)"><path d="M-30 12 L-30 -12 L-15 2 L0 -20 L15 2 L30 -12 L30 12 Z" fill="#ffd23f" stroke="#c98f00" stroke-width="3" stroke-linejoin="round"/><circle cy="4" r="4.5" fill="#ff5c7a"/></g>';
-    case 'round': return '<g fill="none" stroke="#1d1b26" stroke-width="4.5"><circle cx="76" cy="94" r="25"/><circle cx="124" cy="94" r="25"/><path d="M96 88 Q100 83 104 88"/><path d="M51 90 L36 84 M149 90 L164 84"/></g><g fill="#fff" opacity=".35"><path d="M60 84 a18 18 0 0 1 10 -10 l2 3 a15 15 0 0 0 -8 9z"/><path d="M108 84 a18 18 0 0 1 10 -10 l2 3 a15 15 0 0 0 -8 9z"/></g>';
-    case 'sun': return '<g><rect x="46" y="76" width="50" height="34" rx="14" fill="#1d1b26"/><rect x="104" y="76" width="50" height="34" rx="14" fill="#1d1b26"/><path d="M96 88 L104 88" stroke="#1d1b26" stroke-width="5"/><path d="M56 86 L76 86 M114 86 L134 86" stroke="rgba(255,255,255,.45)" stroke-width="4" stroke-linecap="round"/></g>';
-    case 'bowtie': return '<g transform="translate(100 176)"><path d="M0 0 L-26 -14 Q-32 0 -26 14 Z M0 0 L26 -14 Q32 0 26 14 Z" fill="#1d1b26"/><rect x="-7" y="-7" width="14" height="14" rx="4" fill="#33303f"/></g>';
-    case 'scarf': return '<g><path d="M34 164 Q100 188 166 164 L170 180 Q100 206 30 180 Z" fill="#e0483c"/><path d="M128 178 L138 206 L122 208 L116 182 Z" fill="#c43a30"/><path d="M50 170 L56 184 M80 178 L84 192 M112 180 L114 194 M146 174 L148 188" stroke="#ffb3a6" stroke-width="4"/></g>';
-    case 'medal': return '<g transform="translate(100 168)"><path d="M-18 -18 L0 10 L18 -18" fill="none" stroke="#4f7cff" stroke-width="7"/><circle cy="18" r="13" fill="#ffc83d" stroke="#d79a00" stroke-width="3"/><text y="23" font-size="14" text-anchor="middle" fill="#8a5a00" font-weight="900">1</text></g>';
-    default: return '';
-  }
-}
-// Cuerpo peludo: se pinta una vez (el filtro de pelo es caro) y solo cambia con el color
-let bodyKey = '';
-function drawBody() {
-  const sk = skin();
-  if (bodyKey === sk.id && $('#pet').querySelector('#faceG')) return;
-  bodyKey = sk.id;
-  const grad = sk.rainbow
-    ? `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb3d9"/><stop offset=".33" stop-color="#ffe27a"/><stop offset=".66" stop-color="#8fe0b0"/><stop offset="1" stop-color="#8fb8ff"/></linearGradient>`
-    : `<radialGradient id="bg" cx="38%" cy="30%" r="78%"><stop offset="0" stop-color="${sk.c[0]}"/><stop offset=".5" stop-color="${sk.c[1]}"/><stop offset="1" stop-color="${sk.c[2]}"/></radialGradient>`;
-  $('#pet').innerHTML = `<defs>${grad}
-    <filter id="fur" x="-15%" y="-15%" width="130%" height="130%">
-      <feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="4" result="n0"/><feGaussianBlur in="n0" stdDeviation="1.1" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G" result="d"/>
-      <feTurbulence type="fractalNoise" baseFrequency=".7 .35" numOctaves="3" seed="9" result="h0"/><feGaussianBlur in="h0" stdDeviation=".7" result="h"/>
-      <feColorMatrix in="h" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 -.58" result="hl"/>
-      <feComposite in="hl" in2="d" operator="in" result="hl2"/>
-      <feColorMatrix in="h" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1 .42" result="sh"/>
-      <feComposite in="sh" in2="d" operator="in" result="sh2"/>
-      <feGaussianBlur in="d" stdDeviation="2.2" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="d"/><feMergeNode in="sh2"/><feMergeNode in="hl2"/></feMerge>
-    </filter>
-    <radialGradient id="ao" cx="50%" cy="100%" r="70%"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-    <radialGradient id="sheen" cx="35%" cy="25%" r="40%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    <clipPath id="bodyClip"><path d="${BODY}"/></clipPath></defs>
-    <g filter="url(#fur)"><path d="${BODY}" fill="url(#bg)"/><path d="${BODY}" fill="url(#sheen)"/><path d="${BODY}" fill="url(#ao)"/></g>
-    <g id="dirtG"></g><g id="faceG"></g><g id="accG"></g>`;
-}
+const MOOD_L = { happy: 'Feliz', ok: 'Tranquilo', hungry: 'Con hambre', tired: 'Cansado', dirty: 'Pegajoso', bored: 'Aburrido', sleep: 'Durmiendo' };
+let face = { look: [0, 0], blink: false, mouth: null, eyes: null };
+let petForm = '';
 function drawPet() {
-  drawBody();
-  const m = mood(), [lx, ly] = face.look, sleeping = m === 'sleep';
-  // ojos saltones: blanco grande + pupila que mira al dedo
-  const E = [[76, 94], [124, 94]];
-  let eyes = '';
-  if (sleeping) eyes = E.map(([x, y]) => `<path d="M${x - 14} ${y + 2} Q${x} ${y + 12} ${x + 14} ${y + 2}" fill="none" stroke="#1d1b26" stroke-width="5" stroke-linecap="round"/>`).join('');
-  else if (face.squint) eyes = E.map(([x, y]) => `<path d="M${x - 14} ${y + 6} Q${x} ${y - 8} ${x + 14} ${y + 6}" fill="none" stroke="#1d1b26" stroke-width="5" stroke-linecap="round"/>`).join('');
-  else {
-    const lid = face.blink ? 1 : m === 'tired' ? .45 : 0;
-    eyes = E.map(([x, y], i) => {
-      const px = x + lx * 7, py = y + ly * 7 + (m === 'tired' ? 4 : 0);
-      return `<g><circle cx="${x}" cy="${y}" r="19" fill="#fff" stroke="rgba(0,0,0,.12)" stroke-width="2"/>
-        <circle cx="${px}" cy="${py}" r="${m === 'hungry' ? 10 : 8.5}" fill="#1d1b26"/><circle cx="${px + 3}" cy="${py - 3.5}" r="2.8" fill="#fff"/>
-        ${lid ? `<path d="M${x - 20} ${y - 20} H${x + 20} V${y - 20 + 40 * lid} Q${x} ${y - 14 + 40 * lid} ${x - 20} ${y - 20 + 40 * lid} Z" fill="${skin().c[1]}"/><path d="M${x - 19} ${y - 20 + 40 * lid} Q${x} ${y - 14 + 40 * lid} ${x + 19} ${y - 20 + 40 * lid}" fill="none" stroke="#1d1b26" stroke-width="3" stroke-linecap="round"/>` : ''}</g>`;
-    }).join('');
-    if (m === 'bored' || m === 'dirty') eyes += `<path d="M58 70 L92 76 M142 70 L108 76" stroke="#1d1b26" stroke-width="4" stroke-linecap="round" opacity=".7"/>`;
-  }
-  const mx = 100 + lx * 4, my = 132 + ly * 3;
-  const mm = face.mouth || { happy: 'smile', ok: 'small', hungry: 'o', tired: 'flat', dirty: 'wavy', bored: 'flat', sleep: 'tiny' }[m];
-  const M = {
-    open: `<ellipse cx="${mx}" cy="${my + 4}" rx="14" ry="13" fill="#5a2336"/><ellipse cx="${mx}" cy="${my + 11}" rx="8" ry="4" fill="#ff7c9c"/>`,
-    chew: `<path d="M${mx - 10} ${my + 2} Q${mx - 5} ${my + 8} ${mx} ${my + 2} Q${mx + 5} ${my + 8} ${mx + 10} ${my + 2}" fill="none"/>`,
-    laugh: `<path d="M${mx - 14} ${my - 2} Q${mx} ${my + 22} ${mx + 14} ${my - 2} Z" fill="#5a2336"/><path d="M${mx - 7} ${my + 9} Q${mx} ${my + 15} ${mx + 7} ${my + 9}" stroke="#ff7c9c" stroke-width="4" fill="none"/>`,
-    smile: `<path d="M${mx - 11} ${my} Q${mx} ${my + 11} ${mx + 11} ${my}" fill="none"/>`,
-    small: `<path d="M${mx - 6} ${my + 2} Q${mx} ${my + 7} ${mx + 6} ${my + 2}" fill="none"/>`,
-    o: `<ellipse cx="${mx}" cy="${my + 4}" rx="6" ry="7" fill="#5a2336"/>`,
-    flat: `<path d="M${mx - 7} ${my + 5} L${mx + 7} ${my + 5}" fill="none"/>`,
-    wavy: `<path d="M${mx - 10} ${my + 5} Q${mx - 5} ${my} ${mx} ${my + 5} Q${mx + 5} ${my + 10} ${mx + 10} ${my + 5}" fill="none"/>`,
-    grr: `<path d="M${mx - 10} ${my + 8} Q${mx} ${my - 1} ${mx + 10} ${my + 8}" fill="none"/>`,
-  }[mm] || `<circle cx="${mx}" cy="${my + 4}" r="2.5" fill="#5a2336"/>`;
-  const blush = m === 'tired' || m === 'dirty' ? '' : `<ellipse cx="50" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/><ellipse cx="150" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/>`;
-  const sweat = m === 'hungry' ? `<path d="M158 66 q6 10 0 14 q-6 -4 0 -14z" fill="#9fdcff"/>` : '';
-  $('#faceG').innerHTML = eyes + blush + `<g stroke="#1d1b26" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">${M}</g>` + sweat;
-  $('#dirtG').innerHTML = S.clean < 45 ? [[62, 160, 7], [144, 62, 5], [150, 150, 8], [44, 110, 5], [118, 176, 6]].slice(0, S.clean < 25 ? 5 : 3).map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(110,78,40,.5)"/>`).join('') + (S.clean < 25 ? '<text x="150" y="40" font-size="22">🪰</text>' : '') : '';
-  const A = S.acc || {};
-  $('#accG').innerHTML = accSvg(A.neck) + accSvg(A.face) + accSvg(A.head);
-  $('#petWrap').classList.toggle('sleeping', sleeping);
-  $('#zzz').classList.toggle('on', sleeping);
+  if (!S.line) return;
+  const m = mood(), P = $('#pet'), id = cur();
+  if (petForm !== id) { $('#petArt').innerHTML = art(id); petForm = id; }
+  const img = $('#petArt img'); if (img) img.style.transform = `translateX(${face.look[0] * 6}px) rotate(${face.look[0] * 4}deg)`;
+  P.classList.toggle('sleep', m === 'sleep'); P.classList.toggle('dirty', S.clean < 30); $('#zzz').classList.toggle('on', m === 'sleep');
+  let fl = P.querySelector('.flies'); if (S.clean < 20 && !fl) P.insertAdjacentHTML('beforeend', '<span class="flies">🪰</span>'); else if (S.clean >= 20 && fl) fl.remove();
 }
-/* parpadeo y mirada */
-setInterval(() => { if (mood() === 'sleep') return; face.blink = true; drawPet(); setTimeout(() => { face.blink = false; drawPet(); }, 140); }, 3600);
-let lookReset;
+
+let lookT;
 document.addEventListener('pointermove', e => {
-  if ($('#game').classList.contains('on')) return;
-  const r = $('#petWrap').getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  face.look = [clamp((e.clientX - cx) / (r.width * .8), -1, 1), clamp((e.clientY - cy) / (r.height * .8), -1, 1)]; drawPet();
-  clearTimeout(lookReset); lookReset = setTimeout(() => { face.look = [0, 0]; drawPet(); }, 1500);
+  if ($('#game').classList.contains('on') || $('#stage').classList.contains('on')) return;
+  const r = $('#pet').getBoundingClientRect(); face.look = [clamp((e.clientX - r.left - r.width / 2) / r.width, -1, 1), clamp((e.clientY - r.top - r.height * .5) / r.height, -1, 1)]; drawPet();
+  clearTimeout(lookT); lookT = setTimeout(() => { face.look = [0, 0]; drawPet(); }, 1400);
 });
+function expr(eyes, mouth, ms = 800) { face.eyes = eyes; face.mouth = mouth; drawPet(); clearTimeout(expr.t); expr.t = setTimeout(() => { face.eyes = null; face.mouth = null; drawPet(); }, ms); }
 
-/* ================= interfaz ================= */
+/* HUD */
 const NEEDS = [['food', '🍔', 'Comida'], ['energy', '⚡', 'Energía'], ['fun', '🎈', 'Diversión'], ['clean', '🫧', 'Higiene']];
-$('#needs').innerHTML = NEEDS.map(([k, e, l]) => `<div class="need" id="n_${k}"><div class="ring"><svg viewBox="0 0 52 52"><circle class="bg" cx="26" cy="26" r="22"/><circle class="fg" cx="26" cy="26" r="22" stroke-dasharray="138.2"/></svg>${e}</div><span>${l}</span></div>`).join('');
+$('#needs').innerHTML = NEEDS.map(([k, e, l]) => `<div class="need" id="n_${k}"><div class="ring"><svg viewBox="0 0 44 44"><circle class="bg" cx="22" cy="22" r="18.5"/><circle class="fg" cx="22" cy="22" r="18.5" stroke-dasharray="116.2"/></svg>${e}</div>${l}</div>`).join('');
+const xpNeed = () => 30 + S.lvl * 12;
 function renderHud() {
-  for (const [k] of NEEDS) {
-    const v = S[k], el = $('#n_' + k), c = el.querySelector('.fg');
-    c.style.strokeDashoffset = 138.2 * (1 - v / 100);
-    c.style.stroke = v > 55 ? '#7ee0a3' : v > 25 ? '#ffd36e' : '#ff8a8a';
-    el.classList.toggle('low', v < 20);
-  }
-  $('#coinN').textContent = Math.floor(S.coins);
-  $('#lvl').textContent = S.lvl; $('#name').textContent = S.name; $('#mood').textContent = MOOD_L[mood()];
-  $('#xpRing').style.strokeDashoffset = 113.1 * (1 - S.xp / xpNeed());
-  const alerts = { kitchen: S.food < 25, bath: S.clean < 25, bed: S.energy < 20, play: S.fun < 25 };
-  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('alert', !!alerts[b.dataset.room] && b.dataset.room !== S.room));
+  for (const [k] of NEEDS) { const v = S[k], el = $('#n_' + k), c = el.querySelector('.fg'); c.style.strokeDashoffset = 116.2 * (1 - v / 100); c.style.stroke = v > 55 ? '#5fc98a' : v > 25 ? '#ffb347' : '#ff6b6b'; el.classList.toggle('low', v < 20); }
+  $('#coinN').textContent = Math.floor(S.coins); $('#lvl').textContent = S.lvl; $('#name').textContent = nameNow();
+  const next = S.lvl < STAGE_LV[1] ? STAGE_LV[1] : S.lvl < STAGE_LV[2] ? STAGE_LV[2] : null;
+  $('#kind').textContent = `${LINES[S.line || 'hoja'].e} ${CH().t}${next ? ` · evoluciona al nv. ${next}` : S.lvl >= 100 ? ' · ¡nivel máximo!' : ' · forma final'}`;
+  $('#xpBar').style.width = (S.lvl >= 100 ? 100 : S.xp / xpNeed() * 100) + '%';
+  $('#avatar').innerHTML = S.line ? art(cur()) : '';
+  const al = { kitchen: S.food < 25, bath: S.clean < 25, bed: S.energy < 20, play: S.fun < 25 };
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('alert', !!al[b.dataset.room] && b.dataset.room !== S.room));
 }
-const xpNeed = () => 40 + S.lvl * 25;
+let evoPending = null;
 function addXp(n) {
-  S.xp += n;
-  while (S.xp >= xpNeed()) { S.xp -= xpNeed(); S.lvl++; const bonus = 20 + S.lvl * 5; S.coins += bonus; SFX.up(); haptic('ok'); confetti(); toast(`¡Nivel ${S.lvl}! +${bonus} 🪙`); }
+  if (S.lvl >= 100) return;
+  const before = cur(); S.xp += n;
+  while (S.xp >= xpNeed() && S.lvl < 100) { S.xp -= xpNeed(); S.lvl++; const b = 10 + S.lvl * 2; S.coins += b; SFX.up(); haptic('ok'); toast(`¡Nivel ${S.lvl}! +${b} 🪙`);
+    if (S.lvl === 100) setTimeout(() => toast('🥚 ¡Nivel 100! Ya puedes incubar un huevo nuevo en el Armario'), 2500); }
+  if (cur() !== before) evoPending = [before, cur()];
+  if (!S.seen.includes(cur())) S.seen.push(cur());
+  if (evoPending && !$('#game').classList.contains('on')) setTimeout(runEvolution, 900);
 }
-function addCoins(n) { S.coins += n; const c = $('#coins'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
-let bubT;
-function say(t, ms = 1800) { const b = $('#bubble'); b.textContent = t; b.classList.add('show'); clearTimeout(bubT); bubT = setTimeout(() => b.classList.remove('show'), ms); }
-let toastT;
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2200); }
-function popFx(text, color, x, y) {
-  const fx = $('#fx'), r = fx.getBoundingClientRect(), el = document.createElement('div');
-  el.className = 'pop'; el.textContent = text; el.style.color = color || '#fff';
-  const pr = $('#petWrap').getBoundingClientRect();
-  el.style.left = ((x ?? pr.left + pr.width / 2 + rnd(-40, 40)) - r.left) + 'px'; el.style.top = ((y ?? pr.top + pr.height * .2) - r.top) + 'px';
-  fx.appendChild(el); setTimeout(() => el.remove(), 1000);
-}
-function confetti() {
-  const fx = $('#fx'); const cols = ['#ffd36e', '#ff94c8', '#7ab8ff', '#7ee0a3', '#b39dff'];
-  for (let i = 0; i < 40; i++) { const c = document.createElement('i'); c.className = 'confetti'; c.style.left = rnd(0, 100) + '%'; c.style.top = '-20px'; c.style.background = pick(cols); c.style.setProperty('--dx', rnd(-80, 80) + 'px'); c.style.animationDelay = rnd(0, .4) + 's'; fx.appendChild(c); setTimeout(() => c.remove(), 2200); }
-}
-function squish(kind = 'sq') { const s = $('#squish'); s.classList.remove('sq', 'jump'); void s.offsetWidth; s.classList.add(kind); if (kind === 'sq') setTimeout(() => s.classList.remove('sq'), 140); }
+function bumpCoins() { const c = $('#coins'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+let bubT; function say(t, ms = 1900) { const b = $('#bubble'); b.textContent = t; b.classList.add('show'); clearTimeout(bubT); bubT = setTimeout(() => b.classList.remove('show'), ms); }
+let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
+function popFx(t, color) { const p = $('#pet').getBoundingClientRect(), el = document.createElement('div'); el.className = 'pop'; el.textContent = t; el.style.color = color || '#fff'; el.style.left = (p.left + p.width / 2 + rnd(-40, 30)) + 'px'; el.style.top = (p.top + p.height * .3) + 'px'; $('#fx').appendChild(el); setTimeout(() => el.remove(), 1000); }
+function hearts(n = 4, el = $('#pet')) { const p = el.getBoundingClientRect(); for (let i = 0; i < n; i++) { const h = document.createElement('div'); h.className = 'heart'; h.textContent = pick(['💕', '💖', '✨']); h.style.left = (p.left + p.width * rnd(.3, .7)) + 'px'; h.style.top = (p.top + p.height * .35) + 'px'; h.style.setProperty('--dx', rnd(-50, 50) + 'px'); h.style.animationDelay = i * .08 + 's'; $('#fx').appendChild(h); setTimeout(() => h.remove(), 1500); } }
+function confetti() { const cols = ['#ffd36e', '#ff94c8', '#7ab8ff', '#7ee0a3', '#b39dff', '#ff8f7a']; for (let i = 0; i < 50; i++) { const c = document.createElement('i'); c.className = 'confetti'; c.style.left = rnd(0, 100) + '%'; c.style.top = '-20px'; c.style.background = pick(cols); c.style.setProperty('--dx', rnd(-80, 80) + 'px'); c.style.animationDelay = rnd(0, .4) + 's'; $('#fx').appendChild(c); setTimeout(() => c.remove(), 2200); } }
+function squish(k = 'sq') { const s = $('#petS'); s.classList.remove('sq', 'hop'); void s.offsetWidth; s.classList.add(k); }
 
-/* ================= habitaciones ================= */
-const ROOMS = {
-  kitchen: { bg: 'linear-gradient(#3b2f5c,#2a2248)', floor: 'linear-gradient(#5a4478,#46365f)', deco: [['🪟', 14, 12], ['🪴', 82, 58], ['🧁', 10, 62]] },
-  bath: { bg: 'linear-gradient(#2c4a6e,#223a58)', floor: 'repeating-linear-gradient(90deg,#3d6189 0 38px,#355478 38px 76px)', deco: [['🚿', 80, 10], ['🧴', 10, 60], ['🦆', 84, 64]] },
-  bed: { bg: 'linear-gradient(#26214a,#1c1838)', floor: 'linear-gradient(#3a3060,#2c2450)', deco: [['🖼️', 14, 12], ['🧸', 82, 60], ['⭐', 80, 14]] },
-  play: { bg: 'linear-gradient(#2d4d5c,#20394a)', floor: 'linear-gradient(#3e5a3a,#304a2d)', deco: [['⚽', 12, 64], ['🪁', 82, 12], ['🎲', 84, 64]] },
-  closet: { bg: 'linear-gradient(#4a2d4f,#38223d)', floor: 'linear-gradient(#5c3a62,#472d4c)', deco: [['🪞', 12, 14], ['👗', 84, 14], ['👟', 12, 66]] },
-};
+/* habitaciones */
 function goRoom(r) {
   S.room = r; save();
-  const R = ROOMS[r];
-  $('#roomBg').style.background = R.bg; $('#floor').style.background = R.floor;
-  $('#decos').innerHTML = R.deco.map(([e, x, y]) => `<div class="deco" style="left:${x}%;top:${y}%">${e}</div>`).join('');
+  $('#room').innerHTML = `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">${ROOM_SVG[r]}</svg>`;
   document.querySelectorAll('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.room === r));
-  $('#dark').classList.toggle('on', r === 'bed' && S.sleep);
-  tool = null; renderTray(); renderHud();
+  $('#dark').classList.toggle('on', S.sleep && r === 'bed'); tool = null; renderTray(); renderHud();
 }
 $('#nav').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SFX.tap(); haptic(); goRoom(b.dataset.room); });
-
-let tool = null;   // herramienta del baño seleccionada
+let tool = null;
 function renderTray() {
   const T = $('#tray');
   if (S.room === 'kitchen') {
-    const owned = FOODS.filter(f => S.inv[f.id] > 0);
-    T.innerHTML = `<div class="tray-title"><b>Nevera</b><button class="btn" style="min-height:34px;padding:0 14px;font-size:13px" id="shopBtn">🛒 Tienda</button></div>
-      <div class="scroller">${owned.length ? owned.map(f => `<div class="item" data-food="${f.id}"><span class="q">${S.inv[f.id]}</span><span class="e">${f.e}</span><span class="p">${f.n}</span></div>`).join('') : '<div class="hint" style="padding:18px 0;width:100%">La nevera está vacía. Compra comida en la tienda 🛒</div>'}</div>`;
-    $('#shopBtn').onclick = openShop;
-    T.querySelectorAll('.item').forEach(bindFoodDrag);
+    const own = FOODS.filter(f => S.inv[f.id] > 0);
+    T.innerHTML = `<div class="tray-h"><b>🧺 Nevera</b><button class="btn sm" id="shopBtn">🛒 Tienda</button></div>
+      <div class="scroller">${own.length ? own.map(f => `<div class="item" data-food="${f.id}"><span class="q">${S.inv[f.id]}</span><span class="e">${f.e}</span><span class="p">${f.n}</span></div>`).join('') : '<div class="hint" style="width:100%;padding:18px 0">La nevera está vacía. ¡A la tienda! 🛒</div>'}</div>`;
+    $('#shopBtn').onclick = openShop; T.querySelectorAll('.item').forEach(bindFood);
   } else if (S.room === 'bath') {
-    T.innerHTML = `<div class="tray-title"><b>Baño</b><span>${tool === 'soap' ? 'Frota a Bolita con el dedo' : 'Elige el jabón y frota'}</span></div>
-      <div class="row"><button class="btn big ${tool === 'soap' ? 'primary' : ''}" id="soapBtn">🧼 Jabón</button><button class="btn big" id="showerBtn">🚿 Aclarar</button></div>`;
-    $('#soapBtn').onclick = () => { tool = tool === 'soap' ? null : 'soap'; SFX.tap(); renderTray(); };
-    $('#showerBtn').onclick = shower;
+    T.innerHTML = `<div class="tray-h"><b>🛁 Baño</b><span>${tool === 'soap' ? 'Frota con el dedo' : 'Coge el jabón y frota'}</span></div>
+      <div class="row"><button class="btn big ${tool === 'soap' ? 'acc' : ''}" id="soapBtn">🧼 Jabón</button><button class="btn big" id="showerBtn">🚿 Aclarar</button></div>`;
+    $('#soapBtn').onclick = () => { tool = tool === 'soap' ? null : 'soap'; SFX.tap(); renderTray(); }; $('#showerBtn').onclick = shower;
   } else if (S.room === 'bed') {
-    T.innerHTML = `<div class="tray-title"><b>Dormitorio</b><span>${S.sleep ? 'Recuperando energía…' : 'Apaga la luz para dormir'}</span></div>
-      <button class="btn big ${S.sleep ? '' : 'primary'}" id="lampBtn">${S.sleep ? '💡 Encender la luz' : '🌙 Apagar la luz'}</button>`;
+    T.innerHTML = `<div class="tray-h"><b>🌙 Dormitorio</b><span>${S.sleep ? 'Recuperando energía…' : 'Apaga la luz para dormir'}</span></div>
+      <button class="btn big ${S.sleep ? '' : 'acc'}" id="lampBtn">${S.sleep ? '💡 Encender la luz' : '🌙 Apagar la luz'}</button>`;
     $('#lampBtn').onclick = toggleSleep;
   } else if (S.room === 'play') {
-    T.innerHTML = `<div class="games">
-      <button class="game" data-g="catch"><span class="e">🍓</span><b>Lluvia de comida</b><span>Récord: ${S.best.catch}</span></button>
-      <button class="game" data-g="jump"><span class="e">☁️</span><b>Salto al cielo</b><span>Récord: ${S.best.jump} m</span></button></div>`;
+    const G = [['catch', '🍓', 'Lluvia de comida', `Récord ${S.best.catch}`, '#ffe1e1'], ['jump', '☁️', 'Salto al cielo', `Récord ${S.best.jump} m`, '#e1f0ff'], ['mem', '🃏', 'Parejas', S.best.mem ? `Mejor: ${S.best.mem} mov.` : 'Encuentra parejas', '#f0e6ff'], ['whack', '🐛', 'Caza bichos', `Récord ${S.best.whack}`, '#e3f7dc']];
+    T.innerHTML = `<div class="games">${G.map(([k, e, n, s, bg]) => `<button class="game" data-g="${k}"><span class="e" style="background:${bg}">${e}</span><span><b>${n}</b><span>${s}</span></span></button>`).join('')}</div>`;
     T.querySelectorAll('.game').forEach(b => b.onclick = () => startGame(b.dataset.g));
   } else {
-    T.innerHTML = `<div class="tray-title"><b>Armario</b><span>Colores y accesorios</span></div>
-      <div class="row"><button class="btn big" id="skinBtn">🎨 Colores</button><button class="btn big" id="hatBtn">🎀 Complementos</button></div>
-      <div class="row" style="margin-top:2px"><button class="btn" id="renBtn">✏️ Nombre</button><button class="btn" id="sndBtn">${S.sound ? '🔊 Sonido' : '🔇 Sin sonido'}</button></div>`;
-    $('#skinBtn').onclick = () => openCloset('skin'); $('#hatBtn').onclick = () => openCloset('acc');
-    $('#renBtn').onclick = rename; $('#sndBtn').onclick = () => { S.sound = !S.sound; save(); renderTray(); };
+    T.innerHTML = `<div class="tray-h"><b>🎀 Armario</b><span>Álbum, huevos y ajustes</span></div>
+      <div class="row"><button class="btn" id="dexBtn">📖 Álbum</button><button class="btn" id="renBtn">✏️ Nombre</button></div>
+      <div class="row"><button class="btn sm" id="eggBtn" ${S.lvl >= 100 ? '' : 'disabled'}>🥚 ${S.lvl >= 100 ? 'Huevo nuevo' : 'Huevo al nv. 100'}</button><button class="btn sm" id="sndBtn">${S.sound ? '🔊' : '🔇'}</button></div>`;
+    $('#dexBtn').onclick = openDex; $('#renBtn').onclick = rename; $('#sndBtn').onclick = () => { S.sound = !S.sound; save(); renderTray(); };
+    $('#eggBtn').onclick = () => { if (S.lvl < 100) return; openSheet(`<h2>🥚 Huevo nuevo</h2><p class="hint" style="font-size:14px">${nameNow()} se irá a vivir a tu álbum (podrás verlo siempre) y empezarás de cero con un huevo nuevo. Tus monedas, comida y complementos se quedan.</p><div class="row"><button class="btn big" data-close>Todavía no</button><button class="btn big acc" id="egGo">¡Vamos!</button></div>`, s => s.querySelector('#egGo').onclick = () => { S.team.push({ form: cur(), name: nameNow(), lvl: S.lvl, d: today() }); closeSheet(); openChoose(true); }); };
   }
 }
 
-/* ---- comer: toca o arrastra la comida hasta la boca ---- */
+/* comer */
 function feed(id) {
   const f = FOODS.find(x => x.id === id); if (!f || !(S.inv[id] > 0)) return;
   if (S.sleep) { say('Zzz… 😴'); return; }
-  if (S.food >= 98 && !f.energy) { say('¡Estoy llena! 🙅'); face.mouth = 'flat'; drawPet(); setTimeout(() => { face.mouth = null; drawPet(); }, 900); return; }
+  if (S.food >= 98 && !f.energy && !f.xp) { say('¡Estoy lleno! 🙅'); expr('x', 'flat', 900); return; }
   S.inv[id]--; if (!S.inv[id]) delete S.inv[id];
-  S.food = clamp(S.food + f.food, 0, 100); S.fun = clamp(S.fun + (f.fun || 0), 0, 100);
+  const fav = LINES[S.line].food === id;
+  S.food = clamp(S.food + (f.food || 0), 0, 100); S.fun = clamp(S.fun + (f.fun || 0) + (fav ? 8 : 0), 0, 100);
   if (f.energy) S.energy = clamp(S.energy + f.energy, 0, 100); if (f.clean) S.clean = clamp(S.clean + f.clean, 0, 100);
-  addXp(3); SFX.eat(); haptic();
-  let n = 0; const chew = setInterval(() => { face.mouth = n % 2 ? 'chew' : 'small'; drawPet(); if (++n > 5) { clearInterval(chew); face.mouth = null; drawPet(); } }, 130);
-  squish(); popFx('+' + f.food, '#7ee0a3'); say(pick(['¡Ñam! 😋', '¡Qué rico!', '¡Más, más!', 'Mmmm…']));
-  save(); renderHud(); renderTray();
+  SFX.eat(); haptic(); squish();
+  let n = 0; const ch = setInterval(() => { face.mouth = n % 2 ? 'chew' : 'cat'; face.eyes = 'happy'; drawPet(); if (++n > 5) { clearInterval(ch); face.mouth = null; face.eyes = null; drawPet(); } }, 130);
+  if (f.food) popFx('+' + f.food, '#5fc98a'); if (fav) { hearts(); say('¡Mi comida favorita! 💖'); } else if (f.xp) say('¡Me siento más fuerte! ✨'); else say(pick(['¡Ñam! 😋', '¡Qué rico!', '¡Más, más!', 'Mmmm…']));
+  addXp((f.xp || 0) + (fav ? 6 : 3)); save(); renderHud(); renderTray();
 }
-function bindFoodDrag(el) {
-  let ghost = null, sx, sy, moved = false;
-  el.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; moved = false; el.setPointerCapture(e.pointerId); });
+function bindFood(el) {
+  let g = null, sx = null, sy = 0, mv = false;
+  el.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; mv = false; el.setPointerCapture(e.pointerId); });
   el.addEventListener('pointermove', e => {
     if (sx == null) return;
-    if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) { moved = true; ghost = document.createElement('div'); ghost.className = 'drag-food'; ghost.textContent = el.querySelector('.e').textContent; document.body.appendChild(ghost); }
-    if (ghost) {
-      ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
-      const near = nearMouth(e.clientX, e.clientY); const want = near ? 'open' : null;
-      if (face.mouth !== want) { face.mouth = want; drawPet(); }
-    }
+    if (!mv && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) { mv = true; g = document.createElement('div'); g.className = 'drag-food'; g.textContent = el.querySelector('.e').textContent; document.body.appendChild(g); }
+    if (g) { g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px'; const want = nearMouth(e.clientX, e.clientY) ? 'open' : null; if (face.mouth !== want) { face.mouth = want; face.eyes = want ? 'sparkle' : null; drawPet(); } }
   });
-  const end = e => {
-    if (sx == null) return; sx = null;
-    if (!moved) { feed(el.dataset.food); return; }
-    if (ghost) { ghost.remove(); ghost = null; }
-    face.mouth = null; drawPet();
-    if (nearMouth(e.clientX, e.clientY)) feed(el.dataset.food);
-  };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { sx = null; if (ghost) ghost.remove(); ghost = null; face.mouth = null; drawPet(); });
+  el.addEventListener('pointerup', e => { if (sx == null) return; sx = null; if (!mv) return feed(el.dataset.food); if (g) g.remove(); g = null; face.mouth = null; face.eyes = null; drawPet(); if (nearMouth(e.clientX, e.clientY)) feed(el.dataset.food); });
+  el.addEventListener('pointercancel', () => { sx = null; if (g) g.remove(); g = null; face.mouth = null; face.eyes = null; drawPet(); });
 }
-function nearMouth(x, y) { const r = $('#petWrap').getBoundingClientRect(); return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height * .64)) < r.width * .34; }
+function nearMouth(x, y) { const r = $('#pet').getBoundingClientRect(), F = CH().F; return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height * F.my / 200)) < r.width * .34; }
 
-/* ---- baño: frotar con jabón hace espuma; aclarar la convierte en limpieza ---- */
+/* baño y sueño */
 let foam = 0, lastFoam = 0;
-function addFoamAt(x, y) {
+function addFoam(x, y) {
   const now = performance.now(); if (now - lastFoam < 45) return; lastFoam = now;
-  const fx = $('#fx'), r = fx.getBoundingClientRect(), b = document.createElement('i');
-  const s = rnd(16, 34); b.className = 'foam'; b.style.width = b.style.height = s + 'px';
-  b.style.left = (x - r.left - s / 2 + rnd(-10, 10)) + 'px'; b.style.top = (y - r.top - s / 2 + rnd(-10, 10)) + 'px'; b.dataset.foam = 1;
-  fx.appendChild(b); foam = Math.min(foam + 1, 60); SFX.pop();
-  if (foam % 12 === 0) { face.squint = true; drawPet(); say(pick(['¡Jiji, cosquillas!', '¡Burbujas! 🫧', 'Qué gustito'])); setTimeout(() => { face.squint = false; drawPet(); }, 700); }
+  const b = document.createElement('i'), s = rnd(16, 34); b.className = 'foam'; b.dataset.foam = 1; b.style.width = b.style.height = s + 'px'; b.style.left = (x - s / 2 + rnd(-10, 10)) + 'px'; b.style.top = (y - s / 2 + rnd(-10, 10)) + 'px';
+  $('#fx').appendChild(b); foam = Math.min(foam + 1, 60); SFX.pop();
+  if (foam % 12 === 0) { expr('happy', 'laugh', 700); say(pick(['¡Jiji, cosquillas!', '¡Burbujas! 🫧', 'Qué gustito'])); }
 }
 function shower() {
-  const fx = $('#fx'); SFX.jump(); haptic();
-  for (let i = 0; i < 40; i++) { const d = document.createElement('i'); d.className = 'drop'; d.style.left = rnd(20, 80) + '%'; d.style.top = rnd(-40, 10) + 'px'; d.style.animationDelay = rnd(0, .5) + 's'; fx.appendChild(d); setTimeout(() => d.remove(), 1300); }
-  setTimeout(() => {
-    fx.querySelectorAll('[data-foam]').forEach(b => b.remove());
-    const gain = Math.round(foam * 1.6);
-    if (gain > 0) { S.clean = clamp(S.clean + gain, 0, 100); addXp(Math.ceil(gain / 10)); popFx('+' + gain, '#9fdcff'); say('¡Como nueva! ✨'); face.mouth = 'laugh'; drawPet(); setTimeout(() => { face.mouth = null; drawPet(); }, 900); }
-    else say('Primero el jabón 🧼');
-    foam = 0; save(); renderHud();
-  }, 700);
+  SFX.jump(); haptic();
+  for (let i = 0; i < 44; i++) { const d = document.createElement('i'); d.className = 'drop'; d.style.left = rnd(18, 82) + '%'; d.style.top = rnd(80, 200) + 'px'; d.style.animationDelay = rnd(0, .5) + 's'; $('#fx').appendChild(d); setTimeout(() => d.remove(), 1400); }
+  setTimeout(() => { $('#fx').querySelectorAll('[data-foam]').forEach(b => b.remove()); const g = Math.round(foam * 1.6);
+    if (g > 0) { S.clean = clamp(S.clean + g, 0, 100); popFx('+' + g, '#7cc0ff'); say('¡Como nuevo! ✨'); expr('happy', 'laugh', 900); hearts(3); addXp(Math.ceil(g / 10)); } else say('Primero el jabón 🧼');
+    foam = 0; save(); renderHud(); drawPet(); }, 700);
 }
+function toggleSleep() { S.sleep = !S.sleep; SFX.tap(); haptic(); $('#dark').classList.toggle('on', S.sleep); say(S.sleep ? 'Buenas noches… 🌙' : S.energy > 60 ? '¡A tope de energía!' : 'Aún tengo sueño…'); save(); drawPet(); renderHud(); renderTray(); }
 
-/* ---- dormir ---- */
-function toggleSleep() {
-  S.sleep = !S.sleep; SFX.tap(); haptic();
-  $('#dark').classList.toggle('on', S.sleep);
-  say(S.sleep ? 'Buenas noches… 🌙' : S.energy > 60 ? '¡A tope de energía!' : 'Aún tengo sueño…');
-  save(); drawPet(); renderHud(); renderTray();
-}
-
-/* ---- tocar a la mascota ---- */
-let taps = [], petDown = null;
-$('#petWrap').addEventListener('pointerdown', e => { petDown = { x: e.clientX, y: e.clientY, t: performance.now() }; if (S.room === 'bath' && tool === 'soap') { $('#petWrap').setPointerCapture(e.pointerId); addFoamAt(e.clientX, e.clientY); } });
-$('#petWrap').addEventListener('pointermove', e => { if (petDown && S.room === 'bath' && tool === 'soap') addFoamAt(e.clientX, e.clientY); });
-$('#petWrap').addEventListener('pointerup', e => {
-  if (!petDown) return; const d = Math.hypot(e.clientX - petDown.x, e.clientY - petDown.y); petDown = null;
-  if (S.room === 'bath' && tool === 'soap') return;
-  if (d > 12) return;
+/* tocar */
+let taps = [], down = null;
+$('#pet').addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; if (S.room === 'bath' && tool === 'soap') { $('#pet').setPointerCapture(e.pointerId); addFoam(e.clientX, e.clientY); } });
+$('#pet').addEventListener('pointermove', e => { if (down && S.room === 'bath' && tool === 'soap') addFoam(e.clientX, e.clientY); });
+$('#pet').addEventListener('pointerup', e => {
+  if (!down) return; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null;
+  if (S.room === 'bath' && tool === 'soap') return; if (d > 12) return;
   if (S.sleep) { say('Zzz… (déjame dormir)'); return; }
-  const now = Date.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
-  SFX.tap(); haptic();
-  if (taps.length >= 7) { face.mouth = 'grr'; squish(); say('¡Ya vale! 😤'); setTimeout(() => { face.mouth = null; drawPet(); }, 1200); drawPet(); return; }
-  squish(taps.length % 3 === 0 ? 'jump' : 'sq');
-  face.mouth = 'laugh'; drawPet(); setTimeout(() => { face.mouth = null; drawPet(); }, 600);
-  const m = mood();
-  const lines = { hungry: ['Tengo hambre… 🥺', '¿Me das algo de comer?'], tired: ['Qué sueño…', 'Necesito dormir 😴'], dirty: ['Me siento pegajosa…', '¿Un bañito? 🛁'], bored: ['¿Jugamos? 🎮', 'Me aburro…'], ok: ['¡Hola!', '¿Qué hacemos?', 'Jiji'], happy: ['¡Jiji! 💕', '¡Te quiero!', '¡Qué bien estoy!', '✨'] };
-  say(pick(lines[m] || lines.ok));
-  if (taps.length === 3) { S.fun = clamp(S.fun + 2, 0, 100); save(); renderHud(); }
+  const now = Date.now(); taps = taps.filter(t => now - t < 2500); taps.push(now); SFX.tap(); haptic();
+  if (taps.length >= 7) { squish(); say('¡Ya vale! 😤'); expr('x', 'grr', 1200); return; }
+  squish(taps.length % 3 === 0 ? 'hop' : 'sq'); expr('happy', 'laugh', 650);
+  const L = { hungry: ['Tengo hambre… 🥺', '¿Me das algo?'], tired: ['Qué sueño…', 'Necesito dormir 😴'], dirty: ['Me siento pegajoso…', '¿Un bañito? 🛁'], bored: ['¿Jugamos? 🎮', 'Me aburro…'], ok: ['¡Hola!', '¿Qué hacemos?', 'Jiji'], happy: ['¡Jiji! 💕', '¡Te quiero!', '¡Qué bien estoy!', '✨'] };
+  say(pick(L[mood()] || L.ok)); if (taps.length === 3) { S.fun = clamp(S.fun + 2, 0, 100); hearts(2); addXp(1); save(); renderHud(); }
 });
 
-/* ---- tienda y armario (hoja inferior) ---- */
-function openSheet(html, onMount) { $('#sheet').innerHTML = html; $('#sheetWrap').classList.add('open'); onMount && onMount($('#sheet')); }
-function closeSheet() { $('#sheetWrap').classList.remove('open'); }
+/* hojas */
+function openSheet(html, mount) { $('#sheet').innerHTML = html; $('#sheetWrap').classList.add('open'); mount && mount($('#sheet')); }
+const closeSheet = () => $('#sheetWrap').classList.remove('open');
 $('#sheetWrap').addEventListener('click', e => { if (e.target.id === 'sheetWrap' || e.target.closest('[data-close]')) closeSheet(); });
 function openShop() {
-  const draw = () => openSheet(`<h2>Tienda <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2>
-    <div class="grid">${FOODS.map(f => `<button class="shop-item" data-buy="${f.id}"><span class="e">${f.e}</span><span class="s">${f.n}${S.inv[f.id] ? ` · ${S.inv[f.id]}` : ''}</span><span class="p">🪙 ${f.p}</span></button>`).join('')}</div>
-    <p class="hint" style="margin-top:14px">Gana monedas en los minijuegos y subiendo de nivel.</p><button class="btn big" style="width:100%;margin-top:6px" data-close>Listo</button>`,
-    s => s.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
-      const f = FOODS.find(x => x.id === b.dataset.buy);
-      if (S.coins < f.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; }
-      S.coins -= f.p; S.inv[f.id] = (S.inv[f.id] || 0) + 1; SFX.coin(); haptic(); save(); renderHud(); renderTray(); draw();
-    }));
+  const fav = LINES[S.line].food;
+  const draw = () => openSheet(`<h2>🛒 Tienda <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2><div class="grid">${FOODS.map(f => `<button class="shop" data-buy="${f.id}"><span class="e">${f.e}</span><span class="s">${f.n}${S.inv[f.id] ? ' · ' + S.inv[f.id] : ''}${fav === f.id ? ' 💖' : ''}</span><span class="p">🪙 ${f.p}</span></button>`).join('')}</div>
+    <p class="hint">💖 favorita de ${nameNow()} · 🍬 el caramelo raro da mucha experiencia</p><button class="btn big" style="width:100%" data-close>Listo</button>`,
+    s => s.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const f = FOODS.find(x => x.id === b.dataset.buy); if (S.coins < f.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; } S.coins -= f.p; S.inv[f.id] = (S.inv[f.id] || 0) + 1; SFX.coin(); haptic(); save(); renderHud(); renderTray(); draw(); }));
   draw();
 }
-function openCloset(kind) {
+function openCloset() {
+  const draw = () => openSheet(`<h2>🎀 Estilo <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2>
+    <div style="width:140px;height:140px;margin:-6px auto 0">${art(cur())}</div>
+    ${Object.keys(SLOT_L).map(sl => `<div class="sec">${SLOT_L[sl]}</div><div class="grid"><button class="shop ${!S.acc[sl] ? 'eq' : ''}" data-off="${sl}"><span class="e">🚫</span><span class="s">Nada</span></button>
+      ${ACCS.filter(a => a.slot === sl).map(x => { const own = S.accs.includes(x.id), eq = S.acc[sl] === x.id; return `<button class="shop ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}"><span class="e">${x.e}</span><span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>`).join('')}
+    <button class="btn big" style="width:100%;margin-top:14px" data-close>Listo</button>`, s => {
+    s.querySelectorAll('[data-off]').forEach(b => b.onclick = () => { S.acc[b.dataset.off] = ''; SFX.tap(); save(); drawPet(); renderHud(); draw(); });
+    s.querySelectorAll('[data-id]').forEach(b => b.onclick = () => { const x = ACCS.find(i => i.id === b.dataset.id);
+      if (!S.accs.includes(x.id)) { if (S.coins < x.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; } S.coins -= x.p; S.accs.push(x.id); SFX.coin(); confetti(); } else SFX.tap();
+      S.acc[x.slot] = S.acc[x.slot] === x.id ? '' : x.id; haptic(); save(); drawPet(); renderHud(); draw(); squish('hop'); });
+  });
+  draw();
+}
+function openDex() {
+  const got = Object.keys(CHARS).filter(id => S.seen.includes(id)).length;
+  openSheet(`<h2>📖 Álbum <span class="hint">${got}/${Object.keys(CHARS).length}</span></h2>
+    ${Object.entries(LINES).map(([l, L]) => `<div class="sec">${L.e} ${L.n}</div><div class="grid3">${[1, 2, 3].map(s => { const id = l + ':' + s, ok = S.seen.includes(id); return `<div class="shop ${ok ? '' : 'locked'}"><div class="art">${art(id)}</div><span class="s">${ok ? CHARS[id].n : '???'}</span><span class="s">${ok ? 'nv. ' + STAGE_LV[s - 1] : ''}</span></div>`; }).join('')}</div>`).join('')}
+    ${S.team.length ? `<div class="sec">🏡 Viven en tu álbum</div><div class="grid3">${S.team.map(t => `<div class="shop"><div class="art">${art(t.form)}</div><span class="s">${t.name} · nv. ${t.lvl}</span></div>`).join('')}</div>` : ''}
+    <button class="btn big" style="width:100%;margin-top:14px" data-close>Listo</button>`);
+}
+function rename() {
+  openSheet(`<h2>¿Cómo se llama?</h2><div style="width:120px;height:120px;margin:0 auto">${art(cur())}</div><input class="name-in" id="rn" maxlength="14" value="${nameNow().replace(/"/g, '')}">
+    <div class="row" style="margin-top:14px"><button class="btn big" data-close>Cancelar</button><button class="btn big acc" id="rnOk">Guardar</button></div>`,
+    s => { const i = s.querySelector('#rn'); s.querySelector('#rnOk').onclick = () => { const v = i.value.trim(); S.name = v; S.named = !!v && v !== CH().n; save(); renderHud(); closeSheet(); say('¡Me encanta mi nombre! 💕'); hearts(); }; });
+}
+$('#avatarBtn').onclick = rename; $('#whoBtn').onclick = () => toast(`${nameNow()} · ${CH().d}`);
+
+/* ---------- elegir huevo y eclosionar ---------- */
+let chosen = '';
+function openChoose(again) {
+  const St = $('#stage'); St.classList.add('on'); chosen = '';
   const draw = () => {
-    let body;
-    if (kind === 'skin') {
-      body = `<div class="grid">${SKINS.map(x => { const own = S.skins.includes(x.id), eq = S.skin === x.id;
-        const vis = `<span class="swatch" style="background:${x.rainbow ? 'conic-gradient(#ff9ecf,#ffd36e,#7ee0a3,#7ab8ff,#b39dff,#ff9ecf)' : `radial-gradient(circle at 35% 30%,${x.c[0]},${x.c[1]} 55%,${x.c[2]})`}"></span>`;
-        return `<button class="shop-item ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}">${vis}<span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>`;
-    } else {
-      body = Object.keys(SLOT_L).map(slot => `<div class="sec">${SLOT_L[slot]}</div><div class="grid">
-        <button class="shop-item ${!S.acc[slot] ? 'eq' : ''}" data-off="${slot}"><span class="e">🚫</span><span class="s">Nada</span><span class="p">${!S.acc[slot] ? 'Puesto' : 'Quitar'}</span></button>
-        ${ACCS.filter(a => a.slot === slot).map(x => { const own = S.accs.includes(x.id), eq = S.acc[slot] === x.id;
-          return `<button class="shop-item ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}"><span class="e">${x.e}</span><span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>`).join('');
-    }
-    openSheet(`<h2>${kind === 'skin' ? 'Colores' : 'Complementos'} <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2>${body}
-      <button class="btn big" style="width:100%;margin-top:16px" data-close>Listo</button>`, s => {
-      s.querySelectorAll('[data-off]').forEach(b => b.onclick = () => { S.acc[b.dataset.off] = ''; SFX.tap(); save(); drawPet(); draw(); });
-      s.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
-        const list = kind === 'skin' ? SKINS : ACCS, owned = kind === 'skin' ? S.skins : S.accs;
-        const x = list.find(i => i.id === b.dataset.id);
-        if (!owned.includes(x.id)) { if (S.coins < x.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; } S.coins -= x.p; owned.push(x.id); SFX.coin(); confetti(); }
-        else SFX.tap();
-        if (kind === 'skin') S.skin = x.id; else S.acc[x.slot] = S.acc[x.slot] === x.id ? '' : x.id;
-        haptic(); save(); drawPet(); renderHud(); draw(); squish('jump');
-      });
-    });
+    St.innerHTML = `<h1>${again ? 'Un huevo nuevo' : 'Chibimon'}</h1><div class="sub">${again ? 'Elige qué tipo de huevo quieres incubar' : 'Elige tu huevo. ¡Tu amigo evolucionará al crecer!'}</div>
+      <div class="lines">${Object.entries(LINES).map(([l, L]) => `<button class="ln glass" data-l="${l}" aria-pressed="${chosen === l}"><div class="pair"><div>${eggSvg(l)}</div><div>${art(l + ':1')}</div></div><b>${L.e} ${L.n}</b><span>${CHARS[l + ':1'].n} → ${CHARS[l + ':2'].n} → ${CHARS[l + ':3'].n}</span></button>`).join('')}</div>
+      <div class="stage-go">${chosen ? `<div class="hint">${CHARS[chosen + ':1'].d}</div>` : ''}<button class="btn big acc" id="chGo" ${chosen ? '' : 'disabled'}>${chosen ? 'Incubar este huevo 🥚' : 'Elige un huevo'}</button></div>`;
+    St.querySelectorAll('.ln').forEach(b => b.onclick = () => { chosen = b.dataset.l; SFX.tap(); haptic(); const sc = St.querySelector('.lines').scrollTop; draw(); St.querySelector('.lines').scrollTop = sc; });
+    const go = St.querySelector('#chGo'); if (go) go.onclick = () => chosen && hatch(chosen, again);
   };
   draw();
 }
-function rename() {
-  openSheet(`<h2>¿Cómo se llama?</h2><input class="rename" id="rn" maxlength="14" value="${S.name.replace(/"/g, '')}"><div class="row" style="margin-top:14px"><button class="btn big" data-close>Cancelar</button><button class="btn big primary" id="rnOk">Guardar</button></div>`,
-    s => { const i = s.querySelector('#rn'); setTimeout(() => i.focus(), 250); s.querySelector('#rnOk').onclick = () => { S.name = i.value.trim() || 'Bolita'; save(); renderHud(); closeSheet(); say('¡Me encanta mi nombre! 💕'); }; });
+function hatch(line, again) {
+  const St = $('#stage'); let cracks = 0;
+  St.innerHTML = `<h1>¡Tu huevo!</h1><div class="sub">Tócalo para ayudarle a salir</div><div class="egg-wrap"><div class="egg idle" id="egg">${eggSvg(line, 0)}</div><div class="hint" id="eggHint">Toca el huevo 👆</div></div>`;
+  const egg = St.querySelector('#egg');
+  egg.onclick = () => {
+    if (cracks >= 3) return; cracks++; SFX.crack(); haptic(cracks === 3 ? 'heavy' : '');
+    egg.classList.remove('idle', 'wob'); void egg.offsetWidth; egg.classList.add('wob'); egg.innerHTML = eggSvg(line, cracks);
+    St.querySelector('#eggHint').textContent = ['', '¡Se mueve!', '¡Ya casi!', '¡¡Va a salir!!'][cracks];
+    if (cracks === 3) setTimeout(() => {
+      $('#flash').classList.remove('go'); void $('#flash').offsetWidth; $('#flash').classList.add('go'); SFX.evo();
+      Object.assign(S, { line, lvl: 1, xp: 0, name: '', named: false, food: Math.max(S.food, 80), fun: Math.max(S.fun, 80), energy: Math.max(S.energy, 80), clean: Math.max(S.clean, 80), sleep: false });
+      if (!S.seen.includes(line + ':1')) S.seen.push(line + ':1');
+      S.inv[LINES[line].food] = (S.inv[LINES[line].food] || 0) + 2; save();
+      setTimeout(() => {
+        St.innerHTML = `<h1>¡Ha nacido ${CHARS[line + ':1'].n}!</h1><div class="sub">${CHARS[line + ':1'].t}</div><div class="egg-wrap"><div class="evo-art born"><div class="rays"></div><div class="a">${art(line + ':1')}</div></div><div class="hint">${CHARS[line + ':1'].d}</div></div>
+          <div class="stage-go"><input class="name-in" id="nm" maxlength="14" placeholder="${CHARS[line + ':1'].n}"><button class="btn big acc" id="nmGo">¡Hola! 💕</button></div>`;
+        confetti(); hearts(6, St.querySelector('.evo-art'));
+        St.querySelector('#nmGo').onclick = () => { const v = St.querySelector('#nm').value.trim(); S.name = v; S.named = !!v; save(); St.classList.remove('on'); goRoom('kitchen'); drawPet(); renderHud(); setTimeout(() => say(`¡Hola! Soy ${nameNow()} 💕`, 2600), 400); };
+      }, 450);
+    }, 500);
+  };
 }
-$('#nameBtn').onclick = rename;
+/* ---------- evolución ---------- */
+function runEvolution() {
+  if (!evoPending) return; const [from, to] = evoPending; evoPending = null;
+  const St = $('#stage'); St.classList.add('on'); SFX.evo(); haptic('heavy');
+  const oldName = nameNow.call ? (S.named ? S.name : CHARS[from].n) : '';
+  St.innerHTML = `<h1>¿Qué pasa?</h1><div class="sub">¡${oldName} está evolucionando!</div><div class="egg-wrap"><div class="evo-art glow" id="ev"><div class="rays"></div><div class="a" id="evA">${art(from)}</div></div></div>`;
+  let n = 0; const iv = setInterval(() => { n++; St.querySelector('#evA').innerHTML = art(n % 2 ? to : from); if (n > 9) clearInterval(iv); }, 260 - 0);
+  setTimeout(() => {
+    $('#flash').classList.remove('go'); void $('#flash').offsetWidth; $('#flash').classList.add('go');
+    if (!S.seen.includes(to)) S.seen.push(to); save();
+    setTimeout(() => {
+      St.innerHTML = `<h1>¡Enhorabuena!</h1><div class="sub">${oldName} ha evolucionado a <b>${CHARS[to].n}</b></div><div class="egg-wrap"><div class="evo-art born"><div class="rays"></div><div class="a">${art(to)}</div></div><div class="hint">${CHARS[to].t} · ${CHARS[to].d}</div></div><div class="stage-go"><button class="btn big acc" id="evOk">¡Genial! ✨</button></div>`;
+      confetti(); SFX.up();
+      St.querySelector('#evOk').onclick = () => { St.classList.remove('on'); drawPet(); renderHud(); renderTray(); hearts(5); say('¡Mira qué mayor estoy! ✨', 2600); };
+    }, 400);
+  }, 3000);
+}
 
 /* ================= minijuegos ================= */
-const G = { on: false, kind: null, raf: 0 };
-const cv = $('#cv'), cx = cv.getContext('2d');
-let W = 0, H = 0, DPR = 1;
-function sizeCanvas() { DPR = Math.min(3, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+const G = { on: false, kind: null, raf: 0, started: false };
+const cv = $('#cv'), cx = cv.getContext('2d'); let W = 0, H = 0, DPR = 1;
+function sizeCanvas() { DPR = Math.min(3, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0); }
 addEventListener('resize', () => { if (G.on) sizeCanvas(); });
-// Sprite peludo para los minijuegos: se genera una vez por partida (pelos a lo largo del borde + motas)
-let sprite = null;
-function gumPath(c, x, y, r) {
-  // misma gominola que el SVG (caja 200x200 → radio r)
-  const k = r / 92, X = v => x + (v - 100) * k, Y = v => y + (v - 110) * k;
-  c.beginPath(); c.moveTo(X(100), Y(16));
-  c.bezierCurveTo(X(128), Y(16), X(146), Y(44), X(158), Y(76)); c.bezierCurveTo(X(172), Y(112), X(186), Y(146), X(176), Y(170));
-  c.bezierCurveTo(X(166), Y(192), X(132), Y(198), X(100), Y(198)); c.bezierCurveTo(X(68), Y(198), X(34), Y(192), X(24), Y(170));
-  c.bezierCurveTo(X(14), Y(146), X(28), Y(112), X(42), Y(76)); c.bezierCurveTo(X(54), Y(44), X(72), Y(16), X(100), Y(16)); c.closePath();
-}
-function buildSprite(r) {
-  const sk = skin(), s = Math.ceil(r * 2.6), o = document.createElement('canvas'); o.width = o.height = s * DPR;
-  const c = o.getContext('2d'); c.scale(DPR, DPR); const x = s / 2, y = s / 2;
-  const g = c.createRadialGradient(x - r * .3, y - r * .45, r * .1, x, y, r * 1.1);
-  if (sk.rainbow) { g.addColorStop(0, '#fff'); g.addColorStop(.35, '#ffc6e4'); g.addColorStop(.65, '#b3a6ff'); g.addColorStop(1, '#7fd3e8'); }
-  else { g.addColorStop(0, sk.c[0]); g.addColorStop(.5, sk.c[1]); g.addColorStop(1, sk.c[2]); }
-  // pelos del borde: trazos cortos hacia fuera
-  c.save(); gumPath(c, x, y, r); c.clip(); c.fillStyle = g; c.fillRect(0, 0, s, s); c.restore();
-  c.lineCap = 'round';
-  for (let i = 0; i < 420; i++) {
-    const a = Math.random() * Math.PI * 2, rr = r * (0.82 + Math.random() * .2);
-    const px = x + Math.cos(a) * rr * .98, py = y + Math.sin(a) * rr * (a > 0 && a < Math.PI ? 1.02 : 1.04) + r * .05;
-    if (!c.isPointInPath || true) { gumPath(c, x, y, r); if (!c.isPointInPath(px * DPR, py * DPR)) continue; }
-    const len = r * rnd(.1, .22), ang = a + rnd(-.4, .4);
-    c.strokeStyle = Math.random() < .5 ? sk.c[0] : sk.c[1]; c.globalAlpha = rnd(.5, 1); c.lineWidth = rnd(1, 2.2);
-    c.beginPath(); c.moveTo(px, py); c.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); c.stroke();
-  }
-  // motas de pelo por dentro
-  c.save(); gumPath(c, x, y, r); c.clip();
-  for (let i = 0; i < 500; i++) { c.globalAlpha = rnd(.08, .25); c.fillStyle = Math.random() < .5 ? '#fff' : '#000'; c.fillRect(x + rnd(-r, r), y + rnd(-r, r), 1.4, rnd(2, 4)); }
-  c.restore(); c.globalAlpha = 1;
-  sprite = { img: o, s, r, id: sk.id };
-}
-function drawPetCanvas(x, y, r, opts = {}) {
-  if (!sprite || sprite.r !== r || sprite.id !== S.skin) buildSprite(r);
-  cx.save(); cx.translate(x, y); cx.scale(opts.sx || 1, opts.sy || 1);
-  cx.drawImage(sprite.img, -sprite.s / 2, -sprite.s / 2, sprite.s, sprite.s);
-  // ojos saltones
-  const ex = r * .27, ey = -r * .15, er = r * .21;
-  for (const s of [-1, 1]) {
-    cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s * ex, ey, er, 0, 7); cx.fill();
-    if (opts.hurt) { cx.strokeStyle = '#1d1b26'; cx.lineWidth = r * .07; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(s * ex - er * .5, ey - er * .5); cx.lineTo(s * ex + er * .5, ey + er * .5); cx.moveTo(s * ex + er * .5, ey - er * .5); cx.lineTo(s * ex - er * .5, ey + er * .5); cx.stroke(); }
-    else { cx.fillStyle = '#1d1b26'; cx.beginPath(); cx.arc(s * ex + (opts.look || 0) * er * .35, ey - er * .15, er * .48, 0, 7); cx.fill(); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s * ex + er * .2, ey - er * .35, er * .15, 0, 7); cx.fill(); }
-  }
-  cx.strokeStyle = '#1d1b26'; cx.lineWidth = r * .07; cx.lineCap = 'round';
-  if (opts.open) { cx.fillStyle = '#5a2336'; cx.beginPath(); cx.ellipse(0, r * .3, r * .15, r * .13, 0, 0, 7); cx.fill(); }
-  else { cx.beginPath(); cx.arc(0, r * .2, r * .12, .25, Math.PI - .25); cx.stroke(); }
-  cx.restore();
-}
+const SPR = {};
+function sprite() { const id = cur(); if (!SPR[id]) { const img = new Image(); img.src = SPRITES[id]; SPR[id] = img; } return SPR[id]; }
+function drawChar(x, y, size, key, e, sx = 1, sy = 1) { const img = sprite(); if (!img.complete || !img.naturalWidth) return; const k = Math.min(size / img.naturalWidth, size / img.naturalHeight); const w = img.naturalWidth * k, h = img.naturalHeight * k;
+  cx.save(); cx.translate(x, y); cx.scale(sx, sy); if (key === 'hurt') cx.globalAlpha = .55; cx.drawImage(img, -w / 2, -h, w, h); cx.restore(); }
 const emoji = (e, x, y, s) => { cx.font = `${s}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(e, x, y); };
 let pointerX = null;
-cv.addEventListener('pointerdown', e => { pointerX = e.clientX; G.started = true; $('#gStart').style.display = 'none'; });
+cv.addEventListener('pointerdown', e => { pointerX = e.clientX; start(); });
 cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') pointerX = e.clientX; });
 cv.addEventListener('pointerup', () => { if (G.kind === 'jump') pointerX = null; });
-
+function start() { if (!G.started) { G.started = true; $('#gStart').style.display = 'none'; } }
+function hud(score, lives, coins) { $('#gScore').textContent = score; $('#gLives').textContent = lives == null ? '' : '❤️'.repeat(Math.max(0, lives)) + '🤍'.repeat(Math.max(0, 3 - lives)); $('#gCoins').textContent = '🪙 ' + coins; }
 function startGame(kind) {
-  sprite = null;
   if (S.sleep) { say('Está durmiendo 😴'); return; }
-  if (S.energy < 10) { say('Estoy muy cansada… 😴'); SFX.bad(); return; }
-  G.kind = kind; G.on = true; G.started = false; $('#game').classList.add('on'); $('#gOver').classList.remove('on');
-  $('#gStart').style.display = ''; $('#gStart').textContent = kind === 'catch' ? 'Arrastra para atrapar la comida · evita las bombas' : 'Mantén el dedo a un lado para moverte';
-  sizeCanvas(); pointerX = null;
-  kind === 'catch' ? initCatch() : initJump();
+  if (S.energy < 10) { say('Estoy muy cansado… 😴'); SFX.bad(); return; }
+  G.kind = kind; G.on = true; G.started = false; $('#game').classList.add('on'); $('#gOver').classList.remove('on'); pointerX = null;
+  const dom = kind === 'mem' || kind === 'whack'; $('#dom').classList.toggle('on', dom); cv.style.display = dom ? 'none' : '';
+  $('#game').style.background = { catch: 'linear-gradient(#ffe9d6,#ffd6e0)', jump: '#bfe3ff', mem: 'radial-gradient(90% 60% at 20% 10%,#ffe0ec,transparent 60%),radial-gradient(80% 60% at 90% 90%,#e0efff,transparent 60%),#fff4e6', whack: 'linear-gradient(#e6f8dc,#c9ebb6)' }[kind];
+  $('#gStart').style.display = ''; $('#gStart').textContent = { catch: 'Arrastra para atrapar · ¡ojo con las bombas!', jump: 'Toca a un lado para moverte', mem: 'Encuentra todas las parejas', whack: 'Toca un agujero para empezar' }[kind];
+  cancelAnimationFrame(G.raf); clearInterval(G.iv); clearTimeout(G.to);
+  if (dom) { kind === 'mem' ? initMem() : initWhack(); return; }
+  sizeCanvas(); kind === 'catch' ? initCatch() : initJump();
   let last = performance.now();
   const loop = t => { if (!G.on) return; const dt = Math.min(.033, (t - last) / 1000); last = t; (kind === 'catch' ? stepCatch : stepJump)(dt); G.raf = requestAnimationFrame(loop); };
   G.raf = requestAnimationFrame(loop);
 }
-function hud(score, lives, coins) { $('#gScore').textContent = score; $('#gLives').textContent = lives == null ? '' : '❤️'.repeat(lives) + '🤍'.repeat(Math.max(0, 3 - lives)); $('#gCoins').textContent = '🪙 ' + coins; }
-function endGame(score, coins, label) {
-  G.on = false; cancelAnimationFrame(G.raf);
-  const rec = score > S.best[G.kind]; if (rec) S.best[G.kind] = score;
-  S.coins += coins; S.fun = clamp(S.fun + 18, 0, 100); S.energy = clamp(S.energy - 6, 0, 100); S.food = clamp(S.food - 3, 0, 100); addXp(5 + Math.floor(score / 10));
+function endGame(score, coins, label, better = (a, b) => a > b) {
+  if (!G.on) return; G.on = false; cancelAnimationFrame(G.raf); clearInterval(G.iv); clearTimeout(G.to);
+  const rec = !S.best[G.kind] || better(score, S.best[G.kind]); if (rec) S.best[G.kind] = score;
+  S.coins += coins; S.fun = clamp(S.fun + 18, 0, 100); S.energy = clamp(S.energy - 6, 0, 100); S.food = clamp(S.food - 3, 0, 100); addXp(6 + Math.floor(coins / 2));
   save(); renderHud(); renderTray();
-  $('#goTitle').textContent = rec ? '¡Nuevo récord! 🏆' : '¡Fin de la partida!';
-  $('#goScore').textContent = label;
-  $('#goInfo').textContent = `Has ganado 🪙 ${coins} · Diversión +18`;
+  $('#goArt').innerHTML = art(cur());
+  $('#goTitle').textContent = rec ? '¡Nuevo récord! 🏆' : '¡Bien jugado!'; $('#goScore').textContent = label; $('#goInfo').textContent = `Has ganado 🪙 ${coins} · Diversión +18`;
   $('#gOver').classList.add('on'); rec ? SFX.up() : SFX.coin(); haptic('ok');
 }
-function closeGame() { G.on = false; cancelAnimationFrame(G.raf); $('#game').classList.remove('on'); drawPet(); renderHud(); }
-$('#gClose').onclick = () => { if ($('#gOver').classList.contains('on')) closeGame(); else if (G.kind === 'catch') endGame(C.score, C.coins, C.score); else endGame(J.score, J.coins, J.score + ' m'); };
-$('#goExit').onclick = closeGame;
-$('#goAgain').onclick = () => startGame(G.kind);
+function closeGame() { G.on = false; cancelAnimationFrame(G.raf); clearInterval(G.iv); clearTimeout(G.to); $('#game').classList.remove('on'); $('#dom').innerHTML = ''; drawPet(); renderHud(); if (evoPending) setTimeout(runEvolution, 400); }
+$('#gClose').onclick = () => { if ($('#gOver').classList.contains('on') || !G.started) return closeGame(); ({ catch: () => endGame(C.score, C.coins + Math.floor(C.score / 4), C.score), jump: () => endGame(J.score, J.coins + Math.floor(J.score / 50), J.score + ' m'), mem: closeGame, whack: () => endGame(Wk.score, Math.floor(Wk.score / 2), Wk.score) })[G.kind](); };
+$('#goExit').onclick = closeGame; $('#goAgain').onclick = () => startGame(G.kind);
 
-/* --- Lluvia de comida --- */
-let C;
-const GOOD = ['🍎', '🍌', '🍓', '🍕', '🍩', '🍣', '🧁', '🍉', '🍪', '🥐'];
-function initCatch() { C = { x: W / 2, y: H - 110 - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab')) || 0), r: 34, items: [], t: 0, spawn: .9, score: 0, coins: 0, lives: 3, hurt: 0, open: 0, bg: [] }; for (let i = 0; i < 30; i++) C.bg.push([rnd(0, W), rnd(0, H), rnd(.5, 2)]); hud(0, 3, 0); }
+let C; const GOOD = ['🍎', '🍌', '🍓', '🍕', '🍩', '🍣', '🧁', '🍉', '🍪', '🥐'];
+function initCatch() { C = { x: W / 2, y: H - 110, size: 110, items: [], t: 0, spawn: .9, score: 0, coins: 0, lives: 3, hurt: 0, open: 0 }; hud(0, 3, 0); }
 function stepCatch(dt) {
-  const c = C;
-  if (pointerX != null) c.x += (clamp(pointerX, c.r, W - c.r) - c.x) * Math.min(1, dt * 14);
-  if (G.started) {
-    c.t += dt; c.spawn -= dt;
-    const lvl = Math.min(1, c.t / 60);
-    if (c.spawn <= 0) {
-      c.spawn = .85 - lvl * .5 + rnd(0, .25);
-      const r = Math.random(); const type = r < .16 + lvl * .12 ? 'bomb' : r < .24 + lvl * .12 ? 'coin' : r < .27 + lvl * .12 ? 'star' : 'food';
-      c.items.push({ x: rnd(24, W - 24), y: -30, v: rnd(150, 210) + lvl * 230, type, e: type === 'bomb' ? '💣' : type === 'coin' ? '🪙' : type === 'star' ? '⭐' : pick(GOOD), rot: rnd(-1, 1) });
-    }
-  }
-  for (const it of c.items) {
-    it.y += it.v * dt;
-    if (!it.done && Math.hypot(it.x - c.x, it.y - c.y) < c.r + 18) {
-      it.done = true;
-      if (it.type === 'bomb') { c.lives--; c.hurt = .6; SFX.bad(); haptic('heavy'); }
-      else { c.open = .25; if (it.type === 'coin') { c.coins++; SFX.coin(); } else if (it.type === 'star') { c.score += 5; SFX.up(); } else { c.score++; SFX.eat(); } haptic(); }
-      hud(c.score, c.lives, c.coins + Math.floor(c.score / 4));
-    }
-  }
-  c.items = c.items.filter(i => !i.done && i.y < H + 40);
-  c.hurt = Math.max(0, c.hurt - dt); c.open = Math.max(0, c.open - dt);
-  // dibujo
-  const bg = cx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2b2350'); bg.addColorStop(1, '#16122c'); cx.fillStyle = bg; cx.fillRect(0, 0, W, H);
-  cx.fillStyle = 'rgba(255,255,255,.5)'; for (const [x, y, s] of c.bg) { cx.beginPath(); cx.arc(x, y, s, 0, 7); cx.fill(); }
-  cx.fillStyle = 'rgba(255,255,255,.06)'; cx.fillRect(0, c.y + c.r, W, H);
-  for (const it of c.items) emoji(it.e, it.x, it.y, 36);
-  const sq = c.hurt ? 1 + Math.sin(c.hurt * 40) * .06 : 1;
-  cx.fillStyle = 'rgba(0,0,0,.3)'; cx.beginPath(); cx.ellipse(c.x, c.y + c.r + 6, c.r * .8, 6, 0, 0, 7); cx.fill();
-  drawPetCanvas(c.x, c.y, c.r, { open: c.open > 0, hurt: c.hurt > 0, sx: sq, sy: 2 - sq });
+  const c = C; if (pointerX != null) c.x += (clamp(pointerX, 44, W - 44) - c.x) * Math.min(1, dt * 14);
+  if (G.started) { c.t += dt; c.spawn -= dt; const lv = Math.min(1, c.t / 60);
+    if (c.spawn <= 0) { c.spawn = .85 - lv * .5 + rnd(0, .25); const r = Math.random(), type = r < .16 + lv * .12 ? 'bomb' : r < .24 + lv * .12 ? 'coin' : r < .27 + lv * .12 ? 'star' : 'food';
+      c.items.push({ x: rnd(26, W - 26), y: -30, v: rnd(150, 210) + lv * 230, type, e: type === 'bomb' ? '💣' : type === 'coin' ? '🪙' : type === 'star' ? '⭐' : pick(GOOD) }); } }
+  for (const it of c.items) { it.y += it.v * dt;
+    if (!it.done && Math.abs(it.x - c.x) < 46 && Math.abs(it.y - (c.y - 50)) < 40) { it.done = true;
+      if (it.type === 'bomb') { c.lives--; c.hurt = .6; SFX.bad(); haptic('heavy'); } else { c.open = .25; if (it.type === 'coin') { c.coins++; SFX.coin(); } else if (it.type === 'star') { c.score += 5; SFX.up(); } else { c.score++; SFX.eat(); } haptic(); }
+      hud(c.score, c.lives, c.coins + Math.floor(c.score / 4)); } }
+  c.items = c.items.filter(i => !i.done && i.y < H + 40); c.hurt = Math.max(0, c.hurt - dt); c.open = Math.max(0, c.open - dt);
+  cx.clearRect(0, 0, W, H);
+  cx.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 5; i++) { const x = (i * 97 + c.t * 12) % (W + 120) - 60; cx.beginPath(); cx.ellipse(x, 130 + i * 90, 50, 18, 0, 0, 7); cx.fill(); }
+  cx.fillStyle = '#f7c9a8'; cx.fillRect(0, c.y + 2, W, H); cx.fillStyle = '#f0b995'; cx.fillRect(0, c.y + 2, W, 8);
+  for (const it of c.items) emoji(it.e, it.x, it.y, 38);
+  const k = c.hurt ? 1 + Math.sin(c.hurt * 40) * .06 : 1;
+  drawChar(c.x, c.y + 8, c.size, c.hurt ? 'hurt' : c.open ? 'open' : 'n', c.hurt ? { eyes: 'x', mouth: 'wavy' } : c.open ? { eyes: 'happy', mouth: 'open' } : { eyes: 'default', mouth: 'cat' }, k, 2 - k);
   if (c.lives <= 0) endGame(c.score, c.coins + Math.floor(c.score / 4), c.score);
 }
-
-/* --- Salto al cielo --- */
 let J;
-function initJump() {
-  J = { x: W / 2, y: H - 160, vx: 0, vy: -900, r: 24, cam: 0, top: H - 160, plats: [], coins: 0, score: 0, stars: [], tilt: 0 };
-  let y = H - 90; J.plats.push({ x: W / 2 - 40, y, w: 80, t: 'n' });
-  while (y > -H) { y -= rnd(70, 110); addPlat(y); }
-  for (let i = 0; i < 40; i++) J.stars.push([rnd(0, W), rnd(0, H), rnd(.5, 1.8)]);
-  hud('0 m', null, 0);
-}
-function addPlat(y) {
-  const h = Math.max(0, (H - y) / 10), w = Math.max(54, 84 - h / 60);
-  const r = Math.random(), t = h > 150 && r < .22 ? 'm' : h > 250 && r < .34 ? 'b' : 'n';
-  J.plats.push({ x: rnd(8, W - w - 8), y, w, t, dir: rnd(0, 1) < .5 ? -1 : 1, broken: false });
-  if (Math.random() < .18) J.plats[J.plats.length - 1].coin = true;
-}
+function initJump() { J = { x: W / 2, y: H - 170, vx: 0, vy: -900, r: 28, cam: 0, plats: [], coins: 0, score: 0, sq: 0 }; let y = H - 90; J.plats.push({ x: W / 2 - 45, y, w: 90, t: 'n' }); while (y > -H) { y -= rnd(70, 110); addPlat(y); } hud('0 m', null, 0); }
+function addPlat(y) { const h = Math.max(0, J.cam / 10), w = Math.max(56, 88 - h / 60), r = Math.random(), t = h > 150 && r < .22 ? 'm' : h > 250 && r < .34 ? 'b' : 'n'; J.plats.push({ x: rnd(8, W - w - 8), y, w, t, dir: Math.random() < .5 ? -1 : 1, coin: Math.random() < .18 }); }
 function stepJump(dt) {
-  const j = J;
-  if (!G.started) dt *= 0;   // espera al primer toque
-  const target = pointerX == null ? 0 : (pointerX < W / 2 ? -1 : 1);
-  j.vx += (target * 430 - j.vx) * Math.min(1, dt * 8);
-  j.x += j.vx * dt; if (j.x < -j.r) j.x = W + j.r; if (j.x > W + j.r) j.x = -j.r;
+  const j = J; if (!G.started) dt = 0;
+  const target = pointerX == null ? 0 : pointerX < W / 2 ? -1 : 1; j.vx += (target * 440 - j.vx) * Math.min(1, dt * 8); j.x += j.vx * dt; if (j.x < -j.r) j.x = W + j.r; if (j.x > W + j.r) j.x = -j.r;
   j.vy += 1900 * dt; j.y += j.vy * dt;
   for (const p of j.plats) {
     if (p.t === 'm') { p.x += p.dir * 90 * dt; if (p.x < 4 || p.x + p.w > W - 4) p.dir *= -1; }
     if (p.broken) { p.y += 400 * dt; continue; }
-    if (j.vy > 0 && j.y + j.r > p.y && j.y + j.r < p.y + 16 + j.vy * dt && j.x > p.x - 10 && j.x < p.x + p.w + 10) {
-      if (p.t === 'b') { p.broken = true; SFX.pop(); continue; }
-      j.vy = -900; j.y = p.y - j.r; SFX.jump(); j.squash = .15;
-    }
-    if (p.coin && Math.hypot(j.x - (p.x + p.w / 2), j.y - (p.y - 26)) < j.r + 14) { p.coin = false; j.coins++; SFX.coin(); haptic(); }
+    if (j.vy > 0 && j.y > p.y - 4 && j.y < p.y + 14 + j.vy * dt && j.x > p.x - 12 && j.x < p.x + p.w + 12) { if (p.t === 'b') { p.broken = true; SFX.pop(); continue; } j.vy = -900; j.y = p.y - 4; SFX.jump(); j.sq = .15; }
+    if (p.coin && Math.hypot(j.x - (p.x + p.w / 2), j.y - 30 - (p.y - 26)) < 36) { p.coin = false; j.coins++; SFX.coin(); haptic(); }
   }
-  // cámara
-  const line = H * .42;
-  if (j.y < line) { const d = line - j.y; j.y = line; j.plats.forEach(p => p.y += d); j.cam += d; j.stars.forEach(s => { s[1] = (s[1] + d * .2) % H; }); }
-  j.plats = j.plats.filter(p => p.y < H + 60);
-  let minY = Math.min(...j.plats.map(p => p.y));
-  while (minY > -60) { minY -= rnd(70, 110) + Math.min(40, j.cam / 400); addPlat(minY); J.plats[J.plats.length - 1].y = minY; }
-  j.score = Math.floor(j.cam / 10); j.squash = Math.max(0, (j.squash || 0) - dt);
-  hud(j.score + ' m', null, j.coins + Math.floor(j.score / 50));
-  // dibujo
-  const k = Math.min(1, j.cam / 20000);
-  const bg = cx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${230 + k * 40},55%,${28 - k * 16}%)`); bg.addColorStop(1, `hsl(${200 + k * 40},60%,${55 - k * 35}%)`); cx.fillStyle = bg; cx.fillRect(0, 0, W, H);
-  cx.fillStyle = `rgba(255,255,255,${.2 + k * .6})`; for (const [x, y, s] of j.stars) { cx.beginPath(); cx.arc(x, y, s, 0, 7); cx.fill(); }
-  for (const p of j.plats) {
-    cx.fillStyle = p.t === 'b' ? 'rgba(255,255,255,.35)' : p.t === 'm' ? '#ffd9f0' : '#fff';
-    const y = p.y, h = 14;
-    cx.beginPath(); cx.roundRect ? cx.roundRect(p.x, y, p.w, h, 8) : cx.rect(p.x, y, p.w, h); cx.fill();
-    cx.beginPath(); cx.arc(p.x + p.w * .3, y + 2, 10, Math.PI, 0); cx.arc(p.x + p.w * .62, y + 1, 13, Math.PI, 0); cx.fill();
-    if (p.t === 'b') { cx.strokeStyle = 'rgba(80,70,120,.6)'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(p.x + p.w * .45, y); cx.lineTo(p.x + p.w * .55, y + h); cx.stroke(); }
-    if (p.coin) emoji('🪙', p.x + p.w / 2, p.y - 26, 24);
-  }
-  const s = j.squash > 0 ? 1.2 : j.vy < 0 ? .92 : 1;
-  drawPetCanvas(j.x, j.y, j.r, { sx: s, sy: 2 - s, open: j.vy < -500 });
-  if (j.y - j.r > H) endGame(j.score, j.coins + Math.floor(j.score / 50), j.score + ' m');
+  const line = H * .45; if (j.y < line) { const d = line - j.y; j.y = line; j.plats.forEach(p => p.y += d); j.cam += d; }
+  j.plats = j.plats.filter(p => p.y < H + 60); let minY = Math.min(...j.plats.map(p => p.y)); while (minY > -60) { minY -= rnd(70, 110) + Math.min(40, j.cam / 400); addPlat(minY); }
+  j.score = Math.floor(j.cam / 10); j.sq = Math.max(0, j.sq - dt); hud(j.score + ' m', null, j.coins + Math.floor(j.score / 50));
+  const k = Math.min(1, j.cam / 20000), g = cx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, `hsl(${205 + k * 50},80%,${80 - k * 55}%)`); g.addColorStop(1, `hsl(${200 + k * 40},85%,${92 - k * 50}%)`); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+  if (k > .3) { cx.fillStyle = `rgba(255,255,255,${k})`; for (let i = 0; i < 40; i++) { cx.beginPath(); cx.arc((i * 97) % W, (i * 131 + j.cam * .1) % H, 1.5, 0, 7); cx.fill(); } }
+  for (const p of j.plats) { cx.fillStyle = p.t === 'b' ? 'rgba(255,255,255,.5)' : p.t === 'm' ? '#ffe3f0' : '#fff'; cx.strokeStyle = '#6b4a3a'; cx.lineWidth = 2.5;
+    cx.beginPath(); cx.moveTo(p.x + 10, p.y + 14); cx.arc(p.x + p.w * .25, p.y + 4, 12, Math.PI * .8, Math.PI * 1.9); cx.arc(p.x + p.w * .55, p.y, 15, Math.PI * 1.1, Math.PI * 1.95); cx.arc(p.x + p.w * .8, p.y + 5, 11, Math.PI * 1.2, Math.PI * .2); cx.lineTo(p.x + 10, p.y + 14); cx.fill(); cx.stroke();
+    if (p.coin) emoji('🪙', p.x + p.w / 2, p.y - 26, 24); }
+  const s = j.sq > 0 ? 1.18 : j.vy < 0 ? .93 : 1; drawChar(j.x, j.y + 6, 84, j.vy < -500 ? 'up' : 'n', j.vy < -500 ? { eyes: 'happy', mouth: 'open' } : { eyes: 'default', mouth: 'cat' }, s, 2 - s);
+  if (j.y - 60 > H) endGame(j.score, j.coins + Math.floor(j.score / 50), j.score + ' m');
+}
+let Mm;
+function initMem() {
+  const ids = shuffle(Object.keys(CHARS)).slice(0, 8), deck = shuffle([...ids, ...ids]);
+  Mm = { deck, open: [], found: 0, moves: 0, lock: false }; hud('0 mov.', null, 0);
+  $('#dom').innerHTML = `<div class="mem">${deck.map((id, i) => `<div class="card3d" data-i="${i}"><div class="in"><div class="fa">✦</div><div class="ba">${art(id)}</div></div></div>`).join('')}</div>`;
+  $('#dom').querySelectorAll('.card3d').forEach(c => c.onclick = () => flip(c));
+}
+function flip(c) {
+  start(); if (Mm.lock || c.classList.contains('up')) return;
+  c.classList.add('up'); SFX.flip(); haptic(); Mm.open.push(c); if (Mm.open.length < 2) return;
+  Mm.moves++; const [a, b] = Mm.open; hud(Mm.moves + ' mov.', null, 0);
+  if (Mm.deck[a.dataset.i] === Mm.deck[b.dataset.i]) { a.classList.add('done'); b.classList.add('done'); Mm.open = []; Mm.found++; SFX.coin();
+    if (Mm.found === 8) { const coins = Math.max(6, 40 - Mm.moves); setTimeout(() => endGame(Mm.moves, coins, Mm.moves + ' mov.', (x, y) => x < y), 500); } }
+  else { Mm.lock = true; setTimeout(() => { a.classList.remove('up'); b.classList.remove('up'); Mm.open = []; Mm.lock = false; }, 750); }
+}
+let Wk;
+function initWhack() {
+  Wk = { score: 0, time: 30, holes: [] }; hud('0', null, 0);
+  $('#dom').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:18px"><div class="glass" style="padding:8px 18px;border-radius:999px;font-weight:900" id="wkT">⏱ 30 s</div><div class="holes">${Array.from({ length: 9 }, (_, i) => `<div class="hole" data-i="${i}"><div class="who2"></div></div>`).join('')}</div></div>`;
+  Wk.holes = [...$('#dom').querySelectorAll('.hole')];
+  Wk.holes.forEach(h => h.addEventListener('pointerdown', () => { if (!G.started) { start(); runWhack(); } else whackHit(h); }));
+}
+function runWhack() {
+  G.iv = setInterval(() => { Wk.time--; $('#wkT').textContent = `⏱ ${Wk.time} s`; if (Wk.time <= 0) endGame(Wk.score, Math.floor(Wk.score / 2), Wk.score); }, 1000);
+  const pop = () => { if (!G.on) return; const free = Wk.holes.filter(h => !h.classList.contains('up'));
+    if (free.length) { const h = pick(free), friend = Math.random() < .2; h.dataset.kind = friend ? 'friend' : 'bug';
+      h.querySelector('.who2').innerHTML = friend ? `<div style="width:100%;height:100%">${art(cur())}</div>` : pick(['🐛', '🐞', '🦟', '🪲', '🐜']);
+      h.classList.add('up'); setTimeout(() => h.classList.remove('up', 'hit'), 900 - Math.min(500, (30 - Wk.time) * 14)); }
+    G.to = setTimeout(pop, Math.max(330, 700 - (30 - Wk.time) * 14)); };
+  pop();
+}
+function whackHit(h) {
+  if (!h.classList.contains('up') || h.classList.contains('hit')) return; h.classList.add('hit');
+  if (h.dataset.kind === 'friend') { Wk.score = Math.max(0, Wk.score - 3); SFX.bad(); haptic('heavy'); toast('¡A tu amigo no! 😣'); } else { Wk.score++; SFX.pop(); haptic(); }
+  hud(String(Wk.score), null, Math.floor(Wk.score / 2)); setTimeout(() => h.classList.remove('up', 'hit'), 150);
 }
 
-/* ================= arranque ================= */
-function daily() {
-  if (S.day === today()) return;
-  const first = !S.day; S.day = today();
-  if (!first) { addCoins(25); setTimeout(() => toast('Regalo diario: +25 🪙'), 800); }
-  else setTimeout(() => say('¡Hola! Soy ' + S.name + ' 💕', 2600), 700);
-  save();
-}
-tick(); daily(); goRoom(S.room || 'kitchen'); drawPet(); renderHud();
+/* arranque */
+function daily() { if (S.day === today()) return; const first = !S.day; S.day = today(); if (!first) { S.coins += 25; bumpCoins(); setTimeout(() => toast('Regalo diario: +25 🪙'), 900); } save(); }
+loadSprites().then(() => { tick(); daily(); goRoom(S.room || 'kitchen'); drawPet(); renderHud(); if (!S.line) openChoose(false); });
 setInterval(() => { tick(); save(); renderHud(); drawPet(); }, 5000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); daily(); renderHud(); drawPet(); } else { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } } });
-setInterval(() => { const m = mood(); if (!G.on && !S.sleep && Math.random() < .35 && m !== 'happy' && m !== 'ok') say({ hungry: 'Tengo hambre… 🍎', tired: 'Estoy cansada… 😴', dirty: 'Necesito un baño 🛁', bored: '¿Jugamos? 🎮' }[m], 2500); }, 20000);
+setInterval(() => { const m = mood(); if (!G.on && !S.sleep && S.line && Math.random() < .35 && m !== 'happy' && m !== 'ok') say({ hungry: 'Tengo hambre… 🍎', tired: 'Estoy cansado… 😴', dirty: 'Necesito un baño 🛁', bored: '¿Jugamos? 🎮' }[m], 2500); }, 20000);
 </script>
 </body>
 </html>
