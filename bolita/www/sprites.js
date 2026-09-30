@@ -50,7 +50,15 @@ function upscale(src, k) {
   g.putImageData(new ImageData(o, w, h), 0, 0);
   return c.toDataURL('image/png');
 }
+// Criaturas ya recortadas y sin fondo (PNG a 720 px, sacadas de la lámina grande de Gemini). Si existen,
+// se usan tal cual y no hace falta procesar nada al arrancar.
+const PRE = Object.fromEntries(Object.keys(BOX).map(id => [id, `criaturas/${id.replace(':', '')}.png`]));
 function loadSprites(src = 'criaturas.jpg') {
+  const ids = Object.keys(PRE);
+  return Promise.all(ids.map(id => new Promise(ok => { const i = new Image(); i.onload = () => { SPRITES[id] = PRE[id]; ok(true); }; i.onerror = () => ok(false); i.src = PRE[id]; })))
+    .then(r => r.every(Boolean) ? null : loadSheet(src));
+}
+function loadSheet(src) {
   return new Promise((ok, ko) => {
     const img = new Image();
     img.onload = () => {
