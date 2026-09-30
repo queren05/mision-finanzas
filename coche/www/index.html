@@ -132,6 +132,40 @@ h2{font-size:17px;font-weight:700;margin:0}
 .opt{display:flex;gap:10px}
 .opt .btn{flex:1}
 .opt .btn[aria-pressed="true"]{border-color:var(--acc);color:var(--acc)}
+
+/* ---------- Liquid Glass ----------
+   Fondo con luces de color difuminadas (fijo) y superficies de cristal: relleno translúcido en degradado,
+   desenfoque con saturación, borde de luz arriba y sombra suave. */
+:root{--g1:rgba(255,255,255,.10);--g2:rgba(255,255,255,.04);--gedge:rgba(255,255,255,.16);--ghi:rgba(255,255,255,.28);--gblur:saturate(1.8) blur(24px)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(55% 35% at 15% 8%,rgba(255,210,60,.20),transparent 70%),
+  radial-gradient(50% 35% at 95% 30%,rgba(90,140,255,.28),transparent 70%),
+  radial-gradient(60% 40% at 20% 85%,rgba(120,90,255,.18),transparent 70%),
+  radial-gradient(45% 30% at 90% 95%,rgba(79,209,139,.12),transparent 70%),var(--bg)}
+html,body{background:transparent}
+html{background:var(--bg)}
+.card,.list,.stat,.hero,.ivl div,.chip,.inp,.btn:not(.acc):not(.ghost):not(.danger){
+  background:linear-gradient(180deg,var(--g1),var(--g2));border:1px solid var(--gedge);
+  box-shadow:inset 0 1px 0 var(--ghi),inset 0 -1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.28);
+  -webkit-backdrop-filter:var(--gblur);backdrop-filter:var(--gblur)}
+.hero{background:radial-gradient(120% 90% at 50% 15%,rgba(80,120,220,.35),rgba(255,255,255,.04) 70%);border-radius:30px}
+.row{border-top-color:rgba(255,255,255,.07)}
+.row:active{background:rgba(255,255,255,.07)}
+.ico{background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:transparent;box-shadow:0 6px 16px rgba(255,210,60,.3)}
+.btn{border-radius:999px}
+.btn.acc{background:linear-gradient(180deg,#ffe07a,var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 8px 22px rgba(255,210,60,.3)}
+.bar{background:rgba(255,255,255,.08)}
+.pill{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.tabs{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 14px 34px rgba(0,0,0,.45);-webkit-backdrop-filter:saturate(1.8) blur(26px);backdrop-filter:saturate(1.8) blur(26px)}
+.tab[aria-current="page"]{background:rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.sheet-wrap{background:rgba(3,6,15,.35)}
+.sheet{width:calc(100% - 16px);margin:0 8px calc(8px + env(safe-area-inset-bottom,0px));border-radius:30px;background:linear-gradient(180deg,rgba(40,52,90,.72),rgba(18,26,48,.8));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 20px 60px rgba(0,0,0,.5);-webkit-backdrop-filter:saturate(1.8) blur(30px);backdrop-filter:saturate(1.8) blur(30px);padding-bottom:20px}
+.sheet .card,.sheet .list,.sheet .ivl div{-webkit-backdrop-filter:none;backdrop-filter:none}
+.toast{background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.9)}
+#wiz{background:transparent}
+#wiz::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(60% 35% at 20% 10%,rgba(255,210,60,.22),transparent 70%),radial-gradient(55% 40% at 90% 40%,rgba(90,140,255,.3),transparent 70%),var(--bg)}
+@media (prefers-reduced-transparency:reduce){.card,.list,.stat,.hero,.tabs,.sheet{background:var(--card)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
