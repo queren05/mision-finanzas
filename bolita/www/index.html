@@ -47,7 +47,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .need.low .ring{animation:wig 1.2s infinite}
 @keyframes wig{0%,100%{transform:rotate(0)}10%{transform:rotate(-9deg)}20%{transform:rotate(9deg)}30%{transform:rotate(0)}}
 .scene{position:relative;flex:1;min-height:0}
-.pet{position:absolute;left:50%;bottom:3%;width:min(80vw,350px);aspect-ratio:1;transform:translateX(-50%);touch-action:none}
+.pet{position:absolute;left:50%;bottom:3%;height:min(94%,80vw,350px);aspect-ratio:1;transform:translateX(-50%);touch-action:none}
 .pet-b{width:100%;height:100%;animation:breathe 3.4s ease-in-out infinite;transform-origin:50% 94%}
 @keyframes breathe{50%{transform:scale(1.025,.975)}}
 .pet-s{width:100%;height:100%;transform-origin:50% 94%}
@@ -420,7 +420,9 @@ function squish(k = 'sq') { const s = $('#petS'); s.classList.remove('sq', 'hop'
 
 /* ---------- habitaciones y decoración ---------- */
 function roomHtml(r) {
-  const deco = Object.entries(SLOTS[r]).map(([slot, [x, y, s]]) => { const id = (S.place[r] || {})[slot]; const d = id && byId(DECOR, id); return d ? `<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle" dominant-baseline="middle" style="filter:drop-shadow(0 6px 5px rgba(0,0,0,.2))">${d.e}</text>` : ''; }).join('');
+  const deco = Object.entries(SLOTS[r]).map(([slot, [x, y, s]]) => { const id = (S.place[r] || {})[slot]; const d = id && byId(DECOR, id); if (!d) return '';
+    const cord = slot === 'techo' ? `<path d="M${x} 0 V${y - s * .45}" stroke="#8a6f93" stroke-width="2.5"/>` : '';
+    return `${cord}<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle" dominant-baseline="middle" style="filter:drop-shadow(0 6px 5px rgba(0,0,0,.2))">${d.e}</text>`; }).join('');
   return `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">${ROOM_SVG[r]}${deco}</svg>`;
 }
 function goRoom(r) {
@@ -449,17 +451,15 @@ function renderTray() {
     $('#lampBtn').onclick = toggleSleep;
   } else if (S.room === 'play') {
     const toys = TOYS.filter(t => S.toys.includes(t.id));
-    T.innerHTML = `<div class="tray-h"><b>🎮 Juegos</b><button class="btn sm" id="toyShop">🧸 Juguetes</button></div>
-      ${toys.length ? `<div class="scroller">${toys.map(t => { const cd = (S.toyT[t.id] || 0) > Date.now(); return `<div class="item ${cd ? 'cool' : ''}" data-toy="${t.id}"><span class="e">${t.e}</span><span class="p">${esc(t.n)}</span></div>`; }).join('')}</div>` : ''}
-      <div class="games">${GAMES.map(([k, e, n, bg]) => `<button class="game" data-g="${k}"><span class="e" style="background:${bg}">${e}</span><span><b>${n}</b><span>${bestTxt(k)}</span></span></button>`).join('')}</div>`;
-    T.querySelectorAll('.game').forEach(b => b.onclick = () => startGame(b.dataset.g));
+    T.innerHTML = `<div class="tray-h"><b>🎮 Sala de juegos</b><button class="btn sm" id="toyShop">🧸 Juguetes</button></div>
+      <div class="scroller">${toys.map(t => { const cd = (S.toyT[t.id] || 0) > Date.now(); return `<div class="item ${cd ? 'cool' : ''}" data-toy="${t.id}"><span class="e">${t.e}</span><span class="p">${esc(t.n)}</span></div>`; }).join('') || '<div class="hint" style="width:100%;padding:8px 0">Compra juguetes y juega con ellos aquí 🧸</div>'}</div>
+      <button class="btn big acc" id="gamesBtn">🕹️ Minijuegos</button>`;
     T.querySelectorAll('[data-toy]').forEach(b => b.onclick = () => playToy(b.dataset.toy));
-    $('#toyShop').onclick = () => openShop('toys');
+    $('#toyShop').onclick = () => openShop('toys'); $('#gamesBtn').onclick = openGames;
   } else {
     T.innerHTML = `<div class="tray-h"><b>🎀 Armario</b><span>Todo sobre ${esc(nameNow())}</span></div>
-      <div class="row"><button class="btn" id="infoBtn">📋 Ficha</button><button class="btn" id="rwBtn">🎁 Recompensas</button></div>
-      <div class="row"><button class="btn" id="decBtn">🪴 Decorar</button><button class="btn" id="dexBtn">📖 Álbum</button></div>
-      <div class="row"><button class="btn sm ${S.lvl >= MAX_LV ? 'acc' : ''}" id="eggBtn" ${S.lvl >= MAX_LV ? '' : 'disabled'}>🥚 ${S.lvl >= MAX_LV ? 'Huevo nuevo' : 'Huevo al nv. ' + MAX_LV}</button><button class="btn sm" id="sndBtn">${S.sound ? '🔊 Sonido' : '🔇 Silencio'}</button></div>`;
+      <div class="row"><button class="btn sm" id="infoBtn">📋 Ficha</button><button class="btn sm" id="rwBtn">🎁 Premios</button><button class="btn sm" id="decBtn">🪴 Decorar</button></div>
+      <div class="row"><button class="btn sm ${S.lvl >= MAX_LV ? 'acc' : ''}" id="eggBtn" ${S.lvl >= MAX_LV ? '' : 'disabled'}>🥚 ${S.lvl >= MAX_LV ? 'Huevo nuevo' : 'Huevo al nv. ' + MAX_LV}</button><button class="btn sm" id="dexBtn">📖 Álbum</button><button class="btn sm" id="sndBtn" style="flex:.5">${S.sound ? '🔊' : '🔇'}</button></div>`;
     $('#infoBtn').onclick = openInfo; $('#rwBtn').onclick = openRewards; $('#decBtn').onclick = openDecorate; $('#dexBtn').onclick = openDex;
     $('#sndBtn').onclick = () => { S.sound = !S.sound; save(); renderTray(); };
     $('#eggBtn').onclick = () => { if (S.lvl < MAX_LV) return; openSheet(`<h2>🥚 Huevo nuevo</h2><p class="hint" style="font-size:14px">${esc(nameNow())} se irá a vivir a tu álbum (podrás verlo siempre) y empezarás con un huevo nuevo. Tus monedas, comida, juguetes y decoración se quedan.</p><div class="row"><button class="btn big" data-close>Todavía no</button><button class="btn big acc" id="egGo">¡Vamos!</button></div>`, s => s.querySelector('#egGo').onclick = () => { S.team.push({ form: cur(), name: nameNow(), lvl: S.lvl, d: today() }); closeSheet(); openChoose(true); }); };
@@ -554,6 +554,11 @@ function openShop(tab = 'food') {
     s.querySelectorAll('[data-toy]').forEach(b => b.onclick = () => { const t = byId(TOYS, b.dataset.toy); if (S.toys.includes(t.id)) return; if (!buy(t.p)) return; S.toys.push(t.id); confetti(); save(); renderHud(); renderTray(); draw(); });
   });
   draw();
+}
+function openGames() {
+  openSheet(`<h2>🕹️ Minijuegos <span class="hint">⚡ ${Math.round(S.energy)}</span></h2><div class="games" style="max-height:none">${GAMES.map(([k, e, n, bg]) => `<button class="game" data-g="${k}"><span class="e" style="background:${bg}">${e}</span><span><b>${n}</b><span>${bestTxt(k)}</span></span></button>`).join('')}</div>
+    <p class="hint">Cada partida da monedas, experiencia y diversión, y gasta un poco de energía.</p><button class="btn big" style="width:100%" data-close>Cerrar</button>`,
+    s => s.querySelectorAll('.game').forEach(b => b.onclick = () => { closeSheet(); startGame(b.dataset.g); }));
 }
 const SLOT_N = { techo: '💡 Techo', pared: '🖼️ Pared', estante: '📚 Estante', sueloI: '⬅️ Suelo izquierda', sueloD: '➡️ Suelo derecha' };
 function openDecorate() {

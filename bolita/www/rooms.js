@@ -61,10 +61,11 @@ const ROOM_SVG = {
     ${[[250, 140], [352, 160], [360, 300], [244, 316]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff" opacity=".9"/>`).join('')}` +
     floor('#f7c1d6', '#eea3c1') + rug(260, 590, 130, 36, '#fff', '#ffb0cf') + `<rect width="400" height="700" fill="url(#vign)"/>`,
 };
+// Posiciones visibles en un iPhone (la escena recorta ~40 unidades por lado y la bandeja tapa y>500)
 const SLOTS = {
-  kitchen: { techo: [200, 36, 54], pared: [300, 250, 64], estante: [310, 128, 40], sueloI: [70, 520, 86], sueloD: [320, 520, 80] },
-  bath: { techo: [180, 36, 54], pared: [170, 180, 60], estante: [120, 90, 36], sueloI: [250, 470, 60], sueloD: [340, 560, 80] },
-  bed: { techo: [200, 36, 54], pared: [200, 230, 58], estante: [300, 250, 40], sueloI: [60, 530, 90], sueloD: [340, 560, 76] },
-  play: { techo: [200, 130, 50], pared: [100, 330, 62], estante: [290, 208, 40], sueloI: [60, 540, 86], sueloD: [300, 600, 76] },
-  closet: { techo: [110, 60, 50], pared: [300, 380, 60], estante: [110, 100, 38], sueloI: [60, 540, 86], sueloD: [350, 540, 80] },
+  kitchen: { techo: [200, 190, 50], pared: [300, 260, 62], estante: [312, 128, 40], sueloI: [78, 440, 78], sueloD: [322, 450, 70] },
+  bath: { techo: [190, 190, 50], pared: [200, 250, 56], estante: [120, 90, 36], sueloI: [80, 330, 60], sueloD: [322, 450, 70] },
+  bed: { techo: [200, 190, 50], pared: [200, 270, 56], estante: [300, 250, 40], sueloI: [80, 440, 78], sueloD: [322, 330, 60] },
+  play: { techo: [200, 190, 50], pared: [100, 330, 60], estante: [296, 208, 40], sueloI: [78, 440, 78], sueloD: [322, 450, 70] },
+  closet: { techo: [200, 190, 50], pared: [300, 380, 58], estante: [110, 100, 38], sueloI: [78, 440, 78], sueloD: [322, 450, 70] },
 };
