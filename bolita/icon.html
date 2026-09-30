@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- Fuente del icono de Bolita: se captura a 1024x1024 (firefox --headless --screenshot) → resources/icon.png.
+     Reutiliza el dibujo real de la app: carga www/index.html en un iframe oculto no hace falta; copia el SVG. -->
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1024px;height:1024px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#6d5bd0,#2a2152 70%)}
+svg{position:absolute;left:92px;top:110px;width:840px;height:840px}
+.sh{position:absolute;left:230px;top:900px;width:564px;height:70px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent)}
+</style></head><body><div class="sh"></div>
+<svg viewBox="0 0 200 200">
+<defs>
+  <radialGradient id="bg" cx="38%" cy="30%" r="78%"><stop offset="0" stop-color="#fff3a8"/><stop offset=".5" stop-color="#ffd84a"/><stop offset="1" stop-color="#e8a91c"/></radialGradient>
+  <filter id="fur" x="-15%" y="-15%" width="130%" height="130%">
+    <feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="4" result="n0"/><feGaussianBlur in="n0" stdDeviation="1.1" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency=".7 .35" numOctaves="3" seed="9" result="h0"/><feGaussianBlur in="h0" stdDeviation=".7" result="h"/>
+    <feColorMatrix in="h" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 -.58" result="hl"/>
+    <feComposite in="hl" in2="d" operator="in" result="hl2"/>
+    <feColorMatrix in="h" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1 .42" result="sh"/>
+    <feComposite in="sh" in2="d" operator="in" result="sh2"/>
+    <feGaussianBlur in="d" stdDeviation="2.2" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="d"/><feMergeNode in="sh2"/><feMergeNode in="hl2"/></feMerge>
+  </filter>
+  <radialGradient id="ao" cx="50%" cy="100%" r="70%"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  <radialGradient id="sheen" cx="35%" cy="25%" r="40%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+</defs>
+<g filter="url(#fur)"><path id="b" d="M100 16 C128 16 146 44 158 76 C172 112 186 146 176 170 C166 192 132 198 100 198 C68 198 34 192 24 170 C14 146 28 112 42 76 C54 44 72 16 100 16 Z" fill="url(#bg)"/><use href="#b" fill="url(#sheen)"/><use href="#b" fill="url(#ao)"/></g>
+<circle cx="76" cy="94" r="19" fill="#fff"/><circle cx="124" cy="94" r="19" fill="#fff"/>
+<circle cx="79" cy="90" r="8.5" fill="#1d1b26"/><circle cx="127" cy="90" r="8.5" fill="#1d1b26"/><circle cx="82" cy="86.5" r="2.8" fill="#fff"/><circle cx="130" cy="86.5" r="2.8" fill="#fff"/>
+<g fill="none" stroke="#1d1b26" stroke-width="4.5"><circle cx="76" cy="94" r="25"/><circle cx="124" cy="94" r="25"/><path d="M96 88 Q100 83 104 88"/></g>
+<ellipse cx="50" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/><ellipse cx="150" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/>
+<path d="M89 132 Q100 143 111 132" fill="none" stroke="#1d1b26" stroke-width="4.5" stroke-linecap="round"/>
+<g transform="translate(100 176)"><path d="M0 0 L-26 -14 Q-32 0 -26 14 Z M0 0 L26 -14 Q32 0 26 14 Z" fill="#1d1b26"/><rect x="-7" y="-7" width="14" height="14" rx="4" fill="#33303f"/></g>
+</svg></body></html>

@@ -50,7 +50,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .room-bg{position:absolute;inset:0;transition:background .5s}
 .floor{position:absolute;left:0;right:0;bottom:0;height:30%;transition:background .5s}
 .deco{position:absolute;font-size:34px;opacity:.9;pointer-events:none;transition:opacity .4s}
-.pet-wrap{position:absolute;left:50%;top:52%;width:min(62vw,270px);aspect-ratio:1;transform:translate(-50%,-50%);touch-action:none}
+.pet-wrap{position:absolute;left:50%;top:52%;width:min(70vw,300px);aspect-ratio:1;transform:translate(-50%,-50%);touch-action:none}
 .pet-float{width:100%;height:100%;animation:float 3.2s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .pet-squish{width:100%;height:100%;transform-origin:50% 90%;transition:transform .12s}
@@ -58,7 +58,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .pet-squish.jump{animation:hop .5s}
 @keyframes hop{30%{transform:translateY(-22%) scale(.95,1.06)}60%{transform:translateY(0) scale(1.1,.9)}100%{transform:none}}
 .pet-wrap.sleeping .pet-float{animation-duration:5s}
-.shadow{position:absolute;left:50%;top:84%;width:52%;height:9%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent);animation:shadow 3.2s ease-in-out infinite}
+.shadow{position:absolute;left:50%;top:93%;width:66%;height:10%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent);animation:shadow 3.2s ease-in-out infinite}
 @keyframes shadow{50%{transform:translateX(-50%) scale(.85);opacity:.7}}
 .bubble{position:absolute;left:50%;top:9%;transform:translate(-50%,-10px) scale(.8);opacity:0;background:#fff;color:#2a2440;padding:8px 14px;border-radius:18px;font-weight:800;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:none;z-index:5;max-width:88%;overflow:hidden;text-overflow:ellipsis}
 .bubble.show{opacity:1;transform:translate(-50%,0) scale(1)}
@@ -162,8 +162,8 @@ input.rename{width:100%;font:800 18px var(--f);padding:12px 16px;border-radius:1
     <div class="room-bg" id="roomBg"></div>
     <div class="floor" id="floor"></div>
     <div id="decos"></div>
-    <div class="shadow" id="shadow"></div>
-    <div class="pet-wrap" id="petWrap"><div class="pet-float"><div class="pet-squish" id="squish"><svg id="pet" viewBox="0 0 200 200" width="100%" height="100%"></svg></div></div></div>
+    
+    <div class="pet-wrap" id="petWrap"><div class="shadow" id="shadow"></div><div class="pet-float"><div class="pet-squish" id="squish"><svg id="pet" viewBox="0 0 200 200" width="100%" height="100%"></svg></div></div></div>
     <div class="zzz" id="zzz">z z Z</div>
     <div class="bubble" id="bubble"></div>
     <div class="dark" id="dark"></div>
@@ -237,33 +237,40 @@ const FOODS = [
   { id: 'coffee', e: '☕', n: 'Café', p: 10, food: 2, fun: 2, energy: 22 },
   { id: 'potion', e: '🧪', n: 'Poción', p: 40, food: 30, fun: 30, energy: 30, clean: 30 },
 ];
+// Colores del pelo: [claro, medio, oscuro]
 const SKINS = [
-  { id: 'sky', n: 'Cielo', c: ['#bfe4ff', '#6fb6ff', '#3f86e0'], p: 0 },
-  { id: 'mint', n: 'Menta', c: ['#c9f7e2', '#6fdcb0', '#2fa57c'], p: 60 },
-  { id: 'peach', n: 'Melocotón', c: ['#ffe0cc', '#ffab80', '#e2744a'], p: 60 },
-  { id: 'lav', n: 'Lavanda', c: ['#e8e0ff', '#b39dff', '#7b62e0'], p: 80 },
-  { id: 'lemon', n: 'Limón', c: ['#fff6c8', '#ffdf63', '#e0a92a'], p: 80 },
-  { id: 'gum', n: 'Chicle', c: ['#ffe0f0', '#ff94c8', '#e0558f'], p: 100 },
+  { id: 'sun', n: 'Sol', c: ['#fff3a8', '#ffd84a', '#e8a91c'], p: 0 },
+  { id: 'tang', n: 'Mandarina', c: ['#ffd2a6', '#ff9f4a', '#e0661c'], p: 60 },
+  { id: 'grape', n: 'Uva', c: ['#e3d0ff', '#a97cff', '#6c43d6'], p: 60 },
+  { id: 'kiwi', n: 'Kiwi', c: ['#dcf7b8', '#8fdc5a', '#4a9f2a'], p: 80 },
+  { id: 'gum', n: 'Chicle', c: ['#ffe0f0', '#ff94c8', '#e0558f'], p: 80 },
+  { id: 'sky', n: 'Cielo', c: ['#d6efff', '#78c2ff', '#3a86e0'], p: 100 },
+  { id: 'cloud', n: 'Nube', c: ['#ffffff', '#eef0f7', '#b9bfd3'], p: 120 },
   { id: 'night', n: 'Noche', c: ['#8d93c9', '#4a4f8a', '#262a5a'], p: 150 },
   { id: 'rainbow', n: 'Arcoíris', c: ['#fff', '#ff9ecf', '#7ab8ff'], p: 300, rainbow: true },
 ];
-const HATS = [
-  { id: 'none', e: '🚫', n: 'Nada', p: 0 },
-  { id: 'party', e: '🥳', n: 'Gorro de fiesta', p: 40 },
-  { id: 'bow', e: '🎀', n: 'Lazo', p: 50 },
-  { id: 'flower', e: '🌸', n: 'Flor', p: 50 },
-  { id: 'crown', e: '👑', n: 'Corona', p: 200 },
-  { id: 'glasses', e: '🕶️', n: 'Gafas de sol', p: 90 },
-  { id: 'phones', e: '🎧', n: 'Auriculares', p: 120 },
-  { id: 'cap', e: '🧢', n: 'Gorra', p: 70 },
+// Complementos por hueco: cabeza, cara y cuello (se combinan)
+const ACCS = [
+  { id: 'party', slot: 'head', e: '🥳', n: 'Gorro de fiesta', p: 40 },
+  { id: 'bow', slot: 'head', e: '🎀', n: 'Lazo', p: 50 },
+  { id: 'flower', slot: 'head', e: '🌸', n: 'Flor', p: 50 },
+  { id: 'cap', slot: 'head', e: '🧢', n: 'Gorra', p: 70 },
+  { id: 'phones', slot: 'head', e: '🎧', n: 'Auriculares', p: 120 },
+  { id: 'crown', slot: 'head', e: '👑', n: 'Corona', p: 200 },
+  { id: 'round', slot: 'face', e: '👓', n: 'Gafas redondas', p: 0 },
+  { id: 'sun', slot: 'face', e: '🕶️', n: 'Gafas de sol', p: 90 },
+  { id: 'bowtie', slot: 'neck', e: '🎩', n: 'Pajarita', p: 0 },
+  { id: 'scarf', slot: 'neck', e: '🧣', n: 'Bufanda', p: 80 },
+  { id: 'medal', slot: 'neck', e: '🏅', n: 'Medalla', p: 150 },
 ];
+const SLOT_L = { head: 'Cabeza', face: 'Cara', neck: 'Cuello' };
 
 /* ================= estado ================= */
 const KEY = 'bolita.v1';
 const RATE = { food: 7, energy: 5, fun: 6, clean: 4 };   // puntos que baja cada hora (despierta)
 function fresh() {
   return { v: 1, name: 'Bolita', coins: 60, xp: 0, lvl: 1, food: 80, energy: 90, fun: 75, clean: 90, sleep: false, t: Date.now(),
-    inv: { apple: 3, banana: 2, pizza: 1, cake: 1 }, skin: 'sky', skins: ['sky'], hat: 'none', hats: ['none'], day: '', best: { catch: 0, jump: 0 }, sound: true, room: 'kitchen', born: today() };
+    inv: { apple: 3, banana: 2, pizza: 1, cake: 1 }, skin: 'sun', skins: ['sun'], acc: { head: '', face: 'round', neck: 'bowtie' }, accs: ['round', 'bowtie'], day: '', best: { catch: 0, jump: 0 }, sound: true, room: 'kitchen', born: today() };
 }
 let S;
 try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch (e) { S = fresh(); }
@@ -284,6 +291,7 @@ function tick() {
 
 /* ================= mascota (SVG) ================= */
 const skin = () => SKINS.find(s => s.id === S.skin) || SKINS[0];
+if (!S.acc) { S.acc = { head: '', face: 'round', neck: 'bowtie' }; S.accs = ['round', 'bowtie']; }
 function mood() {
   const m = Math.min(S.food, S.energy, S.fun, S.clean);
   if (S.sleep) return 'sleep';
@@ -295,60 +303,87 @@ function mood() {
 }
 const MOOD_L = { happy: 'Feliz', ok: 'Tranquila', hungry: 'Hambrienta', tired: 'Cansada', dirty: 'Pegajosa', bored: 'Aburrida', sleep: 'Durmiendo' };
 let face = { look: [0, 0], blink: false, mouth: null, squint: false };
-function hatSvg(id) {
+// Forma de gominola (más ancha abajo, punta redondeada arriba) en una caja de 200x200
+const BODY = 'M100 16 C128 16 146 44 158 76 C172 112 186 146 176 170 C166 192 132 198 100 198 C68 198 34 192 24 170 C14 146 28 112 42 76 C54 44 72 16 100 16 Z';
+function accSvg(id) {
   switch (id) {
-    case 'party': return '<g transform="translate(100 28)"><path d="M-26 22 L0 -40 L26 22 Z" fill="#ff7ab8"/><path d="M-19 5 L19 5 M-12 -12 L12 -12 M-6 -26 L6 -26" stroke="#ffe36e" stroke-width="5"/><circle cy="-42" r="8" fill="#ffe36e"/></g>';
-    case 'bow': return '<g transform="translate(142 44) rotate(18)"><path d="M0 0 L-26 -16 Q-32 0 -26 16 Z M0 0 L26 -16 Q32 0 26 16 Z" fill="#ff5c9a"/><circle r="8" fill="#ff86b6"/></g>';
-    case 'flower': return '<g transform="translate(140 40)">' + [0, 72, 144, 216, 288].map(a => `<ellipse rx="9" ry="14" transform="rotate(${a}) translate(0 -12)" fill="#ffc2dc"/>`).join('') + '<circle r="8" fill="#ffd36e"/></g>';
-    case 'crown': return '<g transform="translate(100 30)"><path d="M-34 14 L-34 -14 L-17 2 L0 -22 L17 2 L34 -14 L34 14 Z" fill="#ffd23f" stroke="#e0a800" stroke-width="3" stroke-linejoin="round"/><circle cx="0" cy="4" r="5" fill="#ff5c7a"/><circle cx="-20" cy="7" r="4" fill="#5cc8ff"/><circle cx="20" cy="7" r="4" fill="#7ee0a3"/></g>';
-    case 'glasses': return '<g transform="translate(100 88)"><rect x="-56" y="-14" width="46" height="30" rx="12" fill="#1c1a2e"/><rect x="10" y="-14" width="46" height="30" rx="12" fill="#1c1a2e"/><path d="M-10 -4 L10 -4" stroke="#1c1a2e" stroke-width="5"/><path d="M-48 -6 L-30 -6" stroke="rgba(255,255,255,.5)" stroke-width="4" stroke-linecap="round"/><path d="M18 -6 L36 -6" stroke="rgba(255,255,255,.5)" stroke-width="4" stroke-linecap="round"/></g>';
-    case 'phones': return '<g><path d="M40 92 Q40 22 100 22 Q160 22 160 92" fill="none" stroke="#2c2a44" stroke-width="10" stroke-linecap="round"/><rect x="26" y="78" width="24" height="38" rx="10" fill="#ff6f91"/><rect x="150" y="78" width="24" height="38" rx="10" fill="#ff6f91"/></g>';
-    case 'cap': return '<g transform="translate(100 44)"><path d="M-48 10 Q-48 -34 0 -34 Q48 -34 48 10 Z" fill="#ff6f61"/><path d="M-2 10 L70 16 Q72 26 60 26 L-2 22 Z" fill="#e0483c"/><circle cy="-34" r="6" fill="#e0483c"/></g>';
+    case 'party': return '<g transform="translate(100 22)"><path d="M-22 18 L0 -38 L22 18 Z" fill="#ff7ab8"/><path d="M-16 4 L16 4 M-10 -12 L10 -12" stroke="#ffe36e" stroke-width="5"/><circle cy="-40" r="7" fill="#ffe36e"/></g>';
+    case 'bow': return '<g transform="translate(138 40) rotate(20)"><path d="M0 0 L-24 -15 Q-30 0 -24 15 Z M0 0 L24 -15 Q30 0 24 15 Z" fill="#ff5c9a"/><circle r="7" fill="#ff86b6"/></g>';
+    case 'flower': return '<g transform="translate(134 38)">' + [0, 72, 144, 216, 288].map(a => `<ellipse rx="8" ry="13" transform="rotate(${a}) translate(0 -11)" fill="#ffc2dc"/>`).join('') + '<circle r="7" fill="#ffb02e"/></g>';
+    case 'cap': return '<g transform="translate(100 34)"><path d="M-40 12 Q-40 -26 0 -26 Q40 -26 40 12 Z" fill="#ff6f61"/><path d="M-4 12 L60 16 Q62 25 52 25 L-4 21 Z" fill="#e0483c"/><circle cy="-26" r="5" fill="#e0483c"/></g>';
+    case 'phones': return '<g><path d="M34 100 Q34 22 100 22 Q166 22 166 100" fill="none" stroke="#2c2a44" stroke-width="9" stroke-linecap="round"/><rect x="20" y="86" width="24" height="38" rx="10" fill="#ff6f91"/><rect x="156" y="86" width="24" height="38" rx="10" fill="#ff6f91"/></g>';
+    case 'crown': return '<g transform="translate(100 22)"><path d="M-30 12 L-30 -12 L-15 2 L0 -20 L15 2 L30 -12 L30 12 Z" fill="#ffd23f" stroke="#c98f00" stroke-width="3" stroke-linejoin="round"/><circle cy="4" r="4.5" fill="#ff5c7a"/></g>';
+    case 'round': return '<g fill="none" stroke="#1d1b26" stroke-width="4.5"><circle cx="76" cy="94" r="25"/><circle cx="124" cy="94" r="25"/><path d="M96 88 Q100 83 104 88"/><path d="M51 90 L36 84 M149 90 L164 84"/></g><g fill="#fff" opacity=".35"><path d="M60 84 a18 18 0 0 1 10 -10 l2 3 a15 15 0 0 0 -8 9z"/><path d="M108 84 a18 18 0 0 1 10 -10 l2 3 a15 15 0 0 0 -8 9z"/></g>';
+    case 'sun': return '<g><rect x="46" y="76" width="50" height="34" rx="14" fill="#1d1b26"/><rect x="104" y="76" width="50" height="34" rx="14" fill="#1d1b26"/><path d="M96 88 L104 88" stroke="#1d1b26" stroke-width="5"/><path d="M56 86 L76 86 M114 86 L134 86" stroke="rgba(255,255,255,.45)" stroke-width="4" stroke-linecap="round"/></g>';
+    case 'bowtie': return '<g transform="translate(100 176)"><path d="M0 0 L-26 -14 Q-32 0 -26 14 Z M0 0 L26 -14 Q32 0 26 14 Z" fill="#1d1b26"/><rect x="-7" y="-7" width="14" height="14" rx="4" fill="#33303f"/></g>';
+    case 'scarf': return '<g><path d="M34 164 Q100 188 166 164 L170 180 Q100 206 30 180 Z" fill="#e0483c"/><path d="M128 178 L138 206 L122 208 L116 182 Z" fill="#c43a30"/><path d="M50 170 L56 184 M80 178 L84 192 M112 180 L114 194 M146 174 L148 188" stroke="#ffb3a6" stroke-width="4"/></g>';
+    case 'medal': return '<g transform="translate(100 168)"><path d="M-18 -18 L0 10 L18 -18" fill="none" stroke="#4f7cff" stroke-width="7"/><circle cy="18" r="13" fill="#ffc83d" stroke="#d79a00" stroke-width="3"/><text y="23" font-size="14" text-anchor="middle" fill="#8a5a00" font-weight="900">1</text></g>';
     default: return '';
   }
 }
+// Cuerpo peludo: se pinta una vez (el filtro de pelo es caro) y solo cambia con el color
+let bodyKey = '';
+function drawBody() {
+  const sk = skin();
+  if (bodyKey === sk.id && $('#pet').querySelector('#faceG')) return;
+  bodyKey = sk.id;
+  const grad = sk.rainbow
+    ? `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb3d9"/><stop offset=".33" stop-color="#ffe27a"/><stop offset=".66" stop-color="#8fe0b0"/><stop offset="1" stop-color="#8fb8ff"/></linearGradient>`
+    : `<radialGradient id="bg" cx="38%" cy="30%" r="78%"><stop offset="0" stop-color="${sk.c[0]}"/><stop offset=".5" stop-color="${sk.c[1]}"/><stop offset="1" stop-color="${sk.c[2]}"/></radialGradient>`;
+  $('#pet').innerHTML = `<defs>${grad}
+    <filter id="fur" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="4" result="n0"/><feGaussianBlur in="n0" stdDeviation="1.1" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".7 .35" numOctaves="3" seed="9" result="h0"/><feGaussianBlur in="h0" stdDeviation=".7" result="h"/>
+      <feColorMatrix in="h" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 -.58" result="hl"/>
+      <feComposite in="hl" in2="d" operator="in" result="hl2"/>
+      <feColorMatrix in="h" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1 .42" result="sh"/>
+      <feComposite in="sh" in2="d" operator="in" result="sh2"/>
+      <feGaussianBlur in="d" stdDeviation="2.2" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="d"/><feMergeNode in="sh2"/><feMergeNode in="hl2"/></feMerge>
+    </filter>
+    <radialGradient id="ao" cx="50%" cy="100%" r="70%"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sheen" cx="35%" cy="25%" r="40%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <clipPath id="bodyClip"><path d="${BODY}"/></clipPath></defs>
+    <g filter="url(#fur)"><path d="${BODY}" fill="url(#bg)"/><path d="${BODY}" fill="url(#sheen)"/><path d="${BODY}" fill="url(#ao)"/></g>
+    <g id="dirtG"></g><g id="faceG"></g><g id="accG"></g>`;
+}
 function drawPet() {
-  const sk = skin(), m = mood(), [lx, ly] = face.look;
-  const sleeping = m === 'sleep';
-  const body = sk.rainbow
-    ? `<radialGradient id="bg" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#ffc6e4"/><stop offset=".5" stop-color="#c7b3ff"/><stop offset=".75" stop-color="#8fd1ff"/><stop offset="1" stop-color="#7fe3c0"/></radialGradient>`
-    : `<radialGradient id="bg" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${sk.c[0]}"/><stop offset=".55" stop-color="${sk.c[1]}"/><stop offset="1" stop-color="${sk.c[2]}"/></radialGradient>`;
-  const ex = 70 + lx * 6, ey = 96 + ly * 5, ex2 = 130 + lx * 6;
-  let eyes;
-  if (sleeping) eyes = `<path d="M${ex - 12} ${ey} Q${ex} ${ey + 9} ${ex + 12} ${ey}" /><path d="M${ex2 - 12} ${ey} Q${ex2} ${ey + 9} ${ex2 + 12} ${ey}" />`;
-  else if (face.squint || m === 'happy' && face.mouth === 'laugh') eyes = `<path d="M${ex - 12} ${ey + 4} Q${ex} ${ey - 9} ${ex + 12} ${ey + 4}" /><path d="M${ex2 - 12} ${ey + 4} Q${ex2} ${ey - 9} ${ex2 + 12} ${ey + 4}" />`;
+  drawBody();
+  const m = mood(), [lx, ly] = face.look, sleeping = m === 'sleep';
+  // ojos saltones: blanco grande + pupila que mira al dedo
+  const E = [[76, 94], [124, 94]];
+  let eyes = '';
+  if (sleeping) eyes = E.map(([x, y]) => `<path d="M${x - 14} ${y + 2} Q${x} ${y + 12} ${x + 14} ${y + 2}" fill="none" stroke="#1d1b26" stroke-width="5" stroke-linecap="round"/>`).join('');
+  else if (face.squint) eyes = E.map(([x, y]) => `<path d="M${x - 14} ${y + 6} Q${x} ${y - 8} ${x + 14} ${y + 6}" fill="none" stroke="#1d1b26" stroke-width="5" stroke-linecap="round"/>`).join('');
   else {
-    const ry = face.blink ? 1.5 : (m === 'tired' ? 8 : 14);
-    eyes = `<ellipse cx="${ex}" cy="${ey}" rx="11" ry="${ry}" fill="#1f1b33" stroke="none"/><ellipse cx="${ex2}" cy="${ey}" rx="11" ry="${ry}" fill="#1f1b33" stroke="none"/>`
-      + (face.blink ? '' : `<circle cx="${ex + 4}" cy="${ey - 5}" r="4" fill="#fff" stroke="none"/><circle cx="${ex2 + 4}" cy="${ey - 5}" r="4" fill="#fff" stroke="none"/><circle cx="${ex - 4}" cy="${ey + 5}" r="1.8" fill="#fff" stroke="none"/><circle cx="${ex2 - 4}" cy="${ey + 5}" r="1.8" fill="#fff" stroke="none"/>`);
-    if (m === 'tired') eyes += `<path d="M${ex - 13} ${ey - 9} L${ex + 12} ${ey - 7}" /><path d="M${ex2 - 12} ${ey - 7} L${ex2 + 13} ${ey - 9}" />`;
+    const lid = face.blink ? 1 : m === 'tired' ? .45 : 0;
+    eyes = E.map(([x, y], i) => {
+      const px = x + lx * 7, py = y + ly * 7 + (m === 'tired' ? 4 : 0);
+      return `<g><circle cx="${x}" cy="${y}" r="19" fill="#fff" stroke="rgba(0,0,0,.12)" stroke-width="2"/>
+        <circle cx="${px}" cy="${py}" r="${m === 'hungry' ? 10 : 8.5}" fill="#1d1b26"/><circle cx="${px + 3}" cy="${py - 3.5}" r="2.8" fill="#fff"/>
+        ${lid ? `<path d="M${x - 20} ${y - 20} H${x + 20} V${y - 20 + 40 * lid} Q${x} ${y - 14 + 40 * lid} ${x - 20} ${y - 20 + 40 * lid} Z" fill="${skin().c[1]}"/><path d="M${x - 19} ${y - 20 + 40 * lid} Q${x} ${y - 14 + 40 * lid} ${x + 19} ${y - 20 + 40 * lid}" fill="none" stroke="#1d1b26" stroke-width="3" stroke-linecap="round"/>` : ''}</g>`;
+    }).join('');
+    if (m === 'bored' || m === 'dirty') eyes += `<path d="M58 70 L92 76 M142 70 L108 76" stroke="#1d1b26" stroke-width="4" stroke-linecap="round" opacity=".7"/>`;
   }
-  const mx = 100 + lx * 5, my = 128 + ly * 4;
-  let mouth;
+  const mx = 100 + lx * 4, my = 132 + ly * 3;
   const mm = face.mouth || { happy: 'smile', ok: 'small', hungry: 'o', tired: 'flat', dirty: 'wavy', bored: 'flat', sleep: 'tiny' }[m];
-  switch (mm) {
-    case 'open': mouth = `<ellipse cx="${mx}" cy="${my + 4}" rx="17" ry="15" fill="#5a2336" stroke="none"/><ellipse cx="${mx}" cy="${my + 12}" rx="10" ry="5" fill="#ff7c9c" stroke="none"/>`; break;
-    case 'chew': mouth = `<path d="M${mx - 12} ${my + 2} Q${mx - 6} ${my + 8} ${mx} ${my + 2} Q${mx + 6} ${my + 8} ${mx + 12} ${my + 2}" />`; break;
-    case 'laugh': mouth = `<path d="M${mx - 18} ${my - 2} Q${mx} ${my + 26} ${mx + 18} ${my - 2} Z" fill="#5a2336"/><path d="M${mx - 9} ${my + 11} Q${mx} ${my + 18} ${mx + 9} ${my + 11}" stroke="#ff7c9c" stroke-width="5"/>`; break;
-    case 'smile': mouth = `<path d="M${mx - 14} ${my} Q${mx} ${my + 14} ${mx + 14} ${my}" />`; break;
-    case 'small': mouth = `<path d="M${mx - 8} ${my + 2} Q${mx} ${my + 8} ${mx + 8} ${my + 2}" />`; break;
-    case 'o': mouth = `<ellipse cx="${mx}" cy="${my + 4}" rx="7" ry="8" fill="#5a2336" stroke="none"/>`; break;
-    case 'flat': mouth = `<path d="M${mx - 9} ${my + 5} L${mx + 9} ${my + 5}" />`; break;
-    case 'wavy': mouth = `<path d="M${mx - 12} ${my + 5} Q${mx - 6} ${my} ${mx} ${my + 5} Q${mx + 6} ${my + 10} ${mx + 12} ${my + 5}" />`; break;
-    case 'grr': mouth = `<path d="M${mx - 12} ${my + 8} Q${mx} ${my - 2} ${mx + 12} ${my + 8}" />`; break;
-    default: mouth = `<circle cx="${mx}" cy="${my + 4}" r="3" fill="#5a2336" stroke="none"/>`;
-  }
-  const dirt = S.clean < 45 ? [[62, 150, 7], [140, 58, 5], [152, 140, 8], [48, 88, 5], [118, 164, 6]].slice(0, S.clean < 25 ? 5 : 3).map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(110,78,40,.55)"/>`).join('') + (S.clean < 25 ? '<text x="150" y="40" font-size="22">🪰</text>' : '') : '';
-  const blush = m === 'tired' || m === 'dirty' ? '' : `<ellipse cx="${52 + lx * 5}" cy="${122 + ly * 4}" rx="13" ry="8" fill="#ff7aa8" opacity=".38"/><ellipse cx="${148 + lx * 5}" cy="${122 + ly * 4}" rx="13" ry="8" fill="#ff7aa8" opacity=".38"/>`;
-  const sweat = m === 'hungry' ? `<path d="M160 70 q6 10 0 14 q-6 -4 0 -14z" fill="#9fdcff"/>` : '';
-  $('#pet').innerHTML = `<defs>${body}<radialGradient id="gl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
-    <circle cx="100" cy="104" r="84" fill="url(#bg)"/>
-    <ellipse cx="72" cy="52" rx="30" ry="18" fill="url(#gl)" transform="rotate(-28 72 52)"/>
-    <circle cx="136" cy="44" r="6" fill="#fff" opacity=".65"/>
-    <path d="M40 150 Q100 196 160 150" fill="none" stroke="rgba(0,0,0,.07)" stroke-width="10" stroke-linecap="round"/>
-    ${dirt}${blush}
-    <g fill="none" stroke="#1f1b33" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${eyes}${mouth}</g>${sweat}
-    ${hatSvg(S.hat)}`;
+  const M = {
+    open: `<ellipse cx="${mx}" cy="${my + 4}" rx="14" ry="13" fill="#5a2336"/><ellipse cx="${mx}" cy="${my + 11}" rx="8" ry="4" fill="#ff7c9c"/>`,
+    chew: `<path d="M${mx - 10} ${my + 2} Q${mx - 5} ${my + 8} ${mx} ${my + 2} Q${mx + 5} ${my + 8} ${mx + 10} ${my + 2}" fill="none"/>`,
+    laugh: `<path d="M${mx - 14} ${my - 2} Q${mx} ${my + 22} ${mx + 14} ${my - 2} Z" fill="#5a2336"/><path d="M${mx - 7} ${my + 9} Q${mx} ${my + 15} ${mx + 7} ${my + 9}" stroke="#ff7c9c" stroke-width="4" fill="none"/>`,
+    smile: `<path d="M${mx - 11} ${my} Q${mx} ${my + 11} ${mx + 11} ${my}" fill="none"/>`,
+    small: `<path d="M${mx - 6} ${my + 2} Q${mx} ${my + 7} ${mx + 6} ${my + 2}" fill="none"/>`,
+    o: `<ellipse cx="${mx}" cy="${my + 4}" rx="6" ry="7" fill="#5a2336"/>`,
+    flat: `<path d="M${mx - 7} ${my + 5} L${mx + 7} ${my + 5}" fill="none"/>`,
+    wavy: `<path d="M${mx - 10} ${my + 5} Q${mx - 5} ${my} ${mx} ${my + 5} Q${mx + 5} ${my + 10} ${mx + 10} ${my + 5}" fill="none"/>`,
+    grr: `<path d="M${mx - 10} ${my + 8} Q${mx} ${my - 1} ${mx + 10} ${my + 8}" fill="none"/>`,
+  }[mm] || `<circle cx="${mx}" cy="${my + 4}" r="2.5" fill="#5a2336"/>`;
+  const blush = m === 'tired' || m === 'dirty' ? '' : `<ellipse cx="50" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/><ellipse cx="150" cy="126" rx="12" ry="7" fill="#ff6f9a" opacity=".32"/>`;
+  const sweat = m === 'hungry' ? `<path d="M158 66 q6 10 0 14 q-6 -4 0 -14z" fill="#9fdcff"/>` : '';
+  $('#faceG').innerHTML = eyes + blush + `<g stroke="#1d1b26" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">${M}</g>` + sweat;
+  $('#dirtG').innerHTML = S.clean < 45 ? [[62, 160, 7], [144, 62, 5], [150, 150, 8], [44, 110, 5], [118, 176, 6]].slice(0, S.clean < 25 ? 5 : 3).map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(110,78,40,.5)"/>`).join('') + (S.clean < 25 ? '<text x="150" y="40" font-size="22">🪰</text>' : '') : '';
+  const A = S.acc || {};
+  $('#accG').innerHTML = accSvg(A.neck) + accSvg(A.face) + accSvg(A.head);
   $('#petWrap').classList.toggle('sleeping', sleeping);
   $('#zzz').classList.toggle('on', sleeping);
 }
@@ -445,9 +480,9 @@ function renderTray() {
     T.querySelectorAll('.game').forEach(b => b.onclick = () => startGame(b.dataset.g));
   } else {
     T.innerHTML = `<div class="tray-title"><b>Armario</b><span>Colores y accesorios</span></div>
-      <div class="row"><button class="btn big" id="skinBtn">🎨 Colores</button><button class="btn big" id="hatBtn">🎩 Accesorios</button></div>
+      <div class="row"><button class="btn big" id="skinBtn">🎨 Colores</button><button class="btn big" id="hatBtn">🎀 Complementos</button></div>
       <div class="row" style="margin-top:2px"><button class="btn" id="renBtn">✏️ Nombre</button><button class="btn" id="sndBtn">${S.sound ? '🔊 Sonido' : '🔇 Sin sonido'}</button></div>`;
-    $('#skinBtn').onclick = () => openCloset('skin'); $('#hatBtn').onclick = () => openCloset('hat');
+    $('#skinBtn').onclick = () => openCloset('skin'); $('#hatBtn').onclick = () => openCloset('acc');
     $('#renBtn').onclick = rename; $('#sndBtn').onclick = () => { S.sound = !S.sound; save(); renderTray(); };
   }
 }
@@ -554,19 +589,31 @@ function openShop() {
   draw();
 }
 function openCloset(kind) {
-  const list = kind === 'skin' ? SKINS : HATS, owned = kind === 'skin' ? S.skins : S.hats, cur = kind === 'skin' ? S.skin : S.hat;
-  const draw = () => openSheet(`<h2>${kind === 'skin' ? 'Colores' : 'Accesorios'} <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2>
-    <div class="grid">${list.map(x => { const own = owned.includes(x.id), eq = (kind === 'skin' ? S.skin : S.hat) === x.id;
-      const vis = kind === 'skin' ? `<span class="swatch" style="background:${x.rainbow ? 'conic-gradient(#ff9ecf,#ffd36e,#7ee0a3,#7ab8ff,#b39dff,#ff9ecf)' : `radial-gradient(circle at 35% 30%,${x.c[0]},${x.c[1]} 55%,${x.c[2]})`}"></span>` : `<span class="e">${x.e}</span>`;
-      return `<button class="shop-item ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}">${vis}<span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>
-    <button class="btn big" style="width:100%;margin-top:16px" data-close>Listo</button>`,
-    s => s.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
-      const x = list.find(i => i.id === b.dataset.id);
-      if (!owned.includes(x.id)) { if (S.coins < x.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; } S.coins -= x.p; owned.push(x.id); SFX.coin(); confetti(); }
-      else SFX.tap();
-      if (kind === 'skin') S.skin = x.id; else S.hat = x.id;
-      haptic(); save(); drawPet(); renderHud(); draw(); squish('jump');
-    }));
+  const draw = () => {
+    let body;
+    if (kind === 'skin') {
+      body = `<div class="grid">${SKINS.map(x => { const own = S.skins.includes(x.id), eq = S.skin === x.id;
+        const vis = `<span class="swatch" style="background:${x.rainbow ? 'conic-gradient(#ff9ecf,#ffd36e,#7ee0a3,#7ab8ff,#b39dff,#ff9ecf)' : `radial-gradient(circle at 35% 30%,${x.c[0]},${x.c[1]} 55%,${x.c[2]})`}"></span>`;
+        return `<button class="shop-item ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}">${vis}<span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>`;
+    } else {
+      body = Object.keys(SLOT_L).map(slot => `<div class="sec">${SLOT_L[slot]}</div><div class="grid">
+        <button class="shop-item ${!S.acc[slot] ? 'eq' : ''}" data-off="${slot}"><span class="e">🚫</span><span class="s">Nada</span><span class="p">${!S.acc[slot] ? 'Puesto' : 'Quitar'}</span></button>
+        ${ACCS.filter(a => a.slot === slot).map(x => { const own = S.accs.includes(x.id), eq = S.acc[slot] === x.id;
+          return `<button class="shop-item ${eq ? 'eq' : own ? 'own' : ''}" data-id="${x.id}"><span class="e">${x.e}</span><span class="s">${x.n}</span><span class="p">${eq ? 'Puesto' : own ? 'Tuyo' : '🪙 ' + x.p}</span></button>`; }).join('')}</div>`).join('');
+    }
+    openSheet(`<h2>${kind === 'skin' ? 'Colores' : 'Complementos'} <span class="coins">🪙 ${Math.floor(S.coins)}</span></h2>${body}
+      <button class="btn big" style="width:100%;margin-top:16px" data-close>Listo</button>`, s => {
+      s.querySelectorAll('[data-off]').forEach(b => b.onclick = () => { S.acc[b.dataset.off] = ''; SFX.tap(); save(); drawPet(); draw(); });
+      s.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+        const list = kind === 'skin' ? SKINS : ACCS, owned = kind === 'skin' ? S.skins : S.accs;
+        const x = list.find(i => i.id === b.dataset.id);
+        if (!owned.includes(x.id)) { if (S.coins < x.p) { SFX.bad(); toast('No tienes monedas suficientes'); return; } S.coins -= x.p; owned.push(x.id); SFX.coin(); confetti(); }
+        else SFX.tap();
+        if (kind === 'skin') S.skin = x.id; else S.acc[x.slot] = S.acc[x.slot] === x.id ? '' : x.id;
+        haptic(); save(); drawPet(); renderHud(); draw(); squish('jump');
+      });
+    });
+  };
   draw();
 }
 function rename() {
@@ -581,21 +628,53 @@ const cv = $('#cv'), cx = cv.getContext('2d');
 let W = 0, H = 0, DPR = 1;
 function sizeCanvas() { DPR = Math.min(3, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0); }
 addEventListener('resize', () => { if (G.on) sizeCanvas(); });
-function drawPetCanvas(x, y, r, opts = {}) {
-  const sk = skin(); const g = cx.createRadialGradient(x - r * .35, y - r * .45, r * .1, x, y, r * 1.05);
+// Sprite peludo para los minijuegos: se genera una vez por partida (pelos a lo largo del borde + motas)
+let sprite = null;
+function gumPath(c, x, y, r) {
+  // misma gominola que el SVG (caja 200x200 → radio r)
+  const k = r / 92, X = v => x + (v - 100) * k, Y = v => y + (v - 110) * k;
+  c.beginPath(); c.moveTo(X(100), Y(16));
+  c.bezierCurveTo(X(128), Y(16), X(146), Y(44), X(158), Y(76)); c.bezierCurveTo(X(172), Y(112), X(186), Y(146), X(176), Y(170));
+  c.bezierCurveTo(X(166), Y(192), X(132), Y(198), X(100), Y(198)); c.bezierCurveTo(X(68), Y(198), X(34), Y(192), X(24), Y(170));
+  c.bezierCurveTo(X(14), Y(146), X(28), Y(112), X(42), Y(76)); c.bezierCurveTo(X(54), Y(44), X(72), Y(16), X(100), Y(16)); c.closePath();
+}
+function buildSprite(r) {
+  const sk = skin(), s = Math.ceil(r * 2.6), o = document.createElement('canvas'); o.width = o.height = s * DPR;
+  const c = o.getContext('2d'); c.scale(DPR, DPR); const x = s / 2, y = s / 2;
+  const g = c.createRadialGradient(x - r * .3, y - r * .45, r * .1, x, y, r * 1.1);
   if (sk.rainbow) { g.addColorStop(0, '#fff'); g.addColorStop(.35, '#ffc6e4'); g.addColorStop(.65, '#b3a6ff'); g.addColorStop(1, '#7fd3e8'); }
-  else { g.addColorStop(0, sk.c[0]); g.addColorStop(.55, sk.c[1]); g.addColorStop(1, sk.c[2]); }
-  cx.save(); cx.translate(x, y); cx.scale(opts.sx || 1, opts.sy || 1); cx.translate(-x, -y);
-  cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = 'rgba(255,255,255,.55)'; cx.beginPath(); cx.ellipse(x - r * .32, y - r * .5, r * .32, r * .18, -.5, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = '#1f1b33';
-  const ex = r * .32, ey = y - r * .08;
-  if (opts.hurt) { cx.strokeStyle = '#1f1b33'; cx.lineWidth = r * .08; cx.lineCap = 'round'; [[-1], [1]].forEach(([s]) => { cx.beginPath(); cx.moveTo(x + s * ex - r * .1, ey - r * .1); cx.lineTo(x + s * ex + r * .1, ey + r * .1); cx.moveTo(x + s * ex + r * .1, ey - r * .1); cx.lineTo(x + s * ex - r * .1, ey + r * .1); cx.stroke(); }); }
-  else { cx.beginPath(); cx.ellipse(x - ex, ey, r * .12, r * .16, 0, 0, Math.PI * 2); cx.ellipse(x + ex, ey, r * .12, r * .16, 0, 0, Math.PI * 2); cx.fill(); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x - ex + r * .04, ey - r * .06, r * .045, 0, 7); cx.arc(x + ex + r * .04, ey - r * .06, r * .045, 0, 7); cx.fill(); }
-  cx.fillStyle = 'rgba(255,122,168,.4)'; cx.beginPath(); cx.ellipse(x - r * .55, y + r * .2, r * .15, r * .09, 0, 0, 7); cx.ellipse(x + r * .55, y + r * .2, r * .15, r * .09, 0, 0, 7); cx.fill();
-  cx.strokeStyle = '#1f1b33'; cx.lineWidth = r * .07; cx.lineCap = 'round'; cx.beginPath();
-  if (opts.open) { cx.fillStyle = '#5a2336'; cx.ellipse(x, y + r * .3, r * .17, r * .15, 0, 0, 7); cx.fill(); }
-  else { cx.arc(x, y + r * .2, r * .16, .2, Math.PI - .2); cx.stroke(); }
+  else { g.addColorStop(0, sk.c[0]); g.addColorStop(.5, sk.c[1]); g.addColorStop(1, sk.c[2]); }
+  // pelos del borde: trazos cortos hacia fuera
+  c.save(); gumPath(c, x, y, r); c.clip(); c.fillStyle = g; c.fillRect(0, 0, s, s); c.restore();
+  c.lineCap = 'round';
+  for (let i = 0; i < 420; i++) {
+    const a = Math.random() * Math.PI * 2, rr = r * (0.82 + Math.random() * .2);
+    const px = x + Math.cos(a) * rr * .98, py = y + Math.sin(a) * rr * (a > 0 && a < Math.PI ? 1.02 : 1.04) + r * .05;
+    if (!c.isPointInPath || true) { gumPath(c, x, y, r); if (!c.isPointInPath(px * DPR, py * DPR)) continue; }
+    const len = r * rnd(.1, .22), ang = a + rnd(-.4, .4);
+    c.strokeStyle = Math.random() < .5 ? sk.c[0] : sk.c[1]; c.globalAlpha = rnd(.5, 1); c.lineWidth = rnd(1, 2.2);
+    c.beginPath(); c.moveTo(px, py); c.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); c.stroke();
+  }
+  // motas de pelo por dentro
+  c.save(); gumPath(c, x, y, r); c.clip();
+  for (let i = 0; i < 500; i++) { c.globalAlpha = rnd(.08, .25); c.fillStyle = Math.random() < .5 ? '#fff' : '#000'; c.fillRect(x + rnd(-r, r), y + rnd(-r, r), 1.4, rnd(2, 4)); }
+  c.restore(); c.globalAlpha = 1;
+  sprite = { img: o, s, r, id: sk.id };
+}
+function drawPetCanvas(x, y, r, opts = {}) {
+  if (!sprite || sprite.r !== r || sprite.id !== S.skin) buildSprite(r);
+  cx.save(); cx.translate(x, y); cx.scale(opts.sx || 1, opts.sy || 1);
+  cx.drawImage(sprite.img, -sprite.s / 2, -sprite.s / 2, sprite.s, sprite.s);
+  // ojos saltones
+  const ex = r * .27, ey = -r * .15, er = r * .21;
+  for (const s of [-1, 1]) {
+    cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s * ex, ey, er, 0, 7); cx.fill();
+    if (opts.hurt) { cx.strokeStyle = '#1d1b26'; cx.lineWidth = r * .07; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(s * ex - er * .5, ey - er * .5); cx.lineTo(s * ex + er * .5, ey + er * .5); cx.moveTo(s * ex + er * .5, ey - er * .5); cx.lineTo(s * ex - er * .5, ey + er * .5); cx.stroke(); }
+    else { cx.fillStyle = '#1d1b26'; cx.beginPath(); cx.arc(s * ex + (opts.look || 0) * er * .35, ey - er * .15, er * .48, 0, 7); cx.fill(); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s * ex + er * .2, ey - er * .35, er * .15, 0, 7); cx.fill(); }
+  }
+  cx.strokeStyle = '#1d1b26'; cx.lineWidth = r * .07; cx.lineCap = 'round';
+  if (opts.open) { cx.fillStyle = '#5a2336'; cx.beginPath(); cx.ellipse(0, r * .3, r * .15, r * .13, 0, 0, 7); cx.fill(); }
+  else { cx.beginPath(); cx.arc(0, r * .2, r * .12, .25, Math.PI - .25); cx.stroke(); }
   cx.restore();
 }
 const emoji = (e, x, y, s) => { cx.font = `${s}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(e, x, y); };
@@ -605,6 +684,7 @@ cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'to
 cv.addEventListener('pointerup', () => { if (G.kind === 'jump') pointerX = null; });
 
 function startGame(kind) {
+  sprite = null;
   if (S.sleep) { say('Está durmiendo 😴'); return; }
   if (S.energy < 10) { say('Estoy muy cansada… 😴'); SFX.bad(); return; }
   G.kind = kind; G.on = true; G.started = false; $('#game').classList.add('on'); $('#gOver').classList.remove('on');

@@ -3,7 +3,12 @@
 # Lánzalo desde Actions → "Mini app (IPA sin firmar)" → Run workflow → elige la app.
 name: Mini app (IPA sin firmar)
 
+# También se lanza sola al hacer push a la rama "app" que toque la carpeta de una app
+# (los workflow_dispatch solo se pueden lanzar a mano si el workflow está en la rama principal).
 on:
+  push:
+    branches: [app]
+    paths: ['bolita/**', 'coche/**']
   workflow_dispatch:
     inputs:
       app:
@@ -14,12 +19,37 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: miniapp-fuente   # la fuente común se reescribe entera: nunca dos a la vez
+  cancel-in-progress: false
+
 jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.d.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: d
+        run: |
+          if [ -n "${{ inputs.app }}" ]; then L="${{ inputs.app }}"
+          else L=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | cut -d/ -f1 | grep -xE 'bolita|coche' | sort -u)
+               [ -n "$L" ] || L=$(git show --name-only --pretty= HEAD | cut -d/ -f1 | grep -xE 'bolita|coche' | sort -u); fi
+          echo "apps=$(printf '%s\n' $L | jq -R . | jq -sc 'map(select(length>0))')" >> "$GITHUB_OUTPUT"
+
   ipa:
+    needs: detect
+    if: needs.detect.outputs.apps != '[]'
     runs-on: macos-15
     timeout-minutes: 45
+    strategy:
+      max-parallel: 1
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.apps) }}
     env:
-      APP: ${{ inputs.app }}
+      APP: ${{ matrix.app }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +58,7 @@ jobs:
           node-version: 22
 
       - name: Crear el proyecto iOS (Capacitor)
-        working-directory: ${{ inputs.app }}
+        working-directory: ${{ matrix.app }}
         run: |
           NAME=$(jq -r .appName capacitor.config.json)
           npm install
@@ -45,7 +75,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" $PL || true
 
       - name: Compilar sin firma
-        working-directory: ${{ inputs.app }}/ios/App
+        working-directory: ${{ matrix.app }}/ios/App
         run: |
           if [ -d App.xcworkspace ]; then SRC="-workspace App.xcworkspace"; else SRC="-project App.xcodeproj"; fi
           xcodebuild $SRC -scheme App -configuration Release \
