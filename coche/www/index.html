@@ -5,6 +5,9 @@
 <title>Mi Corsa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@87.5..112.5,300..700&family=Onest:wght@400;500;600;700;800&display=swap">
 <style>
 /* Mi Corsa: seguimiento del mantenimiento. Una página con cinco pestañas (Inicio, Piezas, Historial,
    Averías, Más), hoja inferior para detalles y formularios, y un asistente inicial que pregunta
@@ -166,6 +169,33 @@ html{background:var(--bg)}
 #wiz{background:transparent}
 #wiz::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(60% 35% at 20% 10%,rgba(255,210,60,.22),transparent 70%),radial-gradient(55% 40% at 90% 40%,rgba(90,140,255,.3),transparent 70%),var(--bg)}
 @media (prefers-reduced-transparency:reduce){.card,.list,.stat,.hero,.tabs,.sheet{background:var(--card)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+
+/* ---------- Tipografía y detalles al estilo de Caudal ----------
+   Onest para textos, Martian Mono (estrecha) para cifras; títulos de sección en versalitas finas. */
+:root{--f:"Onest",-apple-system,"SF Pro Text",system-ui,sans-serif;--f-num:"Martian Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+body{font-family:var(--f)}
+h1{font:700 30px/1.1 var(--f);letter-spacing:-.025em;margin-top:14px}
+.num,.km,.stat b,.ivl b,.pill,.kv dd.num{font-family:var(--f-num);font-stretch:87.5%;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.km{font-size:42px;font-weight:600;color:var(--acc);letter-spacing:-.045em}
+.km small{font-family:var(--f);font-stretch:100%;letter-spacing:0}
+.stat b{font-size:28px;font-weight:600}
+.stat span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.sec-h{margin:6px 2px -4px}
+.sec-h h2{font:500 11px/1.2 var(--f-num);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sec-h span{font-size:12px}
+.hero-top b{font:700 22px/1.1 var(--f);letter-spacing:-.02em}
+.hero-top small{font:500 10px/1.4 var(--f-num);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.badge{font-family:var(--f-num);letter-spacing:.12em}
+.row-t{font-weight:600;letter-spacing:-.01em}
+.pill{font-size:10.5px;letter-spacing:.02em;padding:5px 9px}
+.ico{border-radius:14px}
+.tab{font-family:var(--f);font-weight:600}
+.btn{font-family:var(--f);font-weight:600}
+.chip{font-family:var(--f);font-weight:600}
+.card b{font-weight:600}
+.health{display:flex;align-items:center;gap:14px}
+.health svg{width:64px;height:64px;flex:none;transform:rotate(-90deg)}
+.health .pc{font:600 22px/1 var(--f-num);font-stretch:87.5%}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -258,7 +288,10 @@ const VIEWS = {
         <div class="car"><img src="corsa.png" alt="Opel Corsa E blanco">${plateHtml()}</div>
         <div class="km-row"><div><div class="km num">${nf.format(S.km)}<small>km</small></div><div class="km-sub">${kpm ? `≈ ${fk(kpm)}/mes · ` : ''}actualizado ${S.kmLog.length ? fdate(S.kmLog[S.kmLog.length - 1].d) : 'nunca'}</div></div>
         <button class="btn acc" data-act="km">Actualizar km</button></div></div>
-      <div class="stats"><div class="stat bad"><b>${c.bad}</b><span>Toca ya</span></div><div class="stat soon"><b>${c.soon + c.unk}</b><span>Pronto / sin datos</span></div><div class="stat ok"><b>${c.ok}</b><span>Al día</span></div></div>
+      ${(() => { const tot = c.bad + c.soon + c.unk + c.ok, pc = tot ? Math.round(c.ok / tot * 100) : 0, col = pc > 70 ? 'var(--ok)' : pc > 40 ? 'var(--soon)' : 'var(--bad)';
+        return `<div class="card health"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle cx="32" cy="32" r="27" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="${169.6 * (1 - pc / 100)}"/></svg>
+        <div class="row-m"><div class="pc" style="color:${col}">${pc}%</div><div class="row-s">del mantenimiento al día · ${c.bad ? c.bad + ' por hacer ya' : 'nada vencido'}</div></div></div>`; })()}
+      <div class="stats"><div class="stat bad"><b>${c.bad}</b><span>Toca ya</span></div><div class="stat soon"><b>${c.soon + c.unk}</b><span>Pronto</span></div><div class="stat ok"><b>${c.ok}</b><span>Al día</span></div></div>
       ${itv ? `<div class="card" style="display:flex;align-items:center;gap:12px"><span class="ico">📋</span><div class="row-m"><div class="row-t">Próxima ITV</div><div class="row-s">${fmonth(itv)} · ${daysTo(itv) < 0 ? 'pasada: compruébala' : `en ${daysTo(itv)} días`}</div></div><button class="btn ghost" data-act="itv">Editar</button></div>` : ''}
       <div class="sec-h"><h2>Lo próximo</h2><span>ordenado por urgencia</span></div>
       <div class="list">${all.filter(x => x.s.st !== 'watch').slice(0, 6).map(partRow).join('')}</div>
