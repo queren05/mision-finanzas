@@ -539,3 +539,30 @@ document.addEventListener('swipe', e => {
     toast('Duplicado con fecha de hoy', { label: 'Deshacer', fn: () => { S.txs = S.txs.filter(x => x.id !== c.id); save(); render(); } });
   }
 });
+
+/* ---------- Deslizar hacia abajo para cerrar la hoja (como en iOS) ----------
+   Si el contenido de la hoja está arriba del todo y el dedo baja, la hoja sigue al dedo. Al soltar se cierra
+   si ha bajado lo suficiente o se ha lanzado rápido; si no, vuelve a su sitio. Evita además el rebote de la
+   página de fondo, que antes daba la sensación de arrastrar sin cerrar nada. */
+(function () {
+  document.head.insertAdjacentHTML('beforeend', '<style>html,body{overscroll-behavior:none}.sheet{overscroll-behavior:contain;touch-action:pan-y}</style>');
+  let sh = null, y0 = 0, dy = 0, on = false, t0 = 0;
+  const scrolled = (el, stop) => { for (let n = el; n && n !== stop.parentElement; n = n.parentElement) if (n.scrollTop > 0) return true; return false; };
+  document.addEventListener('touchstart', e => {
+    const s = e.target.closest('.sheet'); if (!s || e.touches.length > 1) { sh = null; return; }
+    if (e.target.closest('input,textarea,select,[data-swipe-l],[data-swipe-r]') || scrolled(e.target, s)) { sh = null; return; }
+    sh = s; y0 = e.touches[0].clientY; dy = 0; on = false; t0 = Date.now();
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!sh) return; const d = e.touches[0].clientY - y0;
+    if (!on) { if (d > 6) { on = true; sh.style.transition = 'none'; } else if (d < -6) { sh = null; return; } else return; }
+    e.preventDefault(); dy = Math.max(0, d); sh.style.transform = `translateY(${dy < 60 ? dy : 60 + (dy - 60) * .9}px)`;
+  }, { passive: false });
+  document.addEventListener('touchend', () => {
+    if (!sh || !on) { sh = null; return; } const s = sh; sh = null;
+    const fast = dy / Math.max(1, Date.now() - t0) > .55;
+    s.style.transition = 'transform .24s cubic-bezier(.2,.8,.2,1)';
+    if (dy > 110 || (fast && dy > 30)) { s.style.transform = 'translateY(110%)'; setTimeout(() => { closeSheet(); setTimeout(() => { s.style.transition = ''; s.style.transform = ''; }, 350); }, 200); }
+    else { s.style.transform = ''; setTimeout(() => { s.style.transition = ''; }, 260); }
+  });
+})();

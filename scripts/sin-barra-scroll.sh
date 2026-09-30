@@ -14,6 +14,7 @@ class MainViewController: CAPBridgeViewController {
         webView?.scrollView.showsVerticalScrollIndicator = false
         webView?.scrollView.showsHorizontalScrollIndicator = false
         webView?.scrollView.alwaysBounceHorizontal = false
+        webView?.scrollView.bounces = false
     }
 }
 EOF
