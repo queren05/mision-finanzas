@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:1024px;height:1024px;overflow:hidden}canvas{display:block}</style></head><body><canvas id="c" width="1024" height="1024"></canvas><script>
+function drawTung(c, x, y, sc, t, angry = true) {
+  c.save(); c.translate(x, y); c.scale(sc, sc);
+  const bob = Math.sin(t * 10) * 4;
+  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-14, -8); c.lineTo(-18 - Math.sin(t * 10) * 8, 30); c.moveTo(14, -8); c.lineTo(18 + Math.sin(t * 10) * 8, 30); c.stroke();
+  const g = c.createLinearGradient(-38, 0, 38, 0); g.addColorStop(0, '#6b3e1c'); g.addColorStop(.45, '#b8804a'); g.addColorStop(1, '#5a3216');
+  c.fillStyle = g; c.beginPath(); c.roundRect ? c.roundRect(-36, -150 + bob, 72, 145, 30) : c.rect(-36, -150 + bob, 72, 145); c.fill();
+  c.strokeStyle = 'rgba(60,30,10,.45)'; c.lineWidth = 2.5; for (const gx of [-20, -4, 14, 26]) { c.beginPath(); c.moveTo(gx, -135 + bob); c.bezierCurveTo(gx + 6, -100 + bob, gx - 6, -60 + bob, gx + 3, -18 + bob); c.stroke(); }
+  c.fillStyle = '#d9a86c'; c.beginPath(); c.ellipse(0, -146 + bob, 30, 8, 0, 0, 7); c.fill(); c.strokeStyle = '#a87440'; c.lineWidth = 2; for (const r of [8, 16, 24]) { c.beginPath(); c.ellipse(0, -146 + bob, r, r * .27, 0, 0, 7); c.stroke(); }
+  for (const ex of [-14, 14]) { c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, -108 + bob, 11, 0, 7); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(ex + (angry ? 0 : 2), -106 + bob, 5.5, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + 2, -109 + bob, 1.8, 0, 7); c.fill(); }
+  if (angry) { c.strokeStyle = '#2a1405'; c.lineWidth = 5; c.beginPath(); c.moveTo(-26, -126 + bob); c.lineTo(-6, -118 + bob); c.moveTo(26, -126 + bob); c.lineTo(6, -118 + bob); c.stroke(); }
+  c.fillStyle = '#3a0d05'; c.beginPath(); c.ellipse(0, -80 + bob, 12, angry ? 8 : 4, 0, 0, 7); c.fill();
+  // brazo con bate
+  const sw = Math.sin(t * 12) * .6;
+  c.save(); c.translate(32, -70 + bob); c.rotate(-.6 + sw);
+  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(0, 0); c.lineTo(22, 0); c.stroke();
+  c.fillStyle = '#d8b07a'; c.beginPath(); c.moveTo(18, -4); c.lineTo(80, -11); c.quadraticCurveTo(90, 0, 80, 11); c.lineTo(18, 4); c.fill(); c.strokeStyle = '#9a6a38'; c.lineWidth = 2; c.stroke();
+  c.restore();
+  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(-34, -70 + bob); c.lineTo(-50, -48 + bob + Math.sin(t * 10) * 8); c.stroke();
+  c.restore();
+}
+
+const c=document.getElementById('c').getContext('2d');const g=c.createLinearGradient(0,0,0,1024);g.addColorStop(0,'#2a1650');g.addColorStop(.55,'#c2466a');g.addColorStop(1,'#ffb05a');c.fillStyle=g;c.fillRect(0,0,1024,1024);
+c.fillStyle='#ffe3a0';c.beginPath();c.arc(760,560,170,Math.PI,0);c.fill();c.fillStyle='#1e4a2c';c.fillRect(0,560,1024,464);c.fillStyle='#c9b089';c.beginPath();c.moveTo(430,560);c.lineTo(594,560);c.lineTo(1000,1024);c.lineTo(24,1024);c.fill();
+drawTung(c,470,1010,5.2,0.35,true);</script></body></html>

@@ -8,13 +8,13 @@ name: Mini app (IPA sin firmar)
 on:
   push:
     branches: [app]
-    paths: ['bolita/**', 'coche/**', 'cuentas/**']
+    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**']
   workflow_dispatch:
     inputs:
       app:
         description: "Carpeta de la app"
         type: choice
-        options: [bolita, coche, cuentas]
+        options: [bolita, coche, cuentas, tung]
 
 permissions:
   contents: write
@@ -35,8 +35,8 @@ jobs:
       - id: d
         run: |
           if [ -n "${{ inputs.app }}" ]; then L="${{ inputs.app }}"
-          else L=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas' | sort -u)
-               [ -n "$L" ] || L=$(git show --name-only --pretty= HEAD | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas' | sort -u); fi
+          else L=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung' | sort -u)
+               [ -n "$L" ] || L=$(git show --name-only --pretty= HEAD | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung' | sort -u); fi
           echo "apps=$(printf '%s\n' $L | jq -R . | jq -sc 'map(select(length>0))')" >> "$GITHUB_OUTPUT"
 
   ipa:

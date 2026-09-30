@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.tung",
+  "appName": "Tung Tung Run",
+  "webDir": "www",
+  "backgroundColor": "#1a1030",
+  "ios": { "contentInset": "never", "backgroundColor": "#1a1030", "scrollEnabled": false }
+}
