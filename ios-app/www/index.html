@@ -3246,7 +3246,10 @@ function parseLink(raw) {
   const qi = m.indexOf('?');
   const path = (qi < 0 ? m : m.slice(0, qi)).replace(/^\/+|\/+$/g, '').toLowerCase();
   const q = new URLSearchParams(qi < 0 ? '' : m.slice(qi + 1));
-  return { path, q, get: (...k) => { for (const x of k) { const v = q.get(x); if (v != null && String(v).trim() !== '') return String(v).trim(); } return ''; } };
+  // iOS (acción «Abrir URL» de Atajos) puede volver a codificar los %: «4,50%20%E2%82%AC» llega como
+  // «4,50%2520%25E2…». Se decodifica hasta que no quede nada codificado.
+  const clean = v => { let s = String(v); for (let i = 0; i < 3 && /%[0-9a-f]{2}/i.test(s); i++) { try { s = decodeURIComponent(s); } catch (e) { break; } } return s.replace(/ /g, ' ').trim(); };
+  return { path, q, get: (...k) => { for (const x of k) { const v = q.get(x); if (v != null && clean(v) !== '') return clean(v); } return ''; } };
 }
 const LINK_PATHS = ['nuevo', 'gasto', 'ingreso', 'transferencia', 'add', 'new', 'rapido', 'quick', 'plantilla', 'template', 'abrir', 'open', 'importar'];
 // mision://importar?d=<JSON en base64url>: añade cuentas, activos y recurrentes sin tocar lo que ya hay.
@@ -3311,7 +3314,10 @@ function handleLink(raw) {
     const cat = (catName && findCat(catName, type === 'income' ? 'income' : 'expense')) || prevCatFor(note, type) || guessCat(note, type === 'income' ? 'income' : 'expense');
     const fr = norm(L.get('fecha', 'date'));
     const date = !fr || fr === 'hoy' ? today() : fr === 'ayer' ? addDays(today(), -1) : (parseDateAny(L.get('fecha', 'date')) || today());
-    pre = { type, amount: Math.abs(parseMoney(L.get('importe', 'amount', 'cantidad'))) || '', note: note ? cap(note) : '', accountId: acc ? acc.id : '', categoryId: cat ? cat.id : '', date, tags: L.get('etiquetas', 'tags').split(',').map(x => x.trim()).filter(Boolean) };
+    const rawAmt = L.get('importe', 'amount', 'cantidad');
+    let amt = Math.abs(parseMoney(rawAmt));
+    if (!(amt > 0)) { const m = rawAmt.match(/\d[\d.,]*/); amt = m ? Math.abs(parseMoney(m[0])) : NaN; }   // «4,50 EUR», «€4.50»…
+    pre = { type, amount: amt || '', note: note ? cap(note) : '', accountId: acc ? acc.id : '', categoryId: cat ? cat.id : '', date, tags: L.get('etiquetas', 'tags').split(',').map(x => x.trim()).filter(Boolean) };
     if (type === 'transfer') { const to = matchAccount(L.get('destino', 'to', 'hacia')); if (to) pre.toAccountId = to.id; }
     if (!pre.accountId && (L.get('tarjeta', 'card') || L.get('cuenta', 'account'))) pre.unknownCard = L.get('tarjeta', 'card') || L.get('cuenta', 'account');
   }
