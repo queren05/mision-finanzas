@@ -4,224 +4,111 @@
 <meta charset="utf-8">
 <title>Tung Tung Run</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1a1030">
+<meta name="theme-color" content="#0e1a2b">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
-<style>
-/* Tung Tung Run: corredor infinito pseudo-3D (canvas). Tres carriles; deslizar izq/der cambia de carril,
-   arriba salta, abajo se agacha. Te persigue Tung Tung Tung Sahur: si tropiezas se acerca; si tropiezas
-   otra vez antes de despegarte, te pilla. Récord y monedas en localStorage. */
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
-html,body{margin:0;height:100%;overflow:hidden;background:#1a1030;font-family:"Fredoka",ui-rounded,system-ui,sans-serif;color:#fff;touch-action:none}
-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-.hud{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);display:flex;gap:8px;align-items:center;pointer-events:none;z-index:2}
-.pill{padding:8px 14px;border-radius:999px;background:rgba(20,10,40,.55);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-weight:700;font-size:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
-.sp{flex:1}
-.pause{pointer-events:auto;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:18px;color:#fff;background:rgba(20,10,40,.55);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.screen{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:radial-gradient(80% 60% at 50% 30%,rgba(255,140,40,.35),transparent 70%),rgba(15,8,30,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.screen[hidden]{display:none}
-.title{font-size:46px;font-weight:700;line-height:.95;letter-spacing:-.01em;text-shadow:0 4px 0 #7a3a00,0 0 30px rgba(255,160,40,.6)}
-.title small{display:block;font-size:20px;font-weight:600;color:#ffcf6b;text-shadow:none;margin-top:8px;letter-spacing:.2em}
-.card{padding:16px 20px;border-radius:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);min-width:240px}
-.big{font-size:52px;font-weight:700;color:#ffcf6b;line-height:1}
-.btn{border:0;font:700 22px "Fredoka",sans-serif;color:#fff;padding:16px 40px;border-radius:22px;background:linear-gradient(180deg,#ffb347,#ff7a00);box-shadow:0 6px 0 #b84f00,0 12px 24px rgba(255,120,0,.4);text-shadow:0 2px 0 rgba(0,0,0,.25)}
-.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #b84f00}
-.btn.sec{background:rgba(255,255,255,.14);box-shadow:0 5px 0 rgba(0,0,0,.35);font-size:17px;padding:12px 26px}
-.help{font-size:14.5px;color:rgba(255,255,255,.8);line-height:1.6}
-#preview{width:180px;height:200px}
-.tung{position:fixed;left:50%;top:26%;transform:translateX(-50%);font-weight:700;font-size:34px;color:#ffdf6b;text-shadow:0 3px 0 #7a1d00,0 0 18px rgba(255,80,0,.8);pointer-events:none;z-index:3;opacity:0;white-space:nowrap}
-.tung.on{animation:tung .9s ease-out}
-@keyframes tung{0%{opacity:0;transform:translateX(-50%) scale(.6)}20%{opacity:1;transform:translateX(-50%) scale(1.15)}100%{opacity:0;transform:translateX(-50%) scale(1)}}
-</style>
+<link rel="stylesheet" href="estilo.css">
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div class="hud"><span class="pill" id="dist">0 m</span><span class="pill" id="coins">🪙 0</span><span class="sp"></span><button class="pause" id="pauseBtn" aria-label="Pausa">❚❚</button></div>
-<div class="tung" id="tung">TUNG TUNG TUNG!</div>
-<div class="screen" id="start">
-  <canvas id="preview" width="360" height="400"></canvas>
-  <div class="title">TUNG TUNG<br>RUN<small>¡QUE VIENE SAHUR!</small></div>
-  <div class="help">👈 👉 Desliza para cambiar de carril<br>👆 Arriba para saltar troncos · 👇 Abajo para agacharte<br>Si tropiezas dos veces seguidas… ¡te pilla!</div>
-  <div class="card"><span id="bestTxt">Récord: 0 m</span> · <span id="bankTxt">🪙 0</span></div>
-  <button class="btn" id="play">¡A CORRER!</button>
+
+<!-- Carga -->
+<div id="loading" class="screen solid">
+  <div class="logo"><span>TUNG TUNG</span><b>RUN</b></div>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="muted" id="loadTxt">Cargando modelos 3D…</div>
 </div>
-<div class="screen" id="over" hidden>
-  <div class="title" style="font-size:38px">¡TE PILLÓ!<small>TUNG TUNG TUNG SAHUR</small></div>
-  <div class="card"><div class="big" id="oDist">0 m</div><div id="oInfo" style="margin-top:8px"></div></div>
+
+<!-- HUD de la partida -->
+<div id="hud" hidden>
+  <div class="hudTop">
+    <div class="glass score"><small>PUNTOS</small><b id="hScore">0</b></div>
+    <div class="col">
+      <div class="glass pill" id="hCoins"><span class="coin"></span><b>0</b></div>
+      <div class="glass pill sm" id="hDist">0 m</div>
+    </div>
+    <span class="sp"></span>
+    <div class="glass pill sm mult" id="hMult">×1</div>
+    <button class="glass round" id="pauseBtn" aria-label="Pausa"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+  </div>
+  <div id="pw"></div>
+</div>
+<div class="tungTxt" id="tungTxt">TUNG TUNG TUNG!</div>
+<div id="toast"></div>
+
+<!-- Menú -->
+<div id="menu" class="screen" hidden>
+  <div class="topRow">
+    <div class="glass pill"><span class="coin"></span><b id="mCoins">0</b></div>
+    <span class="sp"></span>
+    <button class="glass round" id="gift" aria-label="Premio diario">🎁<i class="dot" id="giftDot"></i></button>
+    <button class="glass round" id="setBtn" aria-label="Ajustes"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.6 5-1.7-.9a7 7 0 0 0 0-1.2l1.7-.9a.6.6 0 0 0 .3-.8l-1.6-2.8a.6.6 0 0 0-.8-.2l-1.7.9a7 7 0 0 0-1-.6V4.1a.6.6 0 0 0-.6-.6h-3.2a.6.6 0 0 0-.6.6V6a7 7 0 0 0-1 .6l-1.7-.9a.6.6 0 0 0-.8.2L3.1 8.7a.6.6 0 0 0 .3.8l1.7.9a7 7 0 0 0 0 1.2l-1.7.9a.6.6 0 0 0-.3.8l1.6 2.8a.6.6 0 0 0 .8.2l1.7-.9a7 7 0 0 0 1 .6v1.9c0 .3.3.6.6.6h3.2c.3 0 .6-.3.6-.6V18a7 7 0 0 0 1-.6l1.7.9c.3.1.6 0 .8-.2l1.6-2.8a.6.6 0 0 0-.3-.8Z"/></svg></button>
+  </div>
+  <div class="logo mlogo"><span>TUNG TUNG</span><b>RUN</b><small>¡QUE VIENE SAHUR!</small></div>
+  <div class="sp"></div>
+  <div class="glass recRow"><div><small>RÉCORD</small><b id="mBest">0</b></div><div><small>MEJOR DISTANCIA</small><b id="mBestD">0 m</b></div><div><small>MULTIPLICADOR</small><b id="mMult">×1</b></div></div>
+  <div id="boosts" class="boosts"></div>
+  <div class="menuBtns">
+    <button class="glass tile" id="shopBtn"><span>🛒</span>Tienda</button>
+    <button class="btn play" id="playBtn">¡A CORRER!</button>
+    <button class="glass tile" id="mapBtn"><span id="mapIco">🌴</span><em id="mapName">Selva</em></button>
+  </div>
+  <div class="muted hint">Desliza ← → para cambiar de carril · ↑ saltar · ↓ agacharte</div>
+</div>
+
+<!-- Tienda -->
+<div id="shop" class="panel" hidden>
+  <div class="shopHead">
+    <button class="glass round" id="shopClose" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="shopTitle">Tienda</div>
+    <span class="sp"></span>
+    <div class="glass pill"><span class="coin"></span><b id="sCoins">0</b></div>
+  </div>
+  <div class="sheet glass">
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+    <div class="detail">
+      <div class="dTxt"><b id="dName">—</b><span id="dDesc"></span></div>
+      <button class="btn buy" id="dBtn">—</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div id="settings" class="screen dim" hidden>
+  <div class="glass card wide">
+    <div class="cardTitle">Ajustes</div>
+    <label class="row"><span>🔊 Efectos de sonido</span><input type="checkbox" id="optSfx"><i class="sw"></i></label>
+    <label class="row"><span>🎵 Música</span><input type="checkbox" id="optMusic"><i class="sw"></i></label>
+    <label class="row"><span>📳 Vibración</span><input type="checkbox" id="optHaptic"><i class="sw"></i></label>
+    <label class="row"><span>✨ Calidad alta</span><input type="checkbox" id="optHQ"><i class="sw"></i></label>
+    <div class="credits">Modelos 3D de Sketchfab (licencias Creative Commons): «Chumbud Shrimp», «Cheering Chumbud Shrimp», «Gawr Gura Shark Hat», «Tung Tung Tung Sahur (for horror, free download)», tronco, «Free Coin Pack», «Low Poly Tree Pack», «Low Poly Tree Set», «Tree Toon Low Poly» y «Low Poly City Pack». Gracias a sus autores.</div>
+    <button class="btn" id="setClose">Listo</button>
+  </div>
+</div>
+
+<!-- Pausa -->
+<div id="paused" class="screen dim" hidden>
+  <div class="logo small"><b>PAUSA</b></div>
+  <button class="btn" id="resume">SEGUIR</button>
+  <button class="btn sec" id="quit">Salir al menú</button>
+</div>
+
+<!-- Fin -->
+<div id="over" class="screen dim" hidden>
+  <div class="logo small"><span>¡TE PILLÓ!</span><small>TUNG TUNG TUNG SAHUR</small></div>
+  <div class="glass card">
+    <div class="newRec" id="oRec" hidden>🏆 ¡NUEVO RÉCORD!</div>
+    <small class="muted">PUNTOS</small>
+    <div class="big" id="oScore">0</div>
+    <div class="stats"><div><small>Distancia</small><b id="oDist">0 m</b></div><div><small>Monedas</small><b id="oCoins">0</b></div><div><small>Récord</small><b id="oBest">0</b></div></div>
+  </div>
+  <button class="btn revive" id="reviveBtn" hidden>❤️‍🩹 Salvavidas (<span id="reviveN">0</span>)</button>
   <button class="btn" id="again">OTRA VEZ</button>
-  <button class="btn sec" id="menu">Menú</button>
+  <div class="row2"><button class="btn sec" id="overShop">🛒 Tienda</button><button class="btn sec" id="overMenu">Menú</button></div>
 </div>
-<div class="screen" id="paused" hidden><div class="title" style="font-size:40px">PAUSA</div><button class="btn" id="resume">SEGUIR</button><button class="btn sec" id="quit">Salir al menú</button></div>
-<script>
-'use strict';
-const $ = s => document.querySelector(s);
-const cv = $('#cv'), cx = cv.getContext('2d');
-let W, H, DPR;
-function size() { DPR = Math.min(3, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0); }
-size(); addEventListener('resize', size);
-const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem('tung.' + k)) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem('tung.' + k, JSON.stringify(v)); } catch (e) { } } };
-const Hap = () => window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics;
-const buzz = (s = 'LIGHT') => { try { const h = Hap(); if (h) h.impact({ style: s }); } catch (e) { } };
 
-/* ---------- sonido (sintetizado) ---------- */
-let AC;
-function snd(f, d, type = 'sine', v = .2, slide = 0) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime; o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .02); } catch (e) { } }
-const S = { coin: () => { snd(1046, .07, 'square', .06); setTimeout(() => snd(1568, .1, 'square', .05), 60); }, jump: () => snd(380, .18, 'sine', .15, 420), slide: () => snd(220, .18, 'triangle', .12, -120), lane: () => snd(600, .05, 'sine', .06),
-  tung: () => [0, 170, 340].forEach(d => setTimeout(() => { snd(170, .12, 'triangle', .35, -60); snd(95, .1, 'sine', .3); }, d)), hit: () => snd(120, .35, 'sawtooth', .2, -80) };
-
-/* ---------- mundo ---------- */
-const LANE_X = [-1, 0, 1];
-let G = null, best = store.get('best', 0), bank = store.get('bank', 0), raf = 0, last = 0;
-function horizon() { return H * .3; }
-function proj(x, z, y = 0) { // z: metros por delante del jugador; x: -1..1 carriles; y: metros de altura
-  const s = 7 / (z + 7), baseY = horizon() + (H * .86 - horizon()) * s, lw = W * .3;
-  return { x: W / 2 + x * lw * s, y: baseY - y * H * .09 * s, s };
-}
-function newGame() {
-  G = { lane: 1, px: 0, y: 0, vy: 0, slide: 0, speed: 16, dist: 0, coins: 0, obs: [], gap: 25, chase: 6, stumble: 0, t: 0, over: false, paused: false, tungT: 0, shake: 0 };
-  for (let z = 30; z < 140; z += 1) spawn(z);
-}
-function spawn(z) {
-  if (z < G.gap) return; G.gap = z + Math.max(9, 18 - G.speed * .25) + Math.random() * 8;
-  const r = Math.random(), lane = Math.floor(Math.random() * 3);
-  if (r < .32) G.obs.push({ t: 'log', z, lanes: [0, 1, 2] });                               // tronco: saltar
-  else if (r < .56) G.obs.push({ t: 'bar', z, lanes: [0, 1, 2] });                          // viga: agacharse
-  else { const l2 = [0, 1, 2].filter(l => l !== lane)[Math.floor(Math.random() * 2)]; G.obs.push({ t: 'rock', z, lanes: Math.random() < .5 ? [lane] : [lane, l2] }); } // rocas: cambiar de carril
-  const cl = Math.floor(Math.random() * 3); for (let i = 0; i < 5; i++) G.obs.push({ t: 'coin', z: z + 3 + i * 1.6, lanes: [cl], hy: r < .32 && i === 0 ? 1.3 : 0 });
-}
-
-/* ---------- controles ---------- */
-let tx0 = 0, ty0 = 0, tDone = false;
-addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; tDone = false; if (AC && AC.state === 'suspended') AC.resume(); }, { passive: true });
-addEventListener('touchmove', e => { if (tDone || !G || G.over || G.paused) return; const dx = e.touches[0].clientX - tx0, dy = e.touches[0].clientY - ty0;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 28) return; tDone = true; Math.abs(dx) > Math.abs(dy) ? move(dx > 0 ? 1 : -1) : dy < 0 ? jump() : slide(); }, { passive: true });
-addEventListener('keydown', e => { if (!G || G.over) return; ({ ArrowLeft: () => move(-1), ArrowRight: () => move(1), ArrowUp: jump, ArrowDown: slide, ' ': jump })[e.key]?.(); });
-function move(d) { const n = Math.max(0, Math.min(2, G.lane + d)); if (n !== G.lane) { G.lane = n; S.lane(); buzz(); } }
-function jump() { if (G.y <= 0.01) { G.vy = 9.5; G.slide = 0; S.jump(); buzz(); } }
-function slide() { if (G.y > .01) G.vy = -14; G.slide = .75; S.slide(); buzz(); }
-
-/* ---------- bucle ---------- */
-function step(dt) {
-  G.t += dt; G.speed = Math.min(34, 16 + G.t * .22); const d = G.speed * dt; G.dist += d;
-  G.px += (LANE_X[G.lane] - G.px) * Math.min(1, dt * 14);
-  G.vy -= 28 * dt; G.y = Math.max(0, G.y + G.vy * dt); if (G.y === 0) G.vy = 0; G.slide = Math.max(0, G.slide - dt);
-  G.stumble = Math.max(0, G.stumble - dt); G.chase += ((G.stumble > 0 ? 1.6 : 7) - G.chase) * dt * .8; G.shake = Math.max(0, G.shake - dt);
-  G.tungT -= dt; if (G.tungT <= 0) { G.tungT = G.stumble > 0 ? 1.2 : 6 + Math.random() * 4; if (G.stumble > 0 || Math.random() < .5) { S.tung(); const t = $('#tung'); t.classList.remove('on'); void t.offsetWidth; t.classList.add('on'); } }
-  for (const o of G.obs) o.z -= d;
-  G.gap -= d;   // el punto del próximo obstáculo avanza con el mundo (antes se quedaba fijo y dejaban de salir)
-  let far = Math.max(...G.obs.map(o => o.z), 0); while (far < 140) { far += 1; spawn(far); }
-  for (const o of G.obs) {
-    if (o.done || o.z > .8 || o.z < -1.2) continue;
-    if (!o.lanes.includes(G.lane)) continue;
-    if (o.t === 'coin') { if (Math.abs(G.y - o.hy) < 1.1) { o.done = true; G.coins++; S.coin(); } continue; }
-    o.done = true;
-    const safe = o.t === 'log' ? G.y > .55 : o.t === 'bar' ? G.slide > 0 : false;
-    if (safe) continue;
-    if (o.t === 'rock' || G.stumble > 0) return gameOver();
-    G.stumble = 3.2; G.shake = .35; S.hit(); buzz('HEAVY'); G.tungT = 0;
-  }
-  G.obs = G.obs.filter(o => o.z > -3 && !(o.done && o.t === 'coin'));
-  $('#dist').textContent = Math.floor(G.dist) + ' m'; $('#coins').textContent = '🪙 ' + G.coins;
-}
-/* ---------- dibujo ---------- */
-function draw() {
-  const hz = horizon(), sx = G && G.shake ? (Math.random() - .5) * 10 : 0;
-  cx.save(); cx.translate(sx, 0);
-  const sky = cx.createLinearGradient(0, 0, 0, hz); sky.addColorStop(0, '#2a1650'); sky.addColorStop(.6, '#c2466a'); sky.addColorStop(1, '#ffb05a'); cx.fillStyle = sky; cx.fillRect(-20, 0, W + 40, hz + 2);
-  cx.fillStyle = '#ffe3a0'; cx.beginPath(); cx.arc(W * .7, hz - 10, W * .09, Math.PI, 0); cx.fill();
-  // montañas / templo al fondo
-  cx.fillStyle = '#4a1f55'; cx.beginPath(); cx.moveTo(-20, hz); for (let i = 0; i <= 8; i++) cx.lineTo(i * W / 8, hz - 30 - Math.sin(i * 1.7) * 26 - (i % 2) * 18); cx.lineTo(W + 20, hz); cx.fill();
-  cx.fillStyle = '#35163f'; cx.fillRect(W / 2 - 34, hz - 64, 68, 64); cx.beginPath(); cx.moveTo(W / 2 - 44, hz - 64); cx.lineTo(W / 2, hz - 96); cx.lineTo(W / 2 + 44, hz - 64); cx.fill();
-  // jungla a los lados
-  const ground = cx.createLinearGradient(0, hz, 0, H); ground.addColorStop(0, '#1e4a2c'); ground.addColorStop(1, '#0d2a18'); cx.fillStyle = ground; cx.fillRect(-20, hz, W + 40, H);
-  // camino de piedra
-  const L = proj(-1.75, 140), R = proj(1.75, 140), BL = proj(-1.75, -1.5), BR = proj(1.75, -1.5);
-  const path = cx.createLinearGradient(0, hz, 0, H); path.addColorStop(0, '#9a8466'); path.addColorStop(1, '#c9b089'); cx.fillStyle = path;
-  cx.beginPath(); cx.moveTo(L.x, L.y); cx.lineTo(R.x, R.y); cx.lineTo(BR.x, H + 40); cx.lineTo(BL.x, H + 40); cx.fill();
-  const off = G ? G.dist % 4 : 0;
-  cx.strokeStyle = 'rgba(80,60,40,.45)'; cx.lineWidth = 1.5;
-  for (let z = 4 - off; z < 140; z += 4) { const a = proj(-1.75, z), b = proj(1.75, z); cx.lineWidth = Math.max(.5, 3 * a.s); cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); }
-  for (const lx of [-.5, .5]) { cx.beginPath(); const a = proj(lx, 140), b = proj(lx, -1.5); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y + 60); cx.stroke(); }
-  // bordes y árboles
-  for (let z = 6 - (G ? G.dist % 6 : 0); z < 140; z += 6) for (const s of [-1, 1]) { const p = proj(s * 2.4, z); const r = 60 * p.s * W / 400; cx.fillStyle = '#123d22'; cx.beginPath(); cx.arc(p.x, p.y - r * 1.3, r, 0, 7); cx.fill(); cx.fillStyle = '#1f6b37'; cx.beginPath(); cx.arc(p.x - r * .3, p.y - r * 1.5, r * .6, 0, 7); cx.fill(); }
-  // objetos (de lejos a cerca)
-  if (G) { const list = [...G.obs].sort((a, b) => b.z - a.z); for (const o of list) if (o.z > -1.5 && !o.done) drawObj(o); }
-  drawRunner();
-  if (G) drawChaser();
-  cx.restore();
-}
-function drawObj(o) {
-  for (const l of o.lanes) {
-    const p = proj(LANE_X[l], o.z), w = W * .28 * p.s;
-    if (o.t === 'coin') { const q = proj(LANE_X[l], o.z, o.hy + .6), r = Math.max(2, w * .16), sp = Math.abs(Math.sin((G.t + o.z) * 4)); cx.fillStyle = '#ffcc1a'; cx.beginPath(); cx.ellipse(q.x, q.y, r * (.35 + sp * .65), r, 0, 0, 7); cx.fill(); cx.strokeStyle = '#c47a00'; cx.lineWidth = Math.max(1, r * .2); cx.stroke(); continue; }
-    if (o.t === 'log') { const h = w * .28; cx.fillStyle = '#6b3d1f'; cx.fillRect(p.x - w / 2, p.y - h, w, h); cx.fillStyle = '#8a5530'; cx.fillRect(p.x - w / 2, p.y - h, w, h * .35); cx.fillStyle = '#d9a86c'; cx.beginPath(); cx.ellipse(p.x + w / 2, p.y - h / 2, h * .3, h / 2, 0, 0, 7); cx.fill(); }
-    if (o.t === 'bar') { const q = proj(LANE_X[l], o.z, 1.4), h = w * .16; cx.fillStyle = '#5c2e14'; cx.fillRect(p.x - w * .5, q.y - h, w * .07, p.y - q.y + h); cx.fillRect(p.x + w * .43, q.y - h, w * .07, p.y - q.y + h); cx.fillStyle = '#b8572b'; cx.fillRect(p.x - w * .52, q.y - h, w * 1.04, h); cx.fillStyle = '#e07a3f'; cx.fillRect(p.x - w * .52, q.y - h, w * 1.04, h * .35); }
-    if (o.t === 'rock') { const h = w * .8; cx.fillStyle = '#5d5a66'; cx.beginPath(); cx.moveTo(p.x - w * .45, p.y); cx.lineTo(p.x - w * .35, p.y - h * .7); cx.lineTo(p.x - w * .05, p.y - h); cx.lineTo(p.x + w * .3, p.y - h * .8); cx.lineTo(p.x + w * .45, p.y); cx.fill(); cx.fillStyle = '#7e7a8a'; cx.beginPath(); cx.moveTo(p.x - w * .35, p.y - h * .7); cx.lineTo(p.x - w * .05, p.y - h); cx.lineTo(p.x + .02 * w, p.y - h * .5); cx.fill(); }
-  }
-}
-function drawRunner() {
-  const x = G ? G.px : 0, p = proj(x, 0, G ? G.y : 0), s = W / 400, t = G ? G.t * 14 : 0, sl = G && G.slide > 0;
-  cx.save(); cx.translate(p.x, p.y);
-  cx.fillStyle = 'rgba(0,0,0,.28)'; cx.beginPath(); cx.ellipse(0, (G ? G.y : 0) * H * .09 * p.s, 26 * s, 8 * s, 0, 0, 7); cx.fill();
-  if (sl) { cx.scale(1.15, .55); }
-  const leg = Math.sin(t) * 12 * s;
-  cx.strokeStyle = '#2b2b3a'; cx.lineWidth = 9 * s; cx.lineCap = 'round';
-  cx.beginPath(); cx.moveTo(-7 * s, -40 * s); cx.lineTo(-9 * s + leg * .3, -12 * s); cx.lineTo(-8 * s + leg, 0); cx.moveTo(7 * s, -40 * s); cx.lineTo(9 * s - leg * .3, -12 * s); cx.lineTo(8 * s - leg, 0); cx.stroke();
-  cx.fillStyle = '#2f7cff'; cx.beginPath(); cx.roundRect ? cx.roundRect(-17 * s, -82 * s, 34 * s, 46 * s, 12 * s) : cx.rect(-17 * s, -82 * s, 34 * s, 46 * s); cx.fill();
-  cx.fillStyle = '#ff9b1f'; cx.fillRect(-17 * s, -64 * s, 34 * s, 7 * s);
-  cx.strokeStyle = '#f2c79b'; cx.lineWidth = 8 * s; cx.beginPath(); cx.moveTo(-17 * s, -76 * s); cx.lineTo(-26 * s, -56 * s - leg * .5); cx.moveTo(17 * s, -76 * s); cx.lineTo(26 * s, -56 * s + leg * .5); cx.stroke();
-  cx.fillStyle = '#f2c79b'; cx.beginPath(); cx.arc(0, -96 * s, 15 * s, 0, 7); cx.fill();
-  cx.fillStyle = '#3b2412'; cx.beginPath(); cx.arc(0, -99 * s, 15 * s, Math.PI * 1.05, Math.PI * 1.95); cx.fill();
-  cx.fillStyle = '#c8962e'; cx.beginPath(); cx.ellipse(0, -107 * s, 24 * s, 6 * s, 0, 0, 7); cx.fill(); cx.fillRect(-12 * s, -118 * s, 24 * s, 11 * s);
-  cx.restore();
-}
-// Tung Tung Tung Sahur (versión propia): tronco de madera con ojos saltones y bate
-function drawTung(c, x, y, sc, t, angry = true) {
-  c.save(); c.translate(x, y); c.scale(sc, sc);
-  const bob = Math.sin(t * 10) * 4;
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(-14, -8); c.lineTo(-18 - Math.sin(t * 10) * 8, 30); c.moveTo(14, -8); c.lineTo(18 + Math.sin(t * 10) * 8, 30); c.stroke();
-  const g = c.createLinearGradient(-38, 0, 38, 0); g.addColorStop(0, '#6b3e1c'); g.addColorStop(.45, '#b8804a'); g.addColorStop(1, '#5a3216');
-  c.fillStyle = g; c.beginPath(); c.roundRect ? c.roundRect(-36, -150 + bob, 72, 145, 30) : c.rect(-36, -150 + bob, 72, 145); c.fill();
-  c.strokeStyle = 'rgba(60,30,10,.45)'; c.lineWidth = 2.5; for (const gx of [-20, -4, 14, 26]) { c.beginPath(); c.moveTo(gx, -135 + bob); c.bezierCurveTo(gx + 6, -100 + bob, gx - 6, -60 + bob, gx + 3, -18 + bob); c.stroke(); }
-  c.fillStyle = '#d9a86c'; c.beginPath(); c.ellipse(0, -146 + bob, 30, 8, 0, 0, 7); c.fill(); c.strokeStyle = '#a87440'; c.lineWidth = 2; for (const r of [8, 16, 24]) { c.beginPath(); c.ellipse(0, -146 + bob, r, r * .27, 0, 0, 7); c.stroke(); }
-  for (const ex of [-14, 14]) { c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, -108 + bob, 11, 0, 7); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(ex + (angry ? 0 : 2), -106 + bob, 5.5, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + 2, -109 + bob, 1.8, 0, 7); c.fill(); }
-  if (angry) { c.strokeStyle = '#2a1405'; c.lineWidth = 5; c.beginPath(); c.moveTo(-26, -126 + bob); c.lineTo(-6, -118 + bob); c.moveTo(26, -126 + bob); c.lineTo(6, -118 + bob); c.stroke(); }
-  c.fillStyle = '#3a0d05'; c.beginPath(); c.ellipse(0, -80 + bob, 12, angry ? 8 : 4, 0, 0, 7); c.fill();
-  // brazo con bate
-  const sw = Math.sin(t * 12) * .6;
-  c.save(); c.translate(32, -70 + bob); c.rotate(-.6 + sw);
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(0, 0); c.lineTo(22, 0); c.stroke();
-  c.fillStyle = '#d8b07a'; c.beginPath(); c.moveTo(18, -4); c.lineTo(80, -11); c.quadraticCurveTo(90, 0, 80, 11); c.lineTo(18, 4); c.fill(); c.strokeStyle = '#9a6a38'; c.lineWidth = 2; c.stroke();
-  c.restore();
-  c.strokeStyle = '#3b2210'; c.lineWidth = 7; c.beginPath(); c.moveTo(-34, -70 + bob); c.lineTo(-50, -48 + bob + Math.sin(t * 10) * 8); c.stroke();
-  c.restore();
-}
-function drawChaser() {
-  const close = Math.max(0, Math.min(1, 1 - (G.chase - 1.6) / 5.4)); if (close < .05) return;
-  const s = (W / 400) * (.55 + close * .6), p = proj(G.px * .6, -1.2 + (1 - close) * -.5);
-  cx.globalAlpha = Math.min(1, close * 1.6); drawTung(cx, p.x - W * .22 + Math.sin(G.t * 3) * 8, H + 60 * s - close * 40 * s, s, G.t); cx.globalAlpha = 1;
-}
-function loop(t) {
-  const dt = Math.min(.033, (t - last) / 1000 || 0); last = t;
-  if (G && !G.over && !G.paused) step(dt);
-  draw(); raf = requestAnimationFrame(loop);
-}
-function gameOver() {
-  G.over = true; S.hit(); S.tung(); buzz('HEAVY');
-  const d = Math.floor(G.dist), rec = d > best; if (rec) best = d; bank += G.coins; store.set('best', best); store.set('bank', bank);
-  $('#oDist').textContent = d + ' m'; $('#oInfo').textContent = `${rec ? '🏆 ¡Nuevo récord! · ' : `Récord: ${best} m · `}🪙 +${G.coins}`;
-  setTimeout(() => { $('#over').hidden = false; }, 500);
-}
-function menu() { $('#start').hidden = false; $('#over').hidden = true; $('#paused').hidden = true; $('#bestTxt').textContent = `Récord: ${best} m`; $('#bankTxt').textContent = `🪙 ${bank}`; G = null; }
-function play() { $('#start').hidden = true; $('#over').hidden = true; newGame(); snd(1, .01); }
-$('#play').onclick = play; $('#again').onclick = play; $('#menu').onclick = menu; $('#quit').onclick = menu;
-$('#pauseBtn').onclick = () => { if (G && !G.over) { G.paused = true; $('#paused').hidden = false; } };
-$('#resume').onclick = () => { G.paused = false; $('#paused').hidden = true; };
-document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.over) { G.paused = true; $('#paused').hidden = false; } });
-// retrato en el menú
-const pc = $('#preview').getContext('2d'); (function prev(t) { pc.clearRect(0, 0, 360, 400); drawTung(pc, 170, 390, 2.2, t / 1000, true); requestAnimationFrame(prev); })(0);
-menu(); requestAnimationFrame(loop);
-</script>
+<img id="shotImg" alt="">
+<script type="module" src="game.js"></script>
 </body>
 </html>

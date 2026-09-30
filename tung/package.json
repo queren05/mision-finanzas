@@ -2,7 +2,7 @@
   "name": "tung-ios",
   "version": "1.0.0",
   "private": true,
-  "description": "Corre por el templo y que no te pille Tung Tung Tung Sahur",
+  "description": "Corredor 3D: huye de Tung Tung Tung Sahur por la selva y la ciudad con tu gamba",
   "dependencies": { "@capacitor/core": "^7.0.0", "@capacitor/ios": "^7.0.0", "@capacitor/haptics": "^7.0.0" },
   "devDependencies": { "@capacitor/cli": "^7.0.0" }
 }
