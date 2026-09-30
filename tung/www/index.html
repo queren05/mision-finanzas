@@ -108,6 +108,7 @@ function step(dt) {
   G.stumble = Math.max(0, G.stumble - dt); G.chase += ((G.stumble > 0 ? 1.6 : 7) - G.chase) * dt * .8; G.shake = Math.max(0, G.shake - dt);
   G.tungT -= dt; if (G.tungT <= 0) { G.tungT = G.stumble > 0 ? 1.2 : 6 + Math.random() * 4; if (G.stumble > 0 || Math.random() < .5) { S.tung(); const t = $('#tung'); t.classList.remove('on'); void t.offsetWidth; t.classList.add('on'); } }
   for (const o of G.obs) o.z -= d;
+  G.gap -= d;   // el punto del próximo obstáculo avanza con el mundo (antes se quedaba fijo y dejaban de salir)
   let far = Math.max(...G.obs.map(o => o.z), 0); while (far < 140) { far += 1; spawn(far); }
   for (const o of G.obs) {
     if (o.done || o.z > .8 || o.z < -1.2) continue;
