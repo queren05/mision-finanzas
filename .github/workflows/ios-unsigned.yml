@@ -4,6 +4,13 @@ name: IPA sin firmar
 
 on:
   workflow_dispatch:
+  push:
+    branches: [app]
+    paths: ['src/**', 'ios-app/**', '.github/workflows/ios-unsigned.yml']
+
+concurrency:
+  group: miniapp-fuente   # comparte la fuente común con miniapp.yml
+  cancel-in-progress: false
 
 permissions:
   contents: write
