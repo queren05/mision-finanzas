@@ -306,6 +306,14 @@ export function buildHouse(scene) {
   blanket.add(rb(1.2, .1, 1.05, .05, A(), 0, 0, 0), rb(1.22, .05, .25, .03, white, 0, .05, -.42));
   blanket.position.set(.05, .9, -1.45); blanket.visible = false; rooms.dormitorio.add(blanket);
 
+
+  // rayos de sol que entran por las ventanas (desaparecen de noche)
+  const beamTex = canvasTex(64, 256, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,236,190,.9)'); g.addColorStop(1, 'rgba(255,236,190,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); const g2 = c.createLinearGradient(0, 0, w, 0); g2.addColorStop(0, 'rgba(0,0,0,1)'); g2.addColorStop(.2, 'rgba(0,0,0,0)'); g2.addColorStop(.8, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,1)'); c.globalCompositeOperation = 'destination-out'; c.fillStyle = g2; c.fillRect(0, 0, w, h); }, false);
+  const beamMat = new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, opacity: .22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const beams = [];
+  for (const [r, wx, wy] of [['salon', -.05, 2.6], ['dormitorio', -.6, 3.0]]) {
+    for (const k of [-.45, 0, .45]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(.55, 3.6), beamMat); b.position.set(wx + k + .9, wy - 1.35, WALL_Z + 1.35); b.rotation.set(-.62, .35, .28); b.renderOrder = 2; rooms[r].add(b); beams.push(b); }
+  }
   const tmpC = new THREE.Color();
   const skyDay = {}, skyNight = skyTexture(0, true);
   let curTheme = null, night = 0, curRoom = 'salon';
@@ -325,6 +333,7 @@ export function buildHouse(scene) {
     tmpC.lerpColors(white3, nightWall, k); wallMat.color.copy(tmpC); floorMat.color.copy(tmpC); base.material.color.copy(tmpC);
     winMat.map = k > .5 ? skyNight : skyDay[curTheme.id]; winMat.needsUpdate = true;
     if (bedLamp) bedLamp.children[2].material.emissiveIntensity = .35 + k * 1.4;
+    beamMat.opacity = .22 * (1 - k); for (const b of beams) b.visible = k < .9;
   }
   function setRoom(id) { curRoom = id; for (const [k, r] of Object.entries(rooms)) r.visible = k === id; }
   const SPOTS = {
@@ -335,6 +344,6 @@ export function buildHouse(scene) {
   return {
     rooms, hot, applyTheme, setNight, setRoom, update, SPOTS, get night() { return night; }, get theme() { return curTheme; }, get room() { return curRoom; },
     bedLampPos: () => bedLight.pos, ball: hot.salon[0].obj, water: () => waterMesh, shared, decoGroup,
-    makeFurniture, setFurniture, setBlanket: (v, y) => { blanket.visible = v; if (y) blanket.position.y = y; },
+    makeFurniture, setFurniture, furnSpot: id => { const p = FURN_POS[id]; return p && { room: p[0], x: p[1], y: p[2], z: p[3] }; }, setBlanket: (v, y) => { blanket.visible = v; if (y) blanket.position.y = y; },
   };
 }

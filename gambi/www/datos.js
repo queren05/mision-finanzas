@@ -61,6 +61,7 @@ export const HATS = [
 
 // Temas de la casa: colores y dibujo de las paredes y del suelo
 export const THEMES = [
+  { id: 'nordico', name: 'Nórdico', price: 0, wall: ['#f7f5f1', '#ebe6de'], line: '#ffffff', floor: ['#dcc29a', '#cdb085'], fpat: 'planks', wpat: 'plain', accent: 0xd8d2c8, dark: 0xa07850, sky: 0x9fd8ff },
   { id: 'cuqui', name: 'Cuqui', price: 0, wall: ['#ffd9e8', '#ffb7d3'], line: '#ffffff', floor: ['#f3dcb8', '#e3c392'], fpat: 'planks', wpat: 'dots', accent: 0xff7ab0, dark: 0xd9467f, sky: 0x9fd8ff },
   { id: 'submarino', name: 'Submarino', price: 300, wall: ['#2a86c9', '#0f4a8a'], line: '#9fe6ff', floor: ['#ecdcab', '#d8c48a'], fpat: 'sand', wpat: 'waves', accent: 0x35d0ff, dark: 0x0a6db0, sky: 0x1a78c2 },
   { id: 'selva', name: 'Selva', price: 350, wall: ['#86cf78', '#3f9a4c'], line: '#d6f7a8', floor: ['#ad7d50', '#8a5e3a'], fpat: 'planks', wpat: 'leaves', accent: 0x4fe37a, dark: 0x2c8a4a, sky: 0xbdf0ff },
@@ -89,6 +90,7 @@ export const MINIGAMES = [
   { id: 'simon', name: 'Simón marino', desc: 'Repite la melodía de las conchas sin equivocarte.', icon: 'brain', col: [0x6a2fb8, 0xffa8f0] },
   { id: 'swim', name: 'Nado', desc: 'Toca para nadar hacia arriba y pasa entre los corales.', icon: 'bubble', col: [0x0b6fb0, 0x5fe0d0] },
   { id: 'memory', name: 'Parejas', desc: 'Da la vuelta a las cartas y encuentra todas las parejas.', icon: 'brain', col: [0xb8336a, 0xffc06a] },
+  { id: 'drive', name: 'Carretera', desc: 'Conduce por las colinas, coge monedas y no te quedes sin gasolina. ¡Sin volcar!', icon: 'catch', col: [0x3a9a3a, 0x8fe0ff] },
   { id: 'crabs', name: 'Caza-cangrejos', desc: 'Dales un toque a los cangrejos que asoman. ¡Ojo con las medusas!', icon: 'catch', col: [0xd9792a, 0xffe08a] },
 ];
 
@@ -102,7 +104,7 @@ export const ACH = [
   { id: 'pets50', name: 'Mimosa', desc: 'Acaríciala 50 veces', v: sv => sv.stats.pets, n: 50, r: 80 },
   { id: 'play10', name: 'Jugona', desc: 'Juega 10 minijuegos', v: sv => sv.stats.played, n: 10, r: 100 },
   { id: 'play60', name: 'Leyenda de los recreativos', desc: 'Juega 60 minijuegos', v: sv => sv.stats.played, n: 60, r: 400 },
-  { id: 'allgames', name: 'Probadora', desc: 'Puntúa en los 6 minijuegos', v: sumBest, n: 6, r: 150 },
+  { id: 'allgames', name: 'Probadora', desc: 'Puntúa en los 7 minijuegos', v: sumBest, n: 7, r: 150 },
   { id: 'tricks20', name: 'Artista', desc: 'Haz 20 bailes o volteretas', v: sv => sv.stats.tricks, n: 20, r: 120 },
   { id: 'talk15', name: 'Charlatana', desc: 'Habla con ella 15 veces', v: sv => sv.stats.talks, n: 15, r: 80 },
   { id: 'cure', name: 'Enfermera', desc: 'Cúrala cuando se ponga mala', v: sv => sv.stats.cured, n: 1, r: 80 },
@@ -144,8 +146,8 @@ const DEF = {
   name: '', hatched: false, taps: 0,
   st: { food: 70, fun: 70, energy: 85, hyg: 80 }, t: Date.now(), sleeping: false,
   xp: 0, lv: 1, coins: 150,
-  inv: {}, owned: {}, eq: { chars: 'gambita', skins: 'natural', hats: 'nada', themes: 'cuqui' },
-  best: { catch: 0, bubbles: 0, simon: 0, swim: 0, memory: 0, crabs: 0 }, daily: { last: '', streak: 0 },
+  inv: {}, owned: {}, eq: { chars: 'gambita', skins: 'natural', hats: 'nada', themes: 'nordico' },
+  best: { catch: 0, bubbles: 0, simon: 0, swim: 0, memory: 0, crabs: 0, drive: 0 }, daily: { last: '', streak: 0 },
   sick: false, sickT: 0, born: 0, furn: {}, ach: {},
   opt: { sfx: true, music: true, haptic: true, hq: true }, stats: { fed: 0, bathed: 0, played: 0, pets: 0, bought: 0, tricks: 0, cured: 0, talks: 0, days: 0 },
 };
@@ -153,6 +155,8 @@ export const save = {};
 for (const k of Object.keys(DEF)) save[k] = get(k, DEF[k]);
 for (const k of ['st', 'eq', 'best', 'daily', 'opt', 'stats', 'furn', 'ach']) save[k] = Object.assign({}, DEF[k], save[k]);
 if (save.hatched && !save.born) save.born = Date.now();
+// la casa por defecto pasa a ser la nórdica (blanco y madera); la cuqui sigue disponible gratis en la tienda
+if (!localStorage.getItem(K + 'mig1')) { if (save.eq.themes === 'cuqui') save.eq.themes = 'nordico'; try { localStorage.setItem(K + 'mig1', '1'); } catch (e) { } }
 for (const k of Object.keys(DEF.st)) if (!Number.isFinite(save.st[k])) save.st[k] = DEF.st[k];   // por si un valor guardado se corrompe
 for (const k of ['coins', 'xp', 'lv']) if (!Number.isFinite(save[k])) save[k] = DEF[k];
 for (const t of TABS) for (const it of t.list) if (!it.price) save.owned[t.id + ':' + it.id] = true;

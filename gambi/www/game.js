@@ -23,8 +23,11 @@ const cv = $('#cv');
 const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: Q.has('shot') });
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a1f4d);
 const cam = new THREE.PerspectiveCamera(50, 1, .1, 100);
-const hemi = new THREE.HemisphereLight(0xfff3e8, 0x7a6a9a, 1.75); scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xffffff, 1.9); sun.position.set(-2.5, 5, 4.5); scene.add(sun);
+R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+const hemi = new THREE.HemisphereLight(0xfff0dc, 0x8a7060, 1.65); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffe8c8, 2.1); sun.position.set(-2.5, 5, 4.5); scene.add(sun);
+// sombras suaves de verdad (la gamba y los muebles las proyectan sobre el suelo)
+sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -4.5, right: 4.5, top: 5, bottom: -2.5, near: .5, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -.0012; sun.shadow.normalBias = .02; sun.shadow.radius = 5;
 const lamp = new THREE.PointLight(0xffd9a0, 0, 7, 1.6); scene.add(lamp);
 const TAN = .52;   // mitad del ancho visible / distancia a la gamba
 const VIEW = { shift: .05 };   // cuánto se sube la escena para quedar entre la cabecera y la barra
@@ -100,6 +103,12 @@ async function applyLook(eq = save.eq) {
   house.applyTheme(eq.themes);
   house.setFurniture(Object.assign({}, save.furn, eq.furnPreview || {}), save.name || 'Gambi');
   await player.use(ch.model);
+  shadowsOn();
+}
+function shadowsOn() {
+  player.root.traverse(o => { if (o.isMesh && o !== shadow) o.castShadow = true; });
+  for (const r of Object.values(house.rooms)) r.traverse(o => { if (o.isMesh) { o.castShadow = !o.material.transparent; o.receiveShadow = true; } });
+  house.shared.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
 }
 
 /* ---------- huevo ---------- */
@@ -138,7 +147,7 @@ function hatch() {
   S.hatch(); buzz('HEAVY');
   PA.burst(0, .9, .3, 70, new THREE.Color(0xffe27a), 3.4, .2, 1, 3); PN.burst(0, .9, .3, 40, new THREE.Color(0xfff2d0), 3, .18, .9, 4);
   eggM.group.visible = false; $('#egg').hidden = true;
-  player.root.visible = true; pet.sc = 0; pet.x = 0; pet.z = .4; pet.hopV = 5;
+  player.root.visible = true; pet.sc = 0; pet.x = 0; pet.z = .4; hop(5);
   $('#nameIn').value = NAMES[Math.floor(Math.random() * NAMES.length)]; $('#nameDlg').hidden = false;
 }
 
@@ -162,6 +171,7 @@ function setupUI() {
   $$('#nav button').forEach(b => b.onclick = () => { if (mode === 'home') goRoom(b.dataset.room); });
   $('#shopBtn').onclick = () => { if (mode === 'home') { S.click(); shop.open('food'); } };
   $('#giftBtn').onclick = gift;
+  document.addEventListener('pointerdown', e => { if (e.target.closest('button, .it, .tab, .game, .food, .lvl')) SND.tone(900, .045, 'sine', .05, 250); }, true);
   $('#lvlBox').onclick = openProfile; $('#profClose').onclick = () => { $('#profile').hidden = true; S.click(); };
   $('#setBtn').onclick = openSettings; $('#setClose').onclick = closeSettings;
   $('#nameOk').onclick = confirmName;
@@ -194,7 +204,7 @@ function gainXp(n) {
     const reward = 40 + save.lv * 8; save.coins += reward; S.levelup(); buzz('HEAVY');
     PA.burst(pet.x, 1, pet.z, 50, new THREE.Color().setHSL(Math.random(), .9, .65), 3, .18, 1.1, 3);
     toast(stageOf(save.lv) > old ? `¡${save.name} ha crecido! · Nivel ${save.lv}` : `¡Nivel ${save.lv}! +${reward} monedas`);
-    if (stageOf(save.lv) > old) { pet.grow = 1; pet.hopV = 6; }
+    if (stageOf(save.lv) > old) { pet.grow = 1; hop(6); }
   }
   updHud(); persist();
 }
@@ -283,7 +293,7 @@ function finishEat(a) {
   const lab = { food: 'Comida', fun: 'Diversión', energy: 'Energía', hyg: 'Limpieza' };
   let i = 0; for (const k of NEEDS) if (gain[k]) { addStat(k, gain[k]); FL.add(`+${gain[k]}`, pet.x + (i++ - 1) * .35, 1.05 * pet.sc + .5, pet.z + .3, { color: { food: '#ffc04a', fun: '#ff8ab8', energy: '#ffe94d', hyg: '#6fdcff' }[k], size: .36, life: 1.3 }); }
   if (f.med) { save.sick = false; save.sickT = 0; save.stats.cured++; say('¡Puaj! Pero ya me encuentro mejor'); }
-  save.stats.fed++; scene.remove(a.mesh); pet.hopV = 4; pet.hearts = 3; S.happy(); buzz('MEDIUM');
+  save.stats.fed++; scene.remove(a.mesh); hop(4); pet.hearts = 3; S.happy(); buzz('MEDIUM');
   gainXp(5 + Math.round((gain.food + gain.fun + gain.energy + gain.hyg) / 14)); persist(); updHud();
 }
 
@@ -307,7 +317,7 @@ function shower() {
 }
 function finishShower() {
   const clean = pet.foam > .3; addStat('hyg', clean ? 100 : 6); addStat('fun', clean ? 8 : 0); foamSet(0);
-  if (clean) { save.stats.bathed++; gainXp(10); pet.hearts = 4; pet.hopV = 4.5; S.happy(); FL.add('¡Limpio!', pet.x, 1.3, pet.z + .2, { color: '#8fe6ff', size: .6, font: '700 54px Fredoka, sans-serif' }); }
+  if (clean) { save.stats.bathed++; gainXp(10); pet.hearts = 4; hop(4.5); S.happy(); FL.add('¡Limpio!', pet.x, 1.3, pet.z + .2, { color: '#8fe6ff', size: .6, font: '700 54px Fredoka, sans-serif' }); }
   else toast('Primero frótalo con espuma');
   persist(); updHud();
 }
@@ -363,7 +373,7 @@ function hotspot(id) {
 }
 function poke() {
   if (save.sleeping) { wake(); return; }
-  pet.hopV = 4.2; pet.hearts = Math.max(pet.hearts, 1); pet.wiggle = .8; S.happy(); buzz('LIGHT');
+  hop(4.2); pet.hearts = Math.max(pet.hearts, 1); pet.wiggle = .8; S.happy(); buzz('LIGHT');
   if (pet.cool <= 0) { addStat('fun', 1.5); pet.cool = .8; gainXp(1); }
 }
 function caress(d) {
@@ -372,7 +382,7 @@ function caress(d) {
 }
 const ballS = { t: 0, x0: 0 };
 function kickBall() {
-  if (ballS.t > 0) return; ballS.t = 1; ballS.x0 = house.ball.position.x; S.pop(); buzz('LIGHT'); pet.hopV = 4; addStat('fun', 2); gainXp(1);
+  if (ballS.t > 0) return; ballS.t = 1; ballS.x0 = house.ball.position.x; S.pop(); buzz('LIGHT'); hop(4); addStat('fun', 2); gainXp(1);
 }
 
 
@@ -399,13 +409,13 @@ function say(txt, ms = 2800) {
 function doAct(id) {
   if (mode !== 'home' || pet.act) return;
   if (save.sleeping) { wake(); return; }
-  if (id === 'talk') { say(phrase()); save.stats.talks++; pet.hopV = 2.5; addStat('fun', 1); gainXp(1); persist(); return; }
+  if (id === 'talk') { say(phrase()); save.stats.talks++; hop(2.5); addStat('fun', 1); gainXp(1); persist(); return; }
   if (id === 'bubbles') { spawnBubbles(); return; }
   if (id === 'flip' && save.lv < 3) { toast('La voltereta se aprende en el nivel 3'); S.no(); return; }
   if (save.sick) { say('Estoy malita… mejor luego'); S.sad(); return; }
   if (save.st.energy < 12) { say('Estoy demasiado cansada'); S.sad(); return; }
   pet.act = { type: id, t: 0 }; S.click(); buzz();
-  if (id === 'dance') { [0, .25, .5, .75, 1, 1.25, 1.5, 1.75, 2, 2.25].forEach((w, i) => SND.tone(440 * Math.pow(2, [0, 4, 7, 12, 7, 4, 0, 7, 12, 16][i] / 12), .18, 'triangle', .11, 0, w)); }
+  if (id === 'dance') { const n = [0, 4, 7, 4, 0, 4, 7, 12, 9, 7, 5, 4, 2, 4, 7, 12]; n.forEach((v, i) => { SND.tone(440 * Math.pow(2, v / 12), .2, 'triangle', .1, 0, i * .25); if (i % 2 === 0) SND.tone(110 * Math.pow(2, [0, 0, 5, 7][(i / 4) | 0] / 12), .2, 'sine', .14, 0, i * .25); }); }
 }
 function finishAct(a) {
   const R2 = { dance: [7, 4, 3], flip: [5, 3, 3], tickle: [6, 2, 2] }[a.type];
@@ -441,7 +451,7 @@ function popBubble(x, y) {
     _v.copy(b.m.position).project(cam); const sx = (_v.x * .5 + .5) * innerWidth, sy = (-_v.y * .5 + .5) * innerHeight;
     if (Math.hypot(x - sx, y - sy) < 60) {
       b.dead = true; b.life = 0; scene.remove(b.m); S.pop(); buzz('LIGHT'); PA.burst(b.m.position.x, b.m.position.y, b.m.position.z, 10, new THREE.Color(0xd6f4ff), 1.6, .1, .5, 1);
-      addStat('fun', 2); pet.hopV = 3.5; if (Math.random() < .25) { save.coins += 2; FL.add('+2', b.m.position.x, b.m.position.y, b.m.position.z + .2, { color: '#ffe14d', size: .4 }); } gainXp(1);
+      addStat('fun', 2); hop(3.5); if (Math.random() < .25) { save.coins += 2; FL.add('+2', b.m.position.x, b.m.position.y, b.m.position.z + .2, { color: '#ffe14d', size: .4 }); } gainXp(1);
       return true;
     }
   }
@@ -478,7 +488,7 @@ function updatePet(dt) {
   else {
     ty = 0; pet.wait -= dt;
     if (pet.wait <= 0 && !a) {
-      if (Math.hypot(pet.tx - pet.x, pet.tz - pet.z) < .12) { pet.tx = rnd(sp.x[0], sp.x[1]); pet.tz = rnd(sp.z[0], sp.z[1]); pet.wait = rnd(0.2, .6); if (Math.random() < .3) { pet.hopV = 3.6; } }
+      if (Math.hypot(pet.tx - pet.x, pet.tz - pet.z) < .12) { pet.tx = rnd(sp.x[0], sp.x[1]); pet.tz = rnd(sp.z[0], sp.z[1]); pet.wait = rnd(0.2, .6); if (Math.random() < .3) { hop(3.6); } }
       tx = pet.tx; tz = pet.tz;
     } else { tx = pet.tx; tz = pet.tz; }
   }
@@ -510,11 +520,16 @@ function updatePet(dt) {
       const bt = [.45, .95, 1.45]; if (a.bites < 3 && a.t > bt[a.bites]) { a.bites++; a.mesh.scale.multiplyScalar(.6); SND.noiseHit(.07, .16, 500); SND.tone(190 + a.bites * 40, .08, 'square', .05, -60); PN.burst(a.mesh.position.x, a.mesh.position.y, a.mesh.position.z, 6, new THREE.Color(0xffe0a0), .9, .08, .5, 5); }
       if (a.t > 1.9) { finishEat(a); pet.act = null; }
     } else if (a.type === 'dance') {
-      const t = a.t; turn = Math.sin(t * 6) * .6; pet.yaw += dt * (t < 1.2 || t > 2 ? 0 : 7); squash = 1 + Math.sin(t * 12) * .08;
-      if (Math.floor(t * 4) !== Math.floor((t - dt) * 4)) { pet.hopV = 3.4; FL.add('♪', pet.x + rnd(-.4, .4), pet.y + .9 * pet.sc, pet.z + .3, { color: ['#ffe14d', '#7fd6ff', '#ff8ab8'][Math.floor(rnd(0, 3))], size: .4, life: 1.1, drift: rnd(-.2, .2) }); }
-      if (t > 2.6) { finishAct(a); pet.act = null; }
+      // 1) pasitos de lado balanceándose, 2) giro sobre sí misma, 3) meneo de cabeza, 4) pose final
+      const t = a.t; a.ox = 0; a.roll = 0; a.pitch = 0; a.legs = true;
+      if (t < 1.3) { a.ox = Math.sin(t * Math.PI * 2.4) * .32; a.roll = Math.sin(t * Math.PI * 4.8) * .22; squash = 1 + Math.abs(Math.sin(t * Math.PI * 4.8)) * -.08; turn = Math.sin(t * Math.PI * 2.4) * .35; }
+      else if (t < 2.3) { pet.yaw += dt * Math.PI * 2; squash = .94; a.roll = .15; }
+      else if (t < 3.4) { a.pitch = Math.sin(t * 16) * .22; a.roll = Math.sin(t * 8) * .12; turn = Math.sin(t * 4) * .5; }
+      else { const k = Math.min(1, (t - 3.4) / .25); a.pitch = -.55 * k; a.legs = false; squash = 1 + .06 * k; if (!a.sparkle) { a.sparkle = true; PA.burst(pet.x, .9 * pet.sc, pet.z, 26, new THREE.Color(0xffe27a), 2.2, .14, .8, 2); } }
+      if (Math.floor(t * 3) !== Math.floor((t - dt) * 3)) FL.add('♪', pet.x + rnd(-.5, .5), pet.y + .9 * pet.sc, pet.z + .3, { color: ['#ffe14d', '#7fd6ff', '#ff8ab8'][Math.floor(rnd(0, 3))], size: .4, life: 1.2, drift: rnd(-.25, .25) });
+      if (t > 4) { finishAct(a); pet.act = null; }
     } else if (a.type === 'flip') {
-      const t = a.t; if (t < .05 && pet.hopY === 0) pet.hopV = 6.5;
+      const t = a.t; if (t < .05) hop(6.5);
       a.rx = t > .05 && t < .85 ? -((t - .05) / .8) * Math.PI * 2 : 0;
       if (t > .85 && !a.landed) { a.landed = true; PA.burst(pet.x, .1, pet.z, 18, new THREE.Color(0xfff2a0), 2, .14, .6, 3); S.happy(); }
       if (t > 1.2) { finishAct(a); pet.act = null; }
@@ -535,16 +550,18 @@ function updatePet(dt) {
   if (pet.hearts > 0) { pet.hearts -= dt * 2.4; if (Math.random() < dt * 9) FL.add('♥', pet.x + rnd(-.3, .3), pet.y + .7 * pet.sc + .3, pet.z + .3, { color: '#ff6f9a', size: .34, life: 1.1, drift: rnd(-.15, .15) }); }
   // aplicar
   const R_ = player.root;
-  R_.position.set(pet.x, pet.y + pet.hopY, pet.z); R_.rotation.y = pet.yaw + turn; R_.scale.setScalar(Math.max(.01, pet.sc));
+  const dnc = a && a.type === 'dance';
+  R_.position.set(pet.x + (dnc && a.ox || 0), pet.y + pet.hopY, pet.z); R_.rotation.y = pet.yaw + turn; R_.scale.setScalar(Math.max(.01, pet.sc));
   pet.ph += dt * (moving ? 5 + pet.speed * 5 : 2);
   const md = mood(), sleeping = save.sleeping;
-  player.pose(pet.ph, moving ? 'run' : 'idle', T, dt, 4);
+  if (dnc && a.legs) pet.ph += dt * 14;
+  player.pose(pet.ph, moving || (dnc && a.legs) ? 'run' : 'idle', T, dt, 4);
   player.tilt.position.y = moving ? Math.abs(Math.sin(pet.ph)) * .03 : 0;
   const breathe = sleeping ? Math.sin(T * 1.6) * .03 : Math.sin(T * 2.2) * .012;
   const droop = md === 0 && !sleeping ? .1 : 0;
   player.tilt.scale.set(1 + pet.wiggle * .04 * Math.sin(T * 30), (1 + breathe) * (1 - droop * .4) - pet.wiggle * .03, 1);
   const sickDroop = save.sick && !sleeping ? .12 : 0;
-  player.tilt.rotation.set(headBob - droop * .5 - sickDroop + (a && a.rx || 0), 0, pet.wiggle * .1 * Math.sin(T * 24));
+  player.tilt.rotation.set(headBob - droop * .5 - sickDroop + (a && a.rx || 0) + (dnc && a.pitch || 0), 0, pet.wiggle * .1 * Math.sin(T * 24) + (dnc && a.roll || 0));
   if (squash !== 1) player.tilt.scale.y *= squash;
   // dormida en la cama: boca arriba, con las patitas moviéndose despacio
   const onBack = sleeping && room === 'dormitorio' && mode === 'home' && player.cur;
@@ -554,7 +571,6 @@ function updatePet(dt) {
     if (onBack) player.pose(T * 1.6, 'slide', T, dt, 1);
   }
   if (player.hat) player.hat.visible = pet.roll < .5;
-  house.setBlanket(onBack && pet.roll > .8, pet.y + (player.cur && player.cur.h || .5) * pet.sc * .5);
   const hb = player.cur && player.cur.bones && player.cur.bones.Head; if (hb && (droop || headBob)) hb.rotation.x += droop * 1.2 + headBob;
   // sueño y avisos
   if (sleeping) { pet.sleepZ -= dt; if (pet.sleepZ <= 0) { pet.sleepZ = 1.2; FL.add('Z', pet.x - .2, pet.y + .95, pet.z, { color: '#cfe3ff', size: .4, life: 2, vy: .4, drift: .12 }); if (Math.random() < .5) PA.emit(pet.x - .55 * pet.sc, pet.y + .35, pet.z, 0, .25, 0, new THREE.Color(0xbfe9ff), .22, 1.6, -.05, 1.2); } }
@@ -562,6 +578,7 @@ function updatePet(dt) {
   warnT -= dt;
   if (warnT <= 0 && !sleeping && !a) { warnT = 22; const k = NEEDS.find(n => save.st[n] < 25); if (k) { FL.add({ food: '🍤', fun: '🎈', energy: '💤', hyg: '🫧' }[k], pet.x, pet.y + 1.05 * pet.sc + .4, pet.z + .2, { size: .55, life: 2.2, font: '70px "Apple Color Emoji","Noto Color Emoji",sans-serif' }); S.sad(); } }
 }
+function hop(v) { if (pet.hopY < .02 && pet.hopV <= 0) pet.hopV = v; }
 const angDiff = (a, b) => { let d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- minijuegos ---------- */
@@ -610,7 +627,7 @@ function frame(dt) {
     updatePet(dt);
     updateBubbles(dt);
     house.update(dt, T);
-    if (sayT > 0) { sayT -= dt; const p = petScreen(), b = $('#talk'); b.style.left = p.x + 'px'; b.style.top = (p.y - 95 * (.6 + .4 * pet.sc)) + 'px'; if (sayT <= 0) b.hidden = true; }
+    if (sayT > 0) { sayT -= dt; const p = petScreen(), b = $('#talk'), hw = b.offsetWidth / 2 + 10; b.style.left = clamp(p.x, hw, innerWidth - hw) + 'px'; b.style.top = Math.max(b.offsetHeight + 150, p.y - 95 * (.6 + .4 * pet.sc)) + 'px'; if (sayT <= 0) b.hidden = true; }
     if (mode === 'home' && !save.sleeping && !pet.act) { chatT -= dt; if (chatT <= 0) { chatT = rnd(35, 70); say(phrase()); } }
     if (room === 'salon' && ballS.t > 0) { ballS.t -= dt * 1.4; const p = 1 - Math.max(0, ballS.t); house.ball.position.y = .3 + Math.abs(Math.sin(p * Math.PI * 3)) * .9 * (1 - p); house.ball.position.x = ballS.x0 + Math.sin(p * Math.PI) * .6; house.ball.rotation.z -= dt * 6; if (ballS.t <= 0) house.ball.position.x = ballS.x0; }
   } else if (mode === 'egg') {
@@ -621,7 +638,8 @@ function frame(dt) {
   // la casa se oscurece al dormir
   const nt = save.sleeping && mode === 'home' ? 1 : 0; nightK = lerp(nightK, nt, Math.min(1, dt * 2.2));
   if (Math.abs(nightK - house.night) > .004) house.setNight(nightK);
-  hemi.intensity = lerp(1.75, .4, nightK); sun.intensity = lerp(1.9, .22, nightK);
+  hemi.intensity = lerp(1.65, .4, nightK); sun.intensity = lerp(2.1, .22, nightK);
+  if (mode === 'home' && nightK < .5 && Math.random() < dt * 5) PN.emit(rnd(-2, 2), rnd(.4, 2.8), rnd(-1.6, 1), rnd(-.05, .05), rnd(-.03, .05), rnd(-.03, .03), new THREE.Color(0xfff0c8), rnd(.03, .055), rnd(4, 7), 0);   // motitas de polvo en la luz
   lamp.intensity = nightK * 4; lamp.position.copy(house.bedLampPos());
   // cámara
   if (mode === 'home' || mode === 'egg') {

@@ -348,12 +348,156 @@ export function createMini(ctx) {
   }
   function SND_hit() { ctx.SND && ctx.SND.noiseHit ? ctx.SND.noiseHit(.08, .2, 700) : S.good(); }
 
+
+  /* ============ 7. CARRETERA (coche por las colinas, tipo Pou) ============ */
+  // Física 2D sencilla: dos ruedas unidas por una barra (Verlet), gravedad y un suelo hecho de senos.
+  // A la derecha de la pantalla, acelerar; a la izquierda, frenar / marcha atrás. En el aire, acelerar levanta el morro.
+  const hgt = x => { if (x < 6) return 0; const k = .55 + Math.min(1.5, (x - 6) / 260); const e = Math.min(1, (x - 6) / 10); return e * k * (1.25 * Math.sin(x * .16) + .7 * Math.sin(x * .37 + 1) + .3 * Math.sin(x * .83 + 2)); };
+  const slope = x => (hgt(x + .05) - hgt(x - .05)) / .1;
+  const WR = .32, CL = 1.5;
+  function terrainChunk(x0, x1) {
+    const n = Math.ceil((x1 - x0) / .25), pos = [], col = [], idx = [], grass = new THREE.Color(0x5fbf4a), grass2 = new THREE.Color(0x4aa63a), dirt = new THREE.Color(0xa86d3e), deep = new THREE.Color(0x6b4426);
+    for (let i = 0; i <= n; i++) {
+      const x = x0 + i * (x1 - x0) / n, y = hgt(x);
+      // capas: césped arriba (frente y tapa), tierra hacia abajo
+      pos.push(x, y, .9, x, y - .22, .9, x, y - 8, .9, x, y, -.9, x, y - .02, .9);
+      const g = i % 2 ? grass : grass2;
+      col.push(g.r, g.g, g.b, dirt.r, dirt.g, dirt.b, deep.r, deep.g, deep.b, g.r, g.g, g.b, g.r, g.g, g.b);
+      if (i < n) { const a = i * 5, b = a + 5; idx.push(a, b + 1, b, a, a + 1, b + 1, a + 1, b + 2, b + 1, a + 1, a + 2, b + 2, a + 3, b + 3, b + 4, a + 3, b + 4, a + 4); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, side: THREE.DoubleSide }));
+    const grp = new THREE.Group(); grp.add(m);
+    // flores y piedras en el borde de atrás
+    for (let x = x0 + 1; x < x1; x += rnd(1.2, 3)) { const r = Math.random(); const o = r < .5 ? new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.12, .25), 0), new THREE.MeshStandardMaterial({ color: 0x9a9488, flatShading: true })) : new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), new THREE.MeshStandardMaterial({ color: [0xff5a7a, 0xffd84a, 0xffffff, 0xb45aff][Math.floor(rnd(0, 4))] })); o.position.set(x, hgt(x) + .05, -.55); grp.add(o); }
+    return grp;
+  }
+  function makeCar() {
+    const g = new THREE.Group(), red = new THREE.MeshStandardMaterial({ color: 0xff4d4d, roughness: .35 }), dark = new THREE.MeshStandardMaterial({ color: 0x24262e, roughness: .7 }), white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .4 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, .36, .9), red); body.position.y = .42; g.add(body);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(.5, .24, .86), red); nose.position.set(.92, .5, 0); nose.rotation.z = -.35; g.add(nose);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(.14, .42, .7), dark); seat.position.set(-.86, .76, 0); g.add(seat);
+    const bar = new THREE.Mesh(new THREE.TorusGeometry(.5, .045, 8, 20, Math.PI), white); bar.position.set(-.25, .6, 0); g.add(bar);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(.06, .12, .2), new THREE.MeshBasicMaterial({ color: 0xfff3b0 })); lamp.position.set(1.05, .5, .3); g.add(lamp);
+    const wheels = [];
+    for (const x of [-CL / 2, CL / 2]) for (const z of [.48, -.48]) {
+      const w = new THREE.Group(), tyre = new THREE.Mesh(new THREE.CylinderGeometry(WR, WR, .2, 20), dark); tyre.rotation.x = Math.PI / 2; w.add(tyre);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(WR * .5, WR * .5, .22, 10), new THREE.MeshStandardMaterial({ color: 0xffd84a, roughness: .3 })); hub.rotation.x = Math.PI / 2; w.add(hub);
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(WR * 1.6, .06, .23), white); w.add(spoke);
+      w.position.set(x, 0, z); g.add(w); wheels.push(w);
+    }
+    g.userData.wheels = wheels; return g;
+  }
+  function startDrive() {
+    const P = (x, y) => ({ x, y, px: x, py: y });
+    G = { id: 'drive', score: 0, over: false, t: 0, fuel: 100, coins: 0, r: P(0, WR + .02), f: P(CL, WR + .02), gas: 0, chunks: [], chunkX: -20, items: [], nextCoin: 8, nextFuel: 90, stopT: 0, ground: false, best: 0, spin: 0 };
+    ctx.setHouse(false);
+    const c2 = document.createElement('canvas'); c2.width = 4; c2.height = 256; const x2 = c2.getContext('2d'), gr = x2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5fc8ff'); gr.addColorStop(.7, '#cdefff'); gr.addColorStop(1, '#fff6d8'); x2.fillStyle = gr; x2.fillRect(0, 0, 4, 256);
+    const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace;
+    G.sky = add(new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ map: tx, depthWrite: false }))); G.sky.position.z = -14;
+    G.hills = [];
+    for (let i = 0; i < 2; i++) { const h = new THREE.Mesh(new THREE.ConeGeometry(rnd(5, 8), rnd(4, 7), 5), new THREE.MeshBasicMaterial({ color: i ? 0x9fd88a : 0x7fc46a })); add(h); G.hills.push({ m: h, k: .3 + i * .2, off: i * 23 }); }
+    G.car = add(makeCar());
+    for (let i = 0; i < 3; i++) addChunk();
+    $('#pedals').hidden = false;
+    hud('0 m', 'Gasolina 100%'); msg('¡A conducir!');
+  }
+  function addChunk() {
+    const g = G, c = terrainChunk(g.chunkX, g.chunkX + 40); add(c); g.chunks.push({ m: c, x1: g.chunkX + 40 }); g.chunkX += 40;
+    while (g.nextCoin < g.chunkX) {   // filas de monedas sobre el suelo
+      const n = Math.floor(rnd(4, 8)); for (let i = 0; i < n; i++) { const x = g.nextCoin + i * .7, m = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .05, 18), new THREE.MeshStandardMaterial({ color: 0xffc21d, emissive: 0x8a5a00, emissiveIntensity: .5, roughness: .3, metalness: .3 })); m.rotation.x = Math.PI / 2; m.position.set(x, hgt(x) + .75, 0); add(m); g.items.push({ m, x, kind: 'coin' }); }
+      g.nextCoin += rnd(10, 22);
+    }
+    while (g.nextFuel < g.chunkX) {
+      const x = g.nextFuel, m = new THREE.Group(), red = new THREE.MeshStandardMaterial({ color: 0xe8302e, roughness: .4 });
+      m.add(new THREE.Mesh(new THREE.BoxGeometry(.4, .5, .25), red)); const cap = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .12, 10), new THREE.MeshStandardMaterial({ color: 0xffd84a })); cap.position.set(.12, .3, 0); m.add(cap);
+      const lab = new THREE.Mesh(new THREE.BoxGeometry(.26, .14, .26), new THREE.MeshStandardMaterial({ color: 0xffffff })); m.add(lab);
+      m.position.set(x, hgt(x) + .45, 0); add(m); g.items.push({ m, x, kind: 'fuel' }); g.nextFuel += rnd(110, 170);
+    }
+  }
+  function wheelGround(p, dt, drive) {
+    const gy = hgt(p.x), d = p.y - WR - gy;
+    if (d > .02) return false;
+    const sl = slope(p.x), nl = Math.hypot(1, sl), nx = -sl / nl, ny = 1 / nl, pen = -d;
+    if (pen > 0) { p.x += nx * pen * Math.abs(ny); p.y += ny * pen; }
+    // quitar la velocidad que va hacia el suelo y aplicar tracción a lo largo de la cuesta
+    let vx = p.x - p.px, vy = p.y - p.py; const vn = vx * nx + vy * ny; if (vn < 0) { vx -= vn * nx * 1.3; vy -= vn * ny * 1.3; }
+    const tx = ny, ty = -nx; let vt = vx * tx + vy * ty;
+    vt += drive * dt * dt; vt *= .997; vt = clamp(vt, -5 * dt, 10.5 * dt);
+    const vnn = vx * nx + vy * ny; vx = tx * vt + nx * vnn; vy = ty * vt + ny * vnn;
+    p.px = p.x - vx; p.py = p.y - vy; return true;
+  }
+  function updateDrive(dt) {
+    const g = G; g.t += dt;
+    const steps = 4, h = dt / steps, wantGas = g.over ? 0 : g.gas;
+    let grounded = false;
+    for (let k = 0; k < steps; k++) {
+      for (const p2 of [g.r, g.f]) { const vx = (p2.x - p2.px) * .999, vy = (p2.y - p2.py) * .999; p2.px = p2.x; p2.py = p2.y; p2.x += vx; p2.y += vy - 15 * h * h; }
+      for (let it = 0; it < 3; it++) { const dx = g.f.x - g.r.x, dy = g.f.y - g.r.y, dd = Math.hypot(dx, dy) || 1, diff = (dd - CL) / dd * .5; g.r.x += dx * diff; g.r.y += dy * diff; g.f.x -= dx * diff; g.f.y -= dy * diff; }
+      const fuelOk = g.fuel > 0, drive = fuelOk ? (wantGas > 0 ? 9 : wantGas < 0 ? -7 : 0) : 0;
+      const gr1 = wheelGround(g.r, h, drive), gr2 = wheelGround(g.f, h, drive * .6);
+      grounded = grounded || gr1 || gr2;
+      if (!gr1 && !gr2 && wantGas && fuelOk) {   // en el aire: acelerar levanta el morro, frenar lo baja
+        const ang = (wantGas > 0 ? 1.6 : -1.6) * h, cx = (g.r.x + g.f.x) / 2, cy = (g.r.y + g.f.y) / 2;
+        for (const p2 of [g.r, g.f]) { const rx = p2.x - cx, ry = p2.y - cy, c = Math.cos(ang), s2 = Math.sin(ang); p2.x = cx + rx * c - ry * s2; p2.y = cy + rx * s2 + ry * c; }
+      }
+    }
+    g.ground = grounded;
+    const cx = (g.r.x + g.f.x) / 2, cy = (g.r.y + g.f.y) / 2, ang = Math.atan2(g.f.y - g.r.y, g.f.x - g.r.x);
+    const vx = ((g.r.x - g.r.px) + (g.f.x - g.f.px)) / 2 / (dt / steps);
+    if (!g.over) {
+      g.fuel = Math.max(0, g.fuel - dt * (wantGas ? 6.5 : 1.6));
+      g.score = Math.max(g.score, Math.floor(cx));
+      // cabeza contra el suelo = vuelco
+      const hx = cx - Math.sin(ang) * .95, hy = cy + Math.cos(ang) * .95;
+      if (hy < hgt(hx) + .05) driveEnd('¡Vuelco!');
+      if (g.fuel <= 0) { g.stopT = Math.abs(vx) < .4 ? g.stopT + dt : 0; if (g.stopT > 1.5) driveEnd('¡Sin gasolina!'); }
+      for (const it of g.items) {
+        if (it.got) continue;
+        if (it.kind === 'coin') it.m.rotation.z += dt * 4;
+        if (Math.abs(it.x - cx) < .9 && Math.abs(it.m.position.y - (cy + .4)) < 1.1) {
+          it.got = true; drop(it.m);
+          if (it.kind === 'coin') { g.coins++; S.coin(); PA.burst(it.m.position.x, it.m.position.y, 0, 6, col(0xffd84a), 1.4, .1, .4); }
+          else { g.fuel = 100; S.good(); buzz('MEDIUM'); msg('¡Gasolina!'); }
+        }
+      }
+      g.items = g.items.filter(it => !it.got && it.x > cx - 30);
+      hud(g.score + ' m', g.coins + ' monedas');
+      const fb = $('#fuelBar i'); if (fb) { fb.style.width = g.fuel + '%'; fb.style.background = g.fuel < 25 ? '#ff4d6d' : ''; }
+    }
+    // generar suelo por delante y quitar el de detrás
+    while (g.chunkX < cx + 60) addChunk();
+    while (g.chunks.length && g.chunks[0].x1 < cx - 30) drop(g.chunks.shift().m);
+    // coche, ruedas y gamba
+    g.car.position.set(cx, cy - WR, 0); g.car.rotation.z = ang;
+    g.spin -= (vx * (dt / steps) / WR) * steps; for (const w of g.car.userData.wheels) w.rotation.z = g.spin;
+    const sc = Math.min(.82, ctx.stage() * .85);
+    player.root.visible = true; player.root.scale.setScalar(sc);
+    _v.set(-.3, .58, 0).applyAxisAngle(V(0, 0, 1), ang).add(g.car.position); player.root.position.copy(_v);
+    player.root.quaternion.setFromEuler(new THREE.Euler(0, 0, ang)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)));
+    player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(-.5 + Math.sin(T * 9) * (Math.abs(vx) > 1 ? .04 : 0), 0, 0); player.tilt.scale.set(1, 1, 1);
+    player.pose(T * 3, 'idle', T, dt, 2);
+    if (wantGas > 0 && grounded && g.fuel > 0 && Math.random() < .5) PN.emit(g.r.x - .3, g.r.y - .2, .4, -rnd(.5, 1.5), rnd(.3, 1), 0, col(0xc9b08a), .25, .6, 0, 1.2);
+    // cámara y fondo
+    const look = V(cx + 2.4, cy + .9, 0), zoom = 9.5 + Math.min(3, Math.abs(vx) * .25);
+    camTo(V(look.x, look.y + 1.6, zoom), look, 9);
+    g.sky.position.set(cx, cy + 4, -14);
+    for (const hh of g.hills) hh.m.position.set(cx - ((cx * hh.k + hh.off) % 46) + 23, cy - 1 + hh.m.geometry.parameters.height / 2 - 2, -10 + hh.k * 3);
+    // pedales
+    const pd = $('#pedals'); if (pd) { pd.querySelector('.gas').classList.toggle('on', wantGas > 0); pd.querySelector('.brake').classList.toggle('on', wantGas < 0); }
+  }
+  function driveEnd(title) {
+    const g = G; if (g.over) return; S.bad(); buzz('HEAVY');
+    const sc = g.score;
+    finish({ id: 'drive', score: sc, coins: g.coins + Math.floor(sc / 8), xp: 6 + Math.floor(sc / 10), fun: Math.min(45, 10 + sc / 8), title });
+  }
+
   /* ============ interfaz común ============ */
-  const GAMES = { catch: [startCatch, updateCatch], bubbles: [startBubbles, updateBubbles], simon: [startSimon, updateSimon], swim: [startSwim, updateSwim], memory: [startMemory, updateMemory], crabs: [startCrabs, updateCrabs] };
-  function clear() { for (const o of objs) scene.remove(o); objs = []; if (G) G.items = G.bubbles = G.pads = G.pipes = G.cards = G.moles = []; }
+  const GAMES = { catch: [startCatch, updateCatch], bubbles: [startBubbles, updateBubbles], simon: [startSimon, updateSimon], swim: [startSwim, updateSwim], memory: [startMemory, updateMemory], crabs: [startCrabs, updateCrabs], drive: [startDrive, updateDrive] };
+  function clear() { for (const o of objs) scene.remove(o); objs = []; if (G) G.items = G.bubbles = G.pads = G.pipes = G.cards = G.moles = G.chunks = []; }
   return {
     start(id) {
-      clear(); ctx.setHouse(true); aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
+      clear(); ctx.setHouse(true); $('#pedals').hidden = true; aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
       pet.act = null; GAMES[id][0](); this.id = id;
     },
     update(dt) { T += dt; if (G) GAMES[G.id][1](dt); },
@@ -365,13 +509,15 @@ export function createMini(ctx) {
       else if (G.id === 'swim') { if (type === 'down') tapSwim(); }
       else if (G.id === 'memory') { if (type === 'down') tapMemory(x, y); }
       else if (G.id === 'crabs') { if (type === 'down') tapCrabs(x, y); }
+      else if (G.id === 'drive') { if (type === 'down' || (type === 'move' && G.gas)) G.gas = x > innerWidth / 2 ? 1 : -1; else if (type === 'up') G.gas = 0; }
     },
     abort() { aborted = true; if (G) G.over = true; },
-    dispose() { clear(); ctx.setHouse(true); G = null; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
+    dispose() { clear(); ctx.setHouse(true); G = null; $('#pedals').hidden = true; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
     // pruebas: ?mini=simon&act=... — adelanta el juego para sacar capturas
     test(Q) {
       const steps = +(Q.get('steps') || 0);
-      for (let i = 0; i < steps; i++) { this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); if (G.id === 'swim' && (!G.started || (G.y < 1.9 && G.vy < 0))) tapSwim(); if (G.id === 'memory' && i % 20 === 5 && G.found < 3) { const c = G.cards.find(c2 => !c2.up && !c2.done); if (c) { const sp = toScreen(c.g.position); tapMemory(sp.x, sp.y); } } }
+      const log = []; for (let i = 0; i < steps; i++) { if (G.id === 'drive' && i % 15 === 0) log.push(`${i}:x${((G.r.x + G.f.x) / 2).toFixed(1)} y${((G.r.y + G.f.y) / 2).toFixed(1)} g${G.ground ? 1 : 0} h${hgt((G.r.x + G.f.x) / 2).toFixed(1)}`); this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); if (G.id === 'drive') G.gas = G.ground ? 1 : 0; if (G.id === 'swim' && (!G.started || (G.y < 1.9 && G.vy < 0))) tapSwim(); if (G.id === 'memory' && i % 20 === 5 && G.found < 3) { const c = G.cards.find(c2 => !c2.up && !c2.done); if (c) { const sp = toScreen(c.g.position); tapMemory(sp.x, sp.y); } } }
+      if (log.length) { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;left:0;top:80px;z-index:99;background:#fffc;color:#000;font:10px monospace;margin:0;white-space:pre-wrap;width:390px'; d.textContent = log.join(' '); document.body.appendChild(d); }
     },
   };
 }

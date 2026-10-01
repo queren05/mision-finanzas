@@ -62,7 +62,7 @@ export function createShop(ctx) {
     return flat((x, w, h) => {
       const g = x.createLinearGradient(0, 0, 0, h * .66); g.addColorStop(0, t.wall[0]); g.addColorStop(1, t.wall[1]); x.fillStyle = g; x.fillRect(0, 0, w, h * .66);
       x.fillStyle = t.line; x.globalAlpha = .4;
-      for (let i = 0; i < 28; i++) { const px = (i % 7) * 50 + 20 + (Math.floor(i / 7) % 2) * 22, py = Math.floor(i / 7) * 36 + 18; if (t.wpat === 'stripes') x.fillRect(px - 10, 0, 18, h * .66); else if (t.wpat === 'waves') { x.fillRect(px - 16, py, 30, 4); } else if (t.wpat === 'grid') { x.fillRect(px, 0, 2, h * .66); } else { x.beginPath(); x.arc(px, py, t.wpat === 'stars' ? 2 : 6, 0, 7); x.fill(); } }
+      for (let i = 0; i < 28 && t.wpat !== 'plain'; i++) { const px = (i % 7) * 50 + 20 + (Math.floor(i / 7) % 2) * 22, py = Math.floor(i / 7) * 36 + 18; if (t.wpat === 'stripes') x.fillRect(px - 10, 0, 18, h * .66); else if (t.wpat === 'waves') { x.fillRect(px - 16, py, 30, 4); } else if (t.wpat === 'grid') { x.fillRect(px, 0, 2, h * .66); } else { x.beginPath(); x.arc(px, py, t.wpat === 'stars' ? 2 : 6, 0, 7); x.fill(); } }
       x.globalAlpha = 1;
       const f = x.createLinearGradient(0, h * .66, 0, h); f.addColorStop(0, t.floor[0]); f.addColorStop(1, t.floor[1]); x.fillStyle = f; x.fillRect(0, h * .66, w, h * .34);
       x.fillStyle = hexs(t.accent); x.beginPath(); x.roundRect ? x.roundRect(28, h * .44, 130, 52, 14) : x.rect(28, h * .44, 130, 52); x.fill();
@@ -78,6 +78,7 @@ export function createShop(ctx) {
       if (g.id === 'catch') { const cols = ['#ffb04a', '#ff7ab0', '#fff27a', '#9bff8a', '#5ff0ff']; for (let i = 0; i < 9; i++) { x.fillStyle = cols[i % 5]; x.beginPath(); x.arc(28 + i * 33, 28 + (i * 47) % 120, 13, 0, 7); x.fill(); } x.fillStyle = '#20222b'; x.beginPath(); x.arc(240, 170, 24, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.95)'; x.beginPath(); x.ellipse(w / 2, 212, 54, 12, 0, 0, 7); x.fill(); }
       else if (g.id === 'bubbles') { for (let i = 0; i < 11; i++) { const r = 14 + (i * 13) % 30, bx = 30 + (i * 59) % 270, by = 40 + (i * 83) % 170; x.strokeStyle = 'rgba(255,255,255,.9)'; x.fillStyle = 'rgba(255,255,255,.22)'; x.lineWidth = 4; x.beginPath(); x.arc(bx, by, r, 0, 7); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,.8)'; x.beginPath(); x.arc(bx - r * .35, by - r * .35, r * .18, 0, 7); x.fill(); } }
       else if (g.id === 'swim') { x.fillStyle = '#ff7a8a'; for (const [cx, gy] of [[70, 90], [170, 140], [270, 70]]) { x.fillRect(cx - 18, 0, 36, gy); x.fillRect(cx - 18, gy + 95, 36, h); } x.fillStyle = '#ffd9b0'; x.beginPath(); x.ellipse(120, 150, 26, 14, -.3, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 6; i++) { x.beginPath(); x.arc(30 + i * 50, 200 - (i % 3) * 25, 5, 0, 7); x.fill(); } }
+      else if (g.id === 'drive') { x.fillStyle = '#5fbf4a'; x.beginPath(); x.moveTo(0, h); for (let i = 0; i <= w; i += 8) x.lineTo(i, 175 + Math.sin(i / 40) * 25); x.lineTo(w, h); x.fill(); x.fillStyle = '#ff4d4d'; x.save(); x.translate(150, 132); x.rotate(-.2); x.fillRect(-48, -14, 96, 26); x.fillStyle = '#24262e'; for (const wx of [-30, 30]) { x.beginPath(); x.arc(wx, 16, 13, 0, 7); x.fill(); } x.fillStyle = '#ffd9b0'; x.beginPath(); x.ellipse(-20, -24, 16, 10, -.3, 0, 7); x.fill(); x.restore(); x.fillStyle = '#ffc21d'; for (let i = 0; i < 4; i++) { x.beginPath(); x.arc(220 + i * 22, 112 - i * 4, 8, 0, 7); x.fill(); } }
       else if (g.id === 'memory') { const cs = ['#ff5a7a', '#5fd6ff', '#ffd84a', '#7cf0b0']; for (let i = 0; i < 8; i++) { const cx = 38 + (i % 4) * 70, cy = 40 + Math.floor(i / 4) * 92; x.fillStyle = i % 3 ? '#fff4e0' : cs[i % 4]; x.beginPath(); x.roundRect ? x.roundRect(cx, cy, 54, 74, 9) : x.rect(cx, cy, 54, 74); x.fill(); if (i % 3) { x.fillStyle = '#c4436a'; x.beginPath(); x.arc(cx + 27, cy + 37, 9, 0, 7); x.fill(); } } }
       else if (g.id === 'crabs') { for (const [cx, cy] of [[70, 80], [160, 80], [250, 80], [70, 175], [160, 175], [250, 175]]) { x.fillStyle = 'rgba(80,40,10,.55)'; x.beginPath(); x.ellipse(cx, cy + 18, 38, 13, 0, 0, 7); x.fill(); } x.fillStyle = '#e8402e'; x.beginPath(); x.ellipse(160, 80, 26, 18, 0, 0, 7); x.fill(); for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 34, 66, 11, 0, 7); x.fill(); } x.fillStyle = '#fff'; for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 8, 62, 6, 0, 7); x.fill(); } x.fillStyle = '#111'; for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 8, 62, 3, 0, 7); x.fill(); } }
       else { const cs = ['#ff5a5a', '#ffd24a', '#5fe37a', '#4f9aff']; for (let i = 0; i < 4; i++) { x.fillStyle = cs[i]; x.beginPath(); x.arc(w / 2 + (i % 2 ? 62 : -62), h / 2 + (i > 1 ? 52 : -44), 46, 0, 7); x.fill(); } }
@@ -119,7 +120,7 @@ export function createShop(ctx) {
   }
 
   /* ---------- tienda ---------- */
-  let tab = 'food', selId = null, preview = {}, shift = null, isOpen = false;
+  let tab = 'food', selId = null, preview = {}, shift = null, isOpen = false, focus = null;
   const SHOWN = ['chars', 'skins', 'hats', 'themes'];
   function open(t = 'food') {
     if (isOpen) return; isOpen = true; ctx.setMode('shop'); tab = t; preview = {}; shift = null;
@@ -128,7 +129,7 @@ export function createShop(ctx) {
     if (!save.hatched) return;
   }
   function close() {
-    if (!isOpen) return; isOpen = false; $('#shop').hidden = true;
+    if (!isOpen) return; isOpen = false; $('#shop').hidden = true; focus = null; player.root.visible = true;
     if (cam.view && cam.view.enabled) cam.clearViewOffset();
     persist(); leave();
   }
@@ -145,7 +146,9 @@ export function createShop(ctx) {
     tab = t; renderTabs();
     const T0 = TABS.find(x => x.id === t);
     selId = SHOWN.includes(t) ? preview[t] || save.eq[t] : T0.list[0].id;
-    $('#grid').scrollTop = 0; renderGrid();
+    $('#grid').scrollTop = 0;
+    if (t === 'furn') tryOn(); else if (focus) { focus = null; house.setRoom('salon'); applyLook(Object.assign({}, save.eq, preview)); }
+    renderGrid();
     const on = $('#tabs .tab.on'); on && on.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
   }
   const kindOf = t => ({ food: 'food', chars: 'chars', skins: 'skins', hats: 'hats', themes: 'themes', furn: 'furn' }[t]);
@@ -176,6 +179,7 @@ export function createShop(ctx) {
   }
   function tryOn() {
     if (SHOWN.includes(tab)) { preview[tab] = selId; applyLook(Object.assign({}, save.eq, preview)); }
+    if (tab === 'furn') { focus = house.furnSpot(selId); house.setRoom(focus.room); applyLook(Object.assign({}, save.eq, preview, { furnPreview: { [selId]: true } })); }
   }
   function renderDetail() {
     const T0 = TABS.find(x => x.id === tab), it = T0.list.find(x => x.id === selId) || T0.list[0], btn = $('#dBtn');
@@ -208,7 +212,11 @@ export function createShop(ctx) {
     shift = shift === null ? target : lerp(shift, target, Math.min(1, dt * 7));
     const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2), tanH = tanV * W / H;
     const d = clamp(Math.max(2.5 / (2 * tanH), 1.45 / (2 * tanV * bh / H)), 2.4, 8);
-    goal.pos.set(0, .4 + d * .2, pet.z + d * .98); goal.look.set(0, .4, pet.z); goal.k = 5;
+    player.root.visible = !focus;
+    if (focus) {   // vista previa del mueble en su sitio
+      const df = clamp(Math.max(3.2 / (2 * tanH), 2.4 / (2 * tanV * bh / H)), 3.8, 8);
+      goal.look.set(focus.x * .9, focus.y + .45, focus.z); goal.pos.set(focus.x * .7, focus.y + .45 + df * .22, focus.z + df); goal.k = 4;
+    } else { goal.pos.set(0, .4 + d * .2, pet.z + d * .98); goal.look.set(0, .4, pet.z); goal.k = 5; }
     cam.setViewOffset(W, H, 0, shift, W, H);
   }
   return { open, close, camera, thumb, get isOpen() { return isOpen; } };
