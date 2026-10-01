@@ -1,0 +1,8 @@
+{
+  "appId": "es.david.shrimpzombies",
+  "appName": "Shrimp Zombies",
+  "webDir": "www",
+  "orientation": "landscape",
+  "backgroundColor": "#07090f",
+  "ios": { "contentInset": "never", "backgroundColor": "#07090f", "scrollEnabled": false }
+}

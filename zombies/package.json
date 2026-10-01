@@ -1,0 +1,8 @@
+{
+  "name": "shrimpzombies-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sobrevive a las rondas de zombis con tu gamba: ventanas, armas de pared, caja misteriosa, ventajas y Pack-a-Punch. Compatible con mando.",
+  "dependencies": { "@capacitor/core": "^7.0.0", "@capacitor/ios": "^7.0.0" },
+  "devDependencies": { "@capacitor/cli": "^7.0.0" }
+}

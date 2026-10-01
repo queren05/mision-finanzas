@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Shrimp Zombies</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07090f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="zombies.css">
+</head>
+<body>
+<canvas id="cv"></canvas>
+<img id="shotImg" alt="">
+
+<div id="loading" class="screen">
+  <div class="logo"><span>SHRIMP</span><b>ZOMBIES</b></div>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="muted" id="loadTxt">Cargando…</div>
+</div>
+
+<div id="rotate" class="screen"><svg viewBox="0 0 64 64"><rect x="18" y="6" width="28" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 40a24 24 0 0 0 20 18M8 40l-3 7M8 40l7 2" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><p>Gira el móvil para jugar</p></div>
+
+<!-- ======== HUD ======== -->
+<div id="hud" hidden>
+  <div id="blood"></div>
+  <div id="flash"></div>
+  <div id="cross"><i></i><i></i><i></i><i></i><b></b></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="prompt"></div>
+  <div id="banner"></div>
+  <div id="sub"></div>
+  <div id="pups"></div>
+  <div id="bl">
+    <div id="perks"></div>
+    <div id="round"></div>
+  </div>
+  <div id="br">
+    <div id="ptsPop"></div>
+    <div id="points">500</div>
+    <div id="gun"><div id="gunName">M1911</div><div id="ammo"><b id="mag">8</b><span>/</span><i id="res">80</i></div><div id="nades"></div></div>
+  </div>
+  <div id="downed" hidden><b>¡HAS CAÍDO!</b><span id="downTxt"></span></div>
+  <button id="pauseBtn" class="tbtn small" aria-label="Pausa"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+  <!-- controles táctiles -->
+  <div id="touch">
+    <div id="stick"><i id="knob"></i></div>
+    <button class="tbtn fire" data-act="fire" aria-label="Disparar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="tbtn fire2" data-act="fire" aria-label="Disparar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="tbtn aim" data-act="aim">APUNTAR</button>
+    <button class="tbtn reload" data-act="reload" aria-label="Recargar"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2-4.9M19 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tbtn swap" data-act="swap" aria-label="Cambiar arma"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tbtn knife" data-act="knife" aria-label="Cuchillo"><svg viewBox="0 0 24 24"><path d="M4 20 14 10l2 2L6 22zM14 10l6-7 1 1-5 8" fill="currentColor"/></svg></button>
+    <button class="tbtn nade" data-act="nade" aria-label="Granada"><svg viewBox="0 0 24 24"><circle cx="11" cy="14" r="6" fill="currentColor"/><rect x="9" y="5" width="5" height="4" rx="1" fill="currentColor"/><path d="M14 6l4-2" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="tbtn jump" data-act="jump" aria-label="Saltar"><svg viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tbtn use" data-act="use" id="useBtn">USAR</button>
+  </div>
+</div>
+
+<!-- ======== MENÚ ======== -->
+<div id="menu" class="screen dim" hidden>
+  <div class="mtop"><div class="logo small"><span>SHRIMP</span><b>ZOMBIES</b></div><div class="mapname">Nacht der Gambas</div></div>
+  <div class="mcols">
+    <div class="mleft">
+      <button class="mbtn nav primary" id="playBtn">JUGAR</button>
+      <button class="mbtn nav" id="charBtn">PERSONAJE</button>
+      <button class="mbtn nav" id="ctrlBtn">CONTROLES</button>
+      <button class="mbtn nav" id="setBtn">AJUSTES</button>
+      <div class="best">Récord: <b id="mBest">—</b></div>
+      <div class="padHint" id="padHint"></div>
+    </div>
+  </div>
+</div>
+
+<div id="chars" class="screen dim" hidden>
+  <div class="ptitle">PERSONAJE</div>
+  <div class="charRow" id="charRow"></div>
+  <button class="mbtn nav back" data-back id="charBack">VOLVER</button>
+</div>
+
+<div id="ctrls" class="screen dim" hidden>
+  <div class="ptitle">CONTROLES</div>
+  <div class="ctrlTable" id="ctrlTable"></div>
+  <button class="mbtn nav back" data-back id="ctrlBack">VOLVER</button>
+</div>
+
+<div id="sets" class="screen dim" hidden>
+  <div class="ptitle">AJUSTES</div>
+  <div class="setList">
+    <label class="setRow nav" tabindex="-1"><span>Sensibilidad</span><input type="range" id="optSens" min="0.3" max="2.5" step="0.1"><b id="optSensV"></b></label>
+    <button class="setRow nav" id="optInv"><span>Invertir eje vertical</span><b></b></button>
+    <button class="setRow nav" id="optAssist"><span>Ayuda al apuntar</span><b></b></button>
+    <button class="setRow nav" id="optSfx"><span>Efectos de sonido</span><b></b></button>
+    <button class="setRow nav" id="optMusic"><span>Ambiente</span><b></b></button>
+  </div>
+  <button class="mbtn nav back" data-back id="setBack">VOLVER</button>
+</div>
+
+<div id="pause" class="screen dim" hidden>
+  <div class="ptitle">PAUSA</div>
+  <div class="pinfo" id="pauseInfo"></div>
+  <button class="mbtn nav primary" id="resumeBtn" data-back>CONTINUAR</button>
+  <button class="mbtn nav" id="pCtrlBtn">CONTROLES</button>
+  <button class="mbtn nav" id="pSetBtn">AJUSTES</button>
+  <button class="mbtn nav" id="restartBtn">REINICIAR</button>
+  <button class="mbtn nav" id="quitBtn">SALIR AL MENÚ</button>
+</div>
+
+<div id="over" class="screen dim" hidden>
+  <div class="overT">FIN DE LA PARTIDA</div>
+  <div class="overR">Has sobrevivido <b id="oRounds">0</b> <span id="oRw">rondas</span></div>
+  <div class="stats" id="oStats"></div>
+  <div class="newBest" id="oBest" hidden>¡NUEVO RÉCORD!</div>
+  <div class="row"><button class="mbtn nav primary" id="againBtn">OTRA VEZ</button><button class="mbtn nav" id="menuBtn">MENÚ</button></div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>

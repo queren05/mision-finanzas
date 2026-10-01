@@ -8,13 +8,13 @@ name: Mini app (IPA sin firmar)
 on:
   push:
     branches: [app]
-    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**', 'gambi/**', 'road/**', 'hill/**', 'merge/**']
+    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**', 'gambi/**', 'road/**', 'hill/**', 'merge/**', 'zombies/**']
   workflow_dispatch:
     inputs:
       app:
         description: "Carpeta de la app"
         type: choice
-        options: [bolita, coche, cuentas, tung, gambi, road, hill, merge]
+        options: [bolita, coche, cuentas, tung, gambi, road, hill, merge, zombies]
 
 permissions:
   contents: write
@@ -35,8 +35,8 @@ jobs:
       - id: d
         run: |
           if [ -n "${{ inputs.app }}" ]; then L="${{ inputs.app }}"
-          else L=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung|gambi|road|hill|merge' | sort -u)
-               [ -n "$L" ] || L=$(git show --name-only --pretty= HEAD | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung|gambi|road|hill|merge' | sort -u); fi
+          else L=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung|gambi|road|hill|merge|zombies' | sort -u)
+               [ -n "$L" ] || L=$(git show --name-only --pretty= HEAD | cut -d/ -f1 | grep -xE 'bolita|coche|cuentas|tung|gambi|road|hill|merge|zombies' | sort -u); fi
           echo "apps=$(printf '%s\n' $L | jq -R . | jq -sc 'map(select(length>0))')" >> "$GITHUB_OUTPUT"
 
   ipa:
@@ -69,10 +69,18 @@ jobs:
           PL=ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $NAME" $PL || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $NAME" $PL
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" $PL || true
-          # solo vertical
+          # orientación: vertical salvo que capacitor.config.json diga "orientation": "landscape"
           /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" $PL || true
           /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" $PL
-          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" $PL
+          if [ "$(jq -r '.orientation // "portrait"' capacitor.config.json)" = landscape ]; then
+            /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationLandscapeRight" $PL
+            /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:1 string UIInterfaceOrientationLandscapeLeft" $PL
+            /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" $PL || true
+            /usr/libexec/PlistBuddy -c "Add :UIStatusBarHidden bool true" $PL || true
+            /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" $PL || /usr/libexec/PlistBuddy -c "Set :UIViewControllerBasedStatusBarAppearance false" $PL
+          else
+            /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" $PL
+          fi
           /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" $PL || true
 
       - name: Compilar sin firma
