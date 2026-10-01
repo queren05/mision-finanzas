@@ -1,0 +1,118 @@
+# Compila una de las apps pequeñas (carpeta con www/, capacitor.config.json, package.json y resources/icon.png)
+# como .apk firmado para Android y lo publica en la release "<app>-latest" (junto al .ipa de iPhone).
+# La firma es siempre la misma (scripts/android-release.p12), así que las actualizaciones se instalan encima
+# sin perder las partidas guardadas.
+name: Mini app (APK Android)
+
+on:
+  push:
+    branches: [app]
+    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**', 'gambi/**', 'road/**', 'hill/**', 'merge/**', 'zombies/**', 'tank/**', 'brainrot/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Carpeta de la app (o «todas»)"
+        type: choice
+        options: [todas, bolita, coche, cuentas, tung, gambi, road, hill, merge, zombies, tank, brainrot]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: miniapp-android
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.d.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: d
+        run: |
+          ALL='bolita coche cuentas tung gambi road hill merge zombies tank brainrot'
+          if [ "${{ inputs.app }}" = todas ]; then L="$ALL"
+          elif [ -n "${{ inputs.app }}" ]; then L="${{ inputs.app }}"
+          else
+            CH=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || git show --name-only --pretty= HEAD)
+            # si cambia este workflow, se compilan todas
+            if echo "$CH" | grep -q '^.github/workflows/android.yml'; then L="$ALL"
+            else L=$(echo "$CH" | cut -d/ -f1 | grep -xE "$(echo $ALL | tr ' ' '|')" | sort -u); fi
+          fi
+          echo "apps=$(printf '%s\n' $L | jq -R . | jq -sc 'map(select(length>0))')" >> "$GITHUB_OUTPUT"
+
+  apk:
+    needs: detect
+    if: needs.detect.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.apps) }}
+    env:
+      APP: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Crear el proyecto Android (Capacitor)
+        working-directory: ${{ matrix.app }}
+        run: |
+          npm install
+          npm install @capacitor/android@^7
+          npx cap add android
+          npx --yes @capacitor/assets generate --android --iconBackgroundColor "$(jq -r .backgroundColor capacitor.config.json)" || echo "Iconos: se usa el por defecto"
+          npx cap sync android
+          # orientación: vertical salvo que capacitor.config.json diga "orientation": "landscape"
+          ORI=portrait; [ "$(jq -r '.orientation // "portrait"' capacitor.config.json)" = landscape ] && ORI=sensorLandscape
+          sed -i "s#<activity #<activity android:screenOrientation=\"$ORI\" #" android/app/src/main/AndroidManifest.xml
+          # versión creciente en cada compilación (si no, Android no deja actualizar)
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          # firma fija para poder actualizar sin desinstalar
+          cp ../scripts/android-release.p12 android/app/release.p12
+          cat >> android/app/build.gradle <<'EOF'
+
+          android {
+              signingConfigs {
+                  fija {
+                      storeFile file('release.p12')
+                      storeType 'pkcs12'
+                      storePassword 'gambas-apps'
+                      keyAlias 'gambas'
+                      keyPassword 'gambas-apps'
+                  }
+              }
+              buildTypes { release { signingConfig signingConfigs.fija; minifyEnabled false } }
+          }
+          EOF
+
+      - name: Compilar el APK
+        working-directory: ${{ matrix.app }}/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon | tail -30
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/$APP.apk"
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Publicar el APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$APP-latest"
+          NAME=$(jq -r .appName "$APP/capacitor.config.json")
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
+          gh release upload "$TAG" "out/$APP.apk" --clobber
