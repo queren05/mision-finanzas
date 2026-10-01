@@ -4,7 +4,7 @@ import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
-import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed } from './zombis.js';
+import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -73,7 +73,7 @@ const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-s
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
@@ -93,6 +93,7 @@ function buildWorld(mapId) {
   for (const l of LAMPS) scene.remove(l); LAMPS = []; machines.length = 0;
   MAP.loadMap(mapId); resetFlow();
   const T = MAP.theme(), W = MAP.GW, H = MAP.GH;
+  hemi.intensity = 1.0; moon.intensity = 1.5;
   SKY = new THREE.Color(T.sky); scene.background = SKY; scene.fog = new THREE.Fog(SKY, 9, 44);
   moon.position.set(W / 2 - 10, 28, H / 2 - 14); moon.target.position.set(W / 2, 0, H / 2);
   const R = Math.max(W, H) / 2 + 2; Object.assign(moon.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near: 2, far: 80 }); moon.shadow.camera.updateProjectionMatrix();
@@ -139,7 +140,19 @@ function buildWorld(mapId) {
   if (!T.city) for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
   // lámparas: una por zona
   const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: T.lamp, emissiveIntensity: .3 });
-  if (T.city) for (const o of MAP.OBJ.props.filter(o => o.kind === 'l')) { const l = new THREE.PointLight(0xffd8a0, 7, 13, 1.4); l.position.set(o.x + .5, 3.6, o.z + .5); l.userData.street = true; scene.add(l); LAMPS.push(l); }
+  cityLamps = [];
+  if (T.city) {
+    hemi.intensity = 1.5; moon.intensity = 2.1; hemi.color.set(0x9aa8d8);
+    MAP.OBJ.props.filter(o => o.kind === 'l').forEach((o, i) => {
+      const col = i % 7 === 3 ? 0x6ad8ff : i % 7 === 5 ? 0xff7ad0 : 0xffc880, x = o.x + .5, z = o.z + .5;
+      const pool = new THREE.Mesh(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); pool.position.set(x, .09, z); pool.renderOrder = 2; level.add(pool);
+      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.55, z); bulb.scale.setScalar(1.1); level.add(bulb);
+      cityLamps.push({ x, z, col });
+    });
+    // un grupo de luces de verdad que se reparte entre las farolas más cercanas
+    for (let i = 0; i < 10; i++) { const l = new THREE.PointLight(0xffc880, 9, 15, 1.3); l.userData.street = true; scene.add(l); LAMPS.push(l); }
+    updCityLights(true);
+  }
   if (!T.city) for (const Zn of MAP.ZONES) {
     const x = (Zn.x0 + Zn.x1 + 1) / 2, z = (Zn.z0 + Zn.z1 + 1) / 2, l = new THREE.PointLight(Zn.outside ? 0xff8a4a : T.lamp, 0, Math.max(14, (Zn.x1 - Zn.x0 + Zn.z1 - Zn.z0) * .7), 1.4);
     l.position.set(x, Zn.outside ? 1.6 : 2.35, z); scene.add(l); LAMPS.push(l); l.userData.out = Zn.outside;
@@ -172,6 +185,15 @@ function cityProp(o, rng) {
 }
 // coches abandonados: un poco más oscuros y sucios
 function tintDirty(o, rng) { o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiplyScalar(.7 + rng() * .15); } }); }
+let cityLamps = [], cityT = 0;
+const poolTex = canvasTex(64, 64, (c, w, h) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.35, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+const poolGeo = new THREE.PlaneGeometry(6, 6).rotateX(-Math.PI / 2);
+function updCityLights(force, dt = 0) {
+  if (!cityLamps.length) return; if (!force && (cityT -= dt) > 0) return; cityT = .4;
+  const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1];
+  const near = [...cityLamps].sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+  LAMPS.filter(l => l.userData.street).forEach((l, i) => { const o = near[i]; if (!o) { l.intensity = 0; return; } l.position.set(o.x, 3.4, o.z); l.color.set(o.col); l.intensity = 9; });
+}
 function tint(o, col) { const c = new THREE.Color(col); o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.copy(c); } }); return o; }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const world = {};
@@ -395,14 +417,16 @@ function spawnZombie() {
   const groundOk = graves.length && (graves.some(g => g.zone === pz) || Math.random() < .2);
   if (groundOk && Math.random() < .4) {
     const gr = graves[Math.floor(Math.random() * graves.length)], x = gr.x + .5, z = gr.z + .5;
-    if (Math.hypot(x - P.pos.x, z - P.pos.z) > 2.5) { const zb = new Zombie(game, K['character-zombie'], opts2); zb.spawnGround(x, z); Z.push(zb); return true; }
+    if (Math.hypot(x - P.pos.x, z - P.pos.z) > 2.5) { const zb = newZombie(opts2); zb.spawnGround(x, z); Z.push(zb); return true; }
   }
   const wins = MAP.WINDOWS.filter(w => MAP.ZONES[w.zone].open);
   const weights = wins.map(w => (w.zone === pz ? 4 : 1) / (1 + Math.hypot(w.x - P.pos.x, w.z - P.pos.z) * .08));
   let s = Math.random() * weights.reduce((a, b) => a + b, 0), w = wins[0];
   for (let i = 0; i < wins.length; i++) { s -= weights[i]; if (s <= 0) { w = wins[i]; break; } }
-  const zb = new Zombie(game, K['character-zombie'], opts2); zb.spawnAtWindow(w); Z.push(zb); return true;
+  const zb = newZombie(opts2); zb.spawnAtWindow(w); Z.push(zb); return true;
 }
+// los que corren son del modelo «corredor»; los que andan, del realista
+function newZombie(o) { const run = o.speed > 2.2; return new Zombie(game, K[run ? 'zombie_runner' : 'zombie_real'], { ...o, def: run ? RUNNER : REAL }); }
 function lightning(x, z) { $('flash').style.transition = 'none'; $('flash').style.opacity = .25; requestAnimationFrame(() => { $('flash').style.transition = 'opacity .4s'; $('flash').style.opacity = 0; }); glow.burst(x, .5, z, 30, new THREE.Color(0x9ad0ff), 3, .3, .5, 2); tone(80, .5, 'sawtooth', .12, -40); }
 
 /* ---------- ventanas ---------- */
@@ -837,7 +861,7 @@ function update(dt) {
   // resto
   updBox(dt); updPap(dt); updBoards(dt); updProj(dt); updPowerups(dt); updSong(dt);
   for (const d of MAP.DOORS) if (d.open && d.mesh.visible) { d.anim += dt; d.mesh.position.y = d.anim * d.anim * 6; d.mesh.children.forEach((b, i) => b.rotation.y += dt * (i % 2 ? 3 : -3)); if (d.anim > 1) d.mesh.visible = false; }
-  if (flash.visible && (flash.userData.t -= dt) <= 0) flash.visible = false; updSplats(dt);
+  if (flash.visible && (flash.userData.t -= dt) <= 0) flash.visible = false; updSplats(dt); updCityLights(false, dt);
   muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt * 80); boomLight.intensity = Math.max(0, boomLight.intensity - dt * 90);
   for (const l of LAMPS) if (l.userData.fire) { l.intensity = 5 + Math.sin(G.time * 13 + l.position.x) * 1.2 + Math.sin(G.time * 7.3) * .8; if (Math.random() < dt * 6) glow.emit(l.position.x + rnd(-.2, .2), .5, l.position.z + rnd(-.2, .2), rnd(-.2, .2), rnd(1, 2), rnd(-.2, .2), new THREE.Color(0xff8a2a), .14, .7); }
   fx.update(dt); glow.update(dt);
@@ -850,7 +874,7 @@ function aimTargets() {
   const o = camera.position, f = camera.getWorldDirection(V3()), L = [];
   for (const z of Z) {
     if (z.dead || z.state === 'rise' && z.pos.y < -.6) continue;
-    const t = V3(z.pos.x, z.pos.y + 1.25 * z.k / (1.85 / .83), z.pos.z), d = t.distanceTo(o); if (d > 26) continue;
+    const t = V3(z.pos.x, z.pos.y + 1.25 * z.hs, z.pos.z), d = t.distanceTo(o); if (d > 26) continue;
     const dir = t.clone().sub(o).normalize(), ang = Math.acos(clamp(dir.dot(f), -1, 1));
     if (wallT(o, dir, d) < d - .3) continue; L.push({ z, t, ang, d, dir });
   }

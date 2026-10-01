@@ -1,5 +1,6 @@
 // Zombis: navegación por el mapa (campo de flujo sobre la rejilla), entrada por ventanas, ataques y muerte.
 import * as THREE from './lib/three.module.min.js';
+import * as SkeletonUtils from './lib/SkeletonUtils.js';
 import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR } from './mapa.js';
 
 export const ZH = 1.3;                // altura de un zombi (un poco más que la gamba de pie)
@@ -51,23 +52,32 @@ export function collide(p, r, ok = walkable) {
 }
 
 /* ---------- el zombi ---------- */
+// modelos de zombi: Kenney (bloques), zombi realista (bachosoftdesign) y corredor (Quaternius)
+const id = n => n;
+export const KENNEY = { h: .83, skinned: false, eyes: true, head: /^head$/, walkSpeed: 1.1, runSpeed: 3.2, clips: Object.fromEntries(['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right'].map(n => [n, id(n)])) };
+export const REAL = { skinned: true, eyes: false, head: /Head$/, walkSpeed: .9, runSpeed: 2.2, clips: { walk: ['Armature|Walk', 'Armature|Walk2'], sprint: 'Armature|Walk2', 'attack-melee-right': 'Armature|Attack', 'attack-melee-left': 'Armature|Headbutt', die: ['Armature|Die', 'Armature|Die2'], idle: 'Armature|Idle', crouch: 'Armature|Idle', 'interact-right': 'Armature|Attack' } };
+export const RUNNER = { skinned: true, eyes: false, head: /^Head$/, walkSpeed: 1, runSpeed: 3.4, clips: { walk: 'Zombie|ZombieWalk', sprint: 'Zombie|ZombieRun', 'attack-melee-right': 'Zombie|ZombieBite', 'attack-melee-left': 'Zombie|ZombieBite', die: null, idle: 'Zombie|ZombieIdle', crouch: 'Zombie|ZombieCrawl', 'interact-right': 'Zombie|ZombieBite' } };
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
 export class Zombie {
   constructor(game, gltf, opt) {
     this.g = game; this.kind = opt.kind || 'zombie';
-    const o = gltf.scene.clone(true); o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.frustumCulled = false; } });
-    this.k = ZH / .83 * (opt.scale || 1);
+    // def: cómo es el modelo (alto original, si tiene esqueleto y qué animación es cada cosa)
+    const def = this.def = opt.def || KENNEY;
+    const o = def.skinned ? SkeletonUtils.clone(gltf.scene) : gltf.scene.clone(true); o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.frustumCulled = false; } });
+    if (!def.h) { gltf.scene.updateMatrixWorld(true); def.h = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3()).y; }
+    this.hs = ZH * (opt.scale || 1) / 1.85;   // escala respecto a un zombi de 1,85 m (para las zonas de impacto)
+    this.k = ZH / def.h * (opt.scale || 1);
     o.scale.setScalar(this.k); this.root = new THREE.Group(); this.root.add(o); this.model = o; game.scene.add(this.root);
-    o.traverse(m => { if (m.name === 'head') this.head = m; });
-    // cada zombi con su tono de piel/ropa, y ojos que brillan en la oscuridad
-    const tintC = new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
+    o.traverse(m => { if (!this.head && def.head.test(m.name)) this.head = m; });
+    // cada zombi con un tono algo distinto
+    const tintC = def.skinned ? new THREE.Color().setHSL(.3, .1 + Math.random() * .15, .7 + Math.random() * .3) : new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
     o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiply(tintC); } });
-    if (this.head) for (const sx of [-1, 1]) { const e = new THREE.Sprite(EYE_MAT[opt.kind === 'skel' ? 1 : 0]); e.position.set(sx * .045, .085, .118); e.scale.setScalar(.06); this.head.add(e); }
+    if (this.head && def.eyes) for (const sx of [-1, 1]) { const e = new THREE.Sprite(EYE_MAT[opt.kind === 'skel' ? 1 : 0]); e.position.set(sx * .045, .085, .118); e.scale.setScalar(.06); this.head.add(e); }
     this.mixer = new THREE.AnimationMixer(o);
-    const clip = n => gltf.animations.find(a => a.name === n);
-    this.act = {}; for (const n of ['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right']) { const c = clip(n); if (c) this.act[n] = this.mixer.clipAction(c); }
+    const clip = n => { const list = [].concat(n || []); const pick = list[Math.floor(Math.random() * list.length)]; return gltf.animations.find(a => a.name === pick); };
+    this.act = {}; for (const n of ['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right']) { const c = clip(def.clips[n]); if (c) this.act[n] = this.mixer.clipAction(c); }
     for (const n of ['attack-melee-right', 'attack-melee-left', 'die', 'interact-right']) if (this.act[n]) { this.act[n].setLoop(THREE.LoopOnce); this.act[n].clampWhenFinished = true; }
     this.cur = null;
     this.hp = opt.hp; this.maxHp = opt.hp; this.speed = opt.speed; this.run = opt.speed > 2.2 ? 'sprint' : 'walk';
@@ -78,7 +88,7 @@ export class Zombie {
   play(n, fade = .2) {
     const a = this.act[n]; if (!a || this.cur === a) return;
     a.reset().play(); if (this.cur) this.cur.crossFadeTo(a, fade, false); this.cur = a;
-    if (n === 'walk') a.timeScale = Math.max(.7, this.speed / 1.1); if (n === 'sprint') a.timeScale = Math.max(.8, this.speed / 3.2);
+    if (n === 'walk') a.timeScale = Math.max(.7, this.speed / this.def.walkSpeed); if (n === 'sprint') a.timeScale = Math.max(.8, this.speed / this.def.runSpeed);
   }
   // aparece fuera de una ventana y va hacia ella
   spawnAtWindow(w) {
@@ -92,7 +102,7 @@ export class Zombie {
   spawnGround(x, z) { this.state = 'rise'; this.pos.set(x, -ZH, z); this.t = 0; this.play('idle'); this.g.fx.burst(x, .1, z, 22, new THREE.Color(0x4a3a2a), 2.2, .22, .9, 7); }
   hit(ray, maxT) {   // devuelve { t, head } o null
     if (this.dead || this.state === 'rise' && this.pos.y < -1) return null;
-    const p = this.pos, k = this.k / (1.85 / .83), y0 = p.y;   // las medidas de abajo son para un zombi de 1,85 m
+    const p = this.pos, k = this.hs, y0 = p.y;   // las medidas de abajo son para un zombi de 1,85 m
     let best = null;
     const test = (y, r, head) => { _s.set(p.x, y0 + y * k, p.z); const t = raySphere(ray, _s, r * k); if (t !== null && t < maxT && (!best || t < best.t)) best = { t, head }; };
     test(1.58, .24, true); test(1.18, .3, false); test(.82, .3, false); test(.42, .26, false);
@@ -100,7 +110,7 @@ export class Zombie {
   }
   update(dt, P) {
     this.mixer.update(dt); this.t += dt;
-    if (this.dead) { this.deadT += dt; if (this.deadT > 2.2) this.root.position.y -= dt * .8; this.root.position.x = this.pos.x; this.root.position.z = this.pos.z; return this.deadT < 3.6; }
+    if (this.dead) { this.deadT += dt; if (this.fall) this.model.rotation.x = -Math.min(1, this.deadT * 2.5) * Math.PI / 2 * .95; if (this.deadT > 2.2) this.root.position.y -= dt * .8; this.root.position.x = this.pos.x; this.root.position.z = this.pos.z; return this.deadT < 3.6; }
     const g = this.g;
     if ((this.groanT -= dt) < 0) { this.groanT = 3 + Math.random() * 6; if (this.pos.distanceTo(P.pos) < 14) g.groan(this); }
     let tx = null, tz = null, sp = this.speed;
@@ -166,8 +176,9 @@ export class Zombie {
     return false;
   }
   die(head) {
-    this.dead = true; this.deadT = 0; this.play('die', .08);
-    if (head && this.head) this.head.visible = false;
+    this.dead = true; this.deadT = 0;
+    if (this.act.die) this.play('die', .08); else { this.cur && this.cur.stop(); this.fall = true; }   // sin animación de muerte: cae de espaldas
+    if (head && this.head) { if (this.def.skinned) this.head.scale.setScalar(.001); else this.head.visible = false; }
     if (this.win && this.win.user === this) this.win.user = null;
   }
   dispose() { this.g.scene.remove(this.root); this.mixer.stopAllAction(); }
