@@ -10,25 +10,26 @@ import { MAPS } from './mapas.js';
 export { MAPS };
 
 export const WALL_H = 2.7;
-export const VOID = 0, FLOOR = 1, WALL = 2, WIN = 3, DOOR = 4, OUT = 5, FENCE = 6, PROP = 7;
-export let GW = 1, GH = 1, grid = new Uint8Array(1), zoneOf = new Int8Array(1), ZONES = [], DOORS = [], WINDOWS = [], OBJ = {}, CFG = null, MAPID = '';
+export const VOID = 0, FLOOR = 1, WALL = 2, WIN = 3, DOOR = 4, OUT = 5, FENCE = 6, PROP = 7, BLD = 8;
+export let GW = 1, GH = 1, grid = new Uint8Array(1), zoneOf = new Int8Array(1), ZONES = [], DOORS = [], WINDOWS = [], OBJ = {}, CFG = null, MAPID = '', ROWS = [];
+export const chAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? ' ' : ROWS[z][x];
 export const idx = (x, z) => z * GW + x;
 export const cellAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? VOID : grid[idx(x, z)];
 export function walkable(x, z) { const c = cellAt(x, z); if (c === FLOOR) return true; if (c === DOOR) return DOORS.some(d => d.open && d.cells.some(([a, b]) => a === x && b === z)); return false; }
 const PERK_CH = { Q: 'revive', J: 'jugg', S: 'speed', T: 'dtap', U: 'stamin', K: 'mule' };
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const isZone = ch => /[a-hA-H]/.test(ch) && ch !== 'g';
+const isZone = ch => /[a-fA-F]/.test(ch) || ch === 'h';   // G (tumba), H (edificio) y g (arma de pared) no son zonas
 
 export function loadMap(id) {
-  CFG = MAPS[id]; MAPID = id; const rows = CFG.rows;
+  CFG = MAPS[id]; MAPID = id; const rows = ROWS = CFG.rows;
   GH = rows.length; GW = rows[0].length; grid = new Uint8Array(GW * GH); zoneOf = new Int8Array(GW * GH).fill(-1);
   const ch = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? ' ' : rows[z][x];
   // zonas, en orden alfabético (a = salida)
   const letters = [...new Set(rows.join('').split('').filter(isZone).map(c => c.toLowerCase()))].sort();
   ZONES = letters.map((l, i) => ({ id: l, name: CFG.zones[l] || l.toUpperCase(), outside: rows.join('').includes(l.toUpperCase()), open: i === 0, x0: 1e9, x1: -1, z0: 1e9, z1: -1 }));
   const zi = c => letters.indexOf(c.toLowerCase());
-  const nearZone = (x, z) => { for (const [dx, dz] of [...N4, [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const c = ch(x + dx, z + dz); if (isZone(c)) return zi(c); } return -1; };
-  OBJ = { spawn: [0, 0], perks: {}, pap: null, power: null, box: [], eggs: [], graves: [], props: [], wallbuys: [] };
+  const nearZone = (x, z) => { for (const [dx, dz] of [...N4, [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const c = ch(x + dx, z + dz); if (isZone(c)) return zi(c); } return CFG.defaultZone ? zi(CFG.defaultZone) : -1; };
+  OBJ = { spawn: [0, 0], perks: {}, pap: null, power: null, box: [], eggs: [], graves: [], props: [], wallbuys: [], buildings: [] };
   const doorCells = {}; WINDOWS = [];
   for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
     const c = rows[z][x], i = idx(x, z);
@@ -37,7 +38,9 @@ export function loadMap(id) {
     else if (c === '=') grid[i] = FENCE;
     else if (c === 'w' || c === 'v') grid[i] = WIN;
     else if (/[1-9]/.test(c)) { grid[i] = DOOR; (doorCells[c] = doorCells[c] || []).push([x, z]); }
-    else if (c === 'g') { grid[i] = WALL; OBJ.wallbuys.push({ x, z }); }
+    else if (c === 'g') { grid[i] = rows.join('').includes('H') ? BLD : WALL; OBJ.wallbuys.push({ x, z }); }
+    else if (c === 'H') grid[i] = BLD;
+    else if (c === '.' || c === ':') { grid[i] = FLOOR; zoneOf[i] = nearZone(x, z); }
     else if (isZone(c)) { grid[i] = FLOOR; zoneOf[i] = zi(c); }
     else { // objetos sobre el suelo
       const zn = nearZone(x, z); zoneOf[i] = zn; grid[i] = FLOOR;
@@ -49,10 +52,18 @@ export function loadMap(id) {
       else if (c === '@') OBJ.spawn = [x + .5, z + .5];
       else if (c === 'o') OBJ.eggs.push(o);
       else if (c === 'G') OBJ.graves.push(o);
-      else if (c === 'L' || c === 'p') { o.kind = c; OBJ.props.push(o); grid[i] = PROP; }
+      else if ('Lptkl'.includes(c)) { o.kind = c; OBJ.props.push(o); grid[i] = PROP; }
     }
   }
   for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) { const k = zoneOf[idx(x, z)]; if (k >= 0) { const Z = ZONES[k]; Z.x0 = Math.min(Z.x0, x); Z.x1 = Math.max(Z.x1, x); Z.z0 = Math.min(Z.z0, z); Z.z1 = Math.max(Z.z1, z); } }
+  const seen = new Uint8Array(GW * GH);
+  for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
+    if (grid[idx(x, z)] !== BLD || seen[idx(x, z)]) continue;
+    let x1 = x; while (grid[idx(x1 + 1, z)] === BLD && !seen[idx(x1 + 1, z)]) x1++;
+    let z1 = z; while (z1 + 1 < GH && [...Array(x1 - x + 1)].every((_, k) => grid[idx(x + k, z1 + 1)] === BLD && !seen[idx(x + k, z1 + 1)])) z1++;
+    for (let zz = z; zz <= z1; zz++) for (let xx = x; xx <= x1; xx++) seen[idx(xx, zz)] = 1;
+    OBJ.buildings.push({ x0: x, z0: z, x1, z1 });
+  }
   // hacia dónde miran los objetos: hacia una casilla libre, con la espalda contra la pared si se puede
   const plain = (x, z) => cellAt(x, z) === FLOOR;
   const face = o => { let best = null; for (const [dx, dz] of N4) { if (!plain(o.x + dx, o.z + dz)) continue; const back = cellAt(o.x - dx, o.z - dz); const s = (back === WALL || back === FENCE || back === WIN) ? 2 : 1; if (!best || s > best.s) best = { d: [dx, dz], s }; } return best ? best.d : [0, 1]; };
@@ -90,12 +101,15 @@ export const TEX = {
   dirt: tex(256, 256, (c, w, h) => { c.fillStyle = '#3d4a2c'; c.fillRect(0, 0, w, h); for (let i = 0; i < 1400; i++) { c.fillStyle = Math.random() < .5 ? `rgba(70,90,45,${rnd(.3, .7)})` : `rgba(60,45,30,${rnd(.3, .6)})`; c.beginPath(); c.arc(rnd(0, w), rnd(0, h), rnd(1, 4), 0, 7); c.fill(); } }),
   asphalt: tex(256, 256, (c, w, h) => { c.fillStyle = '#3a3c40'; c.fillRect(0, 0, w, h); for (let i = 0; i < 2500; i++) { c.fillStyle = `rgba(${Math.random() < .5 ? '0,0,0' : '200,200,200'},${rnd(.05, .2)})`; c.fillRect(rnd(0, w), rnd(0, h), 2, 2); } }),
   sand: tex(256, 256, (c, w, h) => { c.fillStyle = '#c8b080'; c.fillRect(0, 0, w, h); for (let i = 0; i < 3000; i++) { const v = rnd(.75, 1.1); c.fillStyle = `rgba(${200 * v | 0},${172 * v | 0},${120 * v | 0},.7)`; c.fillRect(rnd(0, w), rnd(0, h), 2, 2); } }),
+  tiles: tex(256, 256, (c, w, h) => { c.fillStyle = '#8a8680'; c.fillRect(0, 0, w, h); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const v = rnd(.85, 1.05); c.fillStyle = `rgb(${150 * v | 0},${146 * v | 0},${138 * v | 0})`; c.fillRect(x * 64 + 2, y * 64 + 2, 60, 60); } speckle(c, w, h, 500, .06); }),
+  grass: tex(256, 256, (c, w, h) => { c.fillStyle = '#2f5a24'; c.fillRect(0, 0, w, h); for (let i = 0; i < 4000; i++) { const v = rnd(.7, 1.3); c.fillStyle = `rgba(${60 * v | 0},${110 * v | 0},${40 * v | 0},.7)`; c.fillRect(rnd(0, w), rnd(0, h), 1.5, rnd(2, 5)); } }),
   board: tex(128, 32, (c, w, h) => { c.fillStyle = '#8a6440'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 6; i++) c.fillRect(0, rnd(0, h), w, 1); c.fillStyle = '#3a2a1a'; c.fillRect(6, h / 2 - 3, 6, 6); c.fillRect(w - 12, h / 2 - 3, 6, 6); }),
 };
 // temas visuales de cada mapa
 export const THEMES = {
   nacht: { wall: 'plaster', wall2: 'brick', floor: 'wood', ground: 'dirt', ext: 'dirt', extCol: 0x6a7060, sky: 0x0b1020, lamp: 0xffc27a, fence: 0x6a6a78, trees: ['pine', 'pine-crooked'] },
   fabrica: { wall: 'metal', wall2: 'brick', floor: 'concrete', ground: 'asphalt', ext: 'asphalt', extCol: 0x9a9a9a, sky: 0x10141c, lamp: 0xd8e8ff, fence: 0x8a8a90, trees: ['pine'] },
+  ciudad: { wall: 'brick', wall2: 'brick', floor: 'tiles', ground: 'asphalt', ext: 'asphalt', extCol: 0x6a6a6e, sky: 0x101826, lamp: 0xffe0a0, fence: 0xd8a020, trees: [], city: true },
   isla: { wall: 'planks', wall2: 'planks', floor: 'woodLight', ground: 'sand', ext: 'sand', extCol: 0xb8a070, sky: 0x0a1830, lamp: 0xffa04a, fence: 0x8a5a32, trees: ['palm-bend', 'palm-straight'], sea: true },
 };
 export const theme = () => THEMES[CFG.theme];
@@ -103,7 +117,7 @@ export const theme = () => THEMES[CFG.theme];
 /* ---------- geometría del mapa ---------- */
 export function buildLevel(scene) {
   const T = theme(), level = new THREE.Group(); scene.add(level);
-  const wallGeos = { a: [], b: [] }, floorGeos = { in: [], out: [] };
+  const wallGeos = { a: [], b: [] }, floorGeos = { in: [], out: [], side: [], grass: [] };
   const box = (x, y, z, w, h, d) => { const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, n = g.attributes.normal; for (let i = 0; i < uv.count; i++) { const ny = Math.abs(n.getY(i)), nx = Math.abs(n.getX(i)); uv.setXY(i, uv.getX(i) * (ny > .5 || nx > .5 ? d : w), uv.getY(i) * (ny > .5 ? d : h) + (ny > .5 ? 0 : (y - h / 2))); } g.translate(x, y, z); return g; };
   const outdoorCell = (x, z) => { const k = zoneOf[idx(x, z)]; return k >= 0 && ZONES[k].outside; };
   for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
@@ -113,15 +127,18 @@ export function buildLevel(scene) {
     if (c === FLOOR || c === DOOR || c === WIN || c === PROP) {
       let out = outdoorCell(x, z); if (c === WIN) { const w = WINDOWS.find(w => w.x === x && w.z === z); out = !!(ZONES[w.zone] && ZONES[w.zone].outside); }
       if (c === DOOR) out = false;
-      const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(cx, 0, cz); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i), -p.getZ(i)); floorGeos[out ? 'out' : 'in'].push(g);
+      let rc = chAt(x, z);
+      if (!'.:t'.includes(rc) && !isZone(rc)) { const cnt = {}; for (const [dx, dz] of [...N4, [1, 1], [-1, -1], [1, -1], [-1, 1]]) { const n = chAt(x + dx, z + dz); cnt[n] = (cnt[n] || 0) + 1; } rc = (cnt['.'] || 0) >= 2 ? '.' : (cnt[':'] || 0) >= 2 ? ':' : rc; }
+      const kind = rc === '.' ? 'side' : (rc === ':' || rc === 't') ? 'grass' : out ? 'out' : 'in';
+      const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(cx, kind === 'side' ? .06 : 0, cz); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i), -p.getZ(i)); floorGeos[kind].push(g);
     }
   }
   const mat = (t, rep, extra = {}) => { const tx = TEX[t].clone(); tx.needsUpdate = true; tx.repeat.set(rep, rep); return new THREE.MeshStandardMaterial({ map: tx, roughness: .92, ...extra }); };
   const wm = { a: mat(T.wall, T.wall === 'brick' ? 1 : .5), b: mat(T.wall2, T.wall2 === 'brick' ? 1 : .5) };
   if (T.wall === 'metal') { wm.a.metalness = .35; wm.a.roughness = .6; }
   for (const k of ['a', 'b']) if (wallGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(wallGeos[k]), wm[k]); m.castShadow = m.receiveShadow = true; level.add(m); }
-  const fm = { in: mat(T.floor, .5, { roughness: .85 }), out: mat(T.ground, .5, { roughness: 1 }) };
-  for (const k of ['in', 'out']) if (floorGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(floorGeos[k]), fm[k]); m.receiveShadow = true; level.add(m); }
+  const fm = { in: mat(T.floor, .5, { roughness: .85 }), out: mat(T.ground, .5, { roughness: 1 }), side: mat('tiles', .5, { roughness: .9 }), grass: mat('grass', .5, { roughness: 1 }) };
+  for (const k of ['in', 'out', 'side', 'grass']) if (floorGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(floorGeos[k]), fm[k]); m.receiveShadow = true; level.add(m); }
   // suelo de fuera
   const ext = mat(T.ext, 40); ext.color.set(T.extCol);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GW + 60, GH + 60), ext); ground.rotation.x = -Math.PI / 2; ground.position.set(GW / 2, -.01, GH / 2); ground.receiveShadow = true; level.add(ground);

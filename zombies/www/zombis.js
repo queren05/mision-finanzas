@@ -51,6 +51,8 @@ export function collide(p, r, ok = walkable) {
 }
 
 /* ---------- el zombi ---------- */
+const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
 export class Zombie {
   constructor(game, gltf, opt) {
@@ -59,6 +61,10 @@ export class Zombie {
     this.k = ZH / .83 * (opt.scale || 1);
     o.scale.setScalar(this.k); this.root = new THREE.Group(); this.root.add(o); this.model = o; game.scene.add(this.root);
     o.traverse(m => { if (m.name === 'head') this.head = m; });
+    // cada zombi con su tono de piel/ropa, y ojos que brillan en la oscuridad
+    const tintC = new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
+    o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiply(tintC); } });
+    if (this.head) for (const sx of [-1, 1]) { const e = new THREE.Sprite(EYE_MAT[opt.kind === 'skel' ? 1 : 0]); e.position.set(sx * .045, .085, .118); e.scale.setScalar(.06); this.head.add(e); }
     this.mixer = new THREE.AnimationMixer(o);
     const clip = n => gltf.animations.find(a => a.name === n);
     this.act = {}; for (const n of ['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right']) { const c = clip(n); if (c) this.act[n] = this.mixer.clipAction(c); }

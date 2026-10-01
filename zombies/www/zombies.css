@@ -36,8 +36,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 #pause .mbtn, #over .mbtn { min-width: 240px; text-align: center; border-left: 0; border-bottom: 3px solid transparent; }
 #pause .mbtn.focus, #over .mbtn.focus, #pause .mbtn:active, #over .mbtn:active { border-bottom-color: var(--red2); background: linear-gradient(0deg, rgba(200, 20, 30, .45), rgba(200, 20, 30, 0)); transform: none; }
 .pinfo { color: #b9a98a; font-size: 15px; letter-spacing: 1px; margin-bottom: 4px; text-align: center; }
-.charRow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
-.char { width: clamp(130px, 22vw, 180px); padding: 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 2px solid rgba(255, 255, 255, .12); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.charRow { display: flex; gap: 10px; flex-wrap: nowrap; justify-content: center; max-width: 96vw; overflow-x: auto; scrollbar-width: none; }
+.char { width: clamp(108px, 17vw, 150px); padding: 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 2px solid rgba(255, 255, 255, .12); display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .char img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 8px; background: radial-gradient(circle, #3a2428, #120a0c); }
 .char b { font-family: 'Black Ops One'; font-size: 16px; letter-spacing: 1px; } .char small { font-size: 12px; opacity: .7; text-align: center; }
 .char.sel { border-color: var(--gold); box-shadow: 0 0 18px rgba(255, 204, 51, .35); }
@@ -135,3 +135,4 @@ body.nottouch #viewBtn { display: none; }
 .mapCard b { font-family: 'Black Ops One'; font-size: 17px; letter-spacing: 1px; color: #ffd27a; }
 .mapCard small { font-size: 13px; opacity: .85; line-height: 1.25; } .mapCard span { font-size: 12px; color: #b9a98a; }
 .mapCard.sel { border-color: var(--gold); } .mapCard.focus { border-color: var(--red2); transform: scale(1.03); }
+.credits { font-size: 11px; opacity: .55; max-width: 520px; text-align: center; line-height: 1.3; }

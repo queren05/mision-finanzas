@@ -7,6 +7,11 @@ import * as MAP from './mapa.js';
 import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
+import { EffectComposer } from './lib/EffectComposer.js';
+import { RenderPass } from './lib/RenderPass.js';
+import { UnrealBloomPass } from './lib/UnrealBloomPass.js';
+import { OutputPass } from './lib/OutputPass.js';
+import { ShaderPass } from './lib/ShaderPass.js';
 import { I, opts, poll, bindTouch, resetTouch, setMenu, key, rumble, lockPointer, unlockPointer, onDevice, setNavSound, touchAim, pad } from './controles.js';
 
 const $ = id => document.getElementById(id);
@@ -34,7 +39,19 @@ renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.A
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0b1020, 9, 44);
 const camera = new THREE.PerspectiveCamera(66, 1, .05, 140);
-function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); if (composer) { composer.setSize(innerWidth, innerHeight); bloom.resolution.set(innerWidth / 2, innerHeight / 2); } }
+/* ---------- posprocesado: resplandor, viñeta y un poco de color de cine ---------- */
+let composer = null, bloom = null;
+const GRADE = { uniforms: { tDiffuse: { value: null }, vig: { value: .55 }, hurt: { value: 0 } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float vig; uniform float hurt; varying vec2 vUv;
+  void main(){ vec4 c = texture2D(tDiffuse, vUv); vec2 d = vUv - .5; float v = 1. - dot(d, d) * vig * 1.9;
+    float l = dot(c.rgb, vec3(.299, .587, .114)); c.rgb = mix(vec3(l), c.rgb, 1.12 - hurt * .6); c.rgb *= v; c.rgb = mix(c.rgb, c.rgb * vec3(1.05, .98, .92), .5); c.r += hurt * .06 * (1. - v); gl_FragColor = c; }` };
+let gradePass = null;
+function setupFX() {
+  composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .6, .45, .78); composer.addPass(bloom);
+  gradePass = new ShaderPass(GRADE); composer.addPass(gradePass); composer.addPass(new OutputPass()); resize();
+}
 addEventListener('resize', resize); resize();
 
 const hemi = new THREE.HemisphereLight(0x8090c0, 0x2a2018, 1.0); scene.add(hemi);
@@ -52,10 +69,11 @@ const loader = new GLTFLoader();
 const KITS = ['character-zombie', 'character-skeleton', 'blaster-l', 'blaster-a',
   'gravestone-cross', 'gravestone-round', 'gravestone-broken', 'grave', 'pine', 'pine-crooked', 'lightpost-single', 'fire-basket', 'iron-fence', 'crate-medium', 'crate-small', 'crypt-door',
   'candle-multiple', 'pumpkin-carved', 'rocks', 'debris-wood', 'coffin', 'lantern-candle', 'grenade-a', 'palm-bend', 'palm-straight', 'rocks-a', 'barrel'];
+const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e', 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
@@ -87,6 +105,7 @@ function buildWorld(mapId) {
   for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
     if (MAP.grid[MAP.idx(x, z)] !== MAP.FENCE) continue;
     const alongX = isBar(x - 1, z) || isBar(x + 1, z);
+    if (T.city) { kit('construction-barrier', x + .5, z + .5, alongX ? Math.PI / 2 : 0, 4.8); continue; }
     const o = tint(kit('iron-fence', x + .5, z + .5, alongX ? 0 : Math.PI / 2, 1, 0), T.fence); o.scale.set(1.02, 2, 1.4); o.children[0] && o.children[0].position.set(0, 0, .32);
   }
   const postMat = new THREE.MeshStandardMaterial({ color: T.fence, roughness: .6, metalness: .4 });
@@ -95,7 +114,9 @@ function buildWorld(mapId) {
   const crateMat = new THREE.MeshStandardMaterial({ map: MAP.TEX.wood, color: 0xb08a60, roughness: .9 });
   const crate = (x, z, r, big) => { const c = new THREE.Mesh(new THREE.BoxGeometry(.85, .85, .85), crateMat); c.position.set(x + .5, .425, z + .5); c.rotation.y = r; c.castShadow = c.receiveShadow = true; level.add(c); if (big) { const c2 = new THREE.Mesh(new THREE.BoxGeometry(.55, .55, .55), crateMat); c2.position.set(x + .5, 1.12, z + .5); c2.rotation.y = r + .5; c2.castShadow = true; level.add(c2); } };
   const rng = mulberry(MAP.MAPID.length * 7 + 3);
+  if (T.city) buildCity(rng);
   for (const o of MAP.OBJ.props) {
+    if (T.city) { cityProp(o, rng); continue; }
     if (o.kind === 'p') { crate(o.x, o.z, rng() * .6, true); if (MAP.CFG.theme === 'nacht') kit('candle-multiple', o.x + .5, o.z + .5, 0, 1.6, 1.4); }
     else if (MAP.CFG.theme === 'nacht') kit(['gravestone-cross', 'gravestone-round', 'gravestone-broken'][Math.floor(rng() * 3)], o.x + .5, o.z + .5, rng() - .5, 1.7);
     else if (MAP.CFG.theme === 'fabrica') { crate(o.x, o.z, rng(), true); kit('barrel', o.x + .5 + .3, o.z + .5 - .3, 0, .35); }
@@ -104,20 +125,22 @@ function buildWorld(mapId) {
   // tumbas por donde salen zombis
   for (const g of MAP.OBJ.graves) {
     if (MAP.CFG.theme === 'nacht') tint(kit('grave', g.x + .5, g.z + .5, rng() * 3, 1.6), 0x6a5444);
-    else if (MAP.CFG.theme === 'fabrica') { const m = new THREE.Mesh(new THREE.CylinderGeometry(.45, .45, .04, 20), new THREE.MeshStandardMaterial({ color: 0x2a2a2e, metalness: .6, roughness: .5 })); m.position.set(g.x + .5, .02, g.z + .5); level.add(m); }
+    else if (MAP.CFG.theme === 'fabrica' || T.city) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.45, .45, .04, 20), new THREE.MeshStandardMaterial({ color: 0x2a2a2e, metalness: .6, roughness: .5 })); m.position.set(g.x + .5, .02, g.z + .5); level.add(m); }
     else { const m = new THREE.Mesh(new THREE.SphereGeometry(.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xa89060, roughness: 1 })); m.scale.y = .25; m.position.set(g.x + .5, 0, g.z + .5); level.add(m); }
   }
   // exterior: árboles, rocas o cajas alrededor
-  for (let i = 0; i < 90; i++) {
+  if (T.city) { for (let i = 0; i < 70; i++) { let x, z; do { x = -18 + rng() * (W + 36); z = -18 + rng() * (H + 36); } while (x > 1 && x < W - 1 && z > 1 && z < H - 1); const n = CITY[Math.floor(rng() * 17)]; const o = kit(n, x, z, Math.floor(rng() * 4) * Math.PI / 2, 4 + rng() * 2); } }
+  else for (let i = 0; i < 90; i++) {
     let x, z; do { x = -16 + rng() * (W + 32); z = -16 + rng() * (H + 32); } while (x > -.5 && x < W + .5 && z > -.5 && z < H + .5);
     if (MAP.CFG.theme === 'isla' && (Math.hypot(x - W / 2, z - H / 2) > Math.max(W, H) * .72)) continue;
     if (MAP.CFG.theme === 'fabrica' && rng() < .5) { kit(rng() < .5 ? 'barrel' : 'crate-medium', x, z, rng() * 6, rng() < .5 ? .5 : 1.4); continue; }
     kit(T.trees[Math.floor(rng() * T.trees.length)], x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .5 + rng() * .3 : 1.7 + rng() * 1.2);
   }
-  for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
+  if (!T.city) for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
   // lámparas: una por zona
   const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: T.lamp, emissiveIntensity: .3 });
-  for (const Zn of MAP.ZONES) {
+  if (T.city) for (const o of MAP.OBJ.props.filter(o => o.kind === 'l')) { const l = new THREE.PointLight(0xffd8a0, 7, 13, 1.4); l.position.set(o.x + .5, 3.6, o.z + .5); l.userData.street = true; scene.add(l); LAMPS.push(l); }
+  if (!T.city) for (const Zn of MAP.ZONES) {
     const x = (Zn.x0 + Zn.x1 + 1) / 2, z = (Zn.z0 + Zn.z1 + 1) / 2, l = new THREE.PointLight(Zn.outside ? 0xff8a4a : T.lamp, 0, Math.max(14, (Zn.x1 - Zn.x0 + Zn.z1 - Zn.z0) * .7), 1.4);
     l.position.set(x, Zn.outside ? 1.6 : 2.35, z); scene.add(l); LAMPS.push(l); l.userData.out = Zn.outside;
     if (Zn.outside) { if (MAP.CFG.theme === 'fabrica') kit('lightpost-single', x, z, 0, 1.8); else kit('fire-basket', x, z, 0, 2.2); l.userData.fire = true; MAP.grid[MAP.idx(Math.floor(x), Math.floor(z))] = MAP.PROP; }
@@ -126,6 +149,29 @@ function buildWorld(mapId) {
   world.bulbMat = bulbMat;
   buildPerks(); buildWallBuys(); buildBox(); buildPap(); buildPower(); buildEggs();
 }
+const SIZE = {};
+function sizeOf(n) { if (!SIZE[n]) { const o = K[n].scene; o.updateMatrixWorld(true); SIZE[n] = new THREE.Box3().setFromObject(o).getSize(V3()); } return SIZE[n]; }
+// edificios de Kenney ajustados a cada solar
+function buildCity(rng) {
+  const tall = ['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e'], wide = ['building-j', 'building-k', 'building-n', 'building-e'], sq = [...'abcdfghilm'].map(c => 'building-' + c);
+  for (const b of MAP.OBJ.buildings) {
+    const w = b.x1 - b.x0 + 1, d = b.z1 - b.z0 + 1, ratio = Math.max(w, d) / Math.min(w, d);
+    const pool = ratio > 1.6 ? wide : rng() < .18 ? tall : sq, n = pool[Math.floor(rng() * pool.length)], sz = sizeOf(n);
+    const rot = (w >= d) === (sz.x >= sz.z) ? 0 : Math.PI / 2, sx = rot ? sz.z : sz.x, sd = rot ? sz.x : sz.z;
+    const o = kit(n, (b.x0 + b.x1 + 1) / 2, (b.z0 + b.z1 + 1) / 2, rot + (rng() < .5 ? Math.PI : 0), 1);
+    const k = Math.min(w / sx, d / sd) * 1.02; o.scale.set(rot ? (d / sd) : (w / sx), k * 1.25, rot ? (w / sx) : (d / sd));
+    o.position.y = 0;
+  }
+}
+function cityProp(o, rng) {
+  const x = o.x + .5, z = o.z + .5;
+  if (o.kind === 't') kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5);
+  else if (o.kind === 'k') { const n = ['car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance'][Math.floor(rng() * 7)], sz = sizeOf(n); const c = kit(n, x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1, 2.2 / Math.max(sz.x, sz.z)); tintDirty(c, rng); }
+  else if (o.kind === 'l') kit('light-curved', x, z, Math.floor(rng() * 4) * Math.PI / 2, 5.5);
+  else if (o.kind === 'p') kit(rng() < .6 ? 'dumpster' : 'planter', x, z, rng() * 6, 3.4);
+}
+// coches abandonados: un poco más oscuros y sucios
+function tintDirty(o, rng) { o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiplyScalar(.7 + rng() * .15); } }); }
 function tint(o, col) { const c = new THREE.Color(col); o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.copy(c); } }); return o; }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const world = {};
@@ -258,7 +304,7 @@ async function buildPlayer(id) {
   shrimp = new Shrimp({ gamba: CH.gamba });
   await shrimp.use(id);
   // de pie: la cabeza arriba, las patitas hacia delante sujetando el arma
-  const L = shrimp.cur.cfg.len; shrimp.cur.wrap.rotation.x = 1.42; shrimp.cur.wrap.position.set(0, L * .5, .05);
+  const L = shrimp.cur.cfg.len; shrimp.cur.wrap.rotation.x = 1.42; if (shrimp.cur.cfg.flip) shrimp.cur.holder.rotation.y = 0; shrimp.cur.wrap.position.set(0, L * .5, .05);
   shrimp.root.scale.setScalar(1.12 / L); scene.add(shrimp.root);
   shrimp.root.traverse(m => { if (m.isMesh) m.castShadow = true; });
   gunPivot = new THREE.Group(); gunPivot.position.set(.1 * L, .5 * L, -.22 * L); shrimp.root.add(gunPivot);
@@ -289,10 +335,11 @@ function resetLevelState() {
   for (const z of Z) z.dispose(); Z.length = 0;
   for (const p of proj) scene.remove(p.mesh); proj.length = 0;
   for (const p of pups) scene.remove(p.s); pups.length = 0;
+  for (const p of splats) scene.remove(p.m); splats.length = 0;
   for (const w of MAP.WINDOWS) { w.boards = 6; w.user = null; w.meshes.forEach(m => { m.visible = true; m.position.copy(m.userData.home); m.rotation.copy(m.userData.rot); }); }
   for (const d of MAP.DOORS) { d.open = false; d.mesh.visible = true; d.mesh.position.y = 0; for (const [x, z] of d.cells) MAP.grid[MAP.idx(x, z)] = MAP.DOOR; }
   MAP.ZONES.forEach((z, i) => z.open = i === 0);
-  power = false; machinesPower(); LAMPS.forEach((l, i) => l.intensity = l.userData.fire ? 4 : i === 0 ? 5 : 1.2); world.bulbMat.emissiveIntensity = .3; world.power.leverP.rotation.x = .9;
+  power = false; machinesPower(); LAMPS.forEach((l, i) => l.intensity = l.userData.street ? 7 : l.userData.fire ? 4 : i === 0 ? 5 : 1.2); world.bulbMat.emissiveIntensity = .3; world.power.leverP.rotation.x = .9;
   Object.assign(box, { state: 'idle', t: 0, uses: 0, gun: null }); box.holder.clear(); box.lid.rotation.x = 0; box.g.visible = true; placeBox(0);
   Object.assign(pap, { state: 'idle', t: 0, w: null }); pap.holder.clear();
   world.eggs.forEach(e => { e.found = false; e.o.traverse(m => { if (m.isMesh && m.userData.em0 !== undefined) m.material.emissiveIntensity = m.userData.em0; }); });
@@ -393,7 +440,7 @@ function openDoor(d) {
 }
 function setPower(on) {
   power = on; machinesPower(); world.power.leverP.rotation.x = on ? -.9 : .9;
-  LAMPS.forEach(l => { if (!l.userData.fire) l.intensity = on ? 9 : 1.2; }); world.bulbMat.emissiveIntensity = on ? 2.5 : .3;
+  LAMPS.forEach(l => { if (!l.userData.fire && !l.userData.street) l.intensity = on ? 9 : 1.2; }); world.bulbMat.emissiveIntensity = on ? 2.5 : .3;
   if (on) { S.power(); banner('¡HAY CORRIENTE!', 'Las máquinas de ventajas y el Pack-a-Punch funcionan', 3); }
 }
 function givePerk(id, silent) {
@@ -535,7 +582,7 @@ const ray = new THREE.Ray(), _v = V3(), _f = V3(), _r = V3(), _u = V3();
 function solid(x, y, z, forCam) {
   if (y < 0) return true; if (y > MAP.WALL_H) return false;
   const cx = Math.floor(x), cz = Math.floor(z), c = MAP.cellAt(cx, cz);
-  if (c === MAP.WALL) return true;
+  if (c === MAP.WALL || c === MAP.BLD) return true;
   if (c === MAP.WIN) { const w = MAP.WINDOWS.find(w => w.x === cx && w.z === cz); return !w.fence && (y < .9 || y > 2.0); }
   if (c === MAP.DOOR) return !MAP.DOORS.some(d => d.open && d.cells.some(([a, b]) => a === cx && b === cz));
   if (c === MAP.PROP) return y < (forCam ? .3 : .9);
@@ -564,7 +611,7 @@ function shoot() {
       for (const z of Z) { const h = z.hit(ray, wt); if (h && (!best || h.t < best.t)) { best = h; bz = z; } }
       const t = best ? best.t : wt, hp = V3().copy(o).addScaledVector(_f, t);
       if (p < 3) tracer(m, hp, w.pap ? 0xd08aff : 0xffe2a0);
-      if (bz) { anyHit = true; head = head || best.head; const k = hitZombie(bz, dmg * (best.head ? 2.2 : 1) * (pel > 1 ? Math.max(.4, 1 - t / 14) : 1), best.head, 'bullet'); kill = kill || k; fx.burst(hp.x, hp.y, hp.z, best.head ? 10 : 5, new THREE.Color(best.head ? 0x7a1010 : 0x5a0a0a), 1.6, .1, .5, 6); }
+      if (bz) { anyHit = true; if (Math.random() < .3) splat(bz.pos.x, bz.pos.z, .6); head = head || best.head; const k = hitZombie(bz, dmg * (best.head ? 2.2 : 1) * (pel > 1 ? Math.max(.4, 1 - t / 14) : 1), best.head, 'bullet'); kill = kill || k; fx.burst(hp.x, hp.y, hp.z, best.head ? 10 : 5, new THREE.Color(best.head ? 0x7a1010 : 0x5a0a0a), 1.6, .1, .5, 6); }
       else if (t < 59) { fx.burst(hp.x, hp.y, hp.z, 4, new THREE.Color(0xc8b090), 1.2, .07, .4, 6); glow.emit(hp.x, hp.y, hp.z, 0, 0, 0, new THREE.Color(0xffc070), .16, .08); }
     }
     if (anyHit) hitmark(kill, head);
@@ -572,17 +619,26 @@ function shoot() {
   // efectos
   const big = pel > 1 || stat(w, 'dmg') > 100;
   if (proj0 === 'ray') S.ray(); else S.shot(GUNS[w.id].pitch, big);
+  flash.position.copy(m); flash.scale.setScalar(big ? .55 : .35); flash.material.rotation = Math.random() * 6; flash.visible = true; flash.userData.t = .05; flash.material.color.set(w.pap ? 0xd090ff : 0xffffff);
   muzzleLight.position.copy(m); muzzleLight.intensity = 6; glow.emit(m.x, m.y, m.z, 0, 0, 0, new THREE.Color(w.pap ? 0xc070ff : 0xffb050), .45, .05);
   P.recoil += (big ? .05 : .018) * (1 - P.adsK * .4); P.shake = Math.max(P.shake, big ? .5 : .2);
   rumble(big ? .6 : .25, big ? .4 : .3, big ? 120 : 50);
   updHud();
 }
+const splatTex = canvasTex(64, 64, (c, w, h) => { c.fillStyle = 'rgba(90,0,0,.85)'; for (let i = 0; i < 14; i++) { c.beginPath(); c.arc(32 + rnd(-18, 18), 32 + rnd(-18, 18), rnd(3, 12), 0, 7); c.fill(); } });
+const splatMat = new THREE.MeshBasicMaterial({ map: splatTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), splatGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+const splats = [];
+function splat(x, z, s = 1) { const m = new THREE.Mesh(splatGeo, splatMat.clone()); m.position.set(x + rnd(-.3, .3), .075, z + rnd(-.3, .3)); m.rotation.y = rnd(0, 6); m.scale.setScalar(rnd(.4, .9) * s); scene.add(m); splats.push({ m, t: 0 }); if (splats.length > 45) { const o = splats.shift(); scene.remove(o.m); } }
+function updSplats(dt) { for (const p of splats) { p.t += dt; if (p.t > 25) p.m.material.opacity = Math.max(0, 1 - (p.t - 25) / 5); } }
+const flashTex = canvasTex(64, 64, (c, w, h) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,220,1)'); g.addColorStop(.3, 'rgba(255,190,80,.9)'); g.addColorStop(1, 'rgba(255,120,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); c.strokeStyle = 'rgba(255,220,150,.9)'; c.lineWidth = 3; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; c.beginPath(); c.moveTo(32, 32); c.lineTo(32 + Math.cos(a) * 30, 32 + Math.sin(a) * 30); c.stroke(); } });
+const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: flashTex, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); flash.visible = false; scene.add(flash);
 function hitZombie(z, dmg, head, kind) {
   const insta = G.instaT > 0;
   const killed = z.damage(insta ? 1e9 : dmg, head);
   if (!killed) { if (kind !== 'explo') addPts(10); S.hit(); return false; }
   P.kills++; if (head) P.heads++;
   addPts(kind === 'knife' ? 130 : head ? 100 : kind === 'explo' ? 60 : 60);
+  splat(z.pos.x, z.pos.z, head ? 1.3 : 1);
   if (head) { S.head(); fx.burst(z.pos.x, z.pos.y + 1.15, z.pos.z, 18, new THREE.Color(0x6a0a0a), 2.4, .14, .7, 7); }
   if (!G.special && G.drops < 4 && Math.random() < .035) { G.drops++; const list = ['ammo', 'insta', 'double', 'nuke', 'carpenter']; spawnPowerup(list[Math.floor(Math.random() * list.length)], z.pos.x, z.pos.z); }
   return true;
@@ -781,6 +837,7 @@ function update(dt) {
   // resto
   updBox(dt); updPap(dt); updBoards(dt); updProj(dt); updPowerups(dt); updSong(dt);
   for (const d of MAP.DOORS) if (d.open && d.mesh.visible) { d.anim += dt; d.mesh.position.y = d.anim * d.anim * 6; d.mesh.children.forEach((b, i) => b.rotation.y += dt * (i % 2 ? 3 : -3)); if (d.anim > 1) d.mesh.visible = false; }
+  if (flash.visible && (flash.userData.t -= dt) <= 0) flash.visible = false; updSplats(dt);
   muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt * 80); boomLight.intensity = Math.max(0, boomLight.intensity - dt * 90);
   for (const l of LAMPS) if (l.userData.fire) { l.intensity = 5 + Math.sin(G.time * 13 + l.position.x) * 1.2 + Math.sin(G.time * 7.3) * .8; if (Math.random() < dt * 6) glow.emit(l.position.x + rnd(-.2, .2), .5, l.position.z + rnd(-.2, .2), rnd(-.2, .2), rnd(1, 2), rnd(-.2, .2), new THREE.Color(0xff8a2a), .14, .7); }
   fx.update(dt); glow.update(dt);
@@ -950,6 +1007,7 @@ function bindUI() {
   const tog = (id, k) => $(id).onclick = () => { save.opt[k] = !save.opt[k]; applyOpts(); syncSets(); if (k === 'music') ambient(false); S.buy(); };
   tog('optInv', 'invertY'); tog('optAssist', 'assist'); tog('optSfx', 'sfx'); tog('optMusic', 'music');
   $('optView').onclick = () => { toggleView(); syncSets(); };
+  $('optGfx').onclick = () => { save.opt.gfx = save.opt.gfx === 'low' ? 'high' : 'low'; renderer.shadowMap.enabled = save.opt.gfx !== 'low'; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); renderer.setPixelRatio(Math.min(devicePixelRatio, save.opt.gfx === 'low' ? 1.25 : 1.7)); resize(); LS.set('opt', save.opt); syncSets(); };
   $('viewBtn').addEventListener('touchstart', e => { e.stopPropagation(); e.preventDefault(); toggleView(); }, { passive: false }); $('viewBtn').onclick = toggleView;
   $('mapBtn').onclick = () => { buildMapList(); showScreen('maps'); };
   $('mapsBack').onclick = () => showScreen('menu');
@@ -970,6 +1028,7 @@ function syncSets() {
   const yn = v => v ? 'SÍ' : 'NO';
   $('optInv').querySelector('b').textContent = yn(save.opt.invertY); $('optAssist').querySelector('b').textContent = yn(save.opt.assist);
   $('optView').querySelector('b').textContent = FP ? '1ª PERSONA' : '3ª PERSONA';
+  $('optGfx').querySelector('b').textContent = save.opt.gfx === 'low' ? 'RÁPIDOS' : 'ALTOS';
   $('optSfx').querySelector('b').textContent = yn(save.opt.sfx); $('optMusic').querySelector('b').textContent = yn(save.opt.music);
 }
 function buildCtrlTable() {
@@ -977,7 +1036,7 @@ function buildCtrlTable() {
   const rows = [['Moverse', 'Stick izq.', 'W A S D', 'Joystick izq.'], ['Mirar', 'Stick dcho.', 'Ratón', 'Arrastrar a la dcha.'], ['Disparar', gx.RT, 'Clic', 'Botón rojo'], ['Apuntar', gx.LT, 'Clic dcho.', 'APUNTAR'], ['Recargar / Usar / Comprar', gx.X, 'R / F', 'Botones'], ['Cambiar de arma', gx.Y, 'Q', 'Flechas'], ['Cuchillo', 'R3 / ' + gx.B, 'V', 'Cuchillo'], ['Granada', gx.RB + ' / ' + gx.LB, 'G', 'Granada'], ['Saltar', gx.A, 'Espacio', 'Flecha arriba'], ['Correr', 'L3 / stick a tope', 'Mayús', 'Joystick a tope'], ['Cambiar vista', 'Cruceta ↑', 'C', 'Botón del ojo'], ['Pausa', gx.ST, 'Esc', 'Pausa']];
   $('ctrlTable').innerHTML = '<div class="h">Acción</div><div class="h">Mando</div><div class="h">Teclado</div><div class="h">Táctil</div>' + rows.map(r => `<div>${r[0]}</div><div><kbd>${r[1]}</kbd></div><div><kbd>${r[2]}</kbd></div><div>${r[3]}</div>`).join('');
 }
-const CHARS = [{ id: 'gamba', name: 'Gamba', desc: 'La de siempre' }, { id: 'chaqueta', name: 'Gamba Chaqueta', desc: 'Con su chupa de cuero' }, { id: 'langostino', name: 'Langostino', desc: 'Grande y duro' }];
+const CHARS = [{ id: 'gamba', name: 'Gamba', desc: 'La de siempre' }, { id: 'chaqueta', name: 'Gamba Chaqueta', desc: 'Con su chupa de cuero' }, { id: 'langostino', name: 'Langostino', desc: 'Grande y duro' }, { id: 'langosta', name: 'Langosta', desc: 'Pinzas de acero' }, { id: 'cangrejo', name: 'Cangrejo de río', desc: 'Pequeño pero matón' }];
 const thumbs = {};
 async function makeThumbs() {
   const sc2 = new THREE.Scene(); sc2.add(new THREE.HemisphereLight(0xffffff, 0x553333, 2.2)); const dl = new THREE.DirectionalLight(0xffffff, 2); dl.position.set(2, 3, 3); sc2.add(dl);
@@ -987,7 +1046,7 @@ async function makeThumbs() {
   for (const c of CHARS) {
     const s = new Shrimp({ gamba: CH.gamba }); await s.use(c.id); s.root.rotation.y = -2.2; sc2.add(s.root); s.pose(0, 'idle', 0, .016);
     cam.position.set(0, .9, 2.3); cam.lookAt(0, .3, 0); renderer.setClearColor(0x000000, 0); sc2.background = null;
-    renderer.render(sc2, cam); thumbs[c.id] = cv.toDataURL(); sc2.remove(s.root);
+    renderer.clear(); renderer.render(sc2, cam); thumbs[c.id] = cv.toDataURL(); sc2.remove(s.root);
   }
   renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); renderer.setClearColor(0x000000, 1);
 }
@@ -1004,12 +1063,12 @@ function updMenu(dt) {
   const a = menuT * .08 + .6, R = 3.4;
   camera.position.set(P.pos.x + Math.sin(a) * R, 1.25, P.pos.z + Math.cos(a) * R); camera.lookAt(P.pos.x - .4, .55, P.pos.z);
   if (camera.fov !== 50) { camera.fov = 50; camera.updateProjectionMatrix(); }
-  LAMPS[0].intensity = 5 + Math.sin(menuT * 9) * .4 * (Math.random() < .03 ? 6 : 1);
+  if (LAMPS[0] && !LAMPS[0].userData.street) LAMPS[0].intensity = 5 + Math.sin(menuT * 9) * .4 * (Math.random() < .03 ? 6 : 1);
   fx.update(dt); glow.update(dt);
 }
 
 renderer.autoClear = false;
-function draw() { renderer.clear(); renderer.render(scene, camera); if (FP && G.state !== 'menu' && vmHolder.visible) { renderer.clearDepth(); renderer.render(vmScene, vmCam); } }
+function draw() { renderer.clear(); if (save.opt.gfx !== 'low' && composer) { if (gradePass) gradePass.uniforms.hurt.value = P.alive === false ? 1 : clamp(1 - (P.hp || 100) / (P.maxHp || 100), 0, 1) * .8; composer.render(); } else renderer.render(scene, camera); if (FP && G.state !== 'menu' && vmHolder.visible) { renderer.clearDepth(); renderer.render(vmScene, vmCam); } }
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, clock.getDelta());
@@ -1025,7 +1084,9 @@ async function boot() {
   try { await loadAll(); } catch (e) { $('loadTxt').textContent = 'Error al cargar: ' + e.message; return; }
   $('loadTxt').textContent = 'Preparando el escenario…';
   if (Q.get('map')) save.map = Q.get('map');
+  if (Q.get('char')) save.char = Q.get('char');
   buildWorld(MAP.MAPS[save.map] ? save.map : 'nacht');
+  try { setupFX(); } catch (e) { composer = null; }
   await makeThumbs();
   await buildPlayer(save.char);
   resetPlayer(); resetLevelState(); setGunMesh();

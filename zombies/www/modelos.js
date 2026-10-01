@@ -292,6 +292,8 @@ export const PLAYERS = {
   gamba: { file: 'models/char/gamba.glb', rig: 'chumbud', len: 1.45 },
   chaqueta: { file: 'models/char/gamba_chaqueta.glb', rig: 'chumbud', len: 1.45, cheer: true },
   langostino: { file: 'models/char/langostino.glb', rig: 'static', len: 1.25, hat: [.52, -.2] },
+  langosta: { file: 'models/char/langosta_a.glb', rig: 'static', flip: true, len: 1.35, hat: [.4, -.3] },
+  cangrejo: { file: 'models/char/langosta_c.glb', rig: 'static', flip: true, len: 1.3, hat: [.35, -.3] },
   mysis: { file: 'models/char/gamba_mysis.glb', rig: 'clip', len: 1.7, walk: 'walk1', idle: 'idle1', hat: [.42, -.52] },
 };
 const NOT_SKIN = /outline|eye|glass|heart/i;
