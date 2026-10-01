@@ -9,7 +9,20 @@ function mk(g) {
   };
 }
 const SPH = (r = 1, w = 20, h = 14) => new THREE.SphereGeometry(r, w, h);
+// Modelos del Food Kit de Kenney (CC0): se cargan al arrancar y se usan en lugar de las formas simples
+const KIT = {}, KB = {};
+export const FOOD_KIT = ['alga', 'krill', 'sushi', 'pizza', 'helado', 'tarta', 'piruleta', 'sopa', 'cafe', 'donut', 'fritas', 'taco', 'tortitas', 'sandia', 'cupcake', 'perrito', 'fresa'];
+const FOOD_SIZE = { pizza: .62, tarta: .6, sandia: .5, sopa: .55, alga: .55, tortitas: .55, perrito: .62, taco: .55, piruleta: .55, helado: .55, cafe: .55, fritas: .5, fresa: .32, sushi: .45 };
+export function setFoodKit(map) { Object.assign(KIT, map); }
 export function foodMesh(id) {
+  if (KIT[id]) {
+    const src = KIT[id].scene;
+    if (!KB[id]) { src.updateMatrixWorld(true); KB[id] = new THREE.Box3().setFromObject(src); }
+    const b = KB[id], s2 = b.getSize(new THREE.Vector3()), k = (FOOD_SIZE[id] || .45) / Math.max(s2.x, s2.y, s2.z);
+    const o = src.clone(true); o.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+    const g = new THREE.Group(), w = new THREE.Group(); w.add(o); w.scale.setScalar(k); g.add(w);
+    return g;
+  }
   const g = new THREE.Group(), add = mk(g);
   switch (id) {
     case 'plancton': {

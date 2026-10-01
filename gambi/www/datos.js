@@ -12,6 +12,14 @@ export const FOODS = [
   { id: 'piruleta', name: 'Piruleta', price: 30, food: 4, fun: 26, desc: 'Dulce y entretenida.' },
   { id: 'sopa', name: 'Sopa caliente', price: 60, food: 40, energy: 12, desc: 'Da energía y calorcito.' },
   { id: 'vitamina', name: 'Súper vitamina', price: 160, food: 25, fun: 25, energy: 25, hyg: 25, desc: 'Un poquito de todo.' },
+  { id: 'fresa', name: 'Fresa', price: 20, food: 12, fun: 6, desc: 'Dulce y jugosa.' },
+  { id: 'sandia', name: 'Sandía', price: 35, food: 20, hyg: 5, desc: 'Fresquita, ideal para el verano.' },
+  { id: 'donut', name: 'Dónut', price: 35, food: 18, fun: 16, desc: 'Con virutas de colores.' },
+  { id: 'cupcake', name: 'Cupcake', price: 45, food: 16, fun: 22, desc: 'Con su cereza encima.' },
+  { id: 'fritas', name: 'Patatas fritas', price: 40, food: 30, fun: 8, desc: 'Crujientes y saladitas.' },
+  { id: 'perrito', name: 'Perrito caliente', price: 55, food: 40, fun: 6, desc: 'Con ketchup y mostaza.' },
+  { id: 'taco', name: 'Taco', price: 60, food: 42, fun: 8, desc: '¡Ay, qué rico!' },
+  { id: 'tortitas', name: 'Tortitas', price: 65, food: 38, energy: 10, desc: 'Con mantequilla y sirope.' },
   { id: 'medicina', name: 'Medicina', price: 60, med: true, desc: 'Cura a tu gamba cuando se pone mala. Sabe fatal.' },
   { id: 'cafe', name: 'Batido energético', price: 50, food: 6, energy: 35, desc: 'Para cuando está muy cansada.' },
 ];
@@ -61,8 +69,8 @@ export const HATS = [
 
 // Temas de la casa: colores y dibujo de las paredes y del suelo
 export const THEMES = [
-  { id: 'nordico', name: 'Nórdico', price: 0, wall: ['#f7f5f1', '#ebe6de'], line: '#ffffff', floor: ['#dcc29a', '#cdb085'], fpat: 'planks', wpat: 'plain', accent: 0xd8d2c8, dark: 0xa07850, sky: 0x9fd8ff },
-  { id: 'cuqui', name: 'Cuqui', price: 0, wall: ['#ffd9e8', '#ffb7d3'], line: '#ffffff', floor: ['#f3dcb8', '#e3c392'], fpat: 'planks', wpat: 'dots', accent: 0xff7ab0, dark: 0xd9467f, sky: 0x9fd8ff },
+  { id: 'nordico', name: 'Nórdico', price: 0, wall: ['#f7f5f1', '#ebe6de'], line: '#ffffff', floor: ['#dcc29a', '#cdb085'], fpat: 'planks', wpat: 'plain', accent: 0xa8a196, dark: 0x9a7650, sky: 0x9fd8ff, wood: 0xe2c8a0, woodDark: 0xb8946a },
+  { id: 'cuqui', name: 'Cuqui', price: 0, wood: 0xf3d2b0, woodDark: 0xd4a87e, wall: ['#ffd9e8', '#ffb7d3'], line: '#ffffff', floor: ['#f3dcb8', '#e3c392'], fpat: 'planks', wpat: 'dots', accent: 0xff7ab0, dark: 0xd9467f, sky: 0x9fd8ff },
   { id: 'submarino', name: 'Submarino', price: 300, wall: ['#2a86c9', '#0f4a8a'], line: '#9fe6ff', floor: ['#ecdcab', '#d8c48a'], fpat: 'sand', wpat: 'waves', accent: 0x35d0ff, dark: 0x0a6db0, sky: 0x1a78c2 },
   { id: 'selva', name: 'Selva', price: 350, wall: ['#86cf78', '#3f9a4c'], line: '#d6f7a8', floor: ['#ad7d50', '#8a5e3a'], fpat: 'planks', wpat: 'leaves', accent: 0x4fe37a, dark: 0x2c8a4a, sky: 0xbdf0ff },
   { id: 'playa', name: 'Playa', price: 400, wall: ['#ffeaa8', '#ffd07a'], line: '#ffffff', floor: ['#f6e5b4', '#ebd194'], fpat: 'sand', wpat: 'stripes', accent: 0xffa62e, dark: 0xd9791a, sky: 0x8fd6ff },

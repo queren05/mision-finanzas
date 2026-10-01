@@ -45,7 +45,7 @@ function skyTexture(day, night) {
   }, false);
 }
 
-export function buildHouse(scene) {
+export function buildHouse(scene, KIT = {}) {
   const accents = [], darks = [];
   const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .65 }, o));
   const A = (o = {}) => { const m = mat(0xffffff, o); accents.push(m); return m; };
@@ -81,19 +81,38 @@ export function buildHouse(scene) {
     g.add(plane(w - .14, h - .14, new THREE.MeshBasicMaterial({ map: t }), x, y, WALL_Z + .1)); return g;
   };
 
+
+  /* muebles de Kenney (Furniture Kit, CC0): se centran, se apoyan en el suelo y la tela/madera toman los colores del tema */
+  const KS = 2.4, kitBox = {};
+  const fabric = A(), fabricDark = D(), woodK = mat(0xd9b48a), woodDarkK = mat(0xb08a62);
+  let bedLampMat = null;
+  function kit(name, x, z, ry = 0, sc = KS, y = 0) {
+    const src = KIT[name], g = new THREE.Group(); if (!src) return g;
+    if (!kitBox[name]) { src.scene.updateMatrixWorld(true); kitBox[name] = new THREE.Box3().setFromObject(src.scene); }
+    const b = kitBox[name], o = src.scene.clone(true);
+    o.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+    o.traverse(m => {
+      if (!m.isMesh) return; const n = m.material.name;
+      if (n === 'carpet' || n === 'carpetBlue') m.material = fabric;
+      else if (n === 'carpetDarker') m.material = fabricDark;
+      else if (n === 'wood') m.material = woodK;
+      else if (n === 'woodDark') m.material = woodDarkK;
+      else if (n === 'lamp') { m.material = m.material.clone(); m.material.emissive = new THREE.Color(0xffe2a0); m.material.emissiveIntensity = .5; if (name === 'lampRoundTable') bedLampMat = m.material; }
+    });
+    g.add(o); g.scale.setScalar(sc); g.rotation.y = ry; g.position.set(x, y, z); return g;
+  }
+
   /* ---------- SALÓN ---------- */
   function salon() {
     const g = new THREE.Group();
-    g.add(cyl(1.4, 1.4, .03, A(), 0, 0, .35, 48)); g.add(cyl(1.0, 1.0, .035, mat(0xffffff, { transparent: true, opacity: .35 }), 0, 0, .35, 48));
-    const sofa = new THREE.Group();   // sofá
-    sofa.add(rb(2.3, .48, 1.0, .2, A(), 0, .14, 0), rb(2.3, .8, .3, .15, A(), 0, .14, -.42), rb(.32, .72, 1.0, .15, D(), -1.15, .1, 0), rb(.32, .72, 1.0, .15, D(), 1.15, .1, 0));
-    sofa.add(rb(.95, .2, .8, .09, mat(0xffffff, { transparent: false }), -.5, .6, .05), rb(.95, .2, .8, .09, mat(0xfff3d6), .5, .6, .05));
-    sofa.add(rb(.45, .42, .18, .08, mat(0xffd36b), -.75, .7, -.18));
-    sofa.position.set(-.85, 0, -2.05); g.add(sofa);
-    const pot = cyl(.32, .23, .42, mat(0xc46a3a), 1.85, 0, -1.95); g.add(pot);
-    const leafM = mat(0x3fae5a, { flatShading: true });
-    [[0, .95, 0, .4], [.22, .75, .1, .28], [-.2, .8, -.08, .3], [.05, 1.25, -.04, .24]].forEach(([x, y, z, r]) => g.add(sph(r, leafM, 1.85 + x, y + .2, -1.95 + z, 1, 1.2, 1)));
-    g.add(cyl(.03, .035, 1.75, mat(0x3a3d46), 1.0, 0, -2.3, 8), cyl(.44, .28, .42, lit(0xfff0c0, .7), 1.0, 1.6, -2.3), cyl(.22, .22, .03, mat(0x3a3d46), 1.0, 0, -2.3));
+    g.add(kit('rugRound', 0, .4));
+    g.add(kit('loungeSofa', -.75, -2.17));
+    g.add(kit('pillowLong', -1.35, -2.05, .15, 2.2, .62));
+    g.add(kit('tableCoffee', -.75, -1.05));
+    g.add(kit('books', -.45, -1.0, .4, 2.4, .55));
+    g.add(kit('plantSmall1', -1.15, -1.05, 0, 2.4, .55));
+    g.add(kit('lampRoundFloor', 1.0, -2.35));
+    g.add(kit('pottedPlant', 1.75, -2.2));
     g.add(windowAt(-.05, 2.6, 1.5, 1.4), curtain(-.98, 1.85, 1.75), curtain(.9, 1.85, 1.75));
     g.add(frameArt(-1.85, 3.2, .7, .85, ['#ffd9a0', '#ff8a5c', '#fff']), frameArt(1.8, 3.2, .6, .75, ['#bfe6ff', '#4f9aff', '#ffe27a']));
     const ball = sph(.3, mat(0xffffff), -1.35, .3, .8); const bt = canvasTex(128, 64, (c, w, h) => { for (let i = 0; i < 6; i++) { c.fillStyle = ['#ff5a5a', '#fff', '#4f9aff', '#fff', '#ffd24a', '#fff'][i]; c.fillRect(i * w / 6, 0, w / 6 + 1, h); } }, false);
@@ -105,18 +124,13 @@ export function buildHouse(scene) {
   function cocina() {
     const g = new THREE.Group();
     const tile = tileTexture('#ffffff', '#c7d3dd'); tile.repeat.set(3, 1);
-    g.add(plane(3.0, .8, new THREE.MeshStandardMaterial({ map: tile, roughness: .4 }), -.95, 1.35, WALL_Z + .02));
-    g.add(rb(2.9, .92, .85, .07, white, -.95, 0, -2.2));
-    for (let i = 0; i < 3; i++) { g.add(rb(.88, .74, .04, .02, mat(0xe9e2d3), -1.95 + i * .95, .08, -1.77)); g.add(rb(.12, .04, .05, .02, steel, -1.6 + i * .95, .6, -1.75)); }
-    g.add(rb(3.0, .09, .95, .035, A(), -.95, .92, -2.2));
-    g.add(rb(2.3, .78, .5, .06, white, -1.25, 2.1, -2.42)); for (let i = 0; i < 3; i++) g.add(rb(.7, .64, .04, .02, mat(0xe9e2d3), -1.95 + i * .72, 2.17, -2.16));
-    for (const x of [-.25, .25]) g.add(cyl(.2, .2, .03, mat(0x2b2d33), -.25 + x, 1.01, -2.05), cyl(.11, .11, .02, mat(0x55585f), -.25 + x, 1.04, -2.05));
-    g.add(cyl(.19, .17, .26, steel, -1.7, 1.01, -2.1), cyl(.2, .2, .04, mat(0xd8401f), -1.7, 1.27, -2.1));
-    const fr = new THREE.Group();
-    fr.add(rb(1.15, 2.3, .9, .12, mat(0xf3f8fc), 0, 0, 0), rb(1.05, .03, .02, .01, mat(0xc5d0da), 0, 1.45, .46), rb(.06, .7, .07, .03, steel, -.43, .62, .48), rb(.06, .4, .07, .03, steel, -.43, 1.7, .48));
-    fr.add(rb(.3, .3, .02, .03, A(), .2, 1.85, .46)); fr.position.set(1.55, 0, -2.0); g.add(fr);
+    g.add(plane(3.2, .7, new THREE.MeshStandardMaterial({ map: tile, roughness: .4 }), -.95, 1.43, WALL_Z + .02));
+    const zc = WALL_Z + .56;
+    g.add(kit('kitchenCabinetDrawer', -2.0, zc), kit('kitchenSink', -.97, zc), kit('kitchenStove', .06, zc));
+    g.add(kit('kitchenCabinetUpper', -2.0, WALL_Z + .28, 0, KS, 1.85), kit('kitchenCabinetUpper', -.97, WALL_Z + .28, 0, KS, 1.85), kit('hoodModern', .06, WALL_Z + .35, 0, KS, 1.75));
+    g.add(kit('kitchenCoffeeMachine', -2.2, zc - .1, .2, KS, 1.08), kit('toaster', -1.7, zc - .05, -.2, KS, 1.08), kit('plantSmall1', -.45, zc - .25, 0, KS, 1.08));
+    const fr = kit('kitchenFridgeLarge', 1.32, WALL_Z + .52); g.add(fr);
     g.add(cyl(.008, .008, 1.2, mat(0x333333), .3, 2.6, -1.4, 6), cyl(.32, .12, .32, lit(0xffe2a0, .8), .3, 2.45, -1.4), cyl(.008, .008, .4, mat(0x333333), .3, 3.8, -1.4, 6));
-    g.add(frameArt(1.55, 3.6, .7, .7, ['#c9f0c0', '#ff6a5a', '#fff']));
     hot.cocina = [{ id: 'fridge', obj: fr, r: 90 }];
     return g;
   }
@@ -136,30 +150,27 @@ export function buildHouse(scene) {
     tub.position.set(0, 0, -.25); g.add(tub);
     const tap = new THREE.Group(); tap.add(cyl(.05, .05, .45, steel, 0, 0, 0, 12), put(new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .4, 12), steel), 0, .45, .18)); tap.children[1].rotation.x = Math.PI / 2; tap.position.set(.75, .72, -.95); tub.add(tap);
     // ducha
-    g.add(cyl(.04, .04, 2.6, steel, 1.55, 0, WALL_Z + .14, 12));
-    const head = cyl(.3, .22, .08, steel, 1.1, 2.52, WALL_Z + .6); head.rotation.x = .35; const arm = put(new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .6, 10), steel), 1.3, 2.6, WALL_Z + .3); arm.rotation.z = Math.PI / 2 - .2; g.add(head, arm);
+    g.add(cyl(.04, .04, 2.6, steel, .95, 0, WALL_Z + .14, 12));
+    const head = cyl(.3, .22, .08, steel, .5, 2.52, WALL_Z + .6); head.rotation.x = .35; const arm = put(new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .6, 10), steel), .7, 2.6, WALL_Z + .3); arm.rotation.z = Math.PI / 2 - .2; g.add(head, arm);
+    g.add(kit('bathroomSink', -1.7, WALL_Z + .38), kit('bathroomMirror', -1.7, WALL_Z + .2, 0, KS, 1.5), kit('toilet', 1.75, WALL_Z + .62));
     // patito
     duck = new THREE.Group(); duck.add(sph(.2, lit(0xffd21f, .25), 0, .17, 0, 1.2, .9, 1), sph(.13, lit(0xffd21f, .25), .16, .34, 0), put(new THREE.Mesh(new THREE.ConeGeometry(.05, .12, 10), mat(0xff8a1f)), .3, .33, 0), sph(.02, mat(0x222222), .22, .4, .07), sph(.02, mat(0x222222), .22, .4, -.07));
     duck.children[2].rotation.z = -Math.PI / 2; duck.position.set(-.8, .44, -.25); g.add(duck);
     anim.push((dt, t) => { duck.position.y = .42 + Math.sin(t * 2) * .02; duck.rotation.y = Math.sin(t * .8) * .4; });
     // toalla y alfombrilla
-    g.add(rb(.8, 1.0, .08, .04, white, -1.85, 1.3, WALL_Z + .08), rb(.75, .9, .1, .04, A(), -1.85, 1.0, WALL_Z + .12), cyl(.02, .02, 1.0, steel, -1.85, 1.35, WALL_Z + .05, 8));
     g.add(rb(1.8, .04, .9, .02, A(), 0, 0, 1.25));
-    const mir = cyl(.5, .5, .05, mat(0xbfe9ff, { metalness: .6, roughness: .1 }), -.9, 3.4, WALL_Z + .06); mir.rotation.x = Math.PI / 2; g.add(mir);
-    const ring = put(new THREE.Mesh(new THREE.TorusGeometry(.52, .05, 10, 40), steel), -.9, 3.9, WALL_Z + .07); g.add(ring);
     return g;
   }
 
   /* ---------- DORMITORIO ---------- */
-  let bedLamp, bedLight = { pos: new THREE.Vector3(1.5, 1.35, -1.8) };
+  let bedLamp, bedLight = { pos: new THREE.Vector3(1.3, 1.5, -2.0) };
   function dormitorio() {
     const g = new THREE.Group();
-    g.add(cyl(1.3, 1.3, .03, A(), 0, 0, .8, 48));
-    g.add(rb(2.75, .42, 1.8, .1, wood, -.35, 0, -1.6), rb(2.6, .3, 1.65, .14, mat(0xfbfbff), -.35, .4, -1.6), rb(.22, 1.4, 1.85, .09, wood, -1.72, 0, -1.6));
-    g.add(rb(.85, .2, .52, .1, white, -1.25, .68, -1.6), rb(1.65, .2, 1.7, .1, A(), .15, .62, -1.6), rb(1.65, .05, 1.72, .04, D(), .15, .81, -1.6));
-    const teddy = new THREE.Group(); const br = mat(0xb5773f); teddy.add(sph(.22, br, 0, .22, 0, 1, 1.1, 1), sph(.16, br, 0, .52, 0), sph(.06, br, -.12, .65, 0), sph(.06, br, .12, .65, 0), sph(.05, mat(0xf0d2a8), 0, .49, .13, 1, .8, 1), sph(.02, mat(0x222222), -.06, .56, .14), sph(.02, mat(0x222222), .06, .56, .14)); teddy.position.set(.75, .82, -2.15); teddy.rotation.y = -.2; g.add(teddy);
-    g.add(rb(.78, .75, .62, .07, wood, 1.6, 0, -2.0), rb(.7, .3, .04, .02, mat(0x8a5730), 1.6, .4, -1.68));
-    bedLamp = new THREE.Group(); bedLamp.add(cyl(.12, .14, .05, mat(0x3a3d46), 0, 0, 0), cyl(.025, .025, .35, mat(0x3a3d46), 0, .05, 0, 8), cyl(.26, .18, .3, lit(0xffe6a8, .35), 0, .38, 0)); bedLamp.position.set(1.6, .75, -2.0); g.add(bedLamp);
+    g.add(kit('rugRectangle', 0, .55, 0, 2.0));
+    g.add(kit('bedDouble', -.4, -1.68, Math.PI / 2, 2.1));
+    const teddy = new THREE.Group(); const br = mat(0xb5773f); teddy.add(sph(.22, br, 0, .22, 0, 1, 1.1, 1), sph(.16, br, 0, .52, 0), sph(.06, br, -.12, .65, 0), sph(.06, br, .12, .65, 0), sph(.05, mat(0xf0d2a8), 0, .49, .13, 1, .8, 1), sph(.02, mat(0x222222), -.06, .56, .14), sph(.02, mat(0x222222), .06, .56, .14)); teddy.position.set(1.85, 0, -1.3); teddy.rotation.y = -.5; g.add(teddy);
+    g.add(kit('cabinetBedDrawerTable', 1.35, WALL_Z + .3));
+    bedLamp = kit('lampRoundTable', 1.35, WALL_Z + .3, 0, KS, .62); g.add(bedLamp);
     g.add(sph(.3, lit(0xfff3c2, .6), 1.6, 3.6, WALL_Z + .05, 1, 1, .15));
     g.add(windowAt(-.6, 3.0, 1.4, 1.3), curtain(-1.5, 2.3, 1.65), curtain(.3, 2.3, 1.65));
     g.add(frameArt(-1.75, 3.5, .6, .6, ['#d8c6ff', '#7a5cff', '#ffe27a']));
@@ -170,7 +181,7 @@ export function buildHouse(scene) {
   /* ---------- SALA DE JUEGOS ---------- */
   function juegos() {
     const g = new THREE.Group();
-    g.add(cyl(1.35, 1.35, .03, D(), 0, 0, .45, 48), cyl(1.0, 1.0, .035, A(), 0, 0, .45, 48));
+    g.add(kit('rugSquare', 0, .45, 0, 2.3));
     const arcade = (x, col) => {
       const a = new THREE.Group(); const body = mat(col);
       a.add(rb(.95, 1.9, .8, .1, body, 0, 0, 0), rb(1.0, .3, .86, .08, A(), 0, 1.7, 0), rb(.95, .18, .7, .06, mat(0x22242b), 0, .86, .28));
@@ -180,12 +191,11 @@ export function buildHouse(scene) {
       a.position.set(x, 0, -2.2); return a;
     };
     const a1 = arcade(-1.0, 0x7a3bd6), a2 = arcade(.15, 0x2c86d9); g.add(a1, a2);
-    const bag = (x, z, c) => sph(.62, mat(c, { roughness: .9 }), x, .32, z, 1.1, .55, 1);
-    g.add(bag(1.6, -1.6, 0xff6fa5), bag(1.35, -.7, 0x6fd0ff));
+    g.add(kit('loungeDesignChair', 1.5, -1.75, -.55), kit('speaker', -1.85, WALL_Z + .3), kit('speaker', 1.05, WALL_Z + .3));
     const blocks = new THREE.Group(); [[0, 0, 0xff5a5a], [.42, 0, 0xffd24a], [.2, .42, 0x4f9aff], [.9, 0, 0x5fe37a]].forEach(([x, y, c], i) => blocks.add(rb(.4, .4, .4, .05, mat(c), x, y, (i % 2) * .05)));
-    blocks.position.set(.95, 0, -.35); g.add(blocks);
+    blocks.position.set(.95, 0, -.35); blocks.scale.setScalar(.8); g.add(blocks, kit('cardboardBoxOpen', 1.55, -.55, .4));
     const teddy = new THREE.Group(); const br = mat(0xc08a4a); teddy.add(sph(.4, br, 0, .42, 0, 1, 1.1, 1), sph(.3, br, 0, 1.0, 0), sph(.12, br, -.22, 1.28, 0), sph(.12, br, .22, 1.28, 0), sph(.1, mat(0xf0d2a8), 0, .94, .26, 1, .8, 1), sph(.04, mat(0x222222), -.1, 1.06, .27), sph(.04, mat(0x222222), .1, 1.06, .27), sph(.08, mat(0xf0d2a8), -.34, .35, .15), sph(.08, mat(0xf0d2a8), .34, .35, .15));
-    teddy.position.set(-2.05, 0, -1.2); teddy.rotation.y = .5; g.add(teddy);
+    teddy.position.set(-1.6, 0, -1.35); teddy.rotation.y = .5; teddy.scale.setScalar(.85); g.add(teddy);
     const balloons = new THREE.Group(); [[-1.7, 4.3, 0xff5a7a], [-1.3, 4.7, 0xffd24a], [-.9, 4.2, 0x4fb2ff], [.9, 4.5, 0x5fe37a], [1.3, 4.1, 0xb45aff], [1.7, 4.6, 0xff9a3a]].forEach(([x, y, c]) => { balloons.add(sph(.3, lit(c, .15), x, y, WALL_Z + .4, 1, 1.2, 1)); balloons.add(cyl(.004, .004, 1.0, mat(0xffffff), x, y - 1.5, WALL_Z + .4, 4)); }); g.add(balloons);
     anim.push((dt, t) => { balloons.position.y = Math.sin(t * 1.1) * .06; });
     hot.juegos = [{ id: 'arcade', obj: a1, r: 95 }, { id: 'arcade', obj: a2, r: 95 }];
@@ -325,6 +335,7 @@ export function buildHouse(scene) {
     floorMat.map = floorTexture(t); floorMat.map.repeat.set(8, 6); floorMat.needsUpdate = true;
     for (const m of accents) m.color.set(t.accent);
     for (const m of darks) m.color.set(t.dark);
+    woodK.color.set(t.wood || 0xd9a070); woodDarkK.color.set(t.woodDark || 0xa87a50);
     skyDay[t.id] = skyDay[t.id] || skyTexture(t.sky, false);
     deco(t); setNight(night);
   }
@@ -332,13 +343,13 @@ export function buildHouse(scene) {
     night = k;
     tmpC.lerpColors(white3, nightWall, k); wallMat.color.copy(tmpC); floorMat.color.copy(tmpC); base.material.color.copy(tmpC);
     winMat.map = k > .5 ? skyNight : skyDay[curTheme.id]; winMat.needsUpdate = true;
-    if (bedLamp) bedLamp.children[2].material.emissiveIntensity = .35 + k * 1.4;
+    if (bedLampMat) bedLampMat.emissiveIntensity = .4 + k * 1.6;
     beamMat.opacity = .22 * (1 - k); for (const b of beams) b.visible = k < .9;
   }
   function setRoom(id) { curRoom = id; for (const [k, r] of Object.entries(rooms)) r.visible = k === id; }
   const SPOTS = {
     salon: { x: [-.9, .9], z: [-.1, .9] }, cocina: { fixed: [0, 0, .5] }, bano: { fixed: [0, .34, -.2] },
-    dormitorio: { fixed: [0, 0, .6], sleep: [-.6, .86, -1.45] }, juegos: { x: [-.8, .8], z: [.1, .9] },
+    dormitorio: { fixed: [0, 0, .6], sleep: [-.55, .48, -1.6] }, juegos: { x: [-.8, .8], z: [.1, .9] },
   };
   function update(dt, t) { for (const f of anim) f(dt, t); }
   return {

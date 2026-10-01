@@ -4,7 +4,7 @@ import * as THREE from './lib/three.module.min.js';
 import * as M from './modelos.js';
 import { save, persist, clamp, tickStats, mood, xpNeed, stageOf, STAGE, MAXLV, FOODS, CHARS, SKINS, MINIGAMES, NAMES, OFFLINE_CAP, ACH, FURNITURE } from './datos.js';
 import { buildHouse } from './casa.js';
-import { foodMesh } from './comida.js';
+import { foodMesh, setFoodKit, FOOD_KIT } from './comida.js';
 import { Particles, Floaters } from './particulas.js';
 import { ICON } from './iconos.js';
 import * as SND from './sonido.js';
@@ -61,11 +61,14 @@ function hint(msg, ms = 4200) { const h = $('#hint'); h.textContent = msg; h.hid
 /* ---------- arranque ---------- */
 async function boot() {
   resize();
-  A = await M.loadAll({ hood: 'models/gorro_tiburon.glb', gamba: 'models/gamba.glb' }, p => { $('#loadBar').style.width = Math.round(p * 100) + '%'; });
+  const KITN = ['loungeSofa', 'tableCoffee', 'lampRoundFloor', 'pottedPlant', 'rugRound', 'books', 'kitchenCabinetDrawer', 'kitchenSink', 'kitchenStove', 'kitchenFridgeLarge', 'kitchenCabinetUpper', 'hoodModern', 'kitchenCoffeeMachine', 'toaster', 'plantSmall1', 'bathroomSink', 'bathroomMirror', 'toilet', 'bedDouble', 'cabinetBedDrawerTable', 'lampRoundTable', 'rugRectangle', 'loungeDesignChair', 'speaker', 'rugSquare', 'cardboardBoxOpen', 'pillowLong'];
+  const files = { hood: 'models/gorro_tiburon.glb', gamba: 'models/gamba.glb' }; for (const n of KITN) files['k_' + n] = 'models/kit/' + n + '.glb'; for (const n of FOOD_KIT) files['f_' + n] = 'models/food/' + n + '.glb'; files.kart = 'models/car/kart.glb';
+  const all = await M.loadAll(files, p => { $('#loadBar').style.width = Math.round(p * 100) + '%'; });
+  A = { hood: all.hood, gamba: all.gamba }; const KIT = {}; for (const n of KITN) KIT[n] = all['k_' + n]; const FK = {}; for (const n of FOOD_KIT) FK[n] = all['f_' + n]; setFoodKit(FK); A.kart = all.kart;
   $('#loadTxt').textContent = 'Amueblando…';
   await new Promise(r => setTimeout(r, 20));
   PN = new Particles(scene, 300, false, R.getPixelRatio()); PA = new Particles(scene, 400, true, R.getPixelRatio()); FL = new Floaters(scene);
-  house = buildHouse(scene);
+  house = buildHouse(scene, KIT);
   player = new M.Shrimp(A); scene.add(player.root);
   shadow = M.blob(1.15, 1.95); player.root.add(shadow);
   foam = makeFoam(); player.tilt.add(foam);
@@ -590,7 +593,7 @@ async function startMini(id) {
   for (const s of ['#hud', '#nav', '#tray', '#hint', '#talk']) $(s).hidden = true; sayT = 0;
   for (const b of bubbles) b.life = 0;
   house.setRoom(null); foamSet(0);
-  mini = createMini({ THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, setHouse: v => { house.shared.visible = v; house.decoGroup.visible = v; }, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
+  mini = createMini({ kart: A.kart, THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, setHouse: v => { house.shared.visible = v; house.decoGroup.visible = v; }, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
   mini.start(id);
 }
 function endMini(r) {

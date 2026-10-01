@@ -354,7 +354,7 @@ export function createMini(ctx) {
   // A la derecha de la pantalla, acelerar; a la izquierda, frenar / marcha atrás. En el aire, acelerar levanta el morro.
   const hgt = x => { if (x < 6) return 0; const k = .55 + Math.min(1.5, (x - 6) / 260); const e = Math.min(1, (x - 6) / 10); return e * k * (1.25 * Math.sin(x * .16) + .7 * Math.sin(x * .37 + 1) + .3 * Math.sin(x * .83 + 2)); };
   const slope = x => (hgt(x + .05) - hgt(x - .05)) / .1;
-  const WR = .32, CL = 1.5;
+  let WR = .32; const CL = 1.5;
   function terrainChunk(x0, x1) {
     const n = Math.ceil((x1 - x0) / .25), pos = [], col = [], idx = [], grass = new THREE.Color(0x5fbf4a), grass2 = new THREE.Color(0x4aa63a), dirt = new THREE.Color(0xa86d3e), deep = new THREE.Color(0x6b4426);
     for (let i = 0; i <= n; i++) {
@@ -372,32 +372,31 @@ export function createMini(ctx) {
     for (let x = x0 + 1; x < x1; x += rnd(1.2, 3)) { const r = Math.random(); const o = r < .5 ? new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.12, .25), 0), new THREE.MeshStandardMaterial({ color: 0x9a9488, flatShading: true })) : new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), new THREE.MeshStandardMaterial({ color: [0xff5a7a, 0xffd84a, 0xffffff, 0xb45aff][Math.floor(rnd(0, 4))] })); o.position.set(x, hgt(x) + .05, -.55); grp.add(o); }
     return grp;
   }
+  // kart del Car Kit de Kenney (CC0): se quita el piloto que trae y se sienta a la gamba
   function makeCar() {
-    const g = new THREE.Group(), red = new THREE.MeshStandardMaterial({ color: 0xff4d4d, roughness: .35 }), dark = new THREE.MeshStandardMaterial({ color: 0x24262e, roughness: .7 }), white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .4 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, .36, .9), red); body.position.y = .42; g.add(body);
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(.5, .24, .86), red); nose.position.set(.92, .5, 0); nose.rotation.z = -.35; g.add(nose);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(.14, .42, .7), dark); seat.position.set(-.86, .76, 0); g.add(seat);
-    const bar = new THREE.Mesh(new THREE.TorusGeometry(.5, .045, 8, 20, Math.PI), white); bar.position.set(-.25, .6, 0); g.add(bar);
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(.06, .12, .2), new THREE.MeshBasicMaterial({ color: 0xfff3b0 })); lamp.position.set(1.05, .5, .3); g.add(lamp);
-    const wheels = [];
-    for (const x of [-CL / 2, CL / 2]) for (const z of [.48, -.48]) {
-      const w = new THREE.Group(), tyre = new THREE.Mesh(new THREE.CylinderGeometry(WR, WR, .2, 20), dark); tyre.rotation.x = Math.PI / 2; w.add(tyre);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(WR * .5, WR * .5, .22, 10), new THREE.MeshStandardMaterial({ color: 0xffd84a, roughness: .3 })); hub.rotation.x = Math.PI / 2; w.add(hub);
-      const spoke = new THREE.Mesh(new THREE.BoxGeometry(WR * 1.6, .06, .23), white); w.add(spoke);
-      w.position.set(x, 0, z); g.add(w); wheels.push(w);
-    }
-    g.userData.wheels = wheels; return g;
+    const g = new THREE.Group();
+    if (!ctx.kart) return g;
+    const src = ctx.kart.scene.clone(true), inner = new THREE.Group(); inner.add(src); inner.rotation.y = Math.PI / 2; g.add(inner);
+    let seat = null; const wheels = [];
+    src.traverse(o => { if (/^character/.test(o.name)) { o.visible = false; seat = o; } if (/^wheel/.test(o.name)) wheels.push(o); });
+    // medidas del kart (en el archivo): ruedas de radio 0,21, ejes separados 0,684, eje a 0,21 de altura, piloto en (0, 0,277, -0,068)
+    const k = CL / .684, r0 = .21; inner.scale.setScalar(k);
+    inner.position.set(.018 * k, -.21 * k, 0);
+    g.userData.seat = new THREE.Vector3(-.12 * k, (.3 - .21) * k + .12, 0);
+    g.userData.wheels = wheels; g.userData.r = r0 * k;
+    return g;
   }
   function startDrive() {
     const P = (x, y) => ({ x, y, px: x, py: y });
-    G = { id: 'drive', score: 0, over: false, t: 0, fuel: 100, coins: 0, r: P(0, WR + .02), f: P(CL, WR + .02), gas: 0, chunks: [], chunkX: -20, items: [], nextCoin: 8, nextFuel: 90, stopT: 0, ground: false, best: 0, spin: 0 };
+    const car = makeCar(); if (car.userData.r) WR = car.userData.r;
+    G = { id: 'drive', score: 0, over: false, t: 0, fuel: 100, coins: 0, r: P(0, WR + .02), f: P(CL, WR + .02), gas: 0, chunks: [], chunkX: -20, items: [], nextCoin: 8, nextFuel: 70, stopT: 0, ground: false, best: 0, spin: 0 };
     ctx.setHouse(false);
     const c2 = document.createElement('canvas'); c2.width = 4; c2.height = 256; const x2 = c2.getContext('2d'), gr = x2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5fc8ff'); gr.addColorStop(.7, '#cdefff'); gr.addColorStop(1, '#fff6d8'); x2.fillStyle = gr; x2.fillRect(0, 0, 4, 256);
     const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace;
     G.sky = add(new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ map: tx, depthWrite: false }))); G.sky.position.z = -14;
     G.hills = [];
     for (let i = 0; i < 2; i++) { const h = new THREE.Mesh(new THREE.ConeGeometry(rnd(5, 8), rnd(4, 7), 5), new THREE.MeshBasicMaterial({ color: i ? 0x9fd88a : 0x7fc46a })); add(h); G.hills.push({ m: h, k: .3 + i * .2, off: i * 23 }); }
-    G.car = add(makeCar());
+    G.car = add(car);
     for (let i = 0; i < 3; i++) addChunk();
     $('#pedals').hidden = false;
     hud('0 m', 'Gasolina 100%'); msg('¡A conducir!');
@@ -412,16 +411,16 @@ export function createMini(ctx) {
       const x = g.nextFuel, m = new THREE.Group(), red = new THREE.MeshStandardMaterial({ color: 0xe8302e, roughness: .4 });
       m.add(new THREE.Mesh(new THREE.BoxGeometry(.4, .5, .25), red)); const cap = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .12, 10), new THREE.MeshStandardMaterial({ color: 0xffd84a })); cap.position.set(.12, .3, 0); m.add(cap);
       const lab = new THREE.Mesh(new THREE.BoxGeometry(.26, .14, .26), new THREE.MeshStandardMaterial({ color: 0xffffff })); m.add(lab);
-      m.position.set(x, hgt(x) + .45, 0); add(m); g.items.push({ m, x, kind: 'fuel' }); g.nextFuel += rnd(110, 170);
+      m.position.set(x, hgt(x) + .45, 0); add(m); g.items.push({ m, x, kind: 'fuel' }); g.nextFuel += rnd(95, 140);
     }
   }
   function wheelGround(p, dt, drive) {
     const gy = hgt(p.x), d = p.y - WR - gy;
     if (d > .02) return false;
     const sl = slope(p.x), nl = Math.hypot(1, sl), nx = -sl / nl, ny = 1 / nl, pen = -d;
+    let vx = p.x - p.px, vy = p.y - p.py;   // velocidad antes de corregir (la corrección no debe lanzar el coche)
     if (pen > 0) { p.x += nx * pen * Math.abs(ny); p.y += ny * pen; }
-    // quitar la velocidad que va hacia el suelo y aplicar tracción a lo largo de la cuesta
-    let vx = p.x - p.px, vy = p.y - p.py; const vn = vx * nx + vy * ny; if (vn < 0) { vx -= vn * nx * 1.3; vy -= vn * ny * 1.3; }
+    // quitar la velocidad que va hacia el suelo y aplicar tracción a lo largo de la cuesta const vn = vx * nx + vy * ny; if (vn < 0) { vx -= vn * nx * 1.3; vy -= vn * ny * 1.3; }
     const tx = ny, ty = -nx; let vt = vx * tx + vy * ty;
     vt += drive * dt * dt; vt *= .997; vt = clamp(vt, -5 * dt, 10.5 * dt);
     const vnn = vx * nx + vy * ny; vx = tx * vt + nx * vnn; vy = ty * vt + ny * vnn;
@@ -446,7 +445,7 @@ export function createMini(ctx) {
     const cx = (g.r.x + g.f.x) / 2, cy = (g.r.y + g.f.y) / 2, ang = Math.atan2(g.f.y - g.r.y, g.f.x - g.r.x);
     const vx = ((g.r.x - g.r.px) + (g.f.x - g.f.px)) / 2 / (dt / steps);
     if (!g.over) {
-      g.fuel = Math.max(0, g.fuel - dt * (wantGas ? 6.5 : 1.6));
+      g.fuel = Math.max(0, g.fuel - dt * (wantGas ? 3.6 : 1));
       g.score = Math.max(g.score, Math.floor(cx));
       // cabeza contra el suelo = vuelco
       const hx = cx - Math.sin(ang) * .95, hy = cy + Math.cos(ang) * .95;
@@ -469,11 +468,11 @@ export function createMini(ctx) {
     while (g.chunkX < cx + 60) addChunk();
     while (g.chunks.length && g.chunks[0].x1 < cx - 30) drop(g.chunks.shift().m);
     // coche, ruedas y gamba
-    g.car.position.set(cx, cy - WR, 0); g.car.rotation.z = ang;
-    g.spin -= (vx * (dt / steps) / WR) * steps; for (const w of g.car.userData.wheels) w.rotation.z = g.spin;
-    const sc = Math.min(.82, ctx.stage() * .85);
+    g.car.position.set(cx, cy, 0); g.car.rotation.z = ang;
+    g.spin -= (vx * (dt / steps) / WR) * steps; for (const w of g.car.userData.wheels) w.rotation.x = -g.spin;
+    const sc = Math.min(.95, ctx.stage() * .95);
     player.root.visible = true; player.root.scale.setScalar(sc);
-    _v.set(-.3, .58, 0).applyAxisAngle(V(0, 0, 1), ang).add(g.car.position); player.root.position.copy(_v);
+    _v.copy(g.car.userData.seat).applyAxisAngle(V(0, 0, 1), ang).add(g.car.position); player.root.position.copy(_v);
     player.root.quaternion.setFromEuler(new THREE.Euler(0, 0, ang)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)));
     player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(-.5 + Math.sin(T * 9) * (Math.abs(vx) > 1 ? .04 : 0), 0, 0); player.tilt.scale.set(1, 1, 1);
     player.pose(T * 3, 'idle', T, dt, 2);
