@@ -40,7 +40,9 @@
     <div id="points">500</div>
     <div id="gun"><div id="gunName">M1911</div><div id="ammo"><b id="mag">8</b><span>/</span><i id="res">80</i></div><div id="nades"></div></div>
   </div>
+  <div id="scope" hidden><i></i></div>
   <div id="downed" hidden><b>¡HAS CAÍDO!</b><span id="downTxt"></span></div>
+  <button id="viewBtn" class="tbtn small" aria-label="Cambiar vista"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
   <button id="pauseBtn" class="tbtn small" aria-label="Pausa"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
   <!-- controles táctiles -->
   <div id="touch">
@@ -63,6 +65,7 @@
   <div class="mcols">
     <div class="mleft">
       <button class="mbtn nav primary" id="playBtn">JUGAR</button>
+      <button class="mbtn nav" id="mapBtn">MAPA: <span id="mapName"></span></button>
       <button class="mbtn nav" id="charBtn">PERSONAJE</button>
       <button class="mbtn nav" id="ctrlBtn">CONTROLES</button>
       <button class="mbtn nav" id="setBtn">AJUSTES</button>
@@ -70,6 +73,12 @@
       <div class="padHint" id="padHint"></div>
     </div>
   </div>
+</div>
+
+<div id="maps" class="screen dim" hidden>
+  <div class="ptitle">MAPA</div>
+  <div class="mapRow" id="mapRow"></div>
+  <button class="mbtn nav back" data-back id="mapsBack">VOLVER</button>
 </div>
 
 <div id="chars" class="screen dim" hidden>
@@ -88,6 +97,7 @@
   <div class="ptitle">AJUSTES</div>
   <div class="setList">
     <label class="setRow nav" tabindex="-1"><span>Sensibilidad</span><input type="range" id="optSens" min="0.3" max="2.5" step="0.1"><b id="optSensV"></b></label>
+    <button class="setRow nav" id="optView"><span>Vista</span><b></b></button>
     <button class="setRow nav" id="optInv"><span>Invertir eje vertical</span><b></b></button>
     <button class="setRow nav" id="optAssist"><span>Ayuda al apuntar</span><b></b></button>
     <button class="setRow nav" id="optSfx"><span>Efectos de sonido</span><b></b></button>

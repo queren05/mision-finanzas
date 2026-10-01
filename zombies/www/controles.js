@@ -48,7 +48,7 @@ export function key(action) {
 
 /* ---------- teclado y ratón ---------- */
 const keys = new Set(); let mouseDX = 0, mouseDY = 0, mouseL = false, mouseR = false; const kbPress = new Set();
-const KEYMAP = { KeyR: 'reload', KeyQ: 'swap', Digit1: 'swap', Digit2: 'swap', KeyF: 'use', KeyE: 'use', KeyV: 'knife', KeyG: 'nade', Space: 'jump', Escape: 'pause', KeyP: 'pause' };
+const KEYMAP = { KeyR: 'reload', KeyQ: 'swap', Digit1: 'swap', Digit2: 'swap', KeyF: 'use', KeyE: 'use', KeyV: 'knife', KeyG: 'nade', KeyC: 'view', Space: 'jump', Escape: 'pause', KeyP: 'pause' };
 addEventListener('keydown', e => { if (e.repeat) return; keys.add(e.code); setDevice('kb'); const a = KEYMAP[e.code]; if (a) kbPress.add(a); if (menuActive()) menuKey(e); });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('mousemove', e => { if (document.pointerLockElement) { mouseDX += e.movementX; mouseDY += e.movementY; } });
@@ -127,6 +127,7 @@ export function poll(dt, inGame) {
       if (edge(B.RB) || edge(B.LB)) I.pressed.add('nade');
       if (edge(B.A)) I.pressed.add('jump');
       if (edge(B.START) || edge(B.BACK)) I.pressed.add('pause');
+      if (edge(B.UP) && !menuActive()) I.pressed.add('view');
       if (menuActive()) menuPad(g, btn, edge, my, mx);
     }
     prevPad = g.buttons.map((_, i) => btn(i));

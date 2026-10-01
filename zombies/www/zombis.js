@@ -5,10 +5,11 @@ import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR } from './mapa
 export const ZH = 1.3;                // altura de un zombi (un poco más que la gamba de pie)
 const R = .3;                         // radio de colisión
 /* ---------- campo de flujo hacia el jugador ---------- */
-export const dist = new Int16Array(GW * GH);
+export let dist = new Int16Array(1);
 let lastCell = -1;
 const N8 = [[1, 0, 10], [-1, 0, 10], [0, 1, 10], [0, -1, 10], [1, 1, 14], [1, -1, 14], [-1, 1, 14], [-1, -1, 14]];
 export function flow(px, pz, force = false) {
+  if (dist.length !== GW * GH) { dist = new Int16Array(GW * GH); lastCell = -1; }
   const cx = Math.floor(px), cz = Math.floor(pz), c = idx(cx, cz);
   if (c === lastCell && !force) return; lastCell = c;
   dist.fill(32000); if (!walkable(cx, cz)) return;
@@ -180,7 +181,6 @@ export function separate(zs) {
   }
 }
 // casillas del cementerio donde salen de la tierra
-export const GROUND_SPAWNS = [[16.5, 15.5], [21.5, 14.5], [20.5, 19.5], [15.5, 20.5]];
 // número de zombis y vida por ronda (parecido al Black Ops en solitario)
 export function roundCount(r) { return r <= 5 ? [6, 8, 13, 18, 24][r - 1] : Math.floor(24 + (r - 5) * 3.2 + Math.max(0, r - 15) * 2); }
 export function roundHp(r) { return r < 10 ? 150 + 100 * (r - 1) : Math.floor(950 * Math.pow(1.1, r - 9)); }
