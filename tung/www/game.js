@@ -196,6 +196,7 @@ async function boot() {
   resize();
   A = await M.loadAll({
     gamba: 'models/gamba.glb', chaqueta: 'models/gamba_chaqueta.glb', hood: 'models/gorro_tiburon.glb', tung: 'models/tung.glb',
+    ...Object.fromEntries(['rock_largeA', 'rock_largeB', 'rock_largeD', 'rock_largeC', 'stump_old', 'log_stack', 'stump_round', 'plant_bushLarge', 'plant_bushDetailed', 'plant_bush', 'flower_redA', 'flower_yellowA', 'flower_purpleA', 'mushroom_redGroup', 'sedan', 'taxi', 'police', 'suv', 'van', 'hatchback-sports', 'truck', 'cone'].map(n => ['k_' + n, 'models/kenney/' + n + '.glb'])),
     tronco: 'models/tronco.glb', monedas: 'models/monedas.glb', arbA: 'models/arboles_a.glb', arbB: 'models/arboles_b.glb', arbC: 'models/arboles_c.glb', ciudad: 'models/ciudad.glb',
   }, p => { $('#loadBar').style.width = Math.round(p * 100) + '%'; });
   $('#loadTxt').textContent = 'Preparando la selva…';
@@ -243,13 +244,20 @@ function buildProps() {
     ...treeProtos(A.arbB, 'RootNode', () => true, [4, 6.5]).filter((_, i) => i % 3 === 0).slice(0, 5),
   ];
   P.toon = treeProtos(A.arbC, 'RootNode', n => /^(Tree|FirTree)/.test(n), [3.5, 5.5]).filter((_, i) => i % 3 === 0).slice(0, 4);
-  P.stumps = treeProtos(A.arbC, 'RootNode', n => /^Log/.test(n), [.6, .8]);
-  P.rocks = [0, 1, 2].map(() => M.bake(M.rock(1)));
-  P.cars = [0, 1, 2, 3, 4, 5].map(i => M.bake(M.car(undefined, false)));
-  P.bus = M.bake(M.car(0x2f7cff, true));
+  // modelos de Kenney (Nature Kit y Car Kit, CC0) normalizados a su tamaño en el juego
+  // la paleta del Nature Kit (turquesa y naranja) se pasa a colores de selva para que pegue con los árboles
+  const RECOLOR = { grass: 0x4f9a3a, dirt: 0x8d8579, woodBark: 0x7a5232, woodInner: 0xc9a06a };
+  const K = (n, size, axis = 'x') => { const o = A['k_' + n].scene.clone(true); o.traverse(m => { if (m.isMesh && RECOLOR[m.material.name] !== undefined) { m.material = m.material.clone(); m.material.color.setHex(RECOLOR[m.material.name]); } }); return M.bake(M.normalize(o, axis === 'y' ? { height: size } : { length: size, axis })); };
+  P.rocks = ['rock_largeA', 'rock_largeB', 'rock_largeD'].map(n => K(n, 1.25));
+  P.edgeRocks = ['rock_largeC', 'rock_largeA', 'rock_largeB'].map(n => K(n, 1.1));
+  P.stumps = [K('stump_old', 1.1), K('log_stack', 1.2), K('stump_round', 1.0)];
+  P.bushes = ['plant_bushLarge', 'plant_bushDetailed', 'plant_bush'].map(n => K(n, rnd(.8, 1.1), 'y'));
+  P.flowers = ['flower_redA', 'flower_yellowA', 'flower_purpleA', 'mushroom_redGroup'].map(n => K(n, n.startsWith('mush') ? .45 : .4, 'y'));
+  P.cars = ['sedan', 'taxi', 'police', 'suv', 'van', 'hatchback-sports'].map(n => K(n, 2.45, 'z'));
+  P.bus = K('truck', 3.3, 'z');
   P.barrier3 = M.bake(M.barrier(4.0)); P.barrier1 = M.bake(M.barrier(1.2));
   P.over3 = M.bake(M.overhead(3.9, .74));
-  P.cone = M.bake(M.cone());
+  P.cone = K('cone', .55, 'y');
   // barra alta de la selva: tronco sobre dos postes con lianas
   const bar = new THREE.Group(); const beam = P.log(4.8, .42); beam.position.y = .74; bar.add(beam);
   for (const s of [-1, 1]) { const post = P.log(1.2, .34); post.rotation.z = Math.PI / 2; post.position.set(s * 2.35, .6, 0); bar.add(post); }
@@ -316,10 +324,10 @@ function buildSelva() {
   // bordillos de piedra, árboles, arbustos, flores
   const side = () => Math.random() < .5 ? -1 : 1;
   E.scatters = [
-    new Scatter(P.rocks.map(r => { const g = r.clone(); g.scale.setScalar(.45); return g; }), 70, (it) => { it.x = side() * rnd(2.55, 2.9); it.ry = rnd(0, 6); it.s = rnd(.6, 1.2); }),
+    new Scatter(P.edgeRocks.map(r => { const g = r.clone(); g.scale.multiplyScalar(.45); return g; }), 70, (it) => { it.x = side() * rnd(2.55, 2.9); it.ry = rnd(0, 6); it.s = rnd(.6, 1.2); }),
     new Scatter([...P.trees, ...P.toon], 110, (it) => { it.x = side() * rnd(3.6, 22); it.ry = rnd(0, 6); it.s = rnd(.8, 1.35); }),
-    new Scatter([0, 1, 2].map(i => M.bush([0x3f8f3a, 0x2f7a33, 0x5aa03a][i])), 60, (it) => { it.x = side() * rnd(3, 9); it.ry = rnd(0, 6); it.s = rnd(.7, 1.4); }),
-    new Scatter([0, 1, 2].map(() => M.flower()), 90, (it) => { it.x = side() * rnd(2.9, 8); it.ry = rnd(0, 6); it.s = rnd(.8, 1.5); }),
+    new Scatter(P.bushes, 60, (it) => { it.x = side() * rnd(3, 9); it.ry = rnd(0, 6); it.s = rnd(.7, 1.4); }),
+    new Scatter(P.flowers, 90, (it) => { it.x = side() * rnd(2.9, 8); it.ry = rnd(0, 6); it.s = rnd(.8, 1.5); }),
   ];
   E.scatters.forEach((s, i) => { if (!Q.has('solo') || +Q.get('solo') === i) E.group.add(s.group); });
   // montañas al fondo
@@ -336,7 +344,7 @@ function buildSelva() {
     jump3: () => ({ mesh: P.log(4.6, .58), dz: .35 }),
     jump1: () => ({ mesh: P.log(1.3, .5), dz: .3 }),
     slide3: () => ({ mesh: P.jungleBar.clone(), dz: .25 }),
-    block: () => { const r = Math.random(); if (r < .65) { const g = P.rocks[Math.floor(rnd(0, P.rocks.length))].clone(); g.scale.set(1.05, rnd(1.1, 1.5), 1); g.rotation.y = rnd(0, 6); return { mesh: g, dz: .55 }; } const s = P.stumps.length ? P.stumps[Math.floor(rnd(0, P.stumps.length))].clone() : P.rocks[0].clone(); s.scale.multiplyScalar(1.6); return { mesh: s, dz: .5 }; },
+    block: () => { const r = Math.random(); if (r < .65) { const g = P.rocks[Math.floor(rnd(0, P.rocks.length))].clone(); g.scale.multiplyScalar(rnd(1, 1.25)); g.rotation.y = rnd(0, 6); return { mesh: g, dz: .55 }; } const s = P.stumps[Math.floor(rnd(0, P.stumps.length))].clone(); s.rotation.y = rnd(-.3, .3); return { mesh: s, dz: .5 }; },
   };
   scene.add(E.group); far.add(E.far);
   return E;
@@ -378,7 +386,7 @@ function buildCiudad() {
     jump3: () => ({ mesh: P.barrier3.clone(), dz: .3 }),
     jump1: () => Math.random() < .5 ? { mesh: P.barrier1.clone(), dz: .3 } : { mesh: (() => { const g = new THREE.Group(); for (const x of [-.35, 0, .35]) { const c = P.cone.clone(); c.position.x = x; g.add(c); } return g; })(), dz: .25 },
     slide3: () => ({ mesh: P.over3.clone(), dz: .2 }),
-    block: (moving) => { if (!moving && Math.random() < .12) { const b = P.bus.clone(); return { mesh: b, dz: 2.6 }; } const c = P.cars[Math.floor(rnd(0, P.cars.length))].clone(); if (!moving) c.rotation.y = Math.PI; return { mesh: c, dz: 1.25 }; },
+    block: (moving) => { if (!moving && Math.random() < .12) { const b = P.bus.clone(); b.rotation.y = Math.PI; return { mesh: b, dz: 1.7 }; } const c = P.cars[Math.floor(rnd(0, P.cars.length))].clone(); if (!moving) c.rotation.y = Math.PI; return { mesh: c, dz: 1.25 }; },
   };
   scene.add(E.group); far.add(E.far);
   return E;
