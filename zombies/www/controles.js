@@ -175,7 +175,7 @@ function move(dir) {
 }
 function activate() { const c = cur(); if (c) { c.click(); } }
 function back() { const b = menuRoot.querySelector('[data-back]'); if (b && b.offsetParent !== null) b.click(); }
-function slide(d) { const c = cur(); if (c && c.type === 'range') { c.value = +c.value + d * (+c.step || 1); c.dispatchEvent(new Event('input', { bubbles: true })); return true; } return false; }
+function slide(d) { let c = cur(); if (c && c.type !== 'range') c = c.querySelector('input[type=range]'); if (c && c.type === 'range') { c.value = +c.value + d * (+c.step || 1); c.dispatchEvent(new Event('input', { bubbles: true })); return true; } return false; }
 let navSound = null; export const setNavSound = f => navSound = f;
 function menuPad(g, btn, edge, my, mx) {
   const dir = btn(B.UP) || my < -.5 ? 'up' : btn(B.DOWN) || my > .5 ? 'down' : btn(B.LEFT) || mx < -.5 ? 'left' : btn(B.RIGHT) || mx > .5 ? 'right' : '';

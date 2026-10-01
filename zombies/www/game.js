@@ -979,6 +979,8 @@ async function testShot() {
   for (let i = 0; i < steps; i++) {
     I.pressed.clear(); I.held.clear(); I.lx = I.ly = 0; I.mx = Q.has('mx') ? +Q.get('mx') : 0; I.my = Q.has('my') ? +Q.get('my') : 0; I.fire = Q.has('fire'); I.aim = Q.has('ads'); I.sprint = false;
     if (Q.has('use') && i === 2) I.pressed.add('use');
+    if (Q.has('nade') && i % 90 === 45) I.pressed.add('nade');
+    if (Q.has('knife') && i % 20 === 10) I.pressed.add('knife');
     if (Q.has('bot') && G.state === 'play') {   // piloto automático: apunta al zombi más cercano que se vea y dispara
       updCamera(0); let best = null; for (const a of aimTargets()) if (!best || a.d < best.d) best = a;
       if (best) { P.yaw = Math.atan2(-best.dir.x, -best.dir.z); P.pitch = Math.asin(best.dir.y) + .02; I.fire = i % 2 === 0; }
