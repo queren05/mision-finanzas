@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.shrimphill",
+  "appName": "Shrimp Hill Climb",
+  "webDir": "www",
+  "backgroundColor": "#5fc8ff",
+  "ios": { "contentInset": "never", "backgroundColor": "#5fc8ff", "scrollEnabled": false }
+}

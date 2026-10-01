@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas,img{display:block;position:fixed;left:0;top:0}</style></head><body>
+<!-- Icono: sirve la carpeta hill/ con un servidor web, abre icon.html en un navegador con WebGL y guarda el render de 1024 px como resources/icon.png -->
+<img src="/slow?s=12" style="width:1px;height:1px" onerror="this.remove()">
+<script type="module">
+import * as THREE from './www/lib/three.module.min.js';
+import * as M from './www/modelos.js';
+const S = 1024, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(S, S); document.body.appendChild(r.domElement);
+const sc = new THREE.Scene();
+sc.background = M.canvasTex(4, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3fa8ff'); g.addColorStop(.7, '#bfe8ff'); g.addColorStop(1, '#fff6d8'); x.fillStyle = g; x.fillRect(0, 0, w, h); }, false);
+sc.add(new THREE.HemisphereLight(0xffffff, 0x887766, 1.9)); const sun = new THREE.DirectionalLight(0xfff2dc, 2.2); sun.position.set(-3, 6, 8); sc.add(sun);
+const hgt = x => 1.2 * Math.sin(x * .35 - .3) + .4 * Math.sin(x * .9);
+const pos = [], cl = [], idx = [], n = 120, grass = new THREE.Color(0x5fbf4a), dirt = new THREE.Color(0xa86d3e);
+for (let i = 0; i <= n; i++) { const x = -8 + i * 16 / n, y = hgt(x); pos.push(x, y, 1, x, y - .3, 1, x, y - 10, 1, x, y, -1); cl.push(grass.r, grass.g, grass.b, dirt.r, dirt.g, dirt.b, .42, .27, .15, grass.r, grass.g, grass.b); if (i < n) { const a = i * 4, b = a + 4; idx.push(a, b + 1, b, a, a + 1, b + 1, a + 1, b + 2, b + 1, a + 1, a + 2, b + 2, a + 3, b + 3, b, a + 3, b, a); } }
+const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(cl, 3)); g.setIndex(idx); g.computeVertexNormals();
+sc.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, side: THREE.DoubleSide })));
+for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.ConeGeometry(4, 6, 6), new THREE.MeshBasicMaterial({ color: i % 2 ? 0x8fd07a : 0x7fc46a })); m.position.set(-6 + i * 6, 1, -8); sc.add(m); }
+const A = await M.loadAll({ gamba: './www/models/char/gamba.glb', hood: './www/models/char/gorro_tiburon.glb', kart: './www/models/car/kart.glb' }, () => { });
+const k = 1.5 / .684, inner = new THREE.Group(), src = A.kart.scene; src.traverse(o => { if (/^character/.test(o.name)) o.visible = false; }); inner.add(src); inner.rotation.y = Math.PI / 2; inner.scale.setScalar(k); inner.position.set(.018 * k, -.21 * k, 0);
+const car = new THREE.Group(); car.add(inner); const cx = 0, a = Math.atan((hgt(cx + .1) - hgt(cx - .1)) / .2); car.position.set(cx, hgt(cx) + .46, 0); car.rotation.z = a + .12; sc.add(car);
+const p = new M.Shrimp(A); await p.use('gamba'); for (let i = 0; i < 3; i++) p.pose(1.2, 'idle', 1.4 + i * .3, .3);
+p.root.scale.setScalar(1.05); car.add(p.root); p.root.position.set(-.12 * k, .09 * k + .12, 0); p.root.rotation.set(0, -Math.PI / 2, 0); p.tilt.rotation.x = -.45;
+const cam = new THREE.PerspectiveCamera(32, 1, .1, 100); cam.position.set(.3, 1.9, 9.5); cam.lookAt(.1, 1.1, 0);
+r.render(sc, cam); const im = new Image(); im.src = r.domElement.toDataURL('image/png'); document.body.appendChild(im); document.title = 'LISTO';
+</script></body></html>

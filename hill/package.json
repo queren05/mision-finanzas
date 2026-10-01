@@ -1,0 +1,8 @@
+{
+  "name": "shrimphill-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Conduce cuesta arriba por el campo y la Luna con tu gamba al volante",
+  "dependencies": { "@capacitor/core": "^7.0.0", "@capacitor/ios": "^7.0.0", "@capacitor/haptics": "^7.0.0" },
+  "devDependencies": { "@capacitor/cli": "^7.0.0" }
+}
