@@ -41,3 +41,18 @@ html,body{background:#5fc8ff}
 .bonus{position:fixed;left:0;right:0;top:30%;text-align:center;font-size:34px;font-weight:700;color:#ffe07a;-webkit-text-stroke:1.5px #5a1a00;text-shadow:0 4px 0 #5a1a00;pointer-events:none;z-index:9;opacity:0}
 .bonus.on{animation:bon 1.2s ease-out}
 @keyframes bon{0%{opacity:0;transform:scale(.6)}20%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:translateY(-30px)}}
+
+.cnt{font-style:normal;font-size:13px;opacity:.65;font-weight:600}
+.stMeta{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.stMeta span{font-size:12px;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.12)}
+.garUps .lvd{gap:1.5px}.garUps .lvd i{width:5px}
+#misList{display:flex;flex-direction:column;gap:8px}
+.mis{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.08)}
+.mis>div{flex:1;display:flex;flex-direction:column;gap:5px}.mis b{font-size:14px}
+.mis .sb{height:8px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}.mis .sb i{display:block;height:100%;background:linear-gradient(90deg,#ffd84a,#5fe37a)}
+.mis em{font-style:normal;font-weight:700;color:#ffe07a;display:flex;align-items:center;gap:4px}.mis em .coin{width:15px;height:15px}
+.misFoot{text-align:center;font-size:12px;opacity:.7}
+.misDone{font-size:14px;font-weight:600;color:#7cf0a0;margin-top:4px}.misDone b{color:#ffe07a}
+#over .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#hCp{color:#bff5c8}
+.bonus.cp{color:#9cffb0;-webkit-text-stroke-color:#0a4a1a;text-shadow:0 4px 0 #0a4a1a}

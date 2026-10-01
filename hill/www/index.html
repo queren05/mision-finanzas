@@ -22,17 +22,19 @@
   <div class="topRow"><div class="glass pill"><span class="coin"></span><b id="mCoins">0</b></div><span class="sp"></span><button class="glass round" id="giftBtn" aria-label="Regalo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8h14v-8M12 8C10 3 6 4.500 8 8M12 8c2-5 6-3.500 4 0"/></svg><i class="dot" id="giftDot"></i></button><button class="glass round" id="setBtn" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.900 4.900l2.100 2.100M17 17l2.100 2.100M4.900 19.100 7 17M17 7l2.100-2.100"/></svg></button></div>
   <div class="logo mlogo"><span>SHRIMP</span><b>HILL</b><small>CLIMB</small></div>
   <div class="sp"></div>
-  <div class="tabs2"><button class="tab2 on" data-p="stage">Escenario</button><button class="tab2" data-p="car">Garaje</button></div>
+  <div class="tabs2"><button class="tab2 on" data-p="stage">Escenario</button><button class="tab2" data-p="car">Garaje</button><button class="tab2" data-p="mis">Misiones</button></div>
   <div class="glass panel2" id="pStage">
-    <div class="stRow"><button class="glass round" id="stPrev">‹</button><div class="stName"><b id="stName"></b><small id="stInfo"></small></div><button class="glass round" id="stNext">›</button></div>
+    <div class="stRow"><button class="glass round" id="stPrev">‹</button><div class="stName"><b><span id="stName"></span> <i class="cnt" id="stCount"></i></b><small id="stInfo"></small></div><button class="glass round" id="stNext">›</button></div>
+    <div class="stMeta" id="stMeta"></div>
     <button class="btn sec" id="stBuy" hidden></button>
   </div>
   <div class="glass panel2" id="pCar" hidden>
-    <div class="stRow"><button class="glass round" id="carPrev">‹</button><div class="stName"><b id="carName"></b><small id="carDesc"></small></div><button class="glass round" id="carNext">›</button></div>
+    <div class="stRow"><button class="glass round" id="carPrev">‹</button><div class="stName"><b><span id="carName"></span> <i class="cnt" id="carCount"></i></b><small id="carDesc"></small></div><button class="glass round" id="carNext">›</button></div>
     <div class="garStats" id="carStats"></div>
     <div class="garUps" id="carUps"></div>
     <button class="btn sec" id="carBuy" hidden></button>
   </div>
+  <div class="glass panel2" id="pMis" hidden><div id="misList"></div></div>
   <button class="btn play" id="playBtn">¡A CONDUCIR!</button>
 </div>
 
@@ -40,6 +42,7 @@
 <div id="hud" hidden>
   <div class="glass pill"><b id="hDist">0 m</b></div>
   <div class="glass pill sm" id="hBest">Récord 0 m</div>
+  <div class="glass pill sm" id="hCp"></div>
   <span class="sp"></span>
   <div class="glass pill"><span class="coin"></span><b id="hCoins">0</b></div>
   <button class="glass round" id="pauseBtn" aria-label="Pausa"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
@@ -52,7 +55,7 @@
 <div id="over" class="screen dim" hidden>
   <div class="logo small"><span id="oWhy">¡FIN!</span></div>
   <div class="glass card"><div class="newRec" id="oRec" hidden>¡NUEVO RÉCORD!</div><small class="muted">DISTANCIA</small><div class="big" id="oDist">0 m</div>
-    <div class="stats"><div><small>Monedas</small><b id="oCoins">0</b></div><div><small>Récord</small><b id="oBest">0 m</b></div></div></div>
+    <div class="stats"><div><small>Monedas</small><b id="oCoins">0</b></div><div><small>Récord</small><b id="oBest">0 m</b></div><div><small>Volteretas</small><b id="oFlips">0</b></div><div><small>Mejor salto</small><b id="oAir">0 s</b></div></div><div id="oMis"></div></div>
   <button class="btn" id="again">OTRA VEZ</button>
   <button class="btn sec" id="overMenu">Garaje</button>
 </div>
