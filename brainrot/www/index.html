@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Brainrot Battle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a1446">
+<link rel="preload" href="fonts/Fredoka.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/LuckiestGuy-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="brainrot.css">
+</head>
+<body>
+<canvas id="cv"></canvas>
+<img id="shotImg" alt="">
+
+<div id="loading" class="screen solid">
+  <div class="blogo"><span>BRAINROT</span><b>BATTLE</b></div>
+  <div class="bar"><i id="loadBar"></i></div>
+</div>
+
+<!-- ======== menú ======== -->
+<div id="menu" class="screen clear" hidden>
+  <div class="topRow"><div class="glass pill"><span class="coin"></span><b id="mCoins">0</b></div><span class="sp"></span><button class="glass round" id="setBtn" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.900 4.900l2.100 2.100M17 17l2.100 2.100M4.900 19.100 7 17M17 7l2.100-2.100"/></svg></button></div>
+  <div class="blogo small"><span>BRAINROT</span><b>BATTLE</b></div>
+  <div class="sp"></div>
+  <div class="stageCard glass"><small id="mWorld">Playa de Tralala</small><b id="mStage">Nivel 1</b><div class="stars" id="mStars"></div></div>
+  <button class="btn play" id="playBtn">¡A LUCHAR!</button>
+  <div class="menuRow">
+    <button class="glass tileB" id="colBtn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="9" rx="2"/><rect x="14" y="4" width="7" height="9" rx="2"/><rect x="8.500" y="11" width="7" height="9" rx="2"/></svg><span>Personajes</span><i class="dot" id="colDot"></i></button>
+    <button class="glass tileB" id="boxBtn"><svg viewBox="0 0 24 24"><path d="M3 9h18v11H3zM2 6h20v3H2zM12 6v14" /><path d="M12 6c-2-4-6-3-4 0M12 6c2-4 6-3 4 0" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Cajas</span><i class="dot" id="boxDot"></i></button>
+  </div>
+</div>
+
+<!-- ======== combate ======== -->
+<div id="hud" hidden>
+  <div id="bars"></div>
+  <div class="bTop"><div class="glass pill sm" id="bStage">Nivel 1</div><span class="sp"></span><button class="glass pill sm" id="speedBtn">x1</button><button class="glass pill sm" id="autoBtn">AUTO</button><button class="glass round" id="quitBtn" aria-label="Salir"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" fill="none"/></svg></button></div>
+  <div id="turnTxt"></div>
+  <div id="actions" hidden>
+    <button class="act atk" id="actAtk"><b>ATACAR</b><small id="atkSub">+25 de energía</small></button>
+    <button class="act spc" id="actSpc"><b id="spcName">ESPECIAL</b><small id="spcSub"></small></button>
+  </div>
+  <div id="pickTxt" hidden>Toca a un enemigo</div>
+  <div id="bigTxt"></div>
+</div>
+
+<!-- ======== resultado ======== -->
+<div id="result" class="screen dim" hidden>
+  <div class="resT" id="resT">¡VICTORIA!</div>
+  <div class="stars big" id="resStars"></div>
+  <div class="glass card"><div class="rewards" id="resRew"></div></div>
+  <button class="btn" id="resNext">SIGUIENTE</button>
+  <button class="btn sec" id="resMenu">Menú</button>
+</div>
+
+<!-- ======== personajes ======== -->
+<div id="col" class="panel" hidden>
+  <div class="pHead"><button class="glass round" id="colClose" aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></svg></button><b>Personajes</b><span class="sp"></span><div class="glass pill"><span class="coin"></span><b id="cCoins">0</b></div></div>
+  <div class="teamRow" id="teamRow"></div>
+  <div class="hintTxt">Toca un personaje para verlo, mejorarlo o meterlo en tu equipo</div>
+  <div class="cgrid" id="cgrid"></div>
+</div>
+<div id="det" class="screen dim" hidden>
+  <div class="glass card det">
+    <img id="dImg" alt="">
+    <div class="dName" id="dName"></div>
+    <div class="dRar" id="dRar"></div>
+    <div class="dStats" id="dStats"></div>
+    <div class="dSpc" id="dSpc"></div>
+    <div class="dCards"><span class="cbar"><i id="dBar"></i></span><small id="dCardsTxt"></small></div>
+    <div class="row2"><button class="btn sec" id="dTeam">Al equipo</button><button class="btn" id="dUp">Mejorar</button></div>
+    <button class="btn sec" id="dClose">Cerrar</button>
+  </div>
+</div>
+
+<!-- ======== cajas ======== -->
+<div id="boxes" class="panel" hidden>
+  <div class="pHead"><button class="glass round" id="boxClose" aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></svg></button><b>Cajas sorpresa</b><span class="sp"></span><div class="glass pill"><span class="coin"></span><b id="xCoins">0</b></div></div>
+  <div class="blist" id="blist"></div>
+</div>
+<div id="open" class="screen dim" hidden>
+  <div class="openBox" id="openBox"></div>
+  <div class="openCards" id="openCards"></div>
+  <button class="btn" id="openOk" hidden>¡GENIAL!</button>
+</div>
+
+<div id="settings" class="screen dim" hidden>
+  <div class="glass card wide">
+    <div class="cardTitle">Ajustes</div>
+    <label class="row"><span>Efectos de sonido</span><input type="checkbox" id="optSfx"><i class="sw"></i></label>
+    <label class="row"><span>Música</span><input type="checkbox" id="optMusic"><i class="sw"></i></label>
+    <label class="row"><span>Vibración</span><input type="checkbox" id="optHaptic"><i class="sw"></i></label>
+    <div class="credits">Personajes inspirados en los «italian brainrot». Tung Tung Tung Sahur: modelo de Sketchfab. Gamba: «Chumbud Shrimp» (Sketchfab).</div>
+    <button class="btn" id="setClose">Listo</button>
+  </div>
+</div>
+<div id="toast"></div>
+<script type="module" src="game.js"></script>
+</body>
+</html>

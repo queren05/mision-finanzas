@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.brainrotbattle",
+  "appName": "Brainrot Battle",
+  "webDir": "www",
+  "backgroundColor": "#2a1446",
+  "ios": { "contentInset": "never", "backgroundColor": "#2a1446", "scrollEnabled": false }
+}

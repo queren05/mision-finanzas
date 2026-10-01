@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas,img{display:block;position:fixed;left:0;top:0}</style></head><body>
+<!-- Icono: sirve la carpeta brainrot/ con un servidor web, abre icon.html en un navegador con WebGL y guarda el render de 1024 px como resources/icon.png -->
+<img src="/slow?s=12" style="width:1px;height:1px" onerror="this.remove()">
+<script type="module">
+import * as THREE from './www/lib/three.module.min.js';
+import { GLTFLoader } from './www/lib/GLTFLoader.js';
+import * as M from './www/modelos.js';
+import { BUILD } from './www/personajes.js';
+const S = 1024, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(S, S); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+const sc = new THREE.Scene();
+const c = document.createElement('canvas'); c.width = 256; c.height = 256; const x = c.getContext('2d'); const g = x.createRadialGradient(128, 110, 10, 128, 128, 190); g.addColorStop(0, '#ff9ad8'); g.addColorStop(.5, '#9a3ad8'); g.addColorStop(1, '#2a0a50'); x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+for (let i = 0; i < 16; i++) { x.fillStyle = 'rgba(255,230,120,.12)'; x.beginPath(); x.moveTo(128, 128); const a = i / 16 * Math.PI * 2; x.arc(128, 128, 200, a, a + .18); x.fill(); }
+const bg = new THREE.CanvasTexture(c); bg.colorSpace = THREE.SRGBColorSpace; sc.background = bg;
+sc.add(new THREE.HemisphereLight(0xffffff, 0x6a3a8a, 2)); const d = new THREE.DirectionalLight(0xffffff, 2.4); d.position.set(2, 4, 5); sc.add(d);
+const tung = await new Promise(ok => new GLTFLoader().load('./www/models/tung.glb', ok));
+const t = new M.Tung(tung); t.root.scale.setScalar(.95); t.root.position.set(0, -1.2, .3); t.root.rotation.y = -.25; t.pose(0, 'hit', 0, .3); t.pose(0, 'hit', 0, .3); sc.add(t.root);
+const tr = BUILD.trala(); tr.position.set(-1.3, -1.2, -.4); tr.rotation.y = .7; tr.scale.setScalar(1.1); sc.add(tr);
+const cr = BUILD.croco(); cr.position.set(1.25, -.3, -.8); cr.rotation.set(.15, -.8, .1); sc.add(cr);
+const cam = new THREE.PerspectiveCamera(34, 1, .1, 50); cam.position.set(0, .6, 6); cam.lookAt(0, -.1, 0);
+r.render(sc, cam); const im = new Image(); im.src = r.domElement.toDataURL(); document.body.appendChild(im); document.title = 'LISTO';
+</script></body></html>

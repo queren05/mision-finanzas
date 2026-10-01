@@ -1,0 +1,8 @@
+{
+  "name": "brainrotbattle-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Colecciona personajes italian brainrot, mejóralos y lucha 3 contra 3 por turnos.",
+  "dependencies": { "@capacitor/core": "^7.0.0", "@capacitor/ios": "^7.0.0", "@capacitor/haptics": "^7.0.0" },
+  "devDependencies": { "@capacitor/cli": "^7.0.0" }
+}
