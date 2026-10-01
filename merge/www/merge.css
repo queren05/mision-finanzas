@@ -1,0 +1,18 @@
+/* Shrimp Merge (se suma a estilo.css) */
+html,body{background:#1a4f8a}
+.glass{background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.06))}
+.logo span{background:linear-gradient(180deg,#fff,#ffd9c0 45%,#ff8a5c 60%,#e2563a);-webkit-background-clip:text;background-clip:text}
+#top{position:fixed;left:12px;right:12px;top:calc(var(--safeT) + 10px);display:flex;align-items:center;gap:8px;z-index:5}
+.scoreBox{border-radius:16px;padding:5px 12px 7px;display:flex;flex-direction:column;align-items:flex-start;min-width:76px}
+.scoreBox small,.nextBox small{font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.scoreBox b{font-size:22px;line-height:1.1}
+.nextBox{border-radius:16px;padding:4px 8px;display:flex;flex-direction:column;align-items:center}
+.nextBox canvas{width:44px;height:44px}
+.chain{position:fixed;left:10px;right:10px;bottom:calc(var(--safeB) + 10px);z-index:5;border-radius:20px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:2px}
+.chain canvas{width:100%;max-width:30px;aspect-ratio:1}
+.chain i{font-style:normal;opacity:.6;font-size:10px}
+.helpTxt{max-width:320px;text-align:center;line-height:1.45;font-size:15px}
+.tog{width:220px;border-radius:16px;padding:10px 14px}
+.bonus{position:fixed;left:0;right:0;top:24%;text-align:center;font-size:32px;font-weight:700;color:#ffe07a;-webkit-text-stroke:1.5px #5a1a00;text-shadow:0 4px 0 #5a1a00;pointer-events:none;z-index:9;opacity:0}
+.bonus.on{animation:bon 1.4s ease-out}
+@keyframes bon{0%{opacity:0;transform:scale(.6)}20%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:translateY(-30px)}}

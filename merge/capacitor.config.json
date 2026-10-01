@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.shrimpmerge",
+  "appName": "Shrimp Merge",
+  "webDir": "www",
+  "backgroundColor": "#1a4f8a",
+  "ios": { "contentInset": "never", "backgroundColor": "#1a4f8a", "scrollEnabled": false }
+}
