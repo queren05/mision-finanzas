@@ -1,0 +1,17 @@
+/* Shrimp Road (se suma a estilo.css) */
+html,body{background:#7fc8ff}
+.screen.clear{background:none;justify-content:flex-start;padding-top:calc(var(--safeT) + 70px)}
+.screen.solid{background:radial-gradient(90% 70% at 50% 30%,#8fe0ff,#2f8ad6 75%)}
+.logo span{background:linear-gradient(180deg,#fff,#ffd9c0 45%,#ff8a5c 60%,#e2563a);-webkit-background-clip:text;background-clip:text}
+.mlogo{margin-top:14px}
+#hud{position:fixed;inset:auto;left:14px;right:14px;top:calc(var(--safeT) + 10px);bottom:auto;display:flex;align-items:center;gap:8px;z-index:5;pointer-events:none}
+#hud .round{pointer-events:auto}
+.score{font-size:54px;font-weight:700;line-height:1;color:#fff;-webkit-text-stroke:2px #20304a;text-shadow:0 4px 0 #20304a}
+.best{border-radius:20px;padding:8px 26px;display:flex;flex-direction:column;align-items:center}
+.best small{font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:600}.best b{font-size:28px}
+#menu .menuBtns .tile{width:96px;font-size:15px}
+#menu .hint{font-size:13px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);margin-bottom:6px}
+.glass{background:linear-gradient(160deg,rgba(30,60,110,.55),rgba(20,40,80,.45))}
+.sheet.glass{background:linear-gradient(170deg,rgba(26,46,86,.85),rgba(14,24,50,.92))}
+.sheet{height:46%}
+.it .th{display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}

@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas,img{display:block;position:fixed;left:0;top:0}#i{position:fixed;left:0;bottom:0;font:11px monospace;background:#fff;color:#000;z-index:9}</style></head><body>
+<!-- Icono: sirve la carpeta road/ con un servidor web, abre icon.html en un navegador con WebGL y guarda el render de 1024 px como resources/icon.png -->
+<div id="i">cargando</div><img src="/slow?s=12" style="width:1px;height:1px" onerror="this.remove()">
+<script type="module">
+import * as THREE from './www/lib/three.module.min.js';
+import * as M from './www/modelos.js';
+const S = 1024;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(S, S); r.shadowMap.enabled = true; document.body.appendChild(r.domElement);
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x9ee05a);
+sc.add(new THREE.HemisphereLight(0xffffff, 0x7a8a6a, 1.9));
+const sun = new THREE.DirectionalLight(0xfff2dc, 2.3); sun.position.set(-4, 10, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 }); sc.add(sun);
+const box = (c, x0, x1, y0, y1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), new THREE.MeshStandardMaterial({ color: c, roughness: .9 })); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); m.receiveShadow = true; sc.add(m); return m; };
+box(0x9ee05a, -10, 10, -1, 0, -.5, 10); box(0x4b505c, -10, 10, -1, 0, -2.5, -.5); box(0x92d64f, -10, 10, -1, 0, -10, -2.5);
+for (let x = -10; x < 10; x += 1.4) box(0xe8e8e8, x, x + .7, 0, .02, -1.55, -1.45);
+const A = await M.loadAll({ gamba: './www/models/char/gamba.glb', hood: './www/models/char/gorro_tiburon.glb', car: './www/models/k/taxi.glb' }, () => { });
+const car = M.normalize(A.car.scene, { length: 1.6, axis: 'z' }); car.rotation.y = Math.PI / 2; car.position.set(-1.9, 0, -1.5); car.traverse(o => { if (o.isMesh) o.castShadow = true; }); sc.add(car);
+const p = new M.Shrimp(A); sc.add(p.root); await p.use('gamba');
+for (let i = 0; i < 3; i++) p.pose(1.2, 'idle', 1.4 + i * .3, .3);
+p.root.scale.setScalar(1.6 / 1.45); p.root.rotation.y = 2.2; p.root.position.set(.2, .3, .6); p.root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+const cam = new THREE.PerspectiveCamera(30, 1, .1, 100); cam.position.set(2.6, 4.8, 4.6); cam.lookAt(-.3, .2, -.3);
+r.render(sc, cam);
+const im = new Image(); im.src = r.domElement.toDataURL('image/png'); document.body.appendChild(im);
+document.getElementById('i').remove(); document.title = 'LISTO';
+</script></body></html>

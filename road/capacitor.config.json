@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.shrimproad",
+  "appName": "Shrimp Road",
+  "webDir": "www",
+  "backgroundColor": "#7fc8ff",
+  "ios": { "contentInset": "never", "backgroundColor": "#7fc8ff", "scrollEnabled": false }
+}
