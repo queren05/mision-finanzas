@@ -41,7 +41,7 @@ export class ShrimpActor {
     this.rest = {}; for (const [n, b] of Object.entries(this.bones)) this.rest[n] = b.rotation.clone();
     // tamaño: largo L, cabeza hacia -z
     sc.updateMatrixWorld(true);
-    const b = new THREE.Box3().setFromObject(sc, true), L = sp.model === 'langostino' ? .72 : .64, k = L / (b.max.z - b.min.z);
+    const b = new THREE.Box3().setFromObject(sc, true), L = sp.model === 'langostino' ? .84 : .74, k = L / (b.max.z - b.min.z);
     this.holder = new THREE.Group(); this.holder.add(sc); sc.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
     this.holder.scale.setScalar(k); this.holder.rotation.y = Math.PI;
     this.pitchG = new THREE.Group(); this.pitchG.add(this.holder);
@@ -66,7 +66,7 @@ export class ShrimpActor {
     let sp = .22, tgt = this.target;
     if (this.mode === 'eat') {
       if (!this.food || this.food.gone) { this.mode = 'walk'; this.newTarget('walk'); }
-      else { tgt = this.food.pos; sp = .55; if (this.pos.distanceTo(tgt) < .1) { this.food.gone = true; this.fedT = 180; this.hop = .3; this.onEat && this.onEat(this); this.newTarget('walk'); } }
+      else { tgt = this.food.pos; sp = .55; if (this.pos.distanceTo(tgt) < .1) { this.food.gone = true; this.fedT = 90; this.hop = .3; this.onEat && this.onEat(this); this.newTarget('walk'); } }
     }
     if (this.mode === 'swim') sp = .45 + this.flick;
     if (this.wait > 0) { this.wait -= dt; sp = 0; }
@@ -88,7 +88,7 @@ export class ShrimpActor {
     this.pitchG.rotation.x = THREE.MathUtils.lerp(this.pitchG.rotation.x, pitch, Math.min(1, dt * 3));
     this.hop = Math.max(0, this.hop - dt);
     this.root.position.set(this.pos.x, this.pos.y + Math.sin(this.hop / .3 * Math.PI) * .12, this.pos.z);
-    this.root.rotation.y = this.yaw; this.root.scale.setScalar(this.grow * (1 + this.hop * .6));
+    this.root.rotation.y = this.yaw; this.root.scale.setScalar(this.grow * (this.evo || 1) * (1 + this.hop * .6));
     // animación
     const speed = this.vel.length();
     this.ph += dt * (onFloor ? speed * 40 : 14 + this.flick * 30);

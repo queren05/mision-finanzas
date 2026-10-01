@@ -3,7 +3,7 @@ import * as THREE from './lib/three.module.min.js';
 import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Particles } from './particulas.js';
 import { ShrimpActor, TANK, sandY } from './gambas.js';
-import { SPECIES, speciesPrice, shrimpRate, levelCost, UPGRADES, upCost, DECOR, fmt, fmtTime } from './datos.js';
+import { SPECIES, speciesPrice, shrimpRate, levelCost, evoCost, sellValue, EVO, UPGRADES, upCost, DECOR, pearlsFor, pearlBonus, fmt, fmtTime } from './datos.js';
 import { tone, noise, cfg as AUD, ac } from './audio.js';
 
 const $ = id => document.getElementById(id);
@@ -13,11 +13,11 @@ if (Q.has('shot')) addEventListener('unhandledrejection', e => { const d = docum
 if (Q.has('shot')) addEventListener('error', e => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;top:0;left:0;right:0;color:#f55;z-index:99;font:12px monospace;background:#000c;padding:4px'; d.textContent = e.message + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno; document.body.appendChild(d); });
 
 /* ---------- guardado ---------- */
-const KEY = 'tank.save';
+const KEY = 'tank2.save';   // v2: economía nueva, se empieza de cero
 function load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } }
-let S = load() || { coins: 0, total: 0, shrimps: [{ sp: 'comun', lvl: 1, uid: 1 }], up: {}, decor: [], last: Date.now(), uid: 1, seen: ['comun'], opt: { sfx: true, music: true } };
+let S = load() || { coins: 0, total: 0, shrimps: [{ sp: 'comun', lvl: 1, st: 0, uid: 1 }], up: {}, decor: [], last: Date.now(), uid: 1, seen: ['comun'], opt: { sfx: true, music: true } };
 if (Q.has('coins')) S.coins = +Q.get('coins');
-if (Q.has('fresh')) S = { coins: +(Q.get('coins') || 0), total: 0, shrimps: [{ sp: 'comun', lvl: 1, uid: 1 }], up: {}, decor: [], last: Date.now(), uid: 1, seen: ['comun'], opt: { sfx: true, music: true } };
+if (Q.has('fresh')) S = { coins: +(Q.get('coins') || 0), total: 0, shrimps: [{ sp: 'comun', lvl: 1, st: 0, uid: 1 }], up: {}, decor: [], last: Date.now(), uid: 1, seen: ['comun'], opt: { sfx: true, music: true } };
 function persist() { S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
 AUD.sfx = S.opt.sfx; AUD.music = S.opt.music;
 const lv = id => S.up[id] || 0;
@@ -30,6 +30,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, 1, .1, 60);
+const camBase = { pos: new THREE.Vector3(), look: new THREE.Vector3() }, camLook = new THREE.Vector3();
 function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; } return t; }
 scene.background = canvasTex(4, 256, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#16324a'); g.addColorStop(.6, '#0f2638'); g.addColorStop(1, '#2a1c14'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
 const TW = 3.2, TH = 3.45, TD = 1.5, WATER = 3.22;   // pecera: ancho, alto, fondo y nivel del agua
@@ -37,7 +38,7 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight;
   const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
   const dW = (TW / 2 + .14) / Math.tan(hf / 2), dH = (TH / 2 + 1.3) / Math.tan(vf / 2), d = Math.max(dW, dH) + TD / 2;
-  const portrait = camera.aspect < .8; camera.position.set(0, portrait ? 1.7 : 2.05, d); camera.lookAt(0, portrait ? 1.05 : 1.62, 0); camera.updateProjectionMatrix();
+  const portrait = camera.aspect < .8; camBase.pos.set(0, portrait ? 1.7 : 2.05, d); camBase.look.set(0, portrait ? 1.05 : 1.62, 0); camera.position.copy(camBase.pos); camLook.copy(camBase.look); camera.lookAt(camLook); camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
 
@@ -179,16 +180,44 @@ function popGolden(got) {
 /* ---------- gambas ---------- */
 const SRC = {}; const actors = [];
 const spById = id => SPECIES.find(s => s.id === id);
+const stOf = rec => rec.st || 0;
 function addActor(rec, baby) {
   const a = new ShrimpActor(SRC, spById(rec.sp), { lvl: rec.lvl, baby, uid: rec.uid });
-  a.rec = rec; a.root.traverse(o => { if (o.isMesh) o.castShadow = true; }); tank.add(a.root); actors.push(a);
+  a.rec = rec; a.evo = EVO[stOf(rec)].size; a.root.traverse(o => { if (o.isMesh) o.castShadow = true; }); tank.add(a.root); actors.push(a);
   a.onEat = () => { sparks.burst(a.pos.x, a.pos.y + .05, a.pos.z, 5, new THREE.Color(0xffe08a), .3, .05, .5, 0); };
   return a;
 }
-const cap = () => 5 + 2 * lv('capacidad');
-function mult() { let d = 0; for (const id of S.decor) d += DECOR.find(x => x.id === id).bonus; return (1 + d) * (1 + .2 * lv('filtro')) * (1 + .15 * lv('luz')); }
-function income(live = true) { let s = 0; for (const a of actors) s += shrimpRate(a.sp, a.rec.lvl) * (live && a.fedT > 0 ? 2 : 1) * (a.grow < 1 ? .5 : 1); return s * mult(); }
-function addCoins(n) { S.coins += n; S.total += n; }
+function removeActor(a) { tank.remove(a.root); actors.splice(actors.indexOf(a), 1); S.shrimps.splice(S.shrimps.indexOf(a.rec), 1); }
+const cap = () => 3 + lv('capacidad');
+function mult() { let d = 0; for (const id of S.decor) d += DECOR.find(x => x.id === id).bonus; return (1 + d) * (1 + .15 * lv('filtro')) * (1 + .1 * lv('luz')) * (1 + pearlBonus * (S.pearls || 0)); }
+const rateOf = a => shrimpRate(a.sp, a.rec.lvl, stOf(a.rec));
+function income(live = true) { let s = 0; for (const a of actors) s += rateOf(a) * (live && a.fedT > 0 ? 2 : 1) * (a.grow < 1 ? .5 : 1); return s * mult(); }
+function addCoins(n) { S.coins += n; S.total += n; S.season = (S.season || 0) + n; }
+
+/* ---------- selección: anillo, etiqueta y cámara que se acerca ---------- */
+const ring = new THREE.Mesh(new THREE.RingGeometry(.22, .27, 40), new THREE.MeshBasicMaterial({ color: 0xffe07a, transparent: true, opacity: .9, depthWrite: false }));
+ring.rotation.x = -Math.PI / 2; ring.visible = false; ring.renderOrder = 6; tank.add(ring);
+const tagCv = document.createElement('canvas'); tagCv.width = 512; tagCv.height = 128; const tagTex = new THREE.CanvasTexture(tagCv); tagTex.colorSpace = THREE.SRGBColorSpace;
+const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, depthTest: false, transparent: true })); tag.scale.set(.66, .165, 1); tag.renderOrder = 9; tag.visible = false; tank.add(tag);
+let tagKey = '';
+function drawTag(a) {
+  const key = a.rec.uid + ':' + a.rec.lvl + ':' + stOf(a.rec); if (key === tagKey) return; tagKey = key;
+  const c = tagCv.getContext('2d'); c.clearRect(0, 0, 512, 128); c.fillStyle = 'rgba(13,42,64,.82)'; c.beginPath(); c.roundRect ? c.roundRect(16, 14, 480, 100, 40) : c.rect(16, 14, 480, 100); c.fill();
+  c.fillStyle = '#fff'; c.font = '700 44px Fredoka, sans-serif'; c.textAlign = 'center'; c.fillText(a.sp.name, 256, 62);
+  c.fillStyle = '#ffd88a'; c.font = '600 32px Fredoka, sans-serif'; c.fillText(`${EVO[stOf(a.rec)].name} · Nivel ${a.rec.lvl}`, 256, 100); tagTex.needsUpdate = true;
+}
+function updSelection(dt) {
+  const a = sel;
+  ring.visible = tag.visible = !!a;
+  let tp = camBase.pos, tl = camBase.look;
+  if (a) {
+    ring.position.set(a.pos.x, sandY(a.pos.x, a.pos.z) + .02, a.pos.z); ring.scale.setScalar(a.grow * a.evo * (1 + Math.sin(t * 4) * .06));
+    tag.position.set(a.pos.x, a.pos.y + .42 * a.evo, a.pos.z); drawTag(a);
+    if (zoomed) { tl = a.pos.clone(); tl.y += .1; tp = new THREE.Vector3(a.pos.x * .7, a.pos.y + .55, TD / 2 + 2.2); }
+  }
+  camera.position.lerp(tp, Math.min(1, dt * 3)); camLook.lerp(tl, Math.min(1, dt * 3)); camera.lookAt(camLook);
+}
+let zoomed = false;
 
 /* ---------- interfaz ---------- */
 let tab = null, sel = null;
@@ -196,15 +225,16 @@ const thumbs = {};
 function updTop() {
   $('coins').textContent = fmt(S.coins); $('rate').textContent = fmt(income()) + '/s';
   $('cap').textContent = `${S.shrimps.length}/${cap()}`;
-  // avisos de cosas que se pueden comprar
-  const next = SPECIES.find(sp => !S.seen.includes(sp.id));
   const canG = SPECIES.some(sp => unlocked(sp) && S.coins >= speciesPrice(sp, owned(sp.id))) && S.shrimps.length < cap();
+  const canP = actors.some(a => canLevel(a) || canEvolve(a));
   const canM = UPGRADES.some(u => lv(u.id) < u.max && S.coins >= upCost(u, lv(u.id)));
   const canD = DECOR.some(d => !S.decor.includes(d.id) && S.coins >= d.price);
-  $('dotG').classList.toggle('on', canG && tab !== 'gambas'); $('dotM').classList.toggle('on', canM && tab !== 'mejoras'); $('dotD').classList.toggle('on', canD && tab !== 'deco');
+  $('dotG').classList.toggle('on', canG && tab !== 'gambas'); $('dotP').classList.toggle('on', canP && tab !== 'pecera'); $('dotM').classList.toggle('on', canM && tab !== 'mejoras'); $('dotD').classList.toggle('on', canD && tab !== 'deco');
   const fed = actors.filter(a => a.fedT > 0).length;
-  $('boosts').innerHTML = fed ? `<span>¡${fed === actors.length ? 'Todas' : fed} con la tripa llena! x2</span>` : '';
+  $('boosts').innerHTML = (fed ? `<span>¡${fed === actors.length ? 'Todas' : fed} con la tripa llena! x2</span>` : '') + (S.pearls ? `<span class="pearl">${S.pearls} perlas · +${Math.round(S.pearls * pearlBonus * 100)} %</span>` : '');
 }
+const canLevel = a => a.rec.lvl < EVO[stOf(a.rec)].cap && S.coins >= levelCost(a.sp, a.rec.lvl, stOf(a.rec));
+const canEvolve = a => stOf(a.rec) < 3 && a.rec.lvl >= EVO[stOf(a.rec)].cap && S.coins >= evoCost(a.sp, stOf(a.rec) + 1);
 const owned = id => S.shrimps.filter(s => s.sp === id).length;
 const unlocked = sp => { const i = SPECIES.indexOf(sp); return i === 0 || S.seen.includes(SPECIES[i - 1].id); };
 const coinIc = '<span class="coin"></span>';
@@ -216,22 +246,30 @@ const UP_ICON = {
   comedero: ic('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>'),
   toque: ic('<path d="M9 11V5a2 2 0 0 1 4 0v6M13 10a2 2 0 0 1 4 0v4c0 4-2 7-6 7s-6-3-6-6v-3a2 2 0 0 1 4 0"/>'),
   bomba: ic('<circle cx="8" cy="15" r="3"/><circle cx="15" cy="9" r="4"/><circle cx="17" cy="18" r="2"/>'),
+  perla: ic('<circle cx="12" cy="12" r="7"/><circle cx="9.5" cy="9.5" r="2" fill="#fff"/>'),
 };
+const STARS = st => '★'.repeat(st) + '☆'.repeat(3 - st);
 function openTab(t) {
   if (tab === t) return closeSheet(); tab = t; closeCard();
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  $('sheet').hidden = false; $('feedBtn').hidden = true; $('sheetTitle').textContent = { gambas: 'Gambas', mejoras: 'Mejoras', deco: 'Decoración' }[t]; renderList(); blub(1.6);
+  $('sheet').hidden = false; $('feedBtn').hidden = true; $('sheetTitle').textContent = { pecera: 'Tu pecera', gambas: 'Tienda de gambas', mejoras: 'Mejoras', deco: 'Decoración' }[t]; renderList(); blub(1.6);
 }
-function closeSheet() { tab = null; $('sheet').hidden = true; $('feedBtn').hidden = false; document.querySelectorAll('.tab').forEach(b => b.classList.remove('on')); }
+function closeSheet() { tab = null; $('sheet').hidden = true; if (!sel) $('feedBtn').hidden = false; document.querySelectorAll('.tab').forEach(b => b.classList.remove('on')); }
 function renderList() {
   const L = $('list'); let h = '';
-  if (tab === 'gambas') {
+  if (tab === 'pecera') {
+    const list = [...actors].sort((a, b) => rateOf(b) - rateOf(a));
+    if (!list.length) h = '<div class="empty">No tienes gambas. ¡Compra una en la tienda!</div>';
+    for (const a of list) { const st = stOf(a.rec), capL = EVO[st].cap; h += `<div class="item" data-sel="${a.rec.uid}"><img src="${thumbs[a.sp.id] || ''}"><div class="info"><b>${a.sp.name} <span class="stars">${STARS(st)}</span></b><small><span class="lv">${EVO[st].name} · Nv ${a.rec.lvl}/${capL}</span> · +${fmt(rateOf(a) * mult())}/s</small></div><button class="buy ${canLevel(a) || canEvolve(a) ? '' : 'no'} small" data-sel="${a.rec.uid}">Ver</button></div>`; }
+  } else if (tab === 'gambas') {
     for (const sp of SPECIES) {
       const un = unlocked(sp), n = owned(sp.id), pr = speciesPrice(sp, n), full = S.shrimps.length >= cap();
       if (!un) { h += `<div class="item locked"><img src="${thumbs[sp.id] || ''}"><div class="info"><b>???</b><small>Compra antes la ${SPECIES[SPECIES.indexOf(sp) - 1].name.toLowerCase()}</small></div></div>`; continue; }
       h += `<div class="item"><img src="${thumbs[sp.id] || ''}"><div class="info"><b>${sp.name}</b><small>${sp.desc} <span class="lv">+${fmt(sp.rate * mult())}/s</span>${n ? ` · Tienes ${n}` : ''}</small></div><button class="buy ${S.coins >= pr && !full ? '' : 'no'}" data-sp="${sp.id}">${full ? 'Llena' : coinIc + fmt(pr)}</button></div>`;
     }
   } else if (tab === 'mejoras') {
+    const pr = pearlsFor(S.season || 0);
+    h += `<div class="item season"><div class="ic">${UP_ICON.perla}</div><div class="info"><b>Nueva temporada</b><small>Empiezas de cero, pero ganas <span class="lv">${pr} perla${pr === 1 ? '' : 's'}</span> (+${Math.round(pearlBonus * 100)} % de monedas cada una, para siempre).</small></div><button class="buy ${pr > 0 ? '' : 'no'}" data-season="1">${pr > 0 ? 'Empezar' : 'Aún no'}</button></div>`;
     for (const u of UPGRADES) { const l = lv(u.id), c = upCost(u, l), max = l >= u.max; h += `<div class="item"><div class="ic">${UP_ICON[u.id]}</div><div class="info"><b>${u.name} <span class="lv">Nv ${l}</span></b><small>${u.desc}</small></div><button class="buy ${max ? 'done' : S.coins >= c ? '' : 'no'}" data-up="${u.id}">${max ? 'Máx.' : coinIc + fmt(c)}</button></div>`; }
   } else if (tab === 'deco') {
     for (const d of DECOR) { const has = S.decor.includes(d.id); h += `<div class="item"><img src="${thumbs['d_' + d.id] || ''}"><div class="info"><b>${d.name}</b><small>+${Math.round(d.bonus * 100)} % de monedas para siempre</small></div><button class="buy ${has ? 'done' : S.coins >= d.price ? '' : 'no'}" data-deco="${d.id}">${has ? 'Puesta' : coinIc + fmt(d.price)}</button></div>`; }
@@ -239,42 +277,76 @@ function renderList() {
   L.innerHTML = h;
 }
 $('list').addEventListener('click', e => {
+  const s2 = e.target.closest('[data-sel]'); if (s2) { const a = actors.find(x => x.rec.uid == s2.dataset.sel); if (a) { zoomed = true; showCard(a); } return; }
   const b = e.target.closest('.buy'); if (!b) return;
-  if (b.dataset.sp) buySpecies(b.dataset.sp); else if (b.dataset.up) buyUp(b.dataset.up); else if (b.dataset.deco) buyDeco(b.dataset.deco);
+  if (b.dataset.sp) buySpecies(b.dataset.sp); else if (b.dataset.up) buyUp(b.dataset.up); else if (b.dataset.deco) buyDeco(b.dataset.deco); else if (b.dataset.season) newSeason();
 });
 function buySpecies(id) {
   const sp = spById(id), pr = speciesPrice(sp, owned(id));
-  if (S.shrimps.length >= cap()) { toast('La pecera está llena: amplíala en Mejoras'); return sndNo(); }
+  if (S.shrimps.length >= cap()) { toast('La pecera está llena: amplíala en Mejoras o vende alguna'); return sndNo(); }
   if (S.coins < pr) return sndNo();
-  S.coins -= pr; const rec = { sp: id, lvl: 1, uid: ++S.uid }; S.shrimps.push(rec); if (!S.seen.includes(id)) S.seen.push(id);
+  S.coins -= pr; const rec = { sp: id, lvl: 1, st: 0, uid: ++S.uid }; S.shrimps.push(rec); if (!S.seen.includes(id)) S.seen.push(id);
   const a = addActor(rec, false); a.pos.set(rnd(-1, 1), WATER - .1, rnd(-.3, .3)); bubbles.burst(a.pos.x, WATER - .1, a.pos.z, 20, new THREE.Color(0xdff8ff), .5, .05, .8, -.6);
   sndBuy(); toast(`¡${sp.name} a la pecera!`); renderList(); persist();
 }
 function buyUp(id) { const u = UPGRADES.find(x => x.id === id), l = lv(id), c = upCost(u, l); if (l >= u.max || S.coins < c) return sndNo(); S.coins -= c; S.up[id] = l + 1; sndBuy(); if (id === 'luz') applyLight(); renderList(); persist(); }
 function buyDeco(id) { const d = DECOR.find(x => x.id === id); if (S.decor.includes(id) || S.coins < d.price) return sndNo(); S.coins -= d.price; S.decor.push(id); buildDecor(d); const g = decoMeshes[id]; g.position.y = 2.5; g.userData.drop = 0; drops.push(g); sndBuy(); renderList(); persist(); }
+function newSeason() {
+  const pr = pearlsFor(S.season || 0); if (pr <= 0) return sndNo();
+  modal('Nueva temporada', `Lo perderás todo (monedas, gambas, mejoras y decoración) pero ganarás ${pr} perla${pr === 1 ? '' : 's'}. Cada perla da +${Math.round(pearlBonus * 100)} % de monedas para siempre.`, '', '¡Empezar!', () => {
+    S.pearls = (S.pearls || 0) + pr; S.seasons = (S.seasons || 0) + 1; S.coins = 0; S.season = 0; S.up = {}; S.seen = ['comun'];
+    for (const id of S.decor) { tank.remove(decoMeshes[id]); delete decoMeshes[id]; } S.decor = []; world.chest = null;
+    for (const a of [...actors]) removeActor(a); S.shrimps = []; const rec = { sp: 'comun', lvl: 1, st: 0, uid: ++S.uid }; S.shrimps.push(rec); addActor(rec, false);
+    closeSheet(); closeCard(); applyLight(); persist(); sndBuy(); toast(`¡Temporada ${S.seasons + 1}! Tienes ${S.pearls} perlas`);
+  });
+  $('modal').querySelector('.box').insertAdjacentHTML('beforeend', '<button class="buy no big" id="mCancel">Cancelar</button>'); $('mCancel').onclick = () => { $('modal').hidden = true; $('mCancel').remove(); };
+}
 const drops = [];
-function applyLight() { const l = lv('luz'); sun.intensity = 2.4 + l * .08; fill.color.setHSL(.55 - l * .02, .8, .65); }
+function applyLight() { const l = lv('luz'); sun.intensity = 2.4 + l * .06; fill.color.setHSL(.55 - l * .015, .8, .65); }
 function showCard(a) {
-  sel = a; closeSheet(); $('card').hidden = false; $('feedBtn').hidden = true; updCard();
+  sel = a; tagKey = ''; closeSheet(); $('card').hidden = false; $('feedBtn').hidden = true; updCard();
 }
 function updCard() {
-  if (!sel) return; const a = sel, l = a.rec.lvl, c = levelCost(a.sp, l);
-  $('cardImg').src = thumbs[a.sp.id] || ''; $('cardName').textContent = a.sp.name + (a.grow < 1 ? ' (cría)' : '');
-  $('cardLvl').textContent = `Nivel ${l}` + (l % 10 === 9 ? ' · ¡x2 al subir!' : ''); $('cardRate').textContent = `+${fmt(shrimpRate(a.sp, l) * mult())}/s → +${fmt(shrimpRate(a.sp, l + 1) * mult())}/s`;
-  $('cardUp').innerHTML = `Subir ${coinIc}${fmt(c)}`; $('cardUp').classList.toggle('no', S.coins < c);
+  if (!sel) return; const a = sel, l = a.rec.lvl, st = stOf(a.rec), capL = EVO[st].cap;
+  $('cardImg').src = thumbs[a.sp.id] || ''; $('cardName').innerHTML = `${a.sp.name} <span class="stars">${STARS(st)}</span>`;
+  $('cardLvl').textContent = `${EVO[st].name}${a.grow < 1 ? ' (creciendo)' : ''} · Nivel ${l}/${capL}`;
+  const up = $('cardUp');
+  if (l < capL) { const c = levelCost(a.sp, l, st); $('cardRate').textContent = `+${fmt(rateOf(a) * mult())}/s → +${fmt(shrimpRate(a.sp, l + 1, st) * mult())}/s`; up.innerHTML = `Subir ${coinIc}${fmt(c)}`; up.classList.toggle('no', S.coins < c); up.dataset.act = 'lvl'; }
+  else if (st < 3) { const c = evoCost(a.sp, st + 1); $('cardRate').textContent = `Evoluciona a ${EVO[st + 1].name}: ×${EVO[st + 1].mult / EVO[st].mult} monedas y más grande`; up.innerHTML = `Evolucionar ${coinIc}${fmt(c)}`; up.classList.toggle('no', S.coins < c); up.dataset.act = 'evo'; }
+  else { $('cardRate').textContent = `+${fmt(rateOf(a) * mult())}/s · ¡Al máximo!`; up.innerHTML = 'Máximo'; up.classList.add('no'); up.dataset.act = ''; }
+  $('cardSell').innerHTML = `Vender ${coinIc}${fmt(sellValue(a.sp, l, st))}`;
+  $('cardZoom').classList.toggle('on', zoomed);
 }
-function closeCard() { sel = null; $('card').hidden = true; if (!tab) $('feedBtn').hidden = false; }
-$('cardUp').onclick = () => { const a = sel; if (!a) return; const c = levelCost(a.sp, a.rec.lvl); if (S.coins < c) return sndNo(); S.coins -= c; a.rec.lvl++; a.hop = .3; sparks.burst(a.pos.x, a.pos.y + .1, a.pos.z, 16, new THREE.Color(0xffe08a), .5, .06, .6, 0); sndBuy(); updCard(); persist(); };
+function closeCard() { sel = null; zoomed = false; $('card').hidden = true; if (!tab) $('feedBtn').hidden = false; }
+$('cardUp').onclick = () => {
+  const a = sel; if (!a) return; const st = stOf(a.rec);
+  if ($('cardUp').dataset.act === 'lvl') { const c = levelCost(a.sp, a.rec.lvl, st); if (S.coins < c) return sndNo(); S.coins -= c; a.rec.lvl++; a.hop = .3; sparks.burst(a.pos.x, a.pos.y + .1, a.pos.z, 16, new THREE.Color(0xffe08a), .5, .06, .6, 0); sndBuy(); }
+  else if ($('cardUp').dataset.act === 'evo') {
+    const c = evoCost(a.sp, st + 1); if (S.coins < c) return sndNo(); S.coins -= c; a.rec.st = st + 1; a.evo = EVO[st + 1].size; a.hop = .5;
+    sparks.burst(a.pos.x, a.pos.y + .15, a.pos.z, 60, new THREE.Color(0xffd84a), 1, .09, 1.2, 0); bubbles.burst(a.pos.x, a.pos.y, a.pos.z, 30, new THREE.Color(0xffffff), .6, .06, 1, -.8);
+    [0, .1, .2, .3, .45].forEach((w, i) => tone(N([67, 71, 74, 79, 86][i]), .25, 'triangle', .1, 0, w)); toast(`¡${a.sp.name} ha evolucionado a ${EVO[st + 1].name}!`);
+  } else return sndNo();
+  updCard(); persist();
+};
+$('cardSell').onclick = () => {
+  const a = sel; if (!a) return; const v = sellValue(a.sp, a.rec.lvl, stOf(a.rec));
+  if (actors.length <= 1) { toast('No puedes vender tu última gamba'); return sndNo(); }
+  modal('¿Vender gamba?', `Vas a vender tu ${a.sp.name.toLowerCase()} (${EVO[stOf(a.rec)].name}, nivel ${a.rec.lvl}) por ${fmt(v)} monedas.`, '', 'Vender', () => {
+    addCoins(v); S.total -= v; S.season -= v; bubbles.burst(a.pos.x, a.pos.y, a.pos.z, 25, new THREE.Color(0xffffff), .6, .06, .8, -.8); removeActor(a); closeCard(); sndCoin(true); persist(); toast(`+${fmt(v)} monedas`);
+  });
+  $('modal').querySelector('.box').insertAdjacentHTML('beforeend', '<button class="buy no big" id="mCancel">Cancelar</button>'); $('mCancel').onclick = () => { $('modal').hidden = true; $('mCancel').remove(); };
+};
+$('cardZoom').onclick = () => { zoomed = !zoomed; updCard(); blub(1.2); };
 $('cardClose').onclick = closeCard; $('sheetClose').onclick = closeSheet;
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => openTab(b.dataset.tab));
 $('feedBtn').onclick = () => { dropFood(0, 6, 1.3); };
 let toastT = 0;
-function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2400); }
 function floatText(t, x, y, big) { const d = document.createElement('div'); d.className = 'float'; d.textContent = t; d.style.left = (x - 20) + 'px'; d.style.top = (y - 30) + 'px'; if (big) d.style.fontSize = '26px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1000); }
-function modal(title, text, body, ok = '¡Genial!', cb) { $('mTitle').textContent = title; $('mText').textContent = text; $('mBody').innerHTML = body || ''; $('mOk').textContent = ok; $('modal').hidden = false; $('mOk').onclick = () => { $('modal').hidden = true; blub(1.5); cb && cb(); }; }
+function modal(title, text, body, ok = '¡Genial!', cb) { const old = $('mCancel'); if (old) old.remove(); $('mTitle').textContent = title; $('mText').textContent = text; $('mBody').innerHTML = body || ''; $('mOk').textContent = ok; $('modal').hidden = false; $('mOk').onclick = () => { $('modal').hidden = true; const c = $('mCancel'); if (c) c.remove(); blub(1.5); cb && cb(); }; }
 $('setBtn').onclick = () => {
   const row = (id, t, v) => `<button class="setRow" id="${id}"><span>${t}</span><b>${v ? 'SÍ' : 'NO'}</b></button>`;
-  modal('Ajustes', `Monedas ganadas en total: ${fmt(S.total)}`, row('oSfx', 'Sonidos', S.opt.sfx) + row('oMus', 'Música', S.opt.music), 'Cerrar');
+  modal('Ajustes', `Monedas ganadas en total: ${fmt(S.total)} · Temporada ${(S.seasons || 0) + 1} · Perlas: ${S.pearls || 0}`, row('oSfx', 'Sonidos', S.opt.sfx) + row('oMus', 'Música', S.opt.music), 'Cerrar');
   $('oSfx').onclick = () => { S.opt.sfx = AUD.sfx = !S.opt.sfx; $('oSfx').querySelector('b').textContent = S.opt.sfx ? 'SÍ' : 'NO'; persist(); };
   $('oMus').onclick = () => { S.opt.music = AUD.music = !S.opt.music; $('oMus').querySelector('b').textContent = S.opt.music ? 'SÍ' : 'NO'; persist(); };
 };
@@ -284,15 +356,16 @@ const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let lastTap = { x:
 cv.addEventListener('pointerdown', e => {
   lastTap = { x: e.clientX, y: e.clientY }; ac();
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
-  if (golden && ray.ray.distanceSqToPoint(golden.g.position) < .3 * .3) return popGolden(true);
-  let best = null, bd = 1e9; for (const a of actors) { const d = a.hitTest(ray.ray); if (d !== null && d < bd) { bd = d; best = a; } }
+  if (golden && ray.ray.distanceSqToPoint(golden.g.position) < .32 * .32) return popGolden(true);
+  // la gamba más cercana al rayo (con margen generoso para el dedo)
+  let best = null, bd = 1e9; for (const a of actors) { const c = a.root.position.clone(); c.y += .1 * a.grow * a.evo; const d2 = ray.ray.distanceSqToPoint(c), r = .38 * a.grow * a.evo; if (d2 < r * r && d2 < bd) { bd = d2; best = a; } }
   if (best) { tapShrimp(best, e); return; }
   // tocar el agua: cae comida en ese sitio
   const p = new THREE.Vector3(); if (ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -TD / 2), p) && Math.abs(p.x) < TW / 2 && p.y > 0 && p.y < WATER) { dropFood(p.x, 3, .12); if (tab) closeSheet(); if (sel) closeCard(); }
 });
 function tapShrimp(a, e) {
   a.hop = .3; blub(1 + Math.random() * .5);
-  if (!a.tapCd || performance.now() > a.tapCd) { a.tapCd = performance.now() + 600; const r = shrimpRate(a.sp, a.rec.lvl) * mult() * (3 + lv('toque') * 3); addCoins(r); floatText('+' + fmt(r), e.clientX, e.clientY); sndCoin(); }
+  if (!a.tapCd || performance.now() > a.tapCd) { a.tapCd = performance.now() + 1500; const r = rateOf(a) * mult() * (2 + lv('toque') * 1.5); addCoins(r); floatText('+' + fmt(r), e.clientX, e.clientY); sndCoin(); }
   showCard(a);
 }
 
@@ -332,21 +405,21 @@ function update(dt) {
   // comedero automático
   if (lv('comedero')) { feedT += dt; if (feedT > 70 - lv('comedero') * 10) { feedT = 0; dropFood(rnd(-1, 1), 5, .6); } }
   // crías
-  if ((breedT -= dt) < 0) { breedT = 35; tryBreed(); }
+  if ((breedT -= dt) < 0) { breedT = 90; tryBreed(); }
   // monedas que salen de las gambas (solo para verlas)
   if ((coinVisT -= dt) < 0 && actors.length) { coinVisT = 1.6 / Math.min(actors.length, 8); const a = actors[Math.floor(Math.random() * actors.length)]; sparks.emit(a.pos.x, a.pos.y + .1, a.pos.z, 0, .25, 0, new THREE.Color(0xffd24a), .07, 1.1, -.05); }
   updMusic(dt);
   if ((saveT += dt) > 5) { saveT = 0; persist(); }
-  updTop(); if (sel) updCard();
+  updSelection(dt); updTop(); if (sel) updCard();
   if (tab && Math.floor(t * 2) !== Math.floor((t - dt) * 2)) refreshButtons();
 }
 function refreshButtons() { $('list').querySelectorAll('.buy').forEach(b => { let c = null; if (b.dataset.sp) { const sp = spById(b.dataset.sp); if (S.shrimps.length < cap()) c = speciesPrice(sp, owned(sp.id)); } else if (b.dataset.up) { const u = UPGRADES.find(x => x.id === b.dataset.up); if (lv(u.id) < u.max) c = upCost(u, lv(u.id)); } else if (b.dataset.deco && !S.decor.includes(b.dataset.deco)) c = DECOR.find(x => x.id === b.dataset.deco).price; if (c !== null) b.classList.toggle('no', S.coins < c); }); }
 function tryBreed() {
   if (S.shrimps.length >= cap()) return;
   const groups = {}; for (const a of actors) if (a.fedT > 0 && a.grow >= 1) (groups[a.sp.id] = groups[a.sp.id] || []).push(a);
-  const ok = Object.keys(groups).filter(k => groups[k].length >= 2); if (!ok.length || Math.random() > .35) return;
+  const ok = Object.keys(groups).filter(k => groups[k].length >= 2); if (!ok.length || Math.random() > .2) return;
   const id = ok[Math.floor(Math.random() * ok.length)], par = groups[id][0];
-  const rec = { sp: id, lvl: 1, uid: ++S.uid }; S.shrimps.push(rec);
+  const rec = { sp: id, lvl: 1, st: 0, uid: ++S.uid }; S.shrimps.push(rec);
   const a = addActor(rec, true); a.pos.set(par.pos.x, sandY(par.pos.x, par.pos.z), par.pos.z);
   sparks.burst(a.pos.x, a.pos.y + .1, a.pos.z, 20, new THREE.Color(0xff9ac8), .4, .06, .9, 0); toast(`¡Ha nacido una ${spById(id).name.toLowerCase()}!`); sndBuy(); persist();
 }
@@ -377,13 +450,13 @@ async function boot() {
   buildTank(); applyLight();
   makeThumbs();
   if (!Q.has('many') && !Q.has('deco')) for (const id of S.decor) buildDecor(DECOR.find(d => d.id === id));
-  if (Q.has('many')) S.shrimps = Q.get('many').split(',').map((id, i) => ({ sp: id, lvl: 1, uid: i + 1 }));
+  if (Q.has('many')) S.shrimps = Q.get('many').split(',').map((id, i) => ({ sp: id, lvl: 1 + i * 7 % 30, st: i % 4, uid: i + 1 }));
   if (Q.has('deco')) S.decor = Q.get('deco') === 'all' ? DECOR.map(d => d.id) : Q.get('deco').split(',');
   if (Q.has('many') || Q.has('deco')) for (const id of S.decor) buildDecor(DECOR.find(d => d.id === id));
   for (const rec of S.shrimps) if (!S.seen.includes(rec.sp)) S.seen.push(rec.sp);
   for (const rec of S.shrimps) { const a = addActor(rec, false); a.pos.y = sandY(a.pos.x, a.pos.z); a.mode = 'walk'; }
   // ganancias mientras no estabas
-  const away = (Date.now() - S.last) / 1000, capS = (2 + 2 * lv('bomba')) * 3600;
+  const away = (Date.now() - S.last) / 1000, capS = (1 + lv('bomba')) * 3600;
   if (away > 60 && !Q.has('shot')) {
     const secs = Math.min(away, capS), earned = income(false) * secs * (1 + .2 * lv('comedero'));
     addCoins(earned);
@@ -391,7 +464,7 @@ async function boot() {
   } else if (S.total === 0 && !Q.has('shot')) modal('Tu pecera de gambas', 'Las gambas dan monedas solas. Toca el agua para darles de comer (¡comen y producen el doble!), toca una gamba para mimarla y subirla de nivel, y llena la pecera de especies y decoración.', '', '¡A por ello!');
   persist();
   $('loading').hidden = true;
-  document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); else { const away2 = (Date.now() - S.last) / 1000; if (away2 > 60) { const e2 = income(false) * Math.min(away2, (2 + 2 * lv('bomba')) * 3600); addCoins(e2); toast('Mientras no estabas: +' + fmt(e2)); } } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); else { const away2 = (Date.now() - S.last) / 1000; if (away2 > 60) { const e2 = income(false) * Math.min(away2, (1 + lv('bomba')) * 3600); addCoins(e2); toast('Mientras no estabas: +' + fmt(e2)); } } });
   addEventListener('pagehide', persist);
   if (Q.has('shot')) return testShot();
   frame();
@@ -401,7 +474,7 @@ function testShot() {
   if (Q.has('feed')) dropFood(0, 10, 1.3);
   if (Q.has('golden')) spawnGolden();
   const T = +(Q.get('t') || 0); for (let i = 0; i < T * 30; i++) update(1 / 30);
-  if (Q.has('tab')) openTab(Q.get('tab')); if (Q.has('card') && actors[0]) showCard(actors[0]);
+  if (Q.has('tab')) openTab(Q.get('tab')); if (Q.has('card') && actors[0]) { zoomed = Q.has('zoom'); showCard(actors[0]); for (let i = 0; i < 90; i++) update(1 / 30); }
   renderer.render(scene, camera); const im = $('shotImg'); im.src = cv.toDataURL(); im.style.display = 'block'; document.title = 'LISTO';
 }
 boot();
