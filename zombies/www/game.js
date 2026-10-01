@@ -291,7 +291,8 @@ function startGame() {
   if (Q.has('gun')) { const id = Q.get('gun'); P.weapons.push({ id, pap: Q.has('pap'), mag: stat({ id, pap: Q.has('pap') }, 'mag'), res: stat({ id, pap: Q.has('pap') }, 'res') }); P.cur = 1; }
   if (Q.has('pos')) { const [x, z, yw] = Q.get('pos').split(',').map(Number); P.pos.set(x, 0, z); P.yaw = (yw || 0) * Math.PI / 180; }
   if (Q.has('pitch')) P.pitch = +Q.get('pitch') * Math.PI / 180;
-  setGunMesh(); showScreen(null); $('hud').hidden = false; setMenu(null); resetTouch();
+  setGunMesh(); showScreen(null); $('hud').hidden = false; $('downed').hidden = true; $('blood').style.opacity = 0; setMenu(null); resetTouch(); document.querySelectorAll('.tbtn.on').forEach(b => b.classList.remove('on'));
+  shrimp.tilt.rotation.set(0, 0, 0); camera.rotation.z = 0;
   lockPointer(cv); ambient(true);
   startRound(Q.has('round') ? +Q.get('round') : 1);
   updHud(true);
@@ -564,7 +565,7 @@ function hitZombie(z, dmg, head, kind) {
   if (!killed) { if (kind !== 'explo') addPts(10); S.hit(); return false; }
   P.kills++; if (head) P.heads++;
   addPts(kind === 'knife' ? 130 : head ? 100 : kind === 'explo' ? 60 : 60);
-  if (head) { S.head(); fx.burst(z.pos.x, z.pos.y + 1.6, z.pos.z, 18, new THREE.Color(0x6a0a0a), 2.4, .14, .7, 7); }
+  if (head) { S.head(); fx.burst(z.pos.x, z.pos.y + 1.15, z.pos.z, 18, new THREE.Color(0x6a0a0a), 2.4, .14, .7, 7); }
   if (!G.special && G.drops < 4 && Math.random() < .035) { G.drops++; const list = ['ammo', 'insta', 'double', 'nuke', 'carpenter']; spawnPowerup(list[Math.floor(Math.random() * list.length)], z.pos.x, z.pos.z); }
   return true;
 }
@@ -625,7 +626,7 @@ function knife() {
 }
 function knifeHit() {
   const z = P.knifeTarget; P.knifeTarget = null;
-  if (z && !z.dead && Math.hypot(z.pos.x - P.pos.x, z.pos.z - P.pos.z) < 1.6) { const k = hitZombie(z, 150, false, 'knife'); hitmark(k, false); fx.burst(z.pos.x, 1.1, z.pos.z, 10, new THREE.Color(0x5a0a0a), 2, .1, .5, 6); rumble(.5, .5, 90); z.vel.addScaledVector(V3(z.pos.x - P.pos.x, 0, z.pos.z - P.pos.z).normalize(), 3); }
+  if (z && !z.dead && Math.hypot(z.pos.x - P.pos.x, z.pos.z - P.pos.z) < 1.6) { const k = hitZombie(z, 150, false, 'knife'); hitmark(k, false); fx.burst(z.pos.x, .8, z.pos.z, 10, new THREE.Color(0x5a0a0a), 2, .1, .5, 6); rumble(.5, .5, 90); z.vel.addScaledVector(V3(z.pos.x - P.pos.x, 0, z.pos.z - P.pos.z).normalize(), 3); }
 }
 function startReload() { const w = curW(); if (!w || P.reloadT > 0 || w.res <= 0 || w.mag >= stat(w, 'mag') || P.knifeT >= 0) return; P.reloadT = stat(w, 'rel') * (P.perks.includes('speed') ? .5 : 1); P.reloadMax = P.reloadT; S.reload(); }
 function finishReload() { const w = curW(); if (!w) return; const n = Math.min(stat(w, 'mag') - w.mag, w.res); w.mag += n; w.res -= n; updHud(); }
@@ -675,7 +676,7 @@ function hurtPlayer(z) {
   if (P.hp <= 0) goDown();
 }
 function goDown() {
-  P.alive = false; P.downT = 0; S.down(); $('downed').hidden = false; P.reloadT = 0;
+  P.alive = false; P.downT = 0; S.down(); touchAim(false); $('downed').hidden = false; P.reloadT = 0;
   if (P.perks.includes('revive')) { P.selfRevive = true; P.reviveUses++; $('downTxt').textContent = 'Quick Revive te está levantando…'; }
   else { P.selfRevive = false; $('downTxt').textContent = ''; }
   rumble(1, 1, 600);
@@ -853,6 +854,7 @@ function updHudFrame(dt) {
   if (showUse) setHud('useBtn', curInt.hold ? 'MANTÉN' : curInt.cost ? `USAR · ${curInt.cost}` : 'USAR');
   let pu = ''; if (G.instaT > 0) pu += `<div class="${G.instaT < 5 ? 'blink' : ''}"><svg viewBox="0 0 24 24" width="24"><path d="M12 2a8 8 0 0 0-8 8c0 3 1.500 5 3 6v3h10v-3c1.500-1 3-3 3-6a8 8 0 0 0-8-8z" fill="#c8ffd4"/><circle cx="9" cy="10" r="2" fill="#0a3a1a"/><circle cx="15" cy="10" r="2" fill="#0a3a1a"/></svg></div>`; if (G.dblT > 0) pu += `<div class="${G.dblT < 5 ? 'blink' : ''}">x2</div>`;
   setHud('pups', pu, 'innerHTML');
+  document.querySelector('.tbtn.aim').classList.toggle('on', touchAim());
   if (P.reloadT > 0) setHud('res', 'Recargando…'); else if (w) setHud('res', String(w.res));
   setHud('mag', w ? String(w.mag) : '—');
 }
@@ -871,7 +873,7 @@ function showScreen(id) {
   document.body.classList.toggle('inmenu', !!id);
 }
 function pauseGame() { if (G.state !== 'play') return; G.state = 'pause'; unlockPointer(); ambient(false); $('pauseInfo').textContent = `Ronda ${G.round} · ${P.kills} muertes · ${P.points} puntos`; showScreen('pause'); }
-function resumeGame() { G.state = 'play'; showScreen(null); resetTouch(); lockPointer(cv); ambient(true); clock.getDelta(); }
+function resumeGame() { G.state = 'play'; showScreen(null); resetTouch(); document.querySelectorAll('.tbtn.on').forEach(b => b.classList.remove('on')); lockPointer(cv); ambient(true); clock.getDelta(); }
 function toMenu() { G.state = 'menu'; ambient(false); unlockPointer(); $('hud').hidden = true; resetLevelState(); resetPlayer(); setGunMesh(); $('mBest').textContent = save.best ? `Ronda ${save.best}` : '—'; showScreen('menu'); menuT = 0; }
 function bindUI() {
   $('playBtn').onclick = () => { S.buy(); startGame(); };
@@ -988,6 +990,7 @@ async function testShot() {
     }
     if (G.state === 'play') update(dt); else if (G.state === 'menu') updMenu(dt);
   }
+  if (Q.has('again')) { if (G.state !== 'over') gameOver(); startGame(); for (let i = 0; i < 30; i++) update(dt); }
   if (Q.has('ads')) P.adsK = 1;
   if (G.state === 'play') { updCamera(0); updHudFrame(0); }
   if (Q.has('look')) { const [a, b, c, d, e, f] = Q.get('look').split(',').map(Number); camera.position.set(a, b, c); camera.lookAt(d, e, f); camera.fov = +(Q.get('fov') || 50); camera.updateProjectionMatrix(); }

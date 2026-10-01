@@ -2,7 +2,7 @@
 import * as THREE from './lib/three.module.min.js';
 import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR } from './mapa.js';
 
-export const ZH = 1.85;               // altura de un zombi
+export const ZH = 1.3;                // altura de un zombi (un poco más que la gamba de pie)
 const R = .3;                         // radio de colisión
 /* ---------- campo de flujo hacia el jugador ---------- */
 export const dist = new Int16Array(GW * GH);
@@ -85,7 +85,7 @@ export class Zombie {
   spawnGround(x, z) { this.state = 'rise'; this.pos.set(x, -ZH, z); this.t = 0; this.play('idle'); this.g.fx.burst(x, .1, z, 22, new THREE.Color(0x4a3a2a), 2.2, .22, .9, 7); }
   hit(ray, maxT) {   // devuelve { t, head } o null
     if (this.dead || this.state === 'rise' && this.pos.y < -1) return null;
-    const p = this.pos, k = this.k / (ZH / .83), y0 = p.y;
+    const p = this.pos, k = this.k / (1.85 / .83), y0 = p.y;   // las medidas de abajo son para un zombi de 1,85 m
     let best = null;
     const test = (y, r, head) => { _s.set(p.x, y0 + y * k, p.z); const t = raySphere(ray, _s, r * k); if (t !== null && t < maxT && (!best || t < best.t)) best = { t, head }; };
     test(1.58, .24, true); test(1.18, .3, false); test(.82, .3, false); test(.42, .26, false);
