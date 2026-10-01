@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Shrimp Tank</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d2a40">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="tank.css">
+</head>
+<body>
+<canvas id="cv"></canvas>
+<img id="shotImg" alt="">
+
+<div id="loading" class="screen">
+  <div class="logo"><span>SHRIMP</span><b>TANK</b></div>
+  <div class="bar"><i id="loadBar"></i></div>
+</div>
+
+<div id="top">
+  <div class="coins glass"><span class="coin"></span><div><b id="coins">0</b><small id="rate">0/s</small></div></div>
+  <span class="sp"></span>
+  <div class="glass pill" id="capPill"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z" fill="currentColor"/></svg><b id="cap">1/5</b></div>
+  <button class="glass round" id="setBtn" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.900 4.900l2.100 2.100M17 17l2.100 2.100M4.900 19.100 7 17M17 7l2.100-2.100"/></svg></button>
+</div>
+<div id="boosts"></div>
+
+<button id="feedBtn" class="glass" aria-label="Dar de comer"><svg viewBox="0 0 24 24"><path d="M6 3h12l-1 4H7z" fill="#ffb24a"/><path d="M7 7h10l-1 13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z" fill="#ff7a3a"/><circle cx="12" cy="13" r="2.500" fill="#fff4"/></svg><span>Comida</span></button>
+
+<div id="bottom">
+  <button class="tab" data-tab="gambas"><svg viewBox="0 0 24 24"><path d="M20 7c-2-3-8-4-12 0-3 3-3 8 0 10l2-2c-2-2-1-5 1-6 3-2 6-1 8 1z" fill="currentColor"/><circle cx="17" cy="8" r="1.200" fill="#0d2a40"/></svg><span>Gambas</span><i class="dot" id="dotG"></i></button>
+  <button class="tab" data-tab="mejoras"><svg viewBox="0 0 24 24"><path d="M12 3l7 7h-4v8H9v-8H5z" fill="currentColor"/></svg><span>Mejoras</span><i class="dot" id="dotM"></i></button>
+  <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><path d="M5 20c0-6 2-10 4-14 1 4 0 7 2 9 1-4 3-6 5-8 0 5-1 9 2 13z" fill="currentColor"/></svg><span>Decoración</span><i class="dot" id="dotD"></i></button>
+</div>
+
+<div id="sheet" class="glass" hidden>
+  <div class="sheetHead"><b id="sheetTitle">Gambas</b><span class="sp"></span><button class="round flat" id="sheetClose" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/></svg></button></div>
+  <div class="list" id="list"></div>
+</div>
+
+<div id="card" class="glass" hidden>
+  <img id="cardImg" alt="">
+  <div class="cinfo"><b id="cardName"></b><small id="cardLvl"></small><span id="cardRate"></span></div>
+  <button class="buy" id="cardUp"></button>
+  <button class="round flat" id="cardClose" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/></svg></button>
+</div>
+
+<div id="modal" class="screen dim" hidden>
+  <div class="box glass">
+    <b id="mTitle"></b>
+    <p id="mText"></p>
+    <div id="mBody"></div>
+    <button class="buy big" id="mOk">¡Genial!</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script type="module" src="game.js"></script>
+</body>
+</html>

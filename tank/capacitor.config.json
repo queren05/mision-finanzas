@@ -1,0 +1,7 @@
+{
+  "appId": "es.david.shrimptank",
+  "appName": "Shrimp Tank",
+  "webDir": "www",
+  "backgroundColor": "#0d2a40",
+  "ios": { "contentInset": "never", "backgroundColor": "#0d2a40", "scrollEnabled": false }
+}
