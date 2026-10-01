@@ -156,7 +156,7 @@ const DEF = {
   xp: 0, lv: 1, coins: 150,
   inv: {}, owned: {}, eq: { chars: 'gambita', skins: 'natural', hats: 'nada', themes: 'nordico' },
   best: { catch: 0, bubbles: 0, simon: 0, swim: 0, memory: 0, crabs: 0, drive: 0 }, daily: { last: '', streak: 0 },
-  sick: false, sickT: 0, born: 0, furn: {}, ach: {},
+  sick: false, sickT: 0, born: 0, furn: {}, ach: {}, garage: {},
   opt: { sfx: true, music: true, haptic: true, hq: true }, stats: { fed: 0, bathed: 0, played: 0, pets: 0, bought: 0, tricks: 0, cured: 0, talks: 0, days: 0 },
 };
 export const save = {};

@@ -87,7 +87,7 @@ export function bake(root) {
     if (!o.isMesh) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material], m0 = mats[0];
     if (o.isSkinnedMesh || o.isInstancedMesh || mats.length > 1 || m0.map || m0.transparent || m0.vertexColors) {
-      const k = new THREE.Mesh(o.geometry.clone().applyMatrix4(o.matrixWorld), o.material); k.frustumCulled = o.frustumCulled; out.add(k); return;
+      const k = new THREE.Mesh(o.geometry.clone().applyMatrix4(o.matrixWorld), mats.length > 1 ? o.material.map(bend) : bend(o.material)); k.frustumCulled = o.frustumCulled; out.add(k); return;
     }
     let g = o.geometry.clone().applyMatrix4(o.matrixWorld); if (g.index) g = g.toNonIndexed();
     const pos = f32(g.attributes.position, 3), ng = new THREE.BufferGeometry(); ng.setAttribute('position', pos);

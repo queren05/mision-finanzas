@@ -354,7 +354,6 @@ export function createMini(ctx) {
   // A la derecha de la pantalla, acelerar; a la izquierda, frenar / marcha atrás. En el aire, acelerar levanta el morro.
   const hgt = x => { if (x < 6) return 0; const k = .55 + Math.min(1.5, (x - 6) / 260); const e = Math.min(1, (x - 6) / 10); return e * k * (1.25 * Math.sin(x * .16) + .7 * Math.sin(x * .37 + 1) + .3 * Math.sin(x * .83 + 2)); };
   const slope = x => (hgt(x + .05) - hgt(x - .05)) / .1;
-  let WR = .32; const CL = 1.5;
   function terrainChunk(x0, x1) {
     const n = Math.ceil((x1 - x0) / .25), pos = [], col = [], idx = [], grass = new THREE.Color(0x5fbf4a), grass2 = new THREE.Color(0x4aa63a), dirt = new THREE.Color(0xa86d3e), deep = new THREE.Color(0x6b4426);
     for (let i = 0; i <= n; i++) {
@@ -372,35 +371,99 @@ export function createMini(ctx) {
     for (let x = x0 + 1; x < x1; x += rnd(1.2, 3)) { const r = Math.random(); const o = r < .5 ? new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.12, .25), 0), new THREE.MeshStandardMaterial({ color: 0x9a9488, flatShading: true })) : new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), new THREE.MeshStandardMaterial({ color: [0xff5a7a, 0xffd84a, 0xffffff, 0xb45aff][Math.floor(rnd(0, 4))] })); o.position.set(x, hgt(x) + .05, -.55); grp.add(o); }
     return grp;
   }
-  // kart del Car Kit de Kenney (CC0): se quita el piloto que trae y se sienta a la gamba
-  function makeCar() {
-    const g = new THREE.Group();
-    if (!ctx.kart) return g;
-    const src = ctx.kart.scene.clone(true), inner = new THREE.Group(); inner.add(src); inner.rotation.y = Math.PI / 2; g.add(inner);
-    let seat = null; const wheels = [];
-    src.traverse(o => { if (/^character/.test(o.name)) { o.visible = false; seat = o; } if (/^wheel/.test(o.name)) wheels.push(o); });
-    // medidas del kart (en el archivo): ruedas de radio 0,21, ejes separados 0,684, eje a 0,21 de altura, piloto en (0, 0,277, -0,068)
-    const k = CL / .684, r0 = .21; inner.scale.setScalar(k);
-    inner.position.set(.018 * k, -.21 * k, 0);
-    g.userData.seat = new THREE.Vector3(-.12 * k, (.3 - .21) * k + .12, 0);
-    g.userData.wheels = wheels; g.userData.r = r0 * k;
+  /* --- coches (Car Kit de Kenney, CC0) y mejoras --- */
+  // wb: distancia entre ejes; engine: fuerza; vmax: velocidad punta; mu: agarre; air: giro en el aire; k/c: muelle y amortiguador
+  const CARS = [
+    { id: 'kart', name: 'Kart', file: 'kart', price: 0, wb: 1.5, engine: 19, vmax: 12, mu: 1.15, air: 7, k: 120, c: 11, desc: 'Ligero y fácil de llevar.' },
+    { id: 'taxi', name: 'Taxi', file: 'taxi', price: 700, wb: 1.7, engine: 22, vmax: 14, mu: 1.1, air: 5.5, k: 130, c: 12, desc: 'Equilibrado. ¡Al aeropuerto!' },
+    { id: 'deportivo', name: 'Deportivo', file: 'hatchback-sports', price: 1200, wb: 1.75, engine: 27, vmax: 17, mu: 1.05, air: 5, k: 140, c: 12, desc: 'Rápido, pero hay que saber frenar.' },
+    { id: 'todoterreno', name: 'Todoterreno', file: 'suv', price: 1800, wb: 1.75, engine: 25, vmax: 14, mu: 1.5, air: 5, k: 105, c: 13, desc: 'Se agarra a todo. Suspensión blandita.' },
+    { id: 'tractor', name: 'Tractor', file: 'tractor', price: 2400, wb: 1.6, engine: 34, vmax: 10, mu: 1.9, air: 4, k: 135, c: 15, desc: 'Lento, pero sube cualquier cuesta.' },
+    { id: 'policia', name: 'Policía', file: 'police', price: 3200, wb: 1.75, engine: 31, vmax: 19, mu: 1.2, air: 5, k: 140, c: 13, desc: 'Potente y con sirena.' },
+    { id: 'formula', name: 'Fórmula', file: 'race', price: 5000, wb: 1.7, engine: 40, vmax: 24, mu: 1.35, air: 4.5, k: 160, c: 14, desc: 'Un cohete con ruedas. Para expertos.' },
+  ];
+  const UPG = [
+    { id: 'motor', name: 'Motor', desc: 'Más fuerza y velocidad' },
+    { id: 'agarre', name: 'Ruedas', desc: 'Más agarre en las cuestas' },
+    { id: 'susp', name: 'Suspensión', desc: 'Menos botes y vuelcos' },
+    { id: 'tanque', name: 'Depósito', desc: 'Más gasolina' },
+  ];
+  const upCost = lv => Math.round(120 * Math.pow(lv + 1, 1.7) / 10) * 10;
+  const GAR = () => { save.garage = save.garage || {}; const g = save.garage; g.sel = g.sel || 'kart'; g.owned = Object.assign({ kart: true }, g.owned); g.lv = g.lv || {}; return g; };
+  const lvOf = (car, u) => (GAR().lv[car] || {})[u] || 0;
+  function stats(car) {
+    const c = CARS.find(x => x.id === car) || CARS[0], L = u => lvOf(car, u);
+    return { ...c, engine: c.engine * (1 + .1 * L('motor')), vmax: c.vmax * (1 + .07 * L('motor')), mu: c.mu + .09 * L('agarre'), c: c.c * (1 + .12 * L('susp')), air: c.air * (1 + .06 * L('susp')), tank: 100 + 20 * L('tanque') };
+  }
+  const carGltf = {};
+  let gltfLoader = null;
+  async function loadCar(file) {
+    if (carGltf[file]) return carGltf[file];
+    if (file === 'kart' && ctx.kart) return (carGltf.kart = ctx.kart);
+    if (!gltfLoader) { const { GLTFLoader } = await import('./lib/GLTFLoader.js'); gltfLoader = new GLTFLoader(); }
+    return (carGltf[file] = await new Promise((ok, ko) => gltfLoader.load('models/car/' + file + '.glb', ok, undefined, ko)));
+  }
+  // Monta el coche: el origen queda entre los dos ejes; devuelve las ruedas (trasera y delantera) en coordenadas del coche
+  function makeCar(gltf, st) {
+    const g = new THREE.Group(), src = gltf.scene.clone(true), inner = new THREE.Group(); inner.add(src); g.add(inner);
+    const wheels = [], back = [], front = []; let seat = null;
+    src.traverse(o => {
+      if (/^character/.test(o.name)) { o.visible = false; seat = o.position.clone(); }
+      if (/^wheel-(back|front)-(left|right)/.test(o.name)) { wheels.push(o); (/front/.test(o.name) ? front : back).push(o); }
+    });
+    const avg = (arr, f) => arr.reduce((a2, o) => a2 + f(o), 0) / arr.length;
+    const zb = avg(back, o => o.position.z), zf = avg(front, o => o.position.z), yb = avg(back, o => o.position.y), yf = avg(front, o => o.position.y);
+    const k = st.wb / (zf - zb), midz = (zb + zf) / 2, midy = (yb + yf) / 2;
+    inner.rotation.y = Math.PI / 2; inner.scale.setScalar(k); inner.position.set(-midz * k, -midy * k, 0);
+    src.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(src);
+    g.userData = {
+      wheels, k,
+      wb: { x: (zb - midz) * k, y: (yb - midy) * k, r: yb * k }, wf: { x: (zf - midz) * k, y: (yf - midy) * k, r: yf * k },
+      seat: seat ? new THREE.Vector3((seat.z - midz) * k - .05, (seat.y - midy) * k + .02, 0) : new THREE.Vector3(-.15 * st.wb, (box.max.y - midy) * k - .02, 0),
+      roof: (box.max.y - midy) * k,
+    };
     return g;
   }
-  function startDrive() {
-    const P = (x, y) => ({ x, y, px: x, py: y });
-    const car = makeCar(); if (car.userData.r) WR = car.userData.r;
-    G = { id: 'drive', score: 0, over: false, t: 0, fuel: 100, coins: 0, r: P(0, WR + .02), f: P(CL, WR + .02), gas: 0, chunks: [], chunkX: -20, items: [], nextCoin: 8, nextFuel: 70, stopT: 0, ground: false, best: 0, spin: 0 };
-    ctx.setHouse(false);
-    const c2 = document.createElement('canvas'); c2.width = 4; c2.height = 256; const x2 = c2.getContext('2d'), gr = x2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5fc8ff'); gr.addColorStop(.7, '#cdefff'); gr.addColorStop(1, '#fff6d8'); x2.fillStyle = gr; x2.fillRect(0, 0, 4, 256);
-    const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace;
-    G.sky = add(new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ map: tx, depthWrite: false }))); G.sky.position.z = -14;
-    G.hills = [];
-    for (let i = 0; i < 2; i++) { const h = new THREE.Mesh(new THREE.ConeGeometry(rnd(5, 8), rnd(4, 7), 5), new THREE.MeshBasicMaterial({ color: i ? 0x9fd88a : 0x7fc46a })); add(h); G.hills.push({ m: h, k: .3 + i * .2, off: i * 23 }); }
-    G.car = add(car);
-    for (let i = 0; i < 3; i++) addChunk();
-    $('#pedals').hidden = false;
-    hud('0 m', 'Gasolina 100%'); msg('¡A conducir!');
+
+  /* --- garaje (antes de cada partida) --- */
+  let garageEl = null, garIdx = 0;
+  function garageUI() {
+    if (!garageEl) {
+      garageEl = document.createElement('div'); garageEl.id = 'garage'; garageEl.className = 'garage';
+      garageEl.innerHTML = `<div class="garTop"><button class="glass round" id="garPrev" aria-label="Anterior">‹</button><div class="garName"><b id="garName"></b><small id="garDesc"></small></div><button class="glass round" id="garNext" aria-label="Siguiente">›</button></div>
+        <div class="glass garPanel"><div class="garStats" id="garStats"></div><div class="garUps" id="garUps"></div>
+        <div class="garBtns"><button class="btn sec" id="garBuy"></button><button class="btn" id="garGo">¡A CONDUCIR!</button></div></div>`;
+      document.body.appendChild(garageEl);
+      garageEl.querySelector('#garPrev').onclick = () => { garIdx = (garIdx + CARS.length - 1) % CARS.length; S.tap(); showCar(); };
+      garageEl.querySelector('#garNext').onclick = () => { garIdx = (garIdx + 1) % CARS.length; S.tap(); showCar(); };
+      garageEl.querySelector('#garGo').onclick = () => { const c = CARS[garIdx]; if (!GAR().owned[c.id]) return; GAR().sel = c.id; ctx.persist(); go(); };
+    }
+    garageEl.hidden = false; garIdx = Math.max(0, CARS.findIndex(c => c.id === GAR().sel)); showCar();
   }
+  function bar(v, max) { return `<i style="width:${Math.min(100, v / max * 100)}%"></i>`; }
+  async function showCar() {
+    const c = CARS[garIdx], st = stats(c.id), own = !!GAR().owned[c.id];
+    garageEl.querySelector('#garName').textContent = c.name; garageEl.querySelector('#garDesc').textContent = c.desc;
+    garageEl.querySelector('#garStats').innerHTML = [['Velocidad', st.vmax, 30], ['Fuerza', st.engine, 50], ['Agarre', st.mu, 2.6], ['Gasolina', st.tank, 200]].map(([n, v, m]) => `<div><small>${n}</small><span class="sb">${bar(v, m)}</span></div>`).join('');
+    const ups = garageEl.querySelector('#garUps');
+    ups.innerHTML = own ? UPG.map(u => { const lv = lvOf(c.id, u.id); return `<button class="garUp" data-u="${u.id}" ${lv >= 5 ? 'disabled' : ''}><b>${u.name}</b><span class="lvd">${[0, 1, 2, 3, 4].map(i => `<i class="${i < lv ? 'f' : ''}"></i>`).join('')}</span><em>${lv >= 5 ? 'Máx.' : `<span class="coin"></span>${upCost(lv)}`}</em></button>`; }).join('') : `<div class="garLock">Cómpralo para poder mejorarlo</div>`;
+    ups.querySelectorAll('[data-u]').forEach(b2 => b2.onclick = () => {
+      const u = b2.dataset.u, lv = lvOf(c.id, u), cost = upCost(lv);
+      if (save.coins < cost) { S.err(); buzz('HEAVY'); ctx.toast(`Te faltan ${cost - save.coins} monedas`); return; }
+      save.coins -= cost; const g2 = GAR(); g2.lv[c.id] = g2.lv[c.id] || {}; g2.lv[c.id][u] = lv + 1; ctx.persist(); S.buy(); buzz('MEDIUM'); ctx.updHud(); showCar();
+    });
+    const buy = garageEl.querySelector('#garBuy'), goB = garageEl.querySelector('#garGo');
+    buy.hidden = own; goB.disabled = !own;
+    buy.innerHTML = `Comprar <span class="coin"></span>${c.price}`;
+    buy.onclick = () => { if (save.coins < c.price) { S.err(); buzz('HEAVY'); ctx.toast(`Te faltan ${c.price - save.coins} monedas`); return; } save.coins -= c.price; GAR().owned[c.id] = true; GAR().sel = c.id; ctx.persist(); S.buy(); buzz('MEDIUM'); ctx.updHud(); ctx.toast(`¡${c.name} comprado!`); showCar(); };
+    hud(save.coins.toLocaleString('es') + ' mon.', 'Garaje');
+    const gl = await loadCar(c.file); if (!G || G.id !== 'drive' || CARS[garIdx] !== c) return;
+    if (G.car) drop(G.car);
+    G.st = stats(c.id); G.car = add(makeCar(gl, G.st)); placeCar(0, G.car.userData.wb.r + .02 - G.car.userData.wb.y, 0);
+  }
+
+  /* --- partida --- */
   function addChunk() {
     const g = G, c = terrainChunk(g.chunkX, g.chunkX + 40); add(c); g.chunks.push({ m: c, x1: g.chunkX + 40 }); g.chunkX += 40;
     while (g.nextCoin < g.chunkX) {   // filas de monedas sobre el suelo
@@ -414,79 +477,116 @@ export function createMini(ctx) {
       m.position.set(x, hgt(x) + .45, 0); add(m); g.items.push({ m, x, kind: 'fuel' }); g.nextFuel += rnd(95, 140);
     }
   }
-  function wheelGround(p, dt, drive) {
-    const gy = hgt(p.x), d = p.y - WR - gy;
-    if (d > .02) return false;
-    const sl = slope(p.x), nl = Math.hypot(1, sl), nx = -sl / nl, ny = 1 / nl, pen = -d;
-    let vx = p.x - p.px, vy = p.y - p.py;   // velocidad antes de corregir (la corrección no debe lanzar el coche)
-    if (pen > 0) { p.x += nx * pen * Math.abs(ny); p.y += ny * pen; }
-    // quitar la velocidad que va hacia el suelo y aplicar tracción a lo largo de la cuesta const vn = vx * nx + vy * ny; if (vn < 0) { vx -= vn * nx * 1.3; vy -= vn * ny * 1.3; }
-    const tx = ny, ty = -nx; let vt = vx * tx + vy * ty;
-    vt += drive * dt * dt; vt *= .997; vt = clamp(vt, -5 * dt, 10.5 * dt);
-    const vnn = vx * nx + vy * ny; vx = tx * vt + nx * vnn; vy = ty * vt + ny * vnn;
-    p.px = p.x - vx; p.py = p.y - vy; return true;
+  function startDrive() {
+    G = { id: 'drive', phase: 'garage', score: 0, over: false, t: 0, fuel: 100, coins: 0, gas: 0, chunks: [], chunkX: -20, items: [], nextCoin: 10, nextFuel: 70, stopT: 0, ground: false, spinB: 0, spinF: 0, b: null };
+    ctx.setHouse(false);
+    const c2 = document.createElement('canvas'); c2.width = 4; c2.height = 256; const x2 = c2.getContext('2d'), gr = x2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5fc8ff'); gr.addColorStop(.7, '#cdefff'); gr.addColorStop(1, '#fff6d8'); x2.fillStyle = gr; x2.fillRect(0, 0, 4, 256);
+    const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace;
+    G.sky = add(new THREE.Mesh(new THREE.PlaneGeometry(90, 45), new THREE.MeshBasicMaterial({ map: tx, depthWrite: false }))); G.sky.position.z = -14;
+    G.hills = [];
+    for (let i = 0; i < 2; i++) { const h = new THREE.Mesh(new THREE.ConeGeometry(rnd(5, 8), rnd(4, 7), 5), new THREE.MeshBasicMaterial({ color: i ? 0x9fd88a : 0x7fc46a })); add(h); G.hills.push({ m: h, k: .3 + i * .2, off: i * 23 }); }
+    for (let i = 0; i < 3; i++) addChunk();
+    $('#pedals').hidden = true; $('#miniHud').hidden = false;
+    garageUI();
+  }
+  function go() {
+    const g = G; garageEl.hidden = true; $('#pedals').hidden = false; g.phase = 'drive'; g.t = 0;
+    const u = g.car.userData;
+    g.b = { x: 0, y: Math.max(u.wb.r - u.wb.y, u.wf.r - u.wf.y) + .05, a: 0, vx: 0, vy: 0, w: 0 };
+    g.fuel = g.st.tank; g.maxFuel = g.st.tank;
+    hud('0 m', '0 monedas'); msg('¡A conducir!'); S.click();
+  }
+  function placeCar(x, y, a) { G.car.position.set(x, y, 0); G.car.rotation.z = a; }
+  // Física: cuerpo rígido con dos ruedas sobre muelles (suspensión). Integración en 8 subpasos por frame.
+  function physics(dt) {
+    const g = G, b = g.b, st = g.st, u = g.car.userData, steps = 8, h = dt / steps, I = .2 * st.wb * st.wb, GR = 14;
+    const gas = g.over || g.fuel <= 0 ? (g.gas < 0 ? g.gas : 0) : g.gas;
+    let anyGround = false;
+    for (let k2 = 0; k2 < steps; k2++) {
+      let Fx = 0, Fy = -GR, T = 0, grounded = false;
+      const ca = Math.cos(b.a), sa = Math.sin(b.a);
+      for (const wh of [u.wb, u.wf]) {
+        const rx = wh.x * ca - wh.y * sa, ry = wh.x * sa + wh.y * ca, wx = b.x + rx, wy = b.y + ry;
+        const gy = hgt(wx), sl = slope(wx), L = Math.hypot(1, sl), nx = -sl / L, ny = 1 / L, tx = 1 / L, ty = sl / L;
+        const dist = (wy - gy) * ny, pen = wh.r - dist;
+        if (pen <= 0) continue;
+        grounded = true;
+        const vwx = b.vx - b.w * ry, vwy = b.vy + b.w * rx, vn = vwx * nx + vwy * ny, vt = vwx * tx + vwy * ty;
+        const N = Math.max(0, st.k * Math.min(pen, wh.r * .8) - st.c * vn) + (pen > wh.r * .8 ? 400 * (pen - wh.r * .8) : 0);
+        let Ft;
+        if (gas > 0) Ft = st.engine * .5 * gas * Math.max(0, 1 - Math.max(0, vt) / st.vmax);
+        else if (gas < 0) Ft = vt > .4 ? -st.engine * .55 : -st.engine * .2 * Math.max(0, 1 - Math.max(0, -vt) / (st.vmax * .35));
+        else Ft = -vt * .6;
+        Ft -= vt * .05;
+        const lim = st.mu * N; Ft = Math.max(-lim, Math.min(lim, Ft));
+        const fx = N * nx + Ft * tx, fy = N * ny + Ft * ty;
+        Fx += fx; Fy += fy; T += rx * fy - ry * fx;
+        if (wh === u.wb) g.spinB += vt * h / wh.r; else g.spinF += vt * h / wh.r;
+      }
+      if (!grounded && gas) T += gas * st.air * I;     // en el aire: acelerar levanta el morro, frenar lo baja
+      b.vx += Fx * h; b.vy += Fy * h; b.w += T / I * h; b.w *= 1 - 1.2 * h;
+      b.x += b.vx * h; b.y += b.vy * h; b.a += b.w * h;
+      anyGround = anyGround || grounded;
+    }
+    g.ground = anyGround;
+    return gas;
   }
   function updateDrive(dt) {
     const g = G; g.t += dt;
-    const steps = 4, h = dt / steps, wantGas = g.over ? 0 : g.gas;
-    let grounded = false;
-    for (let k = 0; k < steps; k++) {
-      for (const p2 of [g.r, g.f]) { const vx = (p2.x - p2.px) * .999, vy = (p2.y - p2.py) * .999; p2.px = p2.x; p2.py = p2.y; p2.x += vx; p2.y += vy - 15 * h * h; }
-      for (let it = 0; it < 3; it++) { const dx = g.f.x - g.r.x, dy = g.f.y - g.r.y, dd = Math.hypot(dx, dy) || 1, diff = (dd - CL) / dd * .5; g.r.x += dx * diff; g.r.y += dy * diff; g.f.x -= dx * diff; g.f.y -= dy * diff; }
-      const fuelOk = g.fuel > 0, drive = fuelOk ? (wantGas > 0 ? 9 : wantGas < 0 ? -7 : 0) : 0;
-      const gr1 = wheelGround(g.r, h, drive), gr2 = wheelGround(g.f, h, drive * .6);
-      grounded = grounded || gr1 || gr2;
-      if (!gr1 && !gr2 && wantGas && fuelOk) {   // en el aire: acelerar levanta el morro, frenar lo baja
-        const ang = (wantGas > 0 ? 1.6 : -1.6) * h, cx = (g.r.x + g.f.x) / 2, cy = (g.r.y + g.f.y) / 2;
-        for (const p2 of [g.r, g.f]) { const rx = p2.x - cx, ry = p2.y - cy, c = Math.cos(ang), s2 = Math.sin(ang); p2.x = cx + rx * c - ry * s2; p2.y = cy + rx * s2 + ry * c; }
-      }
+    if (g.phase === 'garage') {
+      if (g.car) { g.car.rotation.y = Math.sin(T * .6) * .5; g.car.rotation.z = 0; }
+      seatPet(dt, 0);
+      camTo(V(0, .9, 6.2), V(0, -.55, 0), 5);
+      g.sky.position.set(0, 4, -14);
+      for (const hh of g.hills) hh.m.position.set(-((hh.off) % 46) + 23 - 30 * hh.k, -1 + hh.m.geometry.parameters.height / 2 - 2, -10 + hh.k * 3);
+      return;
     }
-    g.ground = grounded;
-    const cx = (g.r.x + g.f.x) / 2, cy = (g.r.y + g.f.y) / 2, ang = Math.atan2(g.f.y - g.r.y, g.f.x - g.r.x);
-    const vx = ((g.r.x - g.r.px) + (g.f.x - g.f.px)) / 2 / (dt / steps);
+    if (g.car) g.car.rotation.y = 0;
+    const gas = physics(dt), b = g.b, u = g.car.userData;
     if (!g.over) {
-      g.fuel = Math.max(0, g.fuel - dt * (wantGas ? 3.6 : 1));
-      g.score = Math.max(g.score, Math.floor(cx));
-      // cabeza contra el suelo = vuelco
-      const hx = cx - Math.sin(ang) * .95, hy = cy + Math.cos(ang) * .95;
+      g.fuel = Math.max(0, g.fuel - dt * (gas > 0 ? 3.2 : .9));
+      g.score = Math.max(g.score, Math.floor(b.x));
+      const ca = Math.cos(b.a), sa = Math.sin(b.a), hx = b.x + u.seat.x * ca - (u.roof + .35) * sa, hy = b.y + u.seat.x * sa + (u.roof + .35) * ca;
       if (hy < hgt(hx) + .05) driveEnd('¡Vuelco!');
-      if (g.fuel <= 0) { g.stopT = Math.abs(vx) < .4 ? g.stopT + dt : 0; if (g.stopT > 1.5) driveEnd('¡Sin gasolina!'); }
+      const speed = Math.hypot(b.vx, b.vy);
+      if (g.fuel <= 0) { g.stopT = speed < .4 ? g.stopT + dt : 0; if (g.stopT > 1.5) driveEnd('¡Sin gasolina!'); }
+      if (Math.cos(b.a) < -.3) { g.flipT = (g.flipT || 0) + dt; if (g.flipT > 2) driveEnd('¡Vuelco!'); } else g.flipT = 0;
       for (const it of g.items) {
         if (it.got) continue;
         if (it.kind === 'coin') it.m.rotation.z += dt * 4;
-        if (Math.abs(it.x - cx) < .9 && Math.abs(it.m.position.y - (cy + .4)) < 1.1) {
+        if (Math.abs(it.x - b.x) < 1 && Math.abs(it.m.position.y - (b.y + .5)) < 1.2) {
           it.got = true; drop(it.m);
           if (it.kind === 'coin') { g.coins++; S.coin(); PA.burst(it.m.position.x, it.m.position.y, 0, 6, col(0xffd84a), 1.4, .1, .4); }
-          else { g.fuel = 100; S.good(); buzz('MEDIUM'); msg('¡Gasolina!'); }
+          else { g.fuel = g.maxFuel; S.good(); buzz('MEDIUM'); msg('¡Gasolina!'); }
         }
       }
-      g.items = g.items.filter(it => !it.got && it.x > cx - 30);
+      g.items = g.items.filter(it => !it.got && it.x > b.x - 30);
       hud(g.score + ' m', g.coins + ' monedas');
-      const fb = $('#fuelBar i'); if (fb) { fb.style.width = g.fuel + '%'; fb.style.background = g.fuel < 25 ? '#ff4d6d' : ''; }
+      const fb = $('#fuelBar i'); if (fb) { fb.style.width = (g.fuel / g.maxFuel * 100) + '%'; fb.style.background = g.fuel < g.maxFuel * .25 ? '#ff4d6d' : ''; }
     }
-    // generar suelo por delante y quitar el de detrás
-    while (g.chunkX < cx + 60) addChunk();
-    while (g.chunks.length && g.chunks[0].x1 < cx - 30) drop(g.chunks.shift().m);
-    // coche, ruedas y gamba
-    g.car.position.set(cx, cy, 0); g.car.rotation.z = ang;
-    g.spin -= (vx * (dt / steps) / WR) * steps; for (const w of g.car.userData.wheels) w.rotation.x = -g.spin;
-    const sc = Math.min(.95, ctx.stage() * .95);
+    while (g.chunkX < b.x + 60) addChunk();
+    while (g.chunks.length && g.chunks[0].x1 < b.x - 30) drop(g.chunks.shift().m);
+    placeCar(b.x, b.y, b.a);
+    for (const w of u.wheels) w.rotation.x = /front/.test(w.name) ? g.spinF / u.k * 0 + g.spinF : g.spinB;
+    seatPet(dt, Math.hypot(b.vx, b.vy));
+    if (gas > 0 && g.ground && g.fuel > 0 && Math.random() < .5) { const ca = Math.cos(b.a), sa = Math.sin(b.a); PN.emit(b.x + u.wb.x * ca, b.y + u.wb.x * sa - .2, .4, -rnd(.5, 1.5), rnd(.3, 1), 0, col(0xc9b08a), .25, .6, 0, 1.2); }
+    const vx = b.vx, look = V(b.x + 2.4 + Math.min(2, Math.max(0, vx) * .1), b.y + .9, 0), zoom = 9.5 + Math.min(3, Math.abs(vx) * .2);
+    camTo(V(look.x, look.y + 1.6, zoom), look, 8);
+    g.sky.position.set(b.x, b.y + 4, -14);
+    for (const hh of g.hills) hh.m.position.set(b.x - ((b.x * hh.k + hh.off) % 46) + 23, b.y - 1 + hh.m.geometry.parameters.height / 2 - 2, -10 + hh.k * 3);
+    const pd = $('#pedals'); if (pd) { pd.querySelector('.gas').classList.toggle('on', gas > 0); pd.querySelector('.brake').classList.toggle('on', gas < 0); }
+  }
+  function seatPet(dt, speed) {
+    const g = G; if (!g.car) return; const u = g.car.userData;
+    const sc = Math.min(.8, ctx.stage() * .8) * Math.min(1.1, .55 + u.k * .9);
     player.root.visible = true; player.root.scale.setScalar(sc);
-    _v.copy(g.car.userData.seat).applyAxisAngle(V(0, 0, 1), ang).add(g.car.position); player.root.position.copy(_v);
-    player.root.quaternion.setFromEuler(new THREE.Euler(0, 0, ang)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)));
-    player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(-.5 + Math.sin(T * 9) * (Math.abs(vx) > 1 ? .04 : 0), 0, 0); player.tilt.scale.set(1, 1, 1);
+    _v.copy(u.seat).applyEuler(g.car.rotation).add(g.car.position); player.root.position.copy(_v);
+    player.root.quaternion.setFromEuler(g.car.rotation).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)));
+    player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(-.45 + Math.sin(T * 9) * (speed > 1 ? .04 : 0), 0, 0); player.tilt.scale.set(1, 1, 1);
     player.pose(T * 3, 'idle', T, dt, 2);
-    if (wantGas > 0 && grounded && g.fuel > 0 && Math.random() < .5) PN.emit(g.r.x - .3, g.r.y - .2, .4, -rnd(.5, 1.5), rnd(.3, 1), 0, col(0xc9b08a), .25, .6, 0, 1.2);
-    // cámara y fondo
-    const look = V(cx + 2.4, cy + .9, 0), zoom = 9.5 + Math.min(3, Math.abs(vx) * .25);
-    camTo(V(look.x, look.y + 1.6, zoom), look, 9);
-    g.sky.position.set(cx, cy + 4, -14);
-    for (const hh of g.hills) hh.m.position.set(cx - ((cx * hh.k + hh.off) % 46) + 23, cy - 1 + hh.m.geometry.parameters.height / 2 - 2, -10 + hh.k * 3);
-    // pedales
-    const pd = $('#pedals'); if (pd) { pd.querySelector('.gas').classList.toggle('on', wantGas > 0); pd.querySelector('.brake').classList.toggle('on', wantGas < 0); }
   }
   function driveEnd(title) {
-    const g = G; if (g.over) return; S.bad(); buzz('HEAVY');
+    const g = G; if (g.over) return; g.over = true; S.bad(); buzz('HEAVY'); G.over = false;
     const sc = g.score;
     finish({ id: 'drive', score: sc, coins: g.coins + Math.floor(sc / 8), xp: 6 + Math.floor(sc / 10), fun: Math.min(45, 10 + sc / 8), title });
   }
@@ -496,7 +596,7 @@ export function createMini(ctx) {
   function clear() { for (const o of objs) scene.remove(o); objs = []; if (G) G.items = G.bubbles = G.pads = G.pipes = G.cards = G.moles = G.chunks = []; }
   return {
     start(id) {
-      clear(); ctx.setHouse(true); $('#pedals').hidden = true; aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
+      clear(); ctx.setHouse(true); $('#pedals').hidden = true; if (garageEl) garageEl.hidden = true; aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
       pet.act = null; GAMES[id][0](); this.id = id;
     },
     update(dt) { T += dt; if (G) GAMES[G.id][1](dt); },
@@ -508,14 +608,14 @@ export function createMini(ctx) {
       else if (G.id === 'swim') { if (type === 'down') tapSwim(); }
       else if (G.id === 'memory') { if (type === 'down') tapMemory(x, y); }
       else if (G.id === 'crabs') { if (type === 'down') tapCrabs(x, y); }
-      else if (G.id === 'drive') { if (type === 'down' || (type === 'move' && G.gas)) G.gas = x > innerWidth / 2 ? 1 : -1; else if (type === 'up') G.gas = 0; }
+      else if (G.id === 'drive') { if (G.phase !== 'drive') return; if (type === 'down' || (type === 'move' && G.gas)) G.gas = x > innerWidth / 2 ? 1 : -1; else if (type === 'up') G.gas = 0; }
     },
     abort() { aborted = true; if (G) G.over = true; },
-    dispose() { clear(); ctx.setHouse(true); G = null; $('#pedals').hidden = true; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
+    dispose() { clear(); ctx.setHouse(true); G = null; $('#pedals').hidden = true; if (garageEl) garageEl.hidden = true; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
     // pruebas: ?mini=simon&act=... — adelanta el juego para sacar capturas
     test(Q) {
       const steps = +(Q.get('steps') || 0);
-      const log = []; for (let i = 0; i < steps; i++) { if (G.id === 'drive' && i % 15 === 0) log.push(`${i}:x${((G.r.x + G.f.x) / 2).toFixed(1)} y${((G.r.y + G.f.y) / 2).toFixed(1)} g${G.ground ? 1 : 0} h${hgt((G.r.x + G.f.x) / 2).toFixed(1)}`); this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); if (G.id === 'drive') G.gas = G.ground ? 1 : 0; if (G.id === 'swim' && (!G.started || (G.y < 1.9 && G.vy < 0))) tapSwim(); if (G.id === 'memory' && i % 20 === 5 && G.found < 3) { const c = G.cards.find(c2 => !c2.up && !c2.done); if (c) { const sp = toScreen(c.g.position); tapMemory(sp.x, sp.y); } } }
+      const log = []; for (let i = 0; i < steps; i++) { if (G.id === 'drive' && G.b && i % 20 === 0) log.push(`${i}:x${G.b.x.toFixed(1)} y${G.b.y.toFixed(1)} a${G.b.a.toFixed(2)} g${G.ground ? 1 : 0}`); this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); if (G.id === 'drive') { if (G.phase === 'garage' && G.car && i > 30) go(); if (G.b) G.gas = G.ground ? 1 : 0; } if (G.id === 'swim' && (!G.started || (G.y < 1.9 && G.vy < 0))) tapSwim(); if (G.id === 'memory' && i % 20 === 5 && G.found < 3) { const c = G.cards.find(c2 => !c2.up && !c2.done); if (c) { const sp = toScreen(c.g.position); tapMemory(sp.x, sp.y); } } }
       if (log.length) { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;left:0;top:80px;z-index:99;background:#fffc;color:#000;font:10px monospace;margin:0;white-space:pre-wrap;width:390px'; d.textContent = log.join(' '); document.body.appendChild(d); }
     },
   };

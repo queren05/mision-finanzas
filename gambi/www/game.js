@@ -81,6 +81,7 @@ async function boot() {
   if (Q.get('give')) save.inv[Q.get('give')] = 3;
   if (Q.has('sleep')) save.sleeping = true;
   if (Q.has('sick')) save.sick = true;
+  if (Q.get('car')) { save.garage = { sel: Q.get('car'), owned: { kart: true, [Q.get('car')]: true }, lv: {} }; }
   if (Q.get('furn')) for (const f of Q.get('furn').split(',')) save.furn[f] = true;
   // tiempo transcurrido con la app cerrada
   const away = clamp((Date.now() - save.t) / 1000, 0, OFFLINE_CAP);
@@ -593,7 +594,7 @@ async function startMini(id) {
   for (const s of ['#hud', '#nav', '#tray', '#hint', '#talk']) $(s).hidden = true; sayT = 0;
   for (const b of bubbles) b.life = 0;
   house.setRoom(null); foamSet(0);
-  mini = createMini({ kart: A.kart, THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, setHouse: v => { house.shared.visible = v; house.decoGroup.visible = v; }, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
+  mini = createMini({ kart: A.kart, persist, updHud, toast, THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, setHouse: v => { house.shared.visible = v; house.decoGroup.visible = v; }, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
   mini.start(id);
 }
 function endMini(r) {
