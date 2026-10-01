@@ -220,6 +220,61 @@ function hatMesh(id, gltfs) {
       for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; add(new THREE.ConeGeometry(.0115, .036, 8), gold, Math.sin(a) * .051, .04, Math.cos(a) * .051, 0, 0, 0, .002); add(new THREE.SphereGeometry(.0075, 10, 8), toon([0xff3355, 0x3fa9ff, 0x4fe37a][i % 3]), Math.sin(a) * .054, .012, Math.cos(a) * .054, 0, 0, 0, 0); }
       break;
     }
+    case 'lazo': {
+      tilt(0, .35);
+      const pink = toon(0xff5aa5);
+      for (const sx of [-1, 1]) { const m = add(new THREE.ConeGeometry(.032, .06, 4), pink, sx * .03, .022, 0, 0, 0, sx * Math.PI / 2); m.scale.set(1, 1, .45); }
+      add(new THREE.SphereGeometry(.014, 12, 10), toon(0xff2f86), 0, .022, 0);
+      break;
+    }
+    case 'flor': {
+      tilt(0, -.3);
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const p = add(new THREE.SphereGeometry(.02, 12, 8), toon(0xffffff), Math.cos(a) * .024, .02, Math.sin(a) * .024, 0, 0, 0, .002); p.scale.set(1, .45, 1); }
+      add(new THREE.SphereGeometry(.014, 12, 8), toon(0xffd02a), 0, .026, 0);
+      break;
+    }
+    case 'cocinero': {
+      tilt(-.06);
+      const w = toon(0xffffff);
+      add(new THREE.CylinderGeometry(.05, .05, .045, 28), w, 0, .02, 0);
+      for (const [x, z] of [[0, 0], [-.026, .012], [.026, .012], [0, -.022], [.0, .028]]) add(new THREE.SphereGeometry(.036, 14, 10), w, x, .07, z, 0, 0, 0, .0025);
+      break;
+    }
+    case 'reno': {
+      const br = toon(0x8a5a2b);
+      for (const s of [-1, 1]) {
+        add(new THREE.CylinderGeometry(.006, .008, .08, 8), br, s * .035, .035, 0, 0, 0, -s * .35, .002);
+        add(new THREE.CylinderGeometry(.005, .006, .04, 8), br, s * .055, .07, .0, 0, 0, -s * 1.1, .002);
+        add(new THREE.CylinderGeometry(.005, .006, .035, 8), br, s * .038, .085, -.01, .4, 0, s * .2, .002);
+      }
+      break;
+    }
+    case 'santa': {
+      tilt(-.12, .1);
+      add(new THREE.ConeGeometry(.05, .11, 28), toon(0xe32b2b), 0, .055, 0).rotation.z = -.35;
+      add(new THREE.TorusGeometry(.048, .012, 10, 28), toon(0xffffff), 0, .002, 0, Math.PI / 2, 0, 0, .002);
+      add(new THREE.SphereGeometry(.016, 12, 10), toon(0xffffff), .035, .1, 0);
+      break;
+    }
+    case 'bruja': {
+      tilt(-.1, .12);
+      const pu = toon(0x3d2470);
+      add(new THREE.CylinderGeometry(.085, .085, .008, 36), pu, 0, .0, 0);
+      const c = add(new THREE.ConeGeometry(.045, .14, 28), pu, 0, .07, 0); c.rotation.z = -.25;
+      add(new THREE.CylinderGeometry(.047, .047, .014, 28), toon(0xb45aff), 0, .012, 0, 0, 0, 0, 0);
+      add(new THREE.BoxGeometry(.016, .012, .006), toon(0xffd84a), 0, .012, .047, 0, 0, 0, 0);
+      break;
+    }
+    case 'mexicano': {
+      tilt(-.05);
+      const y = toon(0xf2c75a), r = toon(0xe23c3c);
+      add(new THREE.CylinderGeometry(.11, .11, .007, 40), y, 0, .0, 0);
+      add(new THREE.TorusGeometry(.108, .007, 8, 40), y, 0, .006, 0, Math.PI / 2, 0, 0, .002);
+      add(new THREE.ConeGeometry(.04, .07, 28), y, 0, .04, 0);
+      add(new THREE.CylinderGeometry(.034, .037, .012, 28), r, 0, .016, 0, 0, 0, 0, 0);
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; add(new THREE.SphereGeometry(.006, 8, 6), toon([0x4fe37a, 0xe23c3c][i % 2]), Math.sin(a) * .1, .006, Math.cos(a) * .1, 0, 0, 0, 0); }
+      break;
+    }
     case 'tiburon': {
       const s = gltfs.hood.scene.clone(true);
       // Ajustado a mano: el disfraz rodea la cabeza y la cara asoma por la boca.
@@ -290,7 +345,7 @@ export class Shrimp {
     const rest = {}, restAll = [];
     for (const [n, bn] of Object.entries(bones)) rest[n] = bn.rotation.clone();
     sc.traverse(o => { if (o.isBone) restAll.push([o, o.position.clone(), o.quaternion.clone()]); });
-    const M = { cfg, wrap, holder, sc, bones, rest, restAll, bodies, k };
+    const M = { cfg, wrap, holder, sc, bones, rest, restAll, bodies, k, h: (b.max.y - b.min.y) * k };
     if (cfg.rig === 'chumbud') {
       // el gorro sigue al hueso de la cabeza
       const head = bones.Head, anchor = new THREE.Object3D(), rawAnchor = new THREE.Object3D();

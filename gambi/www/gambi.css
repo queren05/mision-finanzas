@@ -83,3 +83,36 @@ input:focus{border-color:var(--gold)}
 .stats3 small{font-size:10.5px;letter-spacing:.12em;color:var(--muted);font-weight:600}
 .stats3 b{font-size:20px}
 .sheet{height:52%}
+
+/* nivel: punto de logros y etiqueta de enfermedad */
+.lvl{position:relative}
+.lvl .dot{top:-3px;right:-3px}
+.sickTag{position:absolute;left:8px;bottom:-9px;font-size:9px;font-weight:700;letter-spacing:.08em;background:#5fbf3a;color:#fff;padding:1px 6px;border-radius:99px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+/* bocadillo */
+.talk{position:fixed;z-index:6;transform:translate(-50%,-100%);max-width:min(260px,72vw);padding:9px 14px;border-radius:18px;background:#fff;color:#2a1f4d;font-size:15px;font-weight:600;line-height:1.25;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none}
+.talk::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#fff}
+.talk.pop{animation:pop .35s ease}
+/* acciones del salón */
+.act small{font-size:10px;font-weight:700;background:rgba(0,0,0,.3);border-radius:99px;padding:1px 6px;margin-left:2px}
+.tray .act{min-width:0;padding:11px 14px;font-size:14.5px}
+.tray .act svg{width:22px;height:22px}
+/* perfil */
+.prof{max-height:calc(100vh - var(--safeT) - var(--safeB) - 40px);overflow-y:auto;gap:8px;touch-action:pan-y}
+.profHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.profHead .cardTitle{text-align:left;margin:0;font-size:26px}
+.pGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pGrid div{background:rgba(255,255,255,.08);border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.pGrid b{font-size:20px}.pGrid small{font-size:11px;color:var(--muted)}
+.pGrid.best div{flex-direction:column-reverse}
+.secT{font-weight:700;font-size:15px;margin-top:8px;letter-spacing:.04em}
+.achList{display:flex;flex-direction:column;gap:7px}
+.ach{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:16px;padding:9px 10px}
+.ach .at{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ach .at b{font-size:14.5px}.ach .at small{font-size:12px;color:var(--muted)}
+.ab{height:6px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:3px}
+.ab i{display:block;height:100%;background:linear-gradient(90deg,#7cf0b0,#4fb2ff)}
+.ach.got{opacity:.6}
+.ach .ok{color:#7cf0b0}
+.ach .rw{display:flex;align-items:center;gap:4px;font-weight:700;color:#ffe07a;font-size:13px}
+.ach .rw .coin{width:15px;height:15px}
+.ach .btn.buy{font-size:14px;padding:8px 12px}

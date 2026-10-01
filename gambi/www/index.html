@@ -23,7 +23,7 @@
 <div id="hud" hidden>
   <div class="hudTop">
     <div class="glass pill" id="coinPill"><span class="coin"></span><b id="hCoins">0</b></div>
-    <div class="glass lvl" id="lvlBox"><div class="lvTop"><b id="hName">Gambi</b><small id="hLv">Nv 1</small></div><div class="xp"><i id="hXp"></i></div></div>
+    <div class="glass lvl" id="lvlBox" style="pointer-events:auto"><i class="dot" id="achDot" hidden></i><span class="sickTag" id="sickTag" hidden>MALITA</span><div class="lvTop"><b id="hName">Gambi</b><small id="hLv">Nv 1</small></div><div class="xp"><i id="hXp"></i></div></div>
     <span class="sp"></span>
     <button class="glass round" id="giftBtn" aria-label="Premio diario"><span data-i="gift"></span><i class="dot" id="giftDot"></i></button>
     <button class="glass round" id="shopBtn" aria-label="Tienda"><span data-i="shop"></span></button>
@@ -37,6 +37,7 @@
   </div>
 </div>
 <div id="hint" class="hint" hidden></div>
+<div id="talk" class="talk" hidden></div>
 
 <!-- Acciones de cada habitación -->
 <div id="tray" class="tray" hidden></div>
@@ -99,6 +100,18 @@
       <div class="dTxt"><b id="dName">—</b><span id="dDesc"></span></div>
       <button class="btn buy" id="dBtn">—</button>
     </div>
+  </div>
+</div>
+
+<!-- Perfil y logros -->
+<div id="profile" class="screen dim" hidden>
+  <div class="glass card wide prof">
+    <div class="profHead"><div><div class="cardTitle" id="pName">Gambi</div><div class="muted" id="pInfo"></div></div><button class="glass round" id="profClose" aria-label="Cerrar"><span data-i="close"></span></button></div>
+    <div class="pGrid" id="pStats"></div>
+    <div class="secT">Récords</div>
+    <div class="pGrid best" id="pBest"></div>
+    <div class="secT">Logros</div>
+    <div class="achList" id="pAch"></div>
   </div>
 </div>
 

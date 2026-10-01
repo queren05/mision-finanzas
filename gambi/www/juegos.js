@@ -170,12 +170,190 @@ export function createMini(ctx) {
     if (g.idx >= g.seq.length) { g.phase = 'wait'; g.timer = .9; g.score = g.seq.length; g.seq.push(Math.floor(Math.random() * 4)); S.levelup(); msg(`¡Ronda ${g.seq.length - 1}!`); PA.burst(0, 1, .5, 20, col(0xffe27a), 2.4, .16, .8, 3); hud('Ronda ' + g.seq.length, '¡Bien!'); }
   }
 
+
+  /* ============ 4. NADO (tipo Flappy) ============ */
+  function coral(h, c) {
+    const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: c, roughness: .6, flatShading: true });
+    const n = Math.max(1, Math.round(h / .45));
+    for (let i = 0; i < n; i++) { const s2 = new THREE.Mesh(new THREE.IcosahedronGeometry(.36 + Math.random() * .08, 0), m); s2.position.set(rnd(-.05, .05), (i + .5) * h / n, rnd(-.05, .05)); s2.scale.set(1, h / n / .62, 1); g.add(s2); }
+    return g;
+  }
+  function startSwim() {
+    G = { id: 'swim', score: 0, pipes: [], spawn: 0, vy: 0, y: 2.1, over: false, t: 0, started: false, speed: 2.1 };
+    px = -1.1; pz = 0; yaw = -Math.PI / 2;
+    camTo(V(0, 2.2, 6.6), V(0, 2.2, 0), 9); ctx.setHouse(false);
+    const sand = new THREE.Mesh(new THREE.BoxGeometry(14, .3, 3), new THREE.MeshStandardMaterial({ color: 0xf2d99a, roughness: 1 })); sand.position.set(0, -.15, 0); add(sand);
+    const c2 = document.createElement('canvas'); c2.width = 4; c2.height = 256; const x2 = c2.getContext('2d'), gr = x2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#6fe0ff'); gr.addColorStop(1, '#0b4f96'); x2.fillStyle = gr; x2.fillRect(0, 0, 4, 256); const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace;
+    const bg = new THREE.Mesh(new THREE.PlaneGeometry(30, 14), new THREE.MeshBasicMaterial({ map: tx })); bg.position.set(0, 3, -3); add(bg);
+    hud(0, 'Toca para nadar'); msg('¡Toca para nadar!');
+  }
+  function updateSwim(dt) {
+    const g = G; g.t += dt;
+    if (g.started && !g.over) {
+      g.vy -= 10.5 * dt; g.y += g.vy * dt; g.speed = Math.min(3.4, 2.1 + g.t * .025);
+      g.spawn -= dt;
+      if (g.spawn <= 0) {
+        g.spawn = 2.05 / (g.speed / 2.1);
+        const gap = Math.max(1.55, 2.1 - g.t * .008), c = rnd(1.05 + gap / 2, 4.1 - gap / 2), col = [0xff7a8a, 0xffa84a, 0xb45aff, 0x4fe3a0][Math.floor(rnd(0, 4))];
+        const lo = coral(c - gap / 2, col), hi = coral(5.5 - (c + gap / 2), col); hi.position.y = c + gap / 2;
+        const grp = new THREE.Group(); grp.add(lo, hi); grp.position.x = 3.2; add(grp);
+        g.pipes.push({ m: grp, c, gap, passed: false });
+      }
+      for (const p2 of g.pipes) {
+        p2.m.position.x -= g.speed * dt;
+        const dx = Math.abs(p2.m.position.x - px);
+        if (dx < .36 + .3 * ctx.stage() && (g.y < p2.c - p2.gap / 2 + .12 || g.y + .32 > p2.c + p2.gap / 2)) swimDie();
+        if (!p2.passed && p2.m.position.x < px) { p2.passed = true; g.score++; S.good(); buzz('LIGHT'); }
+        if (p2.m.position.x < -4) { drop(p2.m); p2.dead = true; }
+      }
+      g.pipes = g.pipes.filter(p2 => !p2.dead);
+      if (g.y < .05 || g.y > 4.6) swimDie();
+      if (Math.random() < .3) PN.emit(px - .4, g.y + .2, pz, -1, rnd(.2, .6), 0, col(0xd6f4ff), .08, .6, -1);
+      hud(g.score, 'Nado');
+    } else if (!g.started) g.y = 2.1 + Math.sin(g.t * 3) * .12;
+    else g.y = Math.max(.05, g.y - dt * 2);
+    petPose(dt, true, g.y);
+    player.tilt.rotation.x = clamp(g.vy * .07, -.6, .5);
+  }
+  function swimDie() {
+    const g = G; if (g.over) return; S.bad(); buzz('HEAVY'); PA.burst(px, g.y + .2, pz, 20, col(0xffffff), 2, .12, .6);
+    finish({ id: 'swim', score: g.score, coins: g.score * 4, xp: 6 + g.score * 2, fun: Math.min(45, 10 + g.score * 2), title: g.score > 9 ? '¡Qué buceadora!' : '¡Choque!' });
+  }
+  function tapSwim() { const g = G; if (!g || g.over) return; g.started = true; g.vy = 4.3; S.pop(); }
+
+  /* ============ 5. PAREJAS ============ */
+  const SYM = [['#ff5a7a', 'heart'], ['#5fd6ff', 'drop'], ['#ffd84a', 'star'], ['#7cf0b0', 'leaf'], ['#b45aff', 'moon'], ['#ff9a3a', 'fish']];
+  function symTex(i) {
+    const [c, kind] = SYM[i];
+    return ctxTex(c, kind);
+  }
+  function ctxTex(c, kind) {
+    const cv2 = document.createElement('canvas'); cv2.width = 160; cv2.height = 208; const x = cv2.getContext('2d');
+    x.fillStyle = '#fff6e8'; x.fillRect(0, 0, 160, 208); x.strokeStyle = c; x.lineWidth = 8; x.strokeRect(8, 8, 144, 192);
+    x.fillStyle = c; x.translate(80, 104);
+    if (kind === 'heart') { x.beginPath(); x.moveTo(0, 36); x.bezierCurveTo(-60, -4, -30, -50, 0, -18); x.bezierCurveTo(30, -50, 60, -4, 0, 36); x.fill(); }
+    else if (kind === 'drop') { x.beginPath(); x.moveTo(0, -46); x.bezierCurveTo(30, -6, 36, 18, 0, 38); x.bezierCurveTo(-36, 18, -30, -6, 0, -46); x.fill(); }
+    else if (kind === 'star') { x.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 20 : 46; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.fill(); }
+    else if (kind === 'leaf') { x.beginPath(); x.ellipse(0, 0, 24, 44, .5, 0, 7); x.fill(); }
+    else if (kind === 'moon') { x.beginPath(); x.arc(0, 0, 40, 0, 7); x.fill(); x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(18, -10, 34, 0, 7); x.fill(); }
+    else { x.beginPath(); x.ellipse(-6, 0, 34, 20, 0, 0, 7); x.fill(); x.beginPath(); x.moveTo(24, 0); x.lineTo(46, -20); x.lineTo(46, 20); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-22, -4, 5, 0, 7); x.fill(); }
+    const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; return t;
+  }
+  let backTex = null;
+  function startMemory() {
+    G = { id: 'memory', score: 0, cards: [], open: [], found: 0, moves: 0, time: 75, over: false, t: 0, lock: 0 };
+    px = 0; pz = -2.05; yaw = Math.PI * .95;
+    camTo(V(0, 6.6, 3.6), V(0, 0, .45), 9);
+    if (!backTex) { const c2 = document.createElement('canvas'); c2.width = 160; c2.height = 208; const x = c2.getContext('2d'); const gr = x.createLinearGradient(0, 0, 160, 208); gr.addColorStop(0, '#6a2fb8'); gr.addColorStop(1, '#ff6fa5'); x.fillStyle = gr; x.fillRect(0, 0, 160, 208); x.fillStyle = 'rgba(255,255,255,.25)'; for (let i = 0; i < 30; i++) { x.beginPath(); x.arc((i * 37) % 160, (i * 53) % 208, 8, 0, 7); x.fill(); } x.strokeStyle = '#fff'; x.lineWidth = 8; x.strokeRect(8, 8, 144, 192); backTex = new THREE.CanvasTexture(c2); backTex.colorSpace = THREE.SRGBColorSpace; }
+    const ids = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5].sort(() => Math.random() - .5), side = new THREE.MeshStandardMaterial({ color: 0xffffff }), backM = new THREE.MeshStandardMaterial({ map: backTex, roughness: .5 });
+    ids.forEach((id, i) => {
+      const face = new THREE.MeshStandardMaterial({ map: symTex(id), roughness: .5 });
+      const m = new THREE.Mesh(new THREE.BoxGeometry(.82, .05, 1.07), [side, side, backM, face, side, side]);
+      const g2 = new THREE.Group(); g2.add(m); g2.position.set(-1.5 + (i % 4) * 1.0, .05, -.95 + Math.floor(i / 4) * 1.25); add(g2);
+      G.cards.push({ g: g2, id, up: false, rot: 0, done: false });
+    });
+    hud('0 parejas', '75 s'); msg('¡Encuentra las parejas!');
+  }
+  function updateMemory(dt) {
+    const g = G; g.t += dt;
+    for (const c of g.cards) { const want = c.up || c.done ? Math.PI : 0; c.rot += (want - c.rot) * Math.min(1, dt * 12); c.g.rotation.z = c.rot; c.g.position.y = .05 + Math.sin(c.rot) * .35; }
+    if (!g.over) {
+      g.time -= dt;
+      if (g.lock > 0) { g.lock -= dt; if (g.lock <= 0) { for (const c of g.open) c.up = false; g.open = []; } }
+      if (g.time <= 0) memEnd(false);
+      hud(`${g.found} pareja${g.found === 1 ? '' : 's'}`, Math.max(0, Math.ceil(g.time)) + ' s');
+    }
+    petPose(dt, false, g.hop || 0); g.hop = Math.max(0, (g.hop || 0) - dt * 1.5);
+  }
+  function tapMemory(x, y) {
+    const g = G; if (!g || g.over || g.lock > 0) return;
+    let best = null, bd = 1e9;
+    for (const c of g.cards) { if (c.up || c.done) continue; const sp = toScreen(c.g.position), d = Math.hypot(x - sp.x, y - sp.y); if (d < bd) { bd = d; best = c; } }
+    if (!best || bd > 70) return;
+    best.up = true; g.open.push(best); S.tap(); buzz('LIGHT');
+    if (g.open.length === 2) {
+      g.moves++;
+      const [a, b] = g.open;
+      if (a.id === b.id) { a.done = b.done = true; g.open = []; g.found++; S.good(); g.hop = .5; PA.burst(a.g.position.x, .4, a.g.position.z, 12, col(0xffe27a), 1.6, .12, .6); PA.burst(b.g.position.x, .4, b.g.position.z, 12, col(0xffe27a), 1.6, .12, .6); if (g.found === 6) memEnd(true); }
+      else { g.lock = .85; S.no(); }
+    }
+  }
+  function memEnd(win) {
+    const g = G; if (g.over) return;
+    const sc = g.found * 10 + (win ? Math.ceil(g.time) + Math.max(0, 20 - g.moves) * 2 : 0);
+    finish({ id: 'memory', score: sc, coins: Math.round(sc * .7), xp: 6 + Math.round(sc * .3), fun: Math.min(45, 10 + g.found * 5), title: win ? '¡Todas las parejas!' : '¡Se acabó el tiempo!' });
+  }
+
+  /* ============ 6. CAZA-CANGREJOS ============ */
+  function crabMesh(gold) {
+    const g = new THREE.Group(), c = gold ? 0xffc21d : 0xe8402e, m = new THREE.MeshStandardMaterial({ color: c, roughness: .45, emissive: gold ? 0x8a5a00 : 0x000000, emissiveIntensity: .4 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(.3, 18, 12), m); body.scale.set(1.25, .7, 1); g.add(body);
+    for (const s2 of [-1, 1]) {
+      const cl = new THREE.Mesh(new THREE.SphereGeometry(.13, 12, 10), m); cl.position.set(s2 * .45, .14, .12); cl.scale.set(1, .8, .7); g.add(cl);
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, .18, 8), m); st.position.set(s2 * .1, .27, .12); g.add(st);
+      const e = new THREE.Mesh(new THREE.SphereGeometry(.065, 12, 10), new THREE.MeshStandardMaterial({ color: 0xffffff })); e.position.set(s2 * .1, .38, .14); g.add(e);
+      const pu = new THREE.Mesh(new THREE.SphereGeometry(.032, 8, 6), new THREE.MeshBasicMaterial({ color: 0x111111 })); pu.position.set(s2 * .1, .39, .2); g.add(pu);
+      for (let k = 0; k < 3; k++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .25, 6), m); l.position.set(s2 * (.3 + k * .02), -.1, -.08 + k * .1); l.rotation.z = s2 * 1.1; g.add(l); }
+    }
+    return g;
+  }
+  function jellyMesh() {
+    const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xff8ad8, transparent: true, opacity: .75, roughness: .2, emissive: 0xff3fb4, emissiveIntensity: .35 });
+    const b = new THREE.Mesh(new THREE.SphereGeometry(.3, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), m); b.position.y = .1; g.add(b);
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, t2 = new THREE.Mesh(new THREE.CylinderGeometry(.02, .01, .4, 6), m); t2.position.set(Math.cos(a) * .18, -.1, Math.sin(a) * .18); g.add(t2); }
+    for (const s2 of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a1f4d })); e.position.set(s2 * .09, .22, .24); g.add(e); }
+    return g;
+  }
+  const HOLES = [[-1.3, -.2], [0, -.2], [1.3, -.2], [-1.3, 1.05], [0, 1.05], [1.3, 1.05]];
+  function startCrabs() {
+    G = { id: 'crabs', score: 0, time: 40, over: false, t: 0, spawn: .6, moles: [] };
+    px = 0; pz = -1.7; yaw = Math.PI * .95;
+    camTo(V(0, 4.8, 5.4), V(0, 0, .45), 9);
+    const sand = new THREE.Mesh(new THREE.BoxGeometry(5, .2, 3.4), new THREE.MeshStandardMaterial({ color: 0xf2d99a, roughness: 1 })); sand.position.set(0, -.1, .45); add(sand);
+    for (const [hx, hz] of HOLES) { const h = new THREE.Mesh(new THREE.CircleGeometry(.42, 28), new THREE.MeshBasicMaterial({ color: 0x5a3a1a })); h.rotation.x = -Math.PI / 2; h.position.set(hx, .01, hz); add(h); const r2 = new THREE.Mesh(new THREE.TorusGeometry(.43, .06, 8, 28), new THREE.MeshStandardMaterial({ color: 0xd9b870 })); r2.rotation.x = Math.PI / 2; r2.position.set(hx, .02, hz); add(r2); }
+    hud(0, '40 s'); msg('¡Toca los cangrejos!');
+  }
+  function updateCrabs(dt) {
+    const g = G; g.t += dt;
+    if (!g.over) {
+      g.time -= dt; g.spawn -= dt;
+      if (g.spawn <= 0) {
+        g.spawn = Math.max(.32, .8 - g.t * .012);
+        const free = HOLES.map((h, i) => i).filter(i => !g.moles.some(m2 => m2.hole === i));
+        if (free.length) {
+          const hole = free[Math.floor(rnd(0, free.length))], q = Math.random(), kind = q < .18 ? 'jelly' : q > .92 ? 'gold' : 'crab';
+          const m2 = kind === 'jelly' ? jellyMesh() : crabMesh(kind === 'gold'); m2.position.set(HOLES[hole][0], -.5, HOLES[hole][1]); add(m2);
+          g.moles.push({ m: m2, hole, kind, t: 0, up: Math.max(.6, 1.3 - g.t * .015), hit: false });
+        }
+      }
+      for (const m2 of g.moles) {
+        m2.t += dt; const k = m2.hit ? Math.max(0, 1 - (m2.t - m2.hitT) * 5) : m2.t < .15 ? m2.t / .15 : m2.t > m2.up ? Math.max(0, 1 - (m2.t - m2.up) / .15) : 1;
+        m2.m.position.y = -.5 + k * .62; m2.m.rotation.y = Math.sin(m2.t * 8) * .15;
+        if ((m2.hit && k <= 0) || (!m2.hit && m2.t > m2.up + .16)) { drop(m2.m); m2.dead = true; }
+      }
+      g.moles = g.moles.filter(m2 => !m2.dead);
+      if (g.time <= 0) finish({ id: 'crabs', score: g.score, coins: Math.round(g.score * 1.5), xp: 6 + Math.round(g.score * .6), fun: Math.min(45, 10 + g.score), title: '¡Tiempo!' });
+      hud(g.score, Math.max(0, Math.ceil(g.time)) + ' s');
+    }
+    petPose(dt, false, g.hop || 0); g.hop = Math.max(0, (g.hop || 0) - dt * 1.4);
+  }
+  function tapCrabs(x, y) {
+    const g = G; if (!g || g.over) return;
+    let best = null, bd = 1e9;
+    for (const m2 of g.moles) { if (m2.hit) continue; const sp = toScreen(_v.set(m2.m.position.x, .15, m2.m.position.z)), d = Math.hypot(x - sp.x, y - sp.y); if (d < bd) { bd = d; best = m2; } }
+    if (!best || bd > 85 || best.m.position.y < -.3) return;
+    best.hit = true; best.hitT = best.t; const p2 = best.m.position;
+    if (best.kind === 'jelly') { g.score = Math.max(0, g.score - 3); S.bad(); buzz('HEAVY'); FL.add('-3', p2.x, .8, p2.z + .3, { color: '#ff8ad8', size: .6 }); }
+    else { const v = best.kind === 'gold' ? 5 : 1; g.score += v; g.hop = .4; S.bonk ? S.bonk() : S.good(); SND_hit(); buzz('MEDIUM'); PA.burst(p2.x, .4, p2.z, 12, col(best.kind === 'gold' ? 0xffd84a : 0xffffff), 1.8, .12, .5); FL.add('+' + v, p2.x, .9, p2.z + .3, { color: best.kind === 'gold' ? '#ffe14d' : '#ffffff', size: .55 }); }
+  }
+  function SND_hit() { ctx.SND && ctx.SND.noiseHit ? ctx.SND.noiseHit(.08, .2, 700) : S.good(); }
+
   /* ============ interfaz común ============ */
-  const GAMES = { catch: [startCatch, updateCatch], bubbles: [startBubbles, updateBubbles], simon: [startSimon, updateSimon] };
-  function clear() { for (const o of objs) scene.remove(o); objs = []; if (G) G.items = G.bubbles = G.pads = []; }
+  const GAMES = { catch: [startCatch, updateCatch], bubbles: [startBubbles, updateBubbles], simon: [startSimon, updateSimon], swim: [startSwim, updateSwim], memory: [startMemory, updateMemory], crabs: [startCrabs, updateCrabs] };
+  function clear() { for (const o of objs) scene.remove(o); objs = []; if (G) G.items = G.bubbles = G.pads = G.pipes = G.cards = G.moles = []; }
   return {
     start(id) {
-      clear(); aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
+      clear(); ctx.setHouse(true); aborted = false; T = 0; $('#miniEnd').hidden = true; $('#miniHud').hidden = false; $('#miniMsg').hidden = true;
       pet.act = null; GAMES[id][0](); this.id = id;
     },
     update(dt) { T += dt; if (G) GAMES[G.id][1](dt); },
@@ -184,13 +362,16 @@ export function createMini(ctx) {
       if (G.id === 'catch') { if (type !== 'up') { const w = worldAt(x, y, pz); if (w) ptX = w.x; } }
       else if (G.id === 'bubbles') { if (type === 'down') tapBubble(x, y); }
       else if (G.id === 'simon') { if (type === 'down') tapSimon(x, y); }
+      else if (G.id === 'swim') { if (type === 'down') tapSwim(); }
+      else if (G.id === 'memory') { if (type === 'down') tapMemory(x, y); }
+      else if (G.id === 'crabs') { if (type === 'down') tapCrabs(x, y); }
     },
     abort() { aborted = true; if (G) G.over = true; },
-    dispose() { clear(); G = null; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
+    dispose() { clear(); ctx.setHouse(true); G = null; $('#miniMsg').hidden = true; player.tilt.position.set(0, 0, 0); player.tilt.rotation.set(0, 0, 0); player.tilt.scale.set(1, 1, 1); },
     // pruebas: ?mini=simon&act=... — adelanta el juego para sacar capturas
     test(Q) {
       const steps = +(Q.get('steps') || 0);
-      for (let i = 0; i < steps; i++) { this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); }
+      for (let i = 0; i < steps; i++) { this.update(1 / 30); if (G.id === 'catch' && i % 5 === 0) this.pointer('move', innerWidth * (.5 + Math.sin(i / 20) * .3), innerHeight * .6); if (G.id === 'swim' && (!G.started || (G.y < 1.9 && G.vy < 0))) tapSwim(); if (G.id === 'memory' && i % 20 === 5 && G.found < 3) { const c = G.cards.find(c2 => !c2.up && !c2.done); if (c) { const sp = toScreen(c.g.position); tapMemory(sp.x, sp.y); } } }
     },
   };
 }

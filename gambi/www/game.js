@@ -2,7 +2,7 @@
 // (también con la app cerrada). Todo el estado se guarda en localStorage.
 import * as THREE from './lib/three.module.min.js';
 import * as M from './modelos.js';
-import { save, persist, clamp, tickStats, mood, xpNeed, stageOf, STAGE, MAXLV, FOODS, CHARS, SKINS, MINIGAMES, NAMES, OFFLINE_CAP } from './datos.js';
+import { save, persist, clamp, tickStats, mood, xpNeed, stageOf, STAGE, MAXLV, FOODS, CHARS, SKINS, MINIGAMES, NAMES, OFFLINE_CAP, ACH, FURNITURE } from './datos.js';
 import { buildHouse } from './casa.js';
 import { foodMesh } from './comida.js';
 import { Particles, Floaters } from './particulas.js';
@@ -74,6 +74,8 @@ async function boot() {
   for (const k of ['food', 'fun', 'energy', 'hyg']) if (Q.has(k) && Number.isFinite(+Q.get(k))) save.st[k] = +Q.get(k);
   if (Q.get('give')) save.inv[Q.get('give')] = 3;
   if (Q.has('sleep')) save.sleeping = true;
+  if (Q.has('sick')) save.sick = true;
+  if (Q.get('furn')) for (const f of Q.get('furn').split(',')) save.furn[f] = true;
   // tiempo transcurrido con la app cerrada
   const away = clamp((Date.now() - save.t) / 1000, 0, OFFLINE_CAP);
   if (save.hatched && away > 60) { tickStats(away); if (save.sleeping && save.st.energy >= 99) save.sleeping = false; }
@@ -96,6 +98,7 @@ async function applyLook(eq = save.eq) {
   player.setSkin((SKINS.find(s => s.id === eq.skins) || SKINS[0]).p);
   player.hatId = eq.hats;
   house.applyTheme(eq.themes);
+  house.setFurniture(Object.assign({}, save.furn, eq.furnPreview || {}), save.name || 'Gambi');
   await player.use(ch.model);
 }
 
@@ -152,13 +155,14 @@ function goRoom(id, first) {
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.room === id));
   buildTray();
   if (!first) { S.tap(); buzz(); }
-  const H = { salon: 'Toca a Gambi o acarícialo con el dedo', cocina: 'Arrastra la comida hasta Gambi (o tócala)', bano: 'Frota a Gambi con el dedo y luego pulsa la ducha', dormitorio: 'Cuando tenga sueño, apaga la luz', juegos: 'Juega para ganar monedas y diversión' };
-  hint(H[id], 3800);
+  const H = { salon: 'Acaríciala, hazle cosquillas o enséñale trucos', cocina: 'Arrastra la comida hasta Gambi (o tócala)', bano: 'Frota a Gambi con el dedo y luego pulsa la ducha', dormitorio: 'Cuando tenga sueño, apaga la luz', juegos: 'Juega para ganar monedas y diversión' };
+  hint(save.sick ? `${save.name} está mala: dale medicina en la cocina` : H[id], 3800);
 }
 function setupUI() {
   $$('#nav button').forEach(b => b.onclick = () => { if (mode === 'home') goRoom(b.dataset.room); });
   $('#shopBtn').onclick = () => { if (mode === 'home') { S.click(); shop.open('food'); } };
   $('#giftBtn').onclick = gift;
+  $('#lvlBox').onclick = openProfile; $('#profClose').onclick = () => { $('#profile').hidden = true; S.click(); };
   $('#setBtn').onclick = openSettings; $('#setClose').onclick = closeSettings;
   $('#nameOk').onclick = confirmName;
   $('#nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') confirmName(); });
@@ -170,7 +174,7 @@ function setupUI() {
 }
 function confirmName() {
   const n = $('#nameIn').value.trim().slice(0, 14); if (!n) { $('#nameIn').focus(); return; }
-  save.name = n; save.hatched = true; save.lv = 1; save.xp = 0; save.st = { food: 75, fun: 75, energy: 90, hyg: 85 }; persist();
+  save.name = n; save.hatched = true; save.born = Date.now(); save.lv = 1; save.xp = 0; save.st = { food: 75, fun: 75, energy: 90, hyg: 85 }; persist();
   $('#nameDlg').hidden = true; S.happy(); enterHome(); toast(`¡Bienvenido, ${n}!`);
 }
 function openSettings() {
@@ -200,6 +204,8 @@ function updHud(force) {
   $('#hLv').textContent = `Nv ${save.lv} · ${STAGE[stageOf(save.lv)].name}`;
   $('#hXp').style.width = (save.lv >= MAXLV ? 100 : save.xp / xpNeed(save.lv) * 100) + '%';
   $('#giftDot').hidden = save.daily.last === new Date().toISOString().slice(0, 10);
+  $('#achDot').hidden = !ACH.some(a => !save.ach[a.id] && a.v(save) >= a.n);
+  $('#sickTag').hidden = !save.sick;
   for (const k of NEEDS) { const el = $(`.stat[data-k=${k}]`); el.querySelector('i').style.width = Math.max(4, save.st[k]) + '%'; el.classList.toggle('low', save.st[k] < 25); }
 }
 function gift() {
@@ -217,7 +223,11 @@ const GAME_ART = {};
 function buildTray() {
   const t = $('#tray'); t.innerHTML = ''; t.classList.remove('center'); t.hidden = true;
   if (mode !== 'home') return;
-  if (room === 'cocina') {
+  if (room === 'salon') {
+    const acts = [['dance', 'music', 'Bailar'], ['flip', 'star', 'Voltereta'], ['tickle', 'fun', 'Cosquillas'], ['talk', 'talk', 'Hablar'], ['bubbles', 'bubble', 'Pompas']];
+    t.innerHTML = acts.map(([id, ic, nm]) => `<button class="glass act" data-act="${id}">${ICON[ic] || ''}${nm}${id === 'flip' && save.lv < 3 ? '<small>Nv 3</small>' : ''}</button>`).join('');
+    t.querySelectorAll('[data-act]').forEach(b => b.onclick = () => doAct(b.dataset.act));
+  } else if (room === 'cocina') {
     const list = FOODS.filter(f => f.free || (save.inv[f.id] || 0) > 0);
     t.innerHTML = list.map(f => `<div class="glass food" data-id="${f.id}"><span class="th ph" data-th="food:${f.id}"></span><b>${f.name}</b>${f.free ? '' : `<span class="n">×${save.inv[f.id]}</span>`}</div>`).join('') + `<div class="glass food more" data-more="1"><span data-i="plus"></span>Más comida</div>`;
     t.querySelector('[data-more] span').innerHTML = ICON.plus;
@@ -261,7 +271,8 @@ function feed(id) {
   if (pet.act || save.sleeping || mode !== 'home') return;
   const f = FOODS.find(x => x.id === id); if (!f) return;
   if (!f.free && !(save.inv[id] > 0)) { toast('No te queda'); return; }
-  if (save.st.food >= 96 && !(f.fun || f.energy || f.hyg)) { pet.act = { type: 'no', t: 0 }; S.no(); toast(`${save.name} está llena`); buzz('MEDIUM'); return; }
+  if (f.med && !save.sick) { toast(`${save.name} no está mala`); S.no(); return; }
+  if (!f.med && save.st.food >= 96 && !(f.fun || f.energy || f.hyg)) { pet.act = { type: 'no', t: 0 }; S.no(); toast(`${save.name} está llena`); buzz('MEDIUM'); return; }
   if (!f.free) save.inv[id]--;
   const mesh = foodMesh(id); mesh.scale.setScalar(.75 + pet.sc * .5); scene.add(mesh);
   pet.act = { type: 'eat', t: 0, id, f, mesh, bites: 0 };
@@ -271,6 +282,7 @@ function finishEat(a) {
   const f = a.f, gain = { food: f.food || 0, fun: f.fun || 0, energy: f.energy || 0, hyg: f.hyg || 0 };
   const lab = { food: 'Comida', fun: 'Diversión', energy: 'Energía', hyg: 'Limpieza' };
   let i = 0; for (const k of NEEDS) if (gain[k]) { addStat(k, gain[k]); FL.add(`+${gain[k]}`, pet.x + (i++ - 1) * .35, 1.05 * pet.sc + .5, pet.z + .3, { color: { food: '#ffc04a', fun: '#ff8ab8', energy: '#ffe94d', hyg: '#6fdcff' }[k], size: .36, life: 1.3 }); }
+  if (f.med) { save.sick = false; save.sickT = 0; save.stats.cured++; say('¡Puaj! Pero ya me encuentro mejor'); }
   save.stats.fed++; scene.remove(a.mesh); pet.hopV = 4; pet.hearts = 3; S.happy(); buzz('MEDIUM');
   gainXp(5 + Math.round((gain.food + gain.fun + gain.energy + gain.hyg) / 14)); persist(); updHud();
 }
@@ -340,12 +352,13 @@ function cvUp(e) {
     _v.setFromMatrixPosition(h.obj.matrixWorld); _v.y += .4; _v.project(cam);
     if (Math.hypot(e.clientX - (_v.x * .5 + .5) * innerWidth, e.clientY - (-_v.y * .5 + .5) * innerHeight) < h.r) { hotspot(h.id); return; }
   }
+  if (popBubble(e.clientX, e.clientY)) return;
   if (nearPet(e.clientX, e.clientY) && !pet.act) poke();
 }
 function hotspot(id) {
   if (id === 'ball') kickBall();
   else if (id === 'lamp') save.sleeping ? wake() : sleep();
-  else if (id === 'arcade') startMini(MINIGAMES[Math.floor(Math.random() * 2)].id);
+  else if (id === 'arcade') startMini(MINIGAMES[Math.floor(Math.random() * MINIGAMES.length)].id);
   else if (id === 'fridge') toast('Arrastra la comida hacia ' + save.name);
 }
 function poke() {
@@ -360,6 +373,96 @@ function caress(d) {
 const ballS = { t: 0, x0: 0 };
 function kickBall() {
   if (ballS.t > 0) return; ballS.t = 1; ballS.x0 = house.ball.position.x; S.pop(); buzz('LIGHT'); pet.hopV = 4; addStat('fun', 2); gainXp(1);
+}
+
+
+/* ---------- acciones del salón ---------- */
+const TALK = {
+  hungry: ['Tengo un hambre que me comería un krill entero', '¿Hay algo de comer?', 'Mi barriga hace ruidos raros'],
+  bored: ['Me aburroooo', '¿Jugamos a algo?', 'Vamos a la sala de juegos, porfa'],
+  tired: ['Estoy reventada…', 'Necesito una siesta', 'Se me cierran los ojitos'],
+  dirty: ['Huelo un poco a marisco…', 'Necesito un baño', 'Tengo arena hasta en las antenas'],
+  sick: ['No me encuentro bien…', 'Creo que estoy malita', 'Necesito medicina'],
+  happy: ['¡Te quiero mucho!', '¡Qué buen día hace!', '¿Sabías que las gambas oímos con las antenas? Bueno, igual no.', '¡Soy la gamba más feliz del mar!', 'Hoy me siento guapísima', '¿Me haces cosquillas?', '¡Mira qué antenas tan largas tengo!', 'Ojalá fuera domingo todos los días', 'Si fuera un langostino sería más elegante, pero me gusto así'],
+};
+function phrase() {
+  const st = save.st, pick = a => a[Math.floor(Math.random() * a.length)];
+  if (save.sick) return pick(TALK.sick);
+  const low = [['food', 'hungry'], ['energy', 'tired'], ['hyg', 'dirty'], ['fun', 'bored']].filter(([k]) => st[k] < 30).sort((a, b) => st[a[0]] - st[b[0]]);
+  return low.length && Math.random() < .8 ? pick(TALK[low[0][1]]) : pick(TALK.happy);
+}
+let sayT = 0, chatT = 30;
+function say(txt, ms = 2800) {
+  const b = $('#talk'); b.textContent = txt; b.hidden = false; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); sayT = ms / 1000;
+  for (let i = 0; i < Math.min(6, 2 + txt.length / 8); i++) SND.tone(500 + Math.random() * 500, .07, 'triangle', .07, Math.random() < .5 ? 200 : -150, i * .09);
+}
+function doAct(id) {
+  if (mode !== 'home' || pet.act) return;
+  if (save.sleeping) { wake(); return; }
+  if (id === 'talk') { say(phrase()); save.stats.talks++; pet.hopV = 2.5; addStat('fun', 1); gainXp(1); persist(); return; }
+  if (id === 'bubbles') { spawnBubbles(); return; }
+  if (id === 'flip' && save.lv < 3) { toast('La voltereta se aprende en el nivel 3'); S.no(); return; }
+  if (save.sick) { say('Estoy malita… mejor luego'); S.sad(); return; }
+  if (save.st.energy < 12) { say('Estoy demasiado cansada'); S.sad(); return; }
+  pet.act = { type: id, t: 0 }; S.click(); buzz();
+  if (id === 'dance') { [0, .25, .5, .75, 1, 1.25, 1.5, 1.75, 2, 2.25].forEach((w, i) => SND.tone(440 * Math.pow(2, [0, 4, 7, 12, 7, 4, 0, 7, 12, 16][i] / 12), .18, 'triangle', .11, 0, w)); }
+}
+function finishAct(a) {
+  const R2 = { dance: [7, 4, 3], flip: [5, 3, 3], tickle: [6, 2, 2] }[a.type];
+  addStat('fun', R2[0]); addStat('energy', -R2[1]); gainXp(R2[2]); pet.hearts = 3;
+  if (a.type !== 'tickle') save.stats.tricks++;
+  if (Math.random() < .35) say(a.type === 'tickle' ? '¡Jijiji, para, para!' : a.type === 'dance' ? '¡Soy una estrella!' : '¡Tachán!');
+  persist(); updHud();
+}
+// pompas de jabón que flotan por el salón; se revientan tocándolas
+const bubbles = [];
+function spawnBubbles() {
+  if (bubbles.length > 4) return;
+  S.pop(); buzz();
+  for (let i = 0; i < 7; i++) {
+    const r = rnd(.12, .22), m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(rnd(.45, .95), .8, .75), transparent: true, opacity: .45, roughness: .05, emissive: 0x335577, emissiveIntensity: .2 }));
+    m.position.set(rnd(-1.4, 1.4), rnd(.3, .8), rnd(-.4, 1)); scene.add(m);
+    bubbles.push({ m, r, vy: rnd(.15, .35), ph: rnd(0, 6), life: rnd(9, 14) });
+  }
+  hint('Toca las pompas para explotarlas', 2500);
+}
+function updateBubbles(dt) {
+  for (const b of bubbles) {
+    b.life -= dt; b.ph += dt; b.m.position.y += b.vy * dt; b.m.position.x += Math.sin(b.ph * 1.3) * .2 * dt;
+    if (room !== 'salon' || mode !== 'home') b.life = 0;
+    // la gamba persigue la pompa más baja
+    if (b.life <= 0 || b.m.position.y > 3.5) { scene.remove(b.m); b.dead = true; }
+  }
+  for (let i = bubbles.length - 1; i >= 0; i--) if (bubbles[i].dead) bubbles.splice(i, 1);
+  if (bubbles.length && !pet.act && !save.sleeping) { const low = bubbles.reduce((a, b) => b.m.position.y < a.m.position.y ? b : a); pet.tx = clamp(low.m.position.x, -1.2, 1.2); pet.tz = clamp(low.m.position.z, -.2, 1); if (pet.wait > .5) pet.wait = .5; }
+}
+function popBubble(x, y) {
+  for (const b of bubbles) {
+    _v.copy(b.m.position).project(cam); const sx = (_v.x * .5 + .5) * innerWidth, sy = (-_v.y * .5 + .5) * innerHeight;
+    if (Math.hypot(x - sx, y - sy) < 60) {
+      b.dead = true; b.life = 0; scene.remove(b.m); S.pop(); buzz('LIGHT'); PA.burst(b.m.position.x, b.m.position.y, b.m.position.z, 10, new THREE.Color(0xd6f4ff), 1.6, .1, .5, 1);
+      addStat('fun', 2); pet.hopV = 3.5; if (Math.random() < .25) { save.coins += 2; FL.add('+2', b.m.position.x, b.m.position.y, b.m.position.z + .2, { color: '#ffe14d', size: .4 }); } gainXp(1);
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ---------- perfil y logros ---------- */
+function openProfile() {
+  if (mode !== 'home') return; S.click();
+  const days = save.born ? Math.max(0, Math.floor((Date.now() - save.born) / 864e5)) : 0;
+  $('#pName').textContent = save.name; $('#pInfo').textContent = `Nivel ${save.lv} · ${STAGE[stageOf(save.lv)].name} · ${days === 0 ? 'nació hoy' : days === 1 ? '1 día' : days + ' días'}`;
+  const st = save.stats;
+  $('#pStats').innerHTML = [['Comidas', st.fed], ['Baños', st.bathed], ['Caricias', st.pets], ['Partidas', st.played], ['Trucos', st.tricks], ['Charlas', st.talks]].map(([k, v]) => `<div><b>${v}</b><small>${k}</small></div>`).join('');
+  $('#pBest').innerHTML = MINIGAMES.map(g => `<div><small>${g.name}</small><b>${save.best[g.id] || 0}</b></div>`).join('');
+  renderAch(); $('#profile').hidden = false;
+}
+function renderAch() {
+  const box = $('#pAch');
+  box.innerHTML = ACH.map(a => { const v = Math.min(a.n, a.v(save)), done = v >= a.n, got = save.ach[a.id];
+    return `<div class="ach ${got ? 'got' : done ? 'ready' : ''}"><div class="at"><b>${a.name}</b><small>${a.desc}</small><span class="ab"><i style="width:${v / a.n * 100}%"></i></span></div>${got ? `<span class="ok">${ICON.check}</span>` : done ? `<button class="btn buy" data-a="${a.id}"><span class="coin"></span>${a.r}</button>` : `<span class="rw"><span class="coin"></span>${a.r}</span>`}</div>`; }).join('');
+  box.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const a = ACH.find(x => x.id === b.dataset.a); save.ach[a.id] = true; save.coins += a.r; persist(); S.levelup(); buzz('MEDIUM'); toast(`¡Logro «${a.name}»! +${a.r} monedas`); renderAch(); updHud(); });
 }
 
 /* ---------- mascota: movimiento y animación ---------- */
@@ -397,6 +500,7 @@ function updatePet(dt) {
   pet.y = lerp(pet.y, ty, Math.min(1, dt * 6));
   // acciones
   let pose = moving ? 'run' : 'idle', squash = 1, headBob = 0, turn = 0;
+  if (a && a.type === 'dance') pet.speed = 0;
   if (a) {
     a.t += dt;
     if (a.type === 'eat') {
@@ -405,6 +509,19 @@ function updatePet(dt) {
       headBob = Math.max(0, Math.sin(a.t * 13)) * .14;
       const bt = [.45, .95, 1.45]; if (a.bites < 3 && a.t > bt[a.bites]) { a.bites++; a.mesh.scale.multiplyScalar(.6); SND.noiseHit(.07, .16, 500); SND.tone(190 + a.bites * 40, .08, 'square', .05, -60); PN.burst(a.mesh.position.x, a.mesh.position.y, a.mesh.position.z, 6, new THREE.Color(0xffe0a0), .9, .08, .5, 5); }
       if (a.t > 1.9) { finishEat(a); pet.act = null; }
+    } else if (a.type === 'dance') {
+      const t = a.t; turn = Math.sin(t * 6) * .6; pet.yaw += dt * (t < 1.2 || t > 2 ? 0 : 7); squash = 1 + Math.sin(t * 12) * .08;
+      if (Math.floor(t * 4) !== Math.floor((t - dt) * 4)) { pet.hopV = 3.4; FL.add('♪', pet.x + rnd(-.4, .4), pet.y + .9 * pet.sc, pet.z + .3, { color: ['#ffe14d', '#7fd6ff', '#ff8ab8'][Math.floor(rnd(0, 3))], size: .4, life: 1.1, drift: rnd(-.2, .2) }); }
+      if (t > 2.6) { finishAct(a); pet.act = null; }
+    } else if (a.type === 'flip') {
+      const t = a.t; if (t < .05 && pet.hopY === 0) pet.hopV = 6.5;
+      a.rx = t > .05 && t < .85 ? -((t - .05) / .8) * Math.PI * 2 : 0;
+      if (t > .85 && !a.landed) { a.landed = true; PA.burst(pet.x, .1, pet.z, 18, new THREE.Color(0xfff2a0), 2, .14, .6, 3); S.happy(); }
+      if (t > 1.2) { finishAct(a); pet.act = null; }
+    } else if (a.type === 'tickle') {
+      const t = a.t; pet.wiggle = 1; turn = Math.sin(t * 25) * .15;
+      if (Math.floor(t * 5) !== Math.floor((t - dt) * 5)) SND.tone(700 + Math.random() * 400, .08, 'triangle', .08, 300);
+      if (t > 1.8) { finishAct(a); pet.act = null; }
     } else if (a.type === 'no') { turn = Math.sin(a.t * 18) * .4 * Math.max(0, 1 - a.t / 0.7); if (a.t > .75) pet.act = null; }
     else if (a.type === 'shower') {
       const t = a.t; headBob = Math.sin(t * 9) * .05;
@@ -426,10 +543,22 @@ function updatePet(dt) {
   const breathe = sleeping ? Math.sin(T * 1.6) * .03 : Math.sin(T * 2.2) * .012;
   const droop = md === 0 && !sleeping ? .1 : 0;
   player.tilt.scale.set(1 + pet.wiggle * .04 * Math.sin(T * 30), (1 + breathe) * (1 - droop * .4) - pet.wiggle * .03, 1);
-  player.tilt.rotation.set(headBob - droop * .5 + (sleeping ? .05 : 0), 0, pet.wiggle * .1 * Math.sin(T * 24));
+  const sickDroop = save.sick && !sleeping ? .12 : 0;
+  player.tilt.rotation.set(headBob - droop * .5 - sickDroop + (a && a.rx || 0), 0, pet.wiggle * .1 * Math.sin(T * 24));
+  if (squash !== 1) player.tilt.scale.y *= squash;
+  // dormida en la cama: boca arriba, con las patitas moviéndose despacio
+  const onBack = sleeping && room === 'dormitorio' && mode === 'home' && player.cur;
+  pet.roll = lerp(pet.roll || 0, onBack ? 1 : 0, Math.min(1, dt * 4));
+  if (pet.roll > .01) {
+    player.tilt.rotation.z = Math.PI * pet.roll; player.tilt.position.y = (player.cur.h || .5) * pet.roll * .92;
+    if (onBack) player.pose(T * 1.6, 'slide', T, dt, 1);
+  }
+  if (player.hat) player.hat.visible = pet.roll < .5;
+  house.setBlanket(onBack && pet.roll > .8, pet.y + (player.cur && player.cur.h || .5) * pet.sc * .5);
   const hb = player.cur && player.cur.bones && player.cur.bones.Head; if (hb && (droop || headBob)) hb.rotation.x += droop * 1.2 + headBob;
   // sueño y avisos
-  if (sleeping) { pet.sleepZ -= dt; if (pet.sleepZ <= 0) { pet.sleepZ = 1.2; FL.add('Z', pet.x + 0.35, pet.y + .85, pet.z, { color: '#cfe3ff', size: .4, life: 2, vy: .4, drift: .12 }); } }
+  if (sleeping) { pet.sleepZ -= dt; if (pet.sleepZ <= 0) { pet.sleepZ = 1.2; FL.add('Z', pet.x - .2, pet.y + .95, pet.z, { color: '#cfe3ff', size: .4, life: 2, vy: .4, drift: .12 }); if (Math.random() < .5) PA.emit(pet.x - .55 * pet.sc, pet.y + .35, pet.z, 0, .25, 0, new THREE.Color(0xbfe9ff), .22, 1.6, -.05, 1.2); } }
+  if (save.sick && !sleeping) { pet.sickT = (pet.sickT || 0) - dt; if (pet.sickT <= 0) { pet.sickT = 6; FL.add('🤒', pet.x, pet.y + 1.05 * pet.sc + .3, pet.z + .2, { size: .5, life: 2, font: '70px "Apple Color Emoji","Noto Color Emoji",sans-serif' }); } }
   warnT -= dt;
   if (warnT <= 0 && !sleeping && !a) { warnT = 22; const k = NEEDS.find(n => save.st[n] < 25); if (k) { FL.add({ food: '🍤', fun: '🎈', energy: '💤', hyg: '🫧' }[k], pet.x, pet.y + 1.05 * pet.sc + .4, pet.z + .2, { size: .55, life: 2.2, font: '70px "Apple Color Emoji","Noto Color Emoji",sans-serif' }); S.sad(); } }
 }
@@ -441,9 +570,10 @@ async function startMini(id) {
   const { createMini } = await import('./juegos.js');
   if (save.sleeping) wake();
   mode = 'mini'; S.click();
-  for (const s of ['#hud', '#nav', '#tray', '#hint']) $(s).hidden = true;
+  for (const s of ['#hud', '#nav', '#tray', '#hint', '#talk']) $(s).hidden = true; sayT = 0;
+  for (const b of bubbles) b.life = 0;
   house.setRoom(null); foamSet(0);
-  mini = createMini({ THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
+  mini = createMini({ THREE, M, scene, cam, cv, player, pet, PN, PA, FL, S, SND, buzz, save, foodMesh, FOODS, setHouse: v => { house.shared.visible = v; house.decoGroup.visible = v; }, hint, toast, camTo, end: endMini, rnd, clamp, VIEW, stage: () => STAGE[stageOf(save.lv)].scale, onPetReady: null });
   mini.start(id);
 }
 function endMini(r) {
@@ -478,7 +608,10 @@ function frame(dt) {
     saveT += dt; if (saveT > 6) { saveT = 0; persist(); }
     hudT += dt; if (hudT > .3) { hudT = 0; updHud(); }
     updatePet(dt);
+    updateBubbles(dt);
     house.update(dt, T);
+    if (sayT > 0) { sayT -= dt; const p = petScreen(), b = $('#talk'); b.style.left = p.x + 'px'; b.style.top = (p.y - 95 * (.6 + .4 * pet.sc)) + 'px'; if (sayT <= 0) b.hidden = true; }
+    if (mode === 'home' && !save.sleeping && !pet.act) { chatT -= dt; if (chatT <= 0) { chatT = rnd(35, 70); say(phrase()); } }
     if (room === 'salon' && ballS.t > 0) { ballS.t -= dt * 1.4; const p = 1 - Math.max(0, ballS.t); house.ball.position.y = .3 + Math.abs(Math.sin(p * Math.PI * 3)) * .9 * (1 - p); house.ball.position.x = ballS.x0 + Math.sin(p * Math.PI) * .6; house.ball.rotation.z -= dt * 6; if (ballS.t <= 0) house.ball.position.x = ballS.x0; }
   } else if (mode === 'egg') {
     eggM.wob = Math.max(0, (eggM.wob || 0) - dt * 1.6);
@@ -495,6 +628,7 @@ function frame(dt) {
     const k = mode === 'egg' ? 0 : 0;
     camGoal.pos.set(0, 1.25, 3.8); camGoal.look.set(0, .5 + k, 0); camGoal.k = 4;
     if (mode === 'egg') { camGoal.pos.set(0, 1.4, 3.4); camGoal.look.set(0, .75, 0); }
+    if (mode === 'home' && save.sleeping && room === 'dormitorio') { camGoal.pos.set(.1, 2.1, 1.6); camGoal.look.set(-.45, .95, -1.45); camGoal.k = 2; }
     cam.setViewOffset(innerWidth, innerHeight, 0, VIEW.shift * innerHeight, innerWidth, innerHeight);
   } else if (mode === 'shop') shop.camera(dt, camGoal);
   else if (mode === 'mini') { if (cam.view && cam.view.enabled) cam.clearViewOffset(); }
@@ -513,7 +647,7 @@ function testShot() {
   document.head.insertAdjacentHTML('beforeend', '<style>*{animation:none!important;transition:none!important}' + (Q.has('noui') ? '#hud,#nav,#tray,.panel,.screen,#hint{display:none!important}' : '') + '</style>');
   const wait = +(Q.get('shot') || 1);
   setTimeout(async () => {
-    if (Q.has('act')) { const a = Q.get('act'); if (a === 'eat') feed(Q.get('give') || 'pizza'); if (a === 'shower') { foamSet(1); shower(); } if (a === 'scrub') { foamSet(+(Q.get('foam') || .8)); } if (a === 'sleep') sleep(); }
+    if (Q.has('act')) { const a = Q.get('act'); if (a === 'eat') feed(Q.get('give') || 'pizza'); if (a === 'shower') { foamSet(1); shower(); } if (a === 'scrub') { foamSet(+(Q.get('foam') || .8)); } if (a === 'sleep') sleep(); if (['dance', 'flip', 'tickle', 'talk', 'bubbles'].includes(a)) doAct(a); if (a === 'profile') openProfile(); }
     if (Q.has('thumbtest')) { const u = await shop.thumb('food', FOODS[4]); document.title = 'thumb ' + (u ? u.length : u); const im0 = new Image(); im0.src = u; im0.style.cssText = 'position:fixed;left:0;top:0;z-index:98;width:320px'; document.body.appendChild(im0); }
     for (let i = 0; i < (+(Q.get('frames')) || 90); i++) frame(1 / 60);
     if (mode === 'mini' && mini && mini.test) mini.test(Q);

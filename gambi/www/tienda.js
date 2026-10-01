@@ -1,5 +1,5 @@
 // Tienda de Gambi y miniaturas renderizadas en 3D de cada objeto.
-import { FOODS, CHARS, SKINS, HATS, THEMES, TABS, MINIGAMES, owns, persist } from './datos.js';
+import { FOODS, CHARS, SKINS, HATS, THEMES, TABS, MINIGAMES, FURNITURE, owns, persist } from './datos.js';
 
 export function createShop(ctx) {
   const { THREE, M, scene, R, cv, cam, house, player, pet, PN, PA, save, toast, updHud, S, buzz, applyLook, buildTray, leave, foodMesh, FL, VIEW } = ctx;
@@ -77,6 +77,9 @@ export function createShop(ctx) {
       x.globalAlpha = .9;
       if (g.id === 'catch') { const cols = ['#ffb04a', '#ff7ab0', '#fff27a', '#9bff8a', '#5ff0ff']; for (let i = 0; i < 9; i++) { x.fillStyle = cols[i % 5]; x.beginPath(); x.arc(28 + i * 33, 28 + (i * 47) % 120, 13, 0, 7); x.fill(); } x.fillStyle = '#20222b'; x.beginPath(); x.arc(240, 170, 24, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.95)'; x.beginPath(); x.ellipse(w / 2, 212, 54, 12, 0, 0, 7); x.fill(); }
       else if (g.id === 'bubbles') { for (let i = 0; i < 11; i++) { const r = 14 + (i * 13) % 30, bx = 30 + (i * 59) % 270, by = 40 + (i * 83) % 170; x.strokeStyle = 'rgba(255,255,255,.9)'; x.fillStyle = 'rgba(255,255,255,.22)'; x.lineWidth = 4; x.beginPath(); x.arc(bx, by, r, 0, 7); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,.8)'; x.beginPath(); x.arc(bx - r * .35, by - r * .35, r * .18, 0, 7); x.fill(); } }
+      else if (g.id === 'swim') { x.fillStyle = '#ff7a8a'; for (const [cx, gy] of [[70, 90], [170, 140], [270, 70]]) { x.fillRect(cx - 18, 0, 36, gy); x.fillRect(cx - 18, gy + 95, 36, h); } x.fillStyle = '#ffd9b0'; x.beginPath(); x.ellipse(120, 150, 26, 14, -.3, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 6; i++) { x.beginPath(); x.arc(30 + i * 50, 200 - (i % 3) * 25, 5, 0, 7); x.fill(); } }
+      else if (g.id === 'memory') { const cs = ['#ff5a7a', '#5fd6ff', '#ffd84a', '#7cf0b0']; for (let i = 0; i < 8; i++) { const cx = 38 + (i % 4) * 70, cy = 40 + Math.floor(i / 4) * 92; x.fillStyle = i % 3 ? '#fff4e0' : cs[i % 4]; x.beginPath(); x.roundRect ? x.roundRect(cx, cy, 54, 74, 9) : x.rect(cx, cy, 54, 74); x.fill(); if (i % 3) { x.fillStyle = '#c4436a'; x.beginPath(); x.arc(cx + 27, cy + 37, 9, 0, 7); x.fill(); } } }
+      else if (g.id === 'crabs') { for (const [cx, cy] of [[70, 80], [160, 80], [250, 80], [70, 175], [160, 175], [250, 175]]) { x.fillStyle = 'rgba(80,40,10,.55)'; x.beginPath(); x.ellipse(cx, cy + 18, 38, 13, 0, 0, 7); x.fill(); } x.fillStyle = '#e8402e'; x.beginPath(); x.ellipse(160, 80, 26, 18, 0, 0, 7); x.fill(); for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 34, 66, 11, 0, 7); x.fill(); } x.fillStyle = '#fff'; for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 8, 62, 6, 0, 7); x.fill(); } x.fillStyle = '#111'; for (const s2 of [-1, 1]) { x.beginPath(); x.arc(160 + s2 * 8, 62, 3, 0, 7); x.fill(); } }
       else { const cs = ['#ff5a5a', '#ffd24a', '#5fe37a', '#4f9aff']; for (let i = 0; i < 4; i++) { x.fillStyle = cs[i]; x.beginPath(); x.arc(w / 2 + (i % 2 ? 62 : -62), h / 2 + (i > 1 ? 52 : -44), 46, 0, 7); x.fill(); } }
       x.globalAlpha = 1;
     });
@@ -96,6 +99,11 @@ export function createShop(ctx) {
           return capture(bgTex(0x36205e, 0x9a3f8f, 0xffa8d8), cam => { cam.position.copy(c).add(new THREE.Vector3(.85, .42, -1).normalize().multiplyScalar(s * 3.3 + .3)); cam.lookAt(c.x, c.y - s * .22, c.z); });
         });
       case 'themes': return themeThumb(it);
+      case 'furn': return capture(bgTex(0x24406a, 0x3f7aa8, 0xffe6b0), cam => {
+          const g = house.makeFurniture(it.id, save.name || 'Gambi'); g.name = 'tmpfurn'; scene.add(g); g.updateMatrixWorld(true);
+          const b = new THREE.Box3().setFromObject(g), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3()), r = Math.max(sz.x, sz.y * 1.3, sz.z) * .5 + .05;
+          cam.position.copy(c).add(new THREE.Vector3(.45, .3, 1).normalize().multiplyScalar(r / Math.tan(15 * Math.PI / 180) * 1.05)); cam.lookAt(c);
+        }, { hidePlayer: true, after: () => { const g = scene.getObjectByName('tmpfurn'); if (g) scene.remove(g); } });
       case 'game': return gameThumb(it);
     }
     return null;
@@ -140,7 +148,7 @@ export function createShop(ctx) {
     $('#grid').scrollTop = 0; renderGrid();
     const on = $('#tabs .tab.on'); on && on.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
   }
-  const kindOf = t => ({ food: 'food', chars: 'chars', skins: 'skins', hats: 'hats', themes: 'themes' }[t]);
+  const kindOf = t => ({ food: 'food', chars: 'chars', skins: 'skins', hats: 'hats', themes: 'themes', furn: 'furn' }[t]);
   function renderGrid() {
     const T0 = TABS.find(x => x.id === tab), grid = $('#grid'), st = grid.scrollTop, kind = kindOf(tab);
     $('#sCoins').textContent = save.coins.toLocaleString('es');
@@ -149,11 +157,12 @@ export function createShop(ctx) {
       const ic = `<span class="th ${url ? '' : 'ph'}" data-th="${kind}:${it.id}" ${url ? `style="background-image:url(${url})"` : ''}></span>`;
       let pr;
       if (tab === 'food') pr = it.free ? `<span class="pr own">Gratis</span>` : `<span class="pr"><span class="coin"></span>${it.price}</span>`;
+      else if (tab === 'furn') pr = save.furn[it.id] ? `<span class="pr eq">PUESTO</span>` : owns('furn', it.id) ? `<span class="pr own">Guardado</span>` : `<span class="pr"><span class="coin"></span>${it.price}</span>`;
       else if (save.eq[tab] === it.id) pr = `<span class="pr eq">EN USO</span>`;
       else if (owns(tab, it.id)) pr = `<span class="pr own">Tuyo</span>`;
       else pr = `<span class="pr"><span class="coin"></span>${it.price.toLocaleString('es')}</span>`;
       const cnt = tab === 'food' && save.inv[it.id] ? `<span class="cnt">×${save.inv[it.id]}</span>` : '';
-      const lock = SHOWN.includes(tab) && !owns(tab, it.id) ? 'lock' : '';
+      const lock = (SHOWN.includes(tab) || tab === 'furn') && !owns(tab, it.id) ? 'lock' : '';
       return `<button class="it ${it.id === selId ? 'sel' : ''} ${lock}" data-id="${it.id}">${cnt}${ic}<span class="nm">${it.name}</span>${pr}</button>`;
     }).join('');
     grid.scrollTop = st;
@@ -175,6 +184,10 @@ export function createShop(ctx) {
     if (tab === 'food') {
       if (it.free) { label = 'Gratis'; btn.disabled = true; }
       else { label = `Comprar ${coin(it.price)}`; act = () => buy(it.price, () => { save.inv[it.id] = (save.inv[it.id] || 0) + 1; }); }
+    } else if (tab === 'furn') {
+      if (!owns('furn', it.id)) { label = `Comprar ${coin(it.price)}`; act = () => buy(it.price, () => { save.owned['furn:' + it.id] = true; save.furn[it.id] = true; applyLook(); }); }
+      else if (save.furn[it.id]) { label = 'Quitar'; act = () => { save.furn[it.id] = false; persist(); applyLook(); S.click(); }; }
+      else { label = 'Poner'; act = () => { save.furn[it.id] = true; persist(); applyLook(); S.click(); }; }
     } else if (save.eq[tab] === it.id) { label = 'En uso'; btn.disabled = true; }
     else if (owns(tab, it.id)) { label = 'Usar'; act = () => { save.eq[tab] = it.id; persist(); S.click(); }; }
     else { label = `Comprar ${coin(it.price)}`; act = () => buy(it.price, () => { save.owned[tab + ':' + it.id] = true; save.eq[tab] = it.id; }); }
@@ -184,7 +197,7 @@ export function createShop(ctx) {
   }
   function buy(cost, fn) {
     if (save.coins < cost) { toast(`Te faltan ${(cost - save.coins).toLocaleString('es')} monedas`); buzz('HEAVY'); S.err(); return; }
-    save.coins -= cost; fn(); persist(); S.buy(); buzz('MEDIUM'); toast('¡Comprado!'); updHud();
+    save.coins -= cost; save.stats.bought = (save.stats.bought || 0) + 1; fn(); persist(); S.buy(); buzz('MEDIUM'); toast('¡Comprado!'); updHud();
     for (let i = 0; i < 30; i++) PA.emit(Math.random() * 1.2 - .6, .4 + Math.random() * .8, pet.z + .3, Math.random() * 4 - 2, 1 + Math.random() * 3, Math.random() * 2 - 1, new THREE.Color().setHSL(Math.random(), .9, .6), .16, .8, 5);
   }
   // encuadra a Gambi en el hueco libre entre la cabecera y el panel

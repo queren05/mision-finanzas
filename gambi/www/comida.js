@@ -90,6 +90,22 @@ export function foodMesh(id) {
       [0xff5a7a, 0xffd24a, 0x5ab8ff, 0xb45aff, 0x5fe37a, 0xff9a3a].forEach((c, i) => add(SPH(.05, 8, 6), glow(c, .4), Math.cos(i * 1.1) * .07, .08 + (i % 3) * .09, Math.sin(i * 1.1) * .07));
       break;
     }
+    case 'medicina': {   // jarabe con cuchara
+      add(new THREE.CylinderGeometry(.12, .13, .3, 20), mat(0x8a3a1c, { transparent: true, opacity: .85, roughness: .15 }), 0, .15, 0);
+      add(new THREE.CylinderGeometry(.06, .08, .07, 16), mat(0x8a3a1c, { transparent: true, opacity: .85 }), 0, .33, 0);
+      add(new THREE.CylinderGeometry(.07, .07, .07, 16), mat(0xffffff), 0, .4, 0);
+      add(new THREE.BoxGeometry(.2, .12, .01), mat(0xffffff), 0, .16, .125);
+      add(new THREE.BoxGeometry(.03, .08, .012), mat(0xe32b2b), 0, .16, .13); add(new THREE.BoxGeometry(.08, .03, .012), mat(0xe32b2b), 0, .16, .13);
+      break;
+    }
+    case 'cafe': {   // batido con pajita
+      const prof = [[0, 0], [.12, 0], [.16, .36], [0, .36]].map(([x, y]) => new THREE.Vector2(x, y));
+      add(new THREE.LatheGeometry(prof, 20), mat(0xff9ec8, { transparent: true, opacity: .9, roughness: .2 }));
+      add(SPH(.15, 18, 10), mat(0xfff6f0), 0, .38, 0, 0, 0, 0, 1, .55, 1);
+      add(new THREE.CylinderGeometry(.015, .015, .35, 8), mat(0x4fb2ff), .05, .5, 0, 0, 0, -.25);
+      add(SPH(.03, 10, 8), mat(0xd7262e), -.04, .46, .03);
+      break;
+    }
     default: add(SPH(.15), glow(0xffffff, .5), 0, .15, 0);
   }
   return g;

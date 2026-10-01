@@ -12,6 +12,8 @@ export const FOODS = [
   { id: 'piruleta', name: 'Piruleta', price: 30, food: 4, fun: 26, desc: 'Dulce y entretenida.' },
   { id: 'sopa', name: 'Sopa caliente', price: 60, food: 40, energy: 12, desc: 'Da energía y calorcito.' },
   { id: 'vitamina', name: 'Súper vitamina', price: 160, food: 25, fun: 25, energy: 25, hyg: 25, desc: 'Un poquito de todo.' },
+  { id: 'medicina', name: 'Medicina', price: 60, med: true, desc: 'Cura a tu gamba cuando se pone mala. Sabe fatal.' },
+  { id: 'cafe', name: 'Batido energético', price: 50, food: 6, energy: 35, desc: 'Para cuando está muy cansada.' },
 ];
 
 // Especies (modelos de gamba). «model» es el id de PLAYERS en modelos.js.
@@ -47,6 +49,13 @@ export const HATS = [
   { id: 'vikingo', name: 'Casco vikingo', price: 400 },
   { id: 'halo', name: 'Aureola', price: 450 },
   { id: 'corona', name: 'Corona', price: 700 },
+  { id: 'lazo', name: 'Lazo', price: 120 },
+  { id: 'flor', name: 'Flor', price: 150 },
+  { id: 'cocinero', name: 'Gorro de cocinero', price: 260 },
+  { id: 'reno', name: 'Cuernos de reno', price: 300 },
+  { id: 'santa', name: 'Gorro de Papá Noel', price: 350 },
+  { id: 'bruja', name: 'Sombrero de bruja', price: 420 },
+  { id: 'mexicano', name: 'Sombrero mexicano', price: 500 },
   { id: 'tiburon', name: 'Gorro Tiburón', price: 900, desc: 'El disfraz de tiburón más famoso de internet.' },
 ];
 
@@ -60,10 +69,49 @@ export const THEMES = [
   { id: 'neon', name: 'Neón', price: 600, wall: ['#1c103c', '#3b1470'], line: '#ff3fb4', floor: ['#22143f', '#311a60'], fpat: 'grid', wpat: 'grid', accent: 0xff3fb4, dark: 0x3ff0ff, sky: 0x1a0d36 },
 ];
 
+// Muebles y decoración: aparecen en su habitación cuando los tienes puestos
+export const FURNITURE = [
+  { id: 'pecera', name: 'Pecera', price: 450, room: 'salon', desc: 'Con dos pececitos que dan vueltas. Salón.' },
+  { id: 'guitarra', name: 'Guitarra', price: 350, room: 'salon', desc: 'Apoyada en la pared del salón.' },
+  { id: 'poster', name: 'Póster de Gambi', price: 150, room: 'salon', desc: 'Un póster gigante de tu gamba. Salón.' },
+  { id: 'reloj', name: 'Reloj de pared', price: 200, room: 'cocina', desc: 'Marca la hora de verdad. Cocina.' },
+  { id: 'hierbas', name: 'Macetas de hierbas', price: 180, room: 'cocina', desc: 'Albahaca, menta y perejil en la encimera.' },
+  { id: 'patitos', name: 'Familia de patitos', price: 120, room: 'bano', desc: 'Tres patitos más para la bañera.' },
+  { id: 'lava', name: 'Lámpara de lava', price: 400, room: 'dormitorio', desc: 'Burbujas de colores que suben y bajan. Dormitorio.' },
+  { id: 'estrellas', name: 'Estrellas que brillan', price: 300, room: 'dormitorio', desc: 'Pegatinas que se iluminan por la noche.' },
+  { id: 'trofeos', name: 'Estante de trofeos', price: 500, room: 'juegos', desc: 'Para presumir de récords. Sala de juegos.' },
+  { id: 'neon', name: 'Letrero de neón', price: 650, room: 'juegos', desc: 'Con el nombre de tu gamba en luces.' },
+];
+
 export const MINIGAMES = [
   { id: 'catch', name: 'Lluvia de comida', desc: 'Mueve a Gambi y atrapa la comida. ¡Esquiva los erizos!', icon: 'catch', col: [0x2c8a4a, 0x7cf0a2] },
   { id: 'bubbles', name: 'Pompas', desc: 'Explota las burbujas antes de que se escapen. Las doradas valen más.', icon: 'bubble', col: [0x1a78c2, 0x7fe0ff] },
   { id: 'simon', name: 'Simón marino', desc: 'Repite la melodía de las conchas sin equivocarte.', icon: 'brain', col: [0x6a2fb8, 0xffa8f0] },
+  { id: 'swim', name: 'Nado', desc: 'Toca para nadar hacia arriba y pasa entre los corales.', icon: 'bubble', col: [0x0b6fb0, 0x5fe0d0] },
+  { id: 'memory', name: 'Parejas', desc: 'Da la vuelta a las cartas y encuentra todas las parejas.', icon: 'brain', col: [0xb8336a, 0xffc06a] },
+  { id: 'crabs', name: 'Caza-cangrejos', desc: 'Dales un toque a los cangrejos que asoman. ¡Ojo con las medusas!', icon: 'catch', col: [0xd9792a, 0xffe08a] },
+];
+
+// Logros: v(save) devuelve el progreso actual
+const sumBest = sv => Object.values(sv.best).filter(Boolean).length;
+export const ACH = [
+  { id: 'fed10', name: 'Glotona', desc: 'Da de comer 10 veces', v: sv => sv.stats.fed, n: 10, r: 60 },
+  { id: 'fed100', name: 'Chef de gambas', desc: 'Da de comer 100 veces', v: sv => sv.stats.fed, n: 100, r: 300 },
+  { id: 'bath5', name: 'Limpita', desc: 'Báñala 5 veces', v: sv => sv.stats.bathed, n: 5, r: 60 },
+  { id: 'bath40', name: 'Reina de la espuma', desc: 'Báñala 40 veces', v: sv => sv.stats.bathed, n: 40, r: 300 },
+  { id: 'pets50', name: 'Mimosa', desc: 'Acaríciala 50 veces', v: sv => sv.stats.pets, n: 50, r: 80 },
+  { id: 'play10', name: 'Jugona', desc: 'Juega 10 minijuegos', v: sv => sv.stats.played, n: 10, r: 100 },
+  { id: 'play60', name: 'Leyenda de los recreativos', desc: 'Juega 60 minijuegos', v: sv => sv.stats.played, n: 60, r: 400 },
+  { id: 'allgames', name: 'Probadora', desc: 'Puntúa en los 6 minijuegos', v: sumBest, n: 6, r: 150 },
+  { id: 'tricks20', name: 'Artista', desc: 'Haz 20 bailes o volteretas', v: sv => sv.stats.tricks, n: 20, r: 120 },
+  { id: 'talk15', name: 'Charlatana', desc: 'Habla con ella 15 veces', v: sv => sv.stats.talks, n: 15, r: 80 },
+  { id: 'cure', name: 'Enfermera', desc: 'Cúrala cuando se ponga mala', v: sv => sv.stats.cured, n: 1, r: 80 },
+  { id: 'buy10', name: 'De compras', desc: 'Compra 10 cosas en la tienda', v: sv => sv.stats.bought, n: 10, r: 120 },
+  { id: 'lv5', name: 'Creciendo', desc: 'Llega al nivel 6 (joven)', v: sv => sv.lv, n: 6, r: 150 },
+  { id: 'lv16', name: 'Mayor de edad', desc: 'Llega al nivel 16 (adulta)', v: sv => sv.lv, n: 16, r: 500 },
+  { id: 'lv40', name: 'Gamba legendaria', desc: 'Llega al nivel 40', v: sv => sv.lv, n: 40, r: 2000 },
+  { id: 'streak7', name: 'Fiel', desc: 'Recoge el regalo 7 días seguidos', v: sv => sv.daily.streak, n: 7, r: 300 },
+  { id: 'furn5', name: 'Decoradora', desc: 'Pon 5 muebles en la casa', v: sv => Object.values(sv.furn).filter(Boolean).length, n: 5, r: 200 },
 ];
 
 export const NAMES = ['Gambi', 'Coral', 'Burbuja', 'Mochi', 'Nemo', 'Pinchito', 'Sushi', 'Canelo', 'Perla', 'Mini', 'Tito', 'Nube'];
@@ -74,6 +122,7 @@ export const TABS = [
   { id: 'skins', name: 'Colores', list: SKINS },
   { id: 'hats', name: 'Gorros', list: HATS },
   { id: 'themes', name: 'Casa', list: THEMES },
+  { id: 'furn', name: 'Muebles', list: FURNITURE },
 ];
 
 /* ---------- reglas ---------- */
@@ -96,12 +145,14 @@ const DEF = {
   st: { food: 70, fun: 70, energy: 85, hyg: 80 }, t: Date.now(), sleeping: false,
   xp: 0, lv: 1, coins: 150,
   inv: {}, owned: {}, eq: { chars: 'gambita', skins: 'natural', hats: 'nada', themes: 'cuqui' },
-  best: { catch: 0, bubbles: 0, simon: 0 }, daily: { last: '', streak: 0 },
-  opt: { sfx: true, music: true, haptic: true, hq: true }, stats: { fed: 0, bathed: 0, played: 0, pets: 0 },
+  best: { catch: 0, bubbles: 0, simon: 0, swim: 0, memory: 0, crabs: 0 }, daily: { last: '', streak: 0 },
+  sick: false, sickT: 0, born: 0, furn: {}, ach: {},
+  opt: { sfx: true, music: true, haptic: true, hq: true }, stats: { fed: 0, bathed: 0, played: 0, pets: 0, bought: 0, tricks: 0, cured: 0, talks: 0, days: 0 },
 };
 export const save = {};
 for (const k of Object.keys(DEF)) save[k] = get(k, DEF[k]);
-for (const k of ['st', 'eq', 'best', 'daily', 'opt', 'stats']) save[k] = Object.assign({}, DEF[k], save[k]);
+for (const k of ['st', 'eq', 'best', 'daily', 'opt', 'stats', 'furn', 'ach']) save[k] = Object.assign({}, DEF[k], save[k]);
+if (save.hatched && !save.born) save.born = Date.now();
 for (const k of Object.keys(DEF.st)) if (!Number.isFinite(save.st[k])) save.st[k] = DEF.st[k];   // por si un valor guardado se corrompe
 for (const k of ['coins', 'xp', 'lv']) if (!Number.isFinite(save[k])) save[k] = DEF[k];
 for (const t of TABS) for (const it of t.list) if (!it.price) save.owned[t.id + ':' + it.id] = true;
@@ -117,5 +168,8 @@ export function tickStats(dtSec, awake = !save.sleeping) {
   s.fun = clamp(s.fun - DECAY.fun * d * half, 0, 100);
   s.hyg = clamp(s.hyg - DECAY.hyg * d * half, 0, 100);
   s.energy = awake ? clamp(s.energy - DECAY.energy * d, 0, 100) : clamp(s.energy + SLEEP_RATE * dtSec, 0, 100);
+  // si pasa mucho rato sucia o con hambre, se pone mala (y mala se aburre el doble)
+  if (save.hatched && !save.sick) { save.sickT = (s.hyg < 12 || s.food < 8) ? save.sickT + dtSec : Math.max(0, save.sickT - dtSec); if (save.sickT > 150) { save.sick = true; save.sickT = 0; } }
+  if (save.sick) s.fun = clamp(s.fun - DECAY.fun * d, 0, 100);
 }
 export const mood = () => { const s = save.st, m = Math.min(s.food, s.fun, s.energy, s.hyg); return m < 20 ? 0 : m < 45 ? 1 : 2; };   // 0 mal, 1 regular, 2 bien
