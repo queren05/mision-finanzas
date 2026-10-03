@@ -87,7 +87,7 @@ export function loadMap(id) {
 loadMap('nacht');
 
 /* ---------- texturas ---------- */
-function tex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
+function tex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; }
 const rnd = (a, b) => a + Math.random() * (b - a);
 const speckle = (c, w, h, n, a = .08) => { for (let i = 0; i < n; i++) { c.fillStyle = `rgba(${Math.random() < .5 ? '0,0,0' : '255,255,255'},${rnd(.02, a)})`; c.fillRect(rnd(0, w), rnd(0, h), rnd(2, 8), rnd(2, 8)); } };
 export const TEX = {
@@ -109,7 +109,7 @@ export const TEX = {
 export const PBR = {};
 export async function loadPBR() {
   const L = new THREE.TextureLoader(), info = await (await fetch('models/t/info.json')).json();
-  const get = (url, srgb) => new Promise(ok => L.load(url, t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; if (srgb) t.colorSpace = THREE.SRGBColorSpace; ok(t); }, undefined, () => ok(null)));
+  const get = (url, srgb) => new Promise(ok => L.load(url, t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; if (srgb) t.colorSpace = THREE.SRGBColorSpace; ok(t); }, undefined, () => ok(null)));
   await Promise.all(Object.entries(info).map(async ([k, v]) => { const [map, normalMap, roughnessMap] = await Promise.all([get(`models/t/${k}_d.jpg`, true), get(`models/t/${k}_n.jpg`), get(`models/t/${k}_r.jpg`)]); if (map) PBR[k] = { map, normalMap, roughnessMap, size: v.size_m }; }));
 }
 // temas visuales de cada mapa

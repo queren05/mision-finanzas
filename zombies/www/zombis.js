@@ -59,8 +59,8 @@ export const REAL = { skinned: true, eyes: false, head: /Head$/, walkSpeed: .9, 
 export const RUNNER = { skinned: true, eyes: false, head: /^Head$/, walkSpeed: 1, runSpeed: 3.4, clips: { walk: 'Zombie|ZombieWalk', sprint: 'Zombie|ZombieRun', 'attack-melee-right': 'Zombie|ZombieBite', 'attack-melee-left': 'Zombie|ZombieBite', die: null, idle: 'Zombie|ZombieIdle', crouch: 'Zombie|ZombieCrawl', 'interact-right': 'Zombie|ZombieBite' } };
 // marchas medidas sobre las animaciones (recorrido del pie respecto a la cadera): el zombi avanza justo lo que cubre su animación, así los pies no patinan
 KENNEY.gaits = [{ clip: 'walk', v: 1.1, lo: .8, hi: 1.5 }, { clip: 'sprint', v: 3.2, lo: .8, hi: 1.4 }];
-REAL.gaits = [{ clip: 'Armature|Walk', v: .35, lo: .85, hi: 1.6 }, { clip: 'Armature|Walk2', v: .55, lo: .85, hi: 1.8 }, { clip: 'Armature|Running_Crawl', v: 1.27, lo: .7, hi: 1.4, crawl: true }];
-RUNNER.gaits = [{ clip: 'Zombie|ZombieWalk', v: .38, lo: .85, hi: 2.2 }, { clip: 'Zombie|ZombieRun', v: 2.09, lo: .55, hi: 1.5 }];
+REAL.gaits = [{ clip: 'Armature|Walk', v: .26, lo: .85, hi: 2.0 }, { clip: 'Armature|Walk2', v: .36, lo: .85, hi: 2.0 }, { clip: 'Armature|Running_Crawl', v: .95, lo: .75, hi: 1.4, crawl: true }];
+RUNNER.gaits = [{ clip: 'Zombie|ZombieWalk', v: .28, lo: .85, hi: 2.2 }, { clip: 'Zombie|ZombieRun', v: 2.02, lo: .55, hi: 1.5 }];
 function pickGait(def, s) {
   let best = null, bd = 1e9;
   for (const g of def.gaits) { const lo = g.v * g.lo, hi = g.v * g.hi, d = (s < lo ? lo - s : s > hi ? s - hi : 0) + Math.random() * .05; if (d < bd) { bd = d; best = g; } }
@@ -69,7 +69,7 @@ function pickGait(def, s) {
 const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 // zombi de ciudad (Rikindle3D, CC0): texturas PBR; solo lo usamos en las marchas lentas porque su clip de correr viene vacío
 export const CITY = { skinned: true, eyes: false, pbr: true, head: /Head$/, clips: { walk: 'Shamble', sprint: 'Walk', 'attack-melee-right': 'Attack', 'attack-melee-left': 'Attack2', die: ['Death'], idle: ['Idle', 'Idle2'], crouch: 'Idle2', 'interact-right': 'Attack3' },
-  gaits: [{ clip: 'Walk', v: .35, lo: .9, hi: 1.5 }, { clip: 'Shamble', v: .64, lo: .85, hi: 1.8 }] };
+  gaits: [{ clip: 'Walk', v: .2, lo: .9, hi: 2.2 }, { clip: 'Shamble', v: .3, lo: .85, hi: 2.2 }] };
 // instante (en segundos del clip) en que la mano llega al máximo y en que termina el golpe, medidos sobre cada animación
 KENNEY.atk = { 'attack-melee-right': { hit: .42, end: .9 }, 'attack-melee-left': { hit: .42, end: .9 } };
 REAL.atk = { 'attack-melee-right': { hit: 1.0, end: 1.45 }, 'attack-melee-left': { hit: .5, end: 1.0 } };
