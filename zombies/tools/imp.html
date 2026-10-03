@@ -1,0 +1,23 @@
+<script type="importmap">{"imports":{"three":"./m/three.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './m/examples/jsm/loaders/GLTFLoader.js';
+const q = new URLSearchParams(location.search), ids = q.get('ids').split(','), H = +(q.get('h') || 1024);
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.outputColorSpace = THREE.SRGBColorSpace; r.setClearColor(0, 0);
+const out = {};
+for (const id of ids) {
+  const g = await new GLTFLoader().loadAsync(`props/${id}/${id}.gltf`); const o = g.scene;
+  const sc = new THREE.Scene(); sc.add(o); sc.add(new THREE.HemisphereLight(0xffffff, 0x9a9a8a, 2.2)); const dl = new THREE.DirectionalLight(0xffffff, 1.2); dl.position.set(2, 4, 3); sc.add(dl);
+  o.traverse(m => { if (m.isMesh) { [].concat(m.material).forEach(x => { x.side = THREE.DoubleSide; if (x.transparent) { x.alphaTest = .35; x.transparent = false; x.depthWrite = true; } }); } });
+  const b = new THREE.Box3().setFromObject(o), s = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+  const w = Math.max(s.x, s.z), W = Math.round(H * w / s.y);
+  r.setSize(W, H, false); const res = { w: +w.toFixed(2), h: +s.y.toFixed(2), views: [] };
+  for (const az of [0, Math.PI / 2]) {
+    const cam = new THREE.OrthographicCamera(-w / 2, w / 2, b.max.y, b.min.y, .1, 1000);
+    cam.position.set(c.x + Math.sin(az) * 50, 0, c.z + Math.cos(az) * 50); cam.lookAt(c.x, 0, c.z);
+    r.render(sc, cam); res.views.push(r.domElement.toDataURL('image/png').split(',')[1]);
+  }
+  out[id] = res; o.traverse(m => { if (m.isMesh) { m.geometry.dispose(); } });
+}
+window.RESULT = out; document.title = 'DONE';
+</script>

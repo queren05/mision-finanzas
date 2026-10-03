@@ -72,7 +72,7 @@ const KITS = ['character-zombie', 'character-skeleton', 'blaster-l', 'blaster-a'
   'gravestone-cross', 'gravestone-round', 'gravestone-broken', 'grave', 'pine', 'pine-crooked', 'lightpost-single', 'fire-basket', 'iron-fence', 'crate-medium', 'crate-small', 'crypt-door',
   'candle-multiple', 'pumpkin-carved', 'rocks', 'debris-wood', 'coffin', 'lantern-candle', 'grenade-a', 'palm-bend', 'palm-straight', 'rocks-a', 'barrel'];
 const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e', 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
-const PROPS = ['street_lamp_01', 'street_lamp_02', 'metal_trash_can', 'utility_box_01', 'utility_box_02', 'water_manhole_cover', 'old_tyre', 'covered_car', 'barrel_stove', 'trashbag', 'rusted_wheel_rim_01', 'Barrel_01', 'WetFloorSign_01', 'fire_hydrant', 'concrete_road_barrier_02'].map(n => 'p_' + n);   // Poly Haven (CC0)
+const PROPS = ['street_lamp_01', 'street_lamp_02', 'metal_trash_can', 'utility_box_01', 'utility_box_02', 'water_manhole_cover', 'old_tyre', 'covered_car', 'barrel_stove', 'trashbag', 'rusted_wheel_rim_01', 'Barrel_01', 'WetFloorSign_01', 'fire_hydrant', 'concrete_road_barrier_02', 'vintage_grandfather_clock_01', 'Chandelier_01', 'fancy_picture_frame_01', 'hanging_picture_frame_02', 'ornate_mirror_01', 'wine_barrel_01', 'wooden_crate_02', 'treasure_chest', 'ceramic_vase_01', 'cardboard_box_01', 'hand_truck', 'propane_tank', 'old_military_crate', 'metal_toolbox', 'barrel_03'].map(n => 'p_' + n);   // Poly Haven (CC0)
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
@@ -99,7 +99,7 @@ function tree(name, x, z, ry = 0, h = 5) {
 let collecting = false, cullList = [], cullT = 0;
 function updCull(force, dt = 0) {
   if (!cullList.length) return; if (!force && (cullT -= dt) > 0) return; cullT = .3;
-  const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1], R2 = 40 * 40;
+  const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1], R = save.opt.gfx === 'low' ? 28 : 40, R2 = R * R;
   for (const o of cullList) { const dx = o.position.x - px, dz = o.position.z - pz; o.visible = dx * dx + dz * dz < R2; }
 }
 // muchas copias del mismo modelo (vallas, farolas) en una sola llamada de dibujo por malla
@@ -217,10 +217,43 @@ function buildWorld(mapId) {
     else { const b = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 8), bulbMat); b.position.copy(l.position); level.add(b); const c = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .4), new THREE.MeshBasicMaterial({ color: 0x111111 })); c.position.set(x, l.position.y + .3, z); level.add(c); }
   }
   world.bulbMat = bulbMat;
+  dressInterior(rng);
   collecting = false; cullList = level.children.filter(o => o.userData.cull); updCull(true);
   buildPerks(); buildWallBuys(); buildBox(); buildPap(); buildPower(); buildEggs();
 }
 const SIZE = {};
+// decoración de los interiores: objetos pegados a las paredes, cuadros y lámparas, sin tapar puertas, ventanas ni máquinas
+function dressInterior(rng) {
+  const th = MAP.CFG.theme; if (th === 'ciudad') return;
+  const floorSets = { nacht: [['wine_barrel_01', 1.25], ['wooden_crate_02', 1.3], ['treasure_chest', 1.15], ['ceramic_vase_01', 2.2], ['vintage_grandfather_clock_01', 1.15]], fabrica: [['cardboard_box_01', 1.7], ['hand_truck', 1.3], ['propane_tank', 1.6], ['old_military_crate', 1.2], ['metal_toolbox', 2], ['barrel_03', 1.3], ['wooden_crate_02', 1.3]], isla: [['wooden_crate_02', 1.3], ['wine_barrel_01', 1.25], ['barrel_03', 1.3], ['treasure_chest', 1.15]] }[th] || [];
+  const wallSet = th === 'nacht' ? [['fancy_picture_frame_01', 1.6], ['hanging_picture_frame_02', 1.5], ['ornate_mirror_01', 1.7]] : [];
+  const O = MAP.OBJ, keep = [...Object.values(O.perks), O.pap, O.power, ...O.box, ...O.wallbuys, ...MAP.WINDOWS, ...MAP.DOORS.flatMap(d => d.cells.map(([x, z]) => ({ x, z })))].filter(Boolean).map(o => [o.x, o.z]);
+  keep.push([Math.floor(O.spawn[0]), Math.floor(O.spawn[1])]);
+  const far = (x, z, r) => keep.every(([a, b]) => Math.hypot(a - x, b - z) > r);
+  const inside = (x, z) => { const k = MAP.zoneOf[MAP.idx(x, z)]; return k >= 0 && !MAP.ZONES[k].outside; };
+  const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], open = (x, z) => MAP.cellAt(x, z) === MAP.FLOOR;
+  const placed = []; const spaced = (x, z, r) => placed.every(([a, b]) => Math.hypot(a - x, b - z) > r);
+  let nf = 0, nw = 0;
+  for (let z = 1; z < MAP.GH - 1; z++) for (let x = 1; x < MAP.GW - 1; x++) {
+    if (!open(x, z) || !inside(x, z) || !floorSets.length) continue;
+    const walls = N4.filter(([dx, dz]) => MAP.cellAt(x + dx, z + dz) === MAP.WALL);
+    if (walls.length !== 1) continue;
+    let free = 0; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if ((dx || dz) && open(x + dx, z + dz)) free++;
+    if (free < 5 || !far(x, z, 2.2) || !spaced(x, z, 3) || rng() > .16 || nf > 30) continue;
+    const [wdx, wdz] = walls[0], [nm, s] = floorSets[Math.floor(rng() * floorSets.length)];
+    kit('p_' + nm, x + .5 + wdx * .2, z + .5 + wdz * .2, Math.atan2(-wdx, -wdz) + (rng() - .5) * .3, s);
+    block(x, z); placed.push([x, z]); nf++;
+  }
+  for (let z = 1; z < MAP.GH - 1; z++) for (let x = 1; x < MAP.GW - 1; x++) {
+    if (!wallSet.length || MAP.cellAt(x, z) !== MAP.WALL) continue;
+    const f = N4.find(([dx, dz]) => open(x + dx, z + dz) && inside(x + dx, z + dz)); if (!f) continue;
+    if (N4.some(([dx, dz]) => [MAP.WIN, MAP.DOOR].includes(MAP.cellAt(x + dx, z + dz))) || !far(x, z, 2) || !spaced(x, z, 3.5) || rng() > .14 || nw > 16) continue;
+    const [nm, s] = wallSet[Math.floor(rng() * wallSet.length)];
+    const o = kit('p_' + nm, x + .5 + f[0] * .53, x * 0 + z + .5 + f[1] * .53, Math.atan2(f[0], f[1]), s); o.position.y = 1.35 + rng() * .3; placed.push([x, z]); nw++;
+  }
+  // lámpara de techo en el centro de cada sala interior grande (solo en la casa)
+  if (th === 'nacht') for (const Z of MAP.ZONES) { if (Z.outside || Z.x1 - Z.x0 < 5 || Z.z1 - Z.z0 < 5) continue; kit('p_Chandelier_01', (Z.x0 + Z.x1 + 1) / 2, (Z.z0 + Z.z1 + 1) / 2, rng() * 6, 1.3, MAP.WALL_H - 1.15); }
+}
 function sizeOf(n) { if (!SIZE[n]) { const o = K[n].scene; o.updateMatrixWorld(true); SIZE[n] = new THREE.Box3().setFromObject(o).getSize(V3()); } return SIZE[n]; }
 // edificios de Kenney ajustados a cada solar
 function buildCity(rng) {
@@ -1096,7 +1129,7 @@ function bindUI() {
   const tog = (id, k) => $(id).onclick = () => { save.opt[k] = !save.opt[k]; applyOpts(); syncSets(); if (k === 'music') ambient(false); S.buy(); };
   tog('optInv', 'invertY'); tog('optAssist', 'assist'); tog('optSfx', 'sfx'); tog('optMusic', 'music');
   $('optView').onclick = () => { toggleView(); syncSets(); };
-  $('optGfx').onclick = () => { save.opt.gfx = save.opt.gfx === 'low' ? 'high' : 'low'; renderer.shadowMap.enabled = save.opt.gfx !== 'low'; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); renderer.setPixelRatio(Math.min(devicePixelRatio, save.opt.gfx === 'low' ? 1.25 : 1.7)); resize(); LS.set('opt', save.opt); syncSets(); };
+  $('optGfx').onclick = () => { save.opt.gfx = save.opt.gfx === 'low' ? 'high' : 'low'; renderer.shadowMap.enabled = save.opt.gfx !== 'low'; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); renderer.setPixelRatio(Math.min(devicePixelRatio, save.opt.gfx === 'low' ? 1.25 : 1.7)); updCull(true); resize(); LS.set('opt', save.opt); syncSets(); };
   $('viewBtn').addEventListener('touchstart', e => { e.stopPropagation(); e.preventDefault(); toggleView(); }, { passive: false }); $('viewBtn').onclick = toggleView;
   $('mapBtn').onclick = () => { buildMapList(); showScreen('maps'); };
   $('mapsBack').onclick = () => showScreen('menu');

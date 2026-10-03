@@ -1,0 +1,39 @@
+<script type="importmap">{"imports":{"three":"./m/three.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './m/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptSimplifier as MS } from './m/simplifier.js';
+import { mergeVertices } from './m/examples/jsm/utils/BufferGeometryUtils.js';
+import { GLTFExporter } from './m/examples/jsm/exporters/GLTFExporter.js';
+const q = new URLSearchParams(location.search), ids = q.get('ids').split(','), SIZE = +(q.get('size') || 512);
+const out = {}; const MAXT = +(q.get('tris') || 6000); await MS.ready; MS.useExperimentalFeatures = true;
+function simplify(geo, target) {
+  let g = geo.clone(); for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+  if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) return geo;
+  g = mergeVertices(g, 1e-5); const n = g.attributes.position.count, idx = g.index.array;
+  if (idx.length / 3 <= target) return g;
+  const at = new Float32Array(n * 5); for (let i = 0; i < n; i++) { at.set(g.attributes.normal.array.subarray(i * 3, i * 3 + 3), i * 5); at.set(g.attributes.uv.array.subarray(i * 2, i * 2 + 2), i * 5 + 3); }
+  const [simp] = MS.simplifyWithAttributes(new Uint32Array(idx), g.attributes.position.array, 3, at, 5, [1, 1, 1, 3, 3], null, target * 3, 0.1, []);
+  const map = new Map(), ord = []; const fi = new Uint32Array(simp.length); for (let i = 0; i < simp.length; i++) { let v = map.get(simp[i]); if (v === undefined) { v = ord.length; map.set(simp[i], v); ord.push(simp[i]); } fi[i] = v; }
+  const g2 = new THREE.BufferGeometry(); for (const k of ['position', 'normal', 'uv']) { const a = g.attributes[k], A = new Float32Array(ord.length * a.itemSize); ord.forEach((v, i) => { for (let c = 0; c < a.itemSize; c++) A[i * a.itemSize + c] = a.array[v * a.itemSize + c]; }); g2.setAttribute(k, new THREE.BufferAttribute(A, a.itemSize)); }
+  g2.setIndex(new THREE.BufferAttribute(fi, 1)); return g2;
+}
+function shrink(t, jpg) {
+  if (!t || !t.image) return t;
+  const c = document.createElement('canvas'), s = Math.min(SIZE, t.image.width || SIZE); c.width = c.height = s;
+  c.getContext('2d').drawImage(t.image, 0, 0, s, s); const n = new THREE.CanvasTexture(c);
+  n.flipY = false; n.colorSpace = t.colorSpace; n.wrapS = t.wrapS; n.wrapT = t.wrapT; n.userData.mimeType = jpg ? 'image/jpeg' : 'image/png'; return n;
+}
+for (const id of ids) {
+  const g = await new GLTFLoader().loadAsync(`props/${id}/${id}.gltf`); let tris = 0;
+  g.scene.traverse(o => {
+    if (o.isMesh) { const total = g.scene.userData.total || (g.scene.userData.total = (() => { let t = 0; g.scene.traverse(x => { if (x.isMesh) t += (x.geometry.index ? x.geometry.index.count : x.geometry.attributes.position.count) / 3; }); return t; })()); o.geometry = simplify(o.geometry, Math.max(300, Math.floor(MAXT * (o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3) / total))); tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; [].concat(o.material).forEach(m => {
+      for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap']) if (m[k]) m[k] = shrink(m[k], true);
+      if (m.roughnessMap && m.metalnessMap === undefined) m.metalnessMap = m.roughnessMap; }); }
+  });
+  const buf = await new Promise((res, rej) => new GLTFExporter().parse(g.scene, res, rej, { binary: true, onlyVisible: false }));
+  const u8 = new Uint8Array(buf); let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  out[id] = { b64: btoa(s), tris: Math.round(tris), size: new THREE.Box3().setFromObject(g.scene).getSize(new THREE.Vector3()).toArray().map(v => +v.toFixed(2)) };
+}
+window.RESULT = out; document.title = 'DONE';
+</script>

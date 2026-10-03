@@ -1,0 +1,63 @@
+<script type="importmap">{"imports":{"three":"./m/three.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from './m/examples/jsm/loaders/FBXLoader.js';
+import { GLTFExporter } from './m/examples/jsm/exporters/GLTFExporter.js';
+import { MeshoptSimplifier as MS } from './m/simplifier.js';
+import { mergeVertices } from './m/examples/jsm/utils/BufferGeometryUtils.js';
+const q = new URLSearchParams(location.search), SIZE = +(q.get('size') || 1024);
+const F = new FBXLoader(), TL = new THREE.TextureLoader();
+const model = await F.loadAsync('InfectedCityMan.fbx');
+const info = []; model.traverse(o => { if (o.isMesh) info.push({ n: o.name, mat: [].concat(o.material).map(m => m.name + ':' + m.type), skinned: !!o.isSkinnedMesh, verts: o.geometry.attributes.position.count }); });
+async function tex(file, srgb, jpg = true) {
+  const t = await TL.loadAsync(file), im = t.image, c = document.createElement('canvas'); c.width = c.height = SIZE;
+  c.getContext('2d').drawImage(im, 0, 0, SIZE, SIZE);
+  const o = new THREE.CanvasTexture(c); o.flipY = false; o.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; o.wrapS = o.wrapT = THREE.RepeatWrapping; o.userData.mimeType = jpg ? 'image/jpeg' : 'image/png'; return o;
+}
+const P = 'InfectedCityMan_';
+const sets = { body: P + 'City_Infected_Man_Body1_', outfit: P + 'City_Man_Infected_Outfit1_' };
+const T = {}; for (const [k, p] of Object.entries(sets)) T[k] = { map: await tex(p + 'BaseColor.png', true), nor: await tex(p + 'Normal.png', false), orm: await tex(p + 'OcclusionRoughnessMetallic.png', false) };
+await MS.ready; MS.useExperimentalFeatures = true;
+const TRIS = +(q.get('tris') || 7000), report = [];
+const matFor = n => { n = n.toLowerCase(); const t = /outfit/.test(n) ? T.outfit : T.body; return new THREE.MeshStandardMaterial({ name: t === T.outfit ? 'outfit' : 'body', map: t.map, normalMap: t.nor, aoMap: t.orm, roughnessMap: t.orm, metalnessMap: t.orm, metalness: 1, roughness: 1 }); };
+const meshes = []; model.traverse(o => { if (o.isSkinnedMesh) meshes.push(o); });
+for (const m of meshes) {
+  const g0 = m.geometry, mats = [].concat(m.material), parent = m.parent; const groups = g0.groups.length ? g0.groups : [{ start: 0, count: g0.index ? g0.index.count : g0.attributes.position.count, materialIndex: 0 }];
+  const ind = g0.index ? g0.index.array : Uint32Array.from({ length: g0.attributes.position.count }, (_, i) => i);
+  report.push({ mesh: m.name, groups: groups.map(g => [mats[g.materialIndex].name, g.count / 3]) });
+  for (const gr of groups) {
+    const name = mats[gr.materialIndex].name; if (gr.count === 0) continue; const part = /outfit/i.test(name) ? 'outfit' : /default/i.test(name) ? 'extra' : 'body';
+    // sub-geometría de este material, compactada
+    const idx = ind.slice(gr.start, gr.start + gr.count), map = new Map(), order = [];
+    const ni = new Uint32Array(idx.length); for (let i = 0; i < idx.length; i++) { let v = map.get(idx[i]); if (v === undefined) { v = order.length; map.set(idx[i], v); order.push(idx[i]); } ni[i] = v; }
+    let g = new THREE.BufferGeometry(); for (const k of ['position', 'normal', 'uv', 'skinIndex', 'skinWeight']) { const a = g0.attributes[k]; if (!a) continue; const A = new a.array.constructor(order.length * a.itemSize); order.forEach((v, i) => { for (let c = 0; c < a.itemSize; c++) A[i * a.itemSize + c] = a.array[v * a.itemSize + c]; }); g.setAttribute(k, new THREE.BufferAttribute(A, a.itemSize)); }
+    g.setIndex(new THREE.BufferAttribute(ni, 1)); g = mergeVertices(g, 1e-4); const ni2 = g.index.array;
+    const pos = g.attributes.position.array, n = g.attributes.position.count, nor = g.attributes.normal.array, uv = g.attributes.uv.array, sw = g.attributes.skinWeight.array;
+    const attr = new Float32Array(n * 9); for (let i = 0; i < n; i++) { attr.set(nor.subarray(i * 3, i * 3 + 3), i * 9); attr.set(uv.subarray(i * 2, i * 2 + 2), i * 9 + 3); attr.set(sw.subarray(i * 4, i * 4 + 4), i * 9 + 5); }
+    const [simp, err] = MS.simplifyWithAttributes(ni2, pos, 3, attr, 9, [1, 1, 1, 4, 4, 2, 2, 2, 2], null, Math.min(ni2.length, 3 * (part === 'outfit' ? TRIS * .5 : part === 'body' ? TRIS * .8 : TRIS * .2)), 0.05, ['LockBorder']);
+    // quitar los vértices que ya no se usan
+    const map2 = new Map(), ord2 = []; const fi = new Uint32Array(simp.length); for (let i = 0; i < simp.length; i++) { let v = map2.get(simp[i]); if (v === undefined) { v = ord2.length; map2.set(simp[i], v); ord2.push(simp[i]); } fi[i] = v; }
+    const g2 = new THREE.BufferGeometry(); for (const k of Object.keys(g.attributes)) { const a = g.attributes[k]; const A = new a.array.constructor(ord2.length * a.itemSize); ord2.forEach((v, i) => { for (let c = 0; c < a.itemSize; c++) A[i * a.itemSize + c] = a.array[v * a.itemSize + c]; }); g2.setAttribute(k, new THREE.BufferAttribute(A, a.itemSize)); }
+    g2.setIndex(new THREE.BufferAttribute(fi, 1)); g2.computeBoundingSphere();
+    const nm = new THREE.SkinnedMesh(g2, matFor(part === 'extra' ? 'body' : name)); nm.name = 'zombie_' + part; nm.bind(m.skeleton, m.bindMatrix); parent.add(nm); nm.frustumCulled = false;
+    report.push({ part, from: ni2.length / 3, to: fi.length / 3, verts: [g.attributes.position.count, ord2.length], err });
+  }
+  parent.remove(m);
+}
+const anims = { Walk: 'Zombie Walk', Run: 'Zombie Running', Idle: 'Zombie Idle', Idle2: 'Zombie Idle2', Attack: 'Zombie Attack', Attack2: 'Zombie Attack2', Attack3: 'Zombie Attack3', Death: 'Zombie Dying', Hit: 'Zombie Reaction Hit', Scream: 'Zombie Scream', Shamble: 'Walking' };
+const clips = [];
+for (const [name, f] of Object.entries(anims)) {
+  const a = await F.loadAsync(f + '.fbx'); const c = a.animations[0].clone(); c.name = name;
+  // movimiento en el sitio: quitar el desplazamiento horizontal de la cadera
+  c.tracks.forEach(t => { t.name = t.name.replace(/^mixamorig:?/, 'CityDeadOutfit'); });
+  c.tracks = c.tracks.filter(t => !/\.scale$/.test(t.name) && (!/\.position$/.test(t.name) || /Hips\.position$/.test(t.name)));
+  c.tracks.forEach(t => { if (/Hips\.position$/.test(t.name)) { const v = t.values, x0 = v[0], z0 = v[2]; for (let i = 0; i < v.length; i += 3) { v[i] = x0; v[i + 2] = z0; } } });
+  c.optimize?.(); clips.push(c);
+}
+const root = new THREE.Group(); root.name = 'Zombie'; model.scale.setScalar(.01); root.add(model);
+const box = new THREE.Box3().setFromObject(root);
+const buf = await new Promise((res, rej) => new GLTFExporter().parse(root, res, rej, { binary: true, animations: clips, onlyVisible: false }));
+const u8 = new Uint8Array(buf); let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+window.RESULT = { b64: btoa(s), report, height: box.getSize(new THREE.Vector3()).toArray(), clips: clips.map(c => [c.name, +c.duration.toFixed(2), c.tracks.length]) };
+document.title = 'DONE';
+</script>
