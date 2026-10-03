@@ -72,10 +72,11 @@ const KITS = ['character-zombie', 'character-skeleton', 'blaster-l', 'blaster-a'
   'gravestone-cross', 'gravestone-round', 'gravestone-broken', 'grave', 'pine', 'pine-crooked', 'lightpost-single', 'fire-basket', 'iron-fence', 'crate-medium', 'crate-small', 'crypt-door',
   'candle-multiple', 'pumpkin-carved', 'rocks', 'debris-wood', 'coffin', 'lantern-candle', 'grenade-a', 'palm-bend', 'palm-straight', 'rocks-a', 'barrel'];
 const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e', 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
+const PROPS = ['street_lamp_01', 'street_lamp_02', 'metal_trash_can', 'utility_box_01', 'utility_box_02', 'water_manhole_cover', 'old_tyre', 'covered_car', 'barrel_stove', 'trashbag', 'rusted_wheel_rim_01', 'Barrel_01', 'WetFloorSign_01', 'fire_hydrant', 'concrete_road_barrier_02'].map(n => 'p_' + n);   // Poly Haven (CC0)
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb'], ['zombie_city', 'models/z/zombie_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb'], ['zombie_city', 'models/z/zombie_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
@@ -128,8 +129,20 @@ function buildWorld(mapId) {
   // tumbas por donde salen zombis
   for (const g of MAP.OBJ.graves) {
     if (MAP.CFG.theme === 'nacht') tint(kit('grave', g.x + .5, g.z + .5, rng() * 3, 1.6), 0x6a5444);
+    else if (T.city && K.p_water_manhole_cover) { const m = kit('p_water_manhole_cover', g.x + .5, g.z + .5, rng() * 6, 1.25); m.position.y = .01; }
     else if (MAP.CFG.theme === 'fabrica' || T.city) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.45, .45, .04, 20), new THREE.MeshStandardMaterial({ color: 0x2a2a2e, metalness: .6, roughness: .5 })); m.position.set(g.x + .5, .02, g.z + .5); level.add(m); }
     else { const m = new THREE.Mesh(new THREE.SphereGeometry(.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xa89060, roughness: 1 })); m.scale.y = .25; m.position.set(g.x + .5, 0, g.z + .5); level.add(m); }
+  }
+  // calles: basura, neumáticos, barriles y señales sueltos junto a los edificios (decoración, no bloquea)
+  if (T.city && K.p_trashbag) {
+    const junk = [['p_trashbag', .9], ['p_old_tyre', 1.1], ['p_barrel_stove', 1.1], ['p_Barrel_01', 1.1], ['p_WetFloorSign_01', 1.2], ['p_rusted_wheel_rim_01', 1.1], ['p_concrete_road_barrier_02', 1.2]];
+    for (let i = 0, n = 0; i < 900 && n < 70; i++) {
+      const x = 2 + Math.floor(rng() * (W - 4)), z = 2 + Math.floor(rng() * (H - 4));
+      if (MAP.cellAt(x, z) !== MAP.FLOOR || MAP.chAt(x, z) !== 'A') continue;
+      if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => MAP.cellAt(x + dx, z + dz) === MAP.BLD)) continue;   // pegado a un edificio
+      const [nm, s] = junk[Math.floor(rng() * junk.length)];
+      kit(nm, x + .2 + rng() * .6, z + .2 + rng() * .6, rng() * 6, s); n++;
+    }
   }
   // exterior: árboles, rocas o cajas alrededor
   if (T.city) {   // horizonte: solares sueltos alrededor del mapa, con los mismos edificios
@@ -151,7 +164,7 @@ function buildWorld(mapId) {
     MAP.OBJ.props.filter(o => o.kind === 'l').forEach((o, i) => {
       const col = i % 7 === 3 ? 0x6ad8ff : i % 7 === 5 ? 0xff7ad0 : 0xffc880, x = o.x + .5, z = o.z + .5;
       const pool = new THREE.Mesh(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); pool.position.set(x, .09, z); pool.renderOrder = 2; level.add(pool);
-      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.55, z); bulb.scale.setScalar(1.1); level.add(bulb);
+      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.85, z); bulb.scale.setScalar(1.1); level.add(bulb);
       cityLamps.push({ x, z, col });
     });
     // un grupo de luces de verdad que se reparte entre las farolas más cercanas
@@ -185,9 +198,10 @@ function buildCity(rng) {
 function cityProp(o, rng) {
   const x = o.x + .5, z = o.z + .5;
   if (o.kind === 't') kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5);
+  else if (o.kind === 'k' && rng() < .4) { const c = kit('p_covered_car', x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1 + Math.PI / 2, .62); }
   else if (o.kind === 'k') { const n = ['car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance'][Math.floor(rng() * 7)], sz = sizeOf(n); const c = kit(n, x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1, 2.2 / Math.max(sz.x, sz.z)); tintDirty(c, rng); }
-  else if (o.kind === 'l') kit('light-curved', x, z, Math.floor(rng() * 4) * Math.PI / 2, 5.5);
-  else if (o.kind === 'p') kit(rng() < .6 ? 'dumpster' : 'planter', x, z, rng() * 6, 3.4);
+  else if (o.kind === 'l') kit('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15);
+  else if (o.kind === 'p') { const r = rng(); kit(r < .45 ? 'p_metal_trash_can' : r < .7 ? 'p_utility_box_01' : r < .9 ? 'p_utility_box_02' : 'p_fire_hydrant', x, z, Math.floor(rng() * 4) * Math.PI / 2, r < .45 ? 1.15 : 1.2); }
 }
 // coches abandonados: un poco más oscuros y sucios
 function tintDirty(o, rng) { o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiplyScalar(.7 + rng() * .15); } }); }
@@ -198,7 +212,7 @@ function updCityLights(force, dt = 0) {
   if (!cityLamps.length) return; if (!force && (cityT -= dt) > 0) return; cityT = .4;
   const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1];
   const near = [...cityLamps].sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
-  LAMPS.filter(l => l.userData.street).forEach((l, i) => { const o = near[i]; if (!o) { l.intensity = 0; return; } l.position.set(o.x, 3.4, o.z); l.color.set(o.col); l.intensity = 9; });
+  LAMPS.filter(l => l.userData.street).forEach((l, i) => { const o = near[i]; if (!o) { l.intensity = 0; return; } l.position.set(o.x, 3.8, o.z); l.color.set(o.col); l.intensity = 9; });
 }
 function tint(o, col) { const c = new THREE.Color(col); o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.copy(c); } }); return o; }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
