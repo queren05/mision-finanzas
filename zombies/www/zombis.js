@@ -67,6 +67,9 @@ function pickGait(def, s) {
   return best;
 }
 const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+// zombi de ciudad (Rikindle3D, CC0): texturas PBR; solo lo usamos en las marchas lentas porque su clip de correr viene vacío
+export const CITY = { skinned: true, eyes: false, pbr: true, head: /Head$/, clips: { walk: 'Shamble', sprint: 'Walk', 'attack-melee-right': 'Attack', 'attack-melee-left': 'Attack2', die: ['Death'], idle: ['Idle', 'Idle2'], crouch: 'Idle2', 'interact-right': 'Attack3' },
+  gaits: [{ clip: 'Walk', v: .35, lo: .9, hi: 1.5 }, { clip: 'Shamble', v: .64, lo: .85, hi: 1.8 }] };
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
@@ -82,7 +85,7 @@ export class Zombie {
     o.scale.setScalar(this.k); this.root = new THREE.Group(); this.root.add(o); this.model = o; game.scene.add(this.root);
     o.traverse(m => { if (!this.head && def.head.test(m.name)) this.head = m; });
     // cada zombi con un tono algo distinto
-    const tintC = def.skinned ? new THREE.Color().setHSL(.3, .1 + Math.random() * .15, .7 + Math.random() * .3) : new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
+    const tintC = def.pbr ? new THREE.Color().setScalar(.75 + Math.random() * .25) : def.skinned ? new THREE.Color().setHSL(.3, .1 + Math.random() * .15, .7 + Math.random() * .3) : new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
     o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiply(tintC); } });
     if (this.head && def.eyes) for (const sx of [-1, 1]) { const e = new THREE.Sprite(EYE_MAT[opt.kind === 'skel' ? 1 : 0]); e.position.set(sx * .045, .085, .118); e.scale.setScalar(.06); this.head.add(e); }
     this.mixer = new THREE.AnimationMixer(o);

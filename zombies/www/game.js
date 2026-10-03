@@ -4,7 +4,7 @@ import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
-import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER } from './zombis.js';
+import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -73,7 +73,7 @@ const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-s
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb'], ['zombie_city', 'models/z/zombie_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
@@ -427,8 +427,10 @@ function spawnZombie() {
 }
 // según la velocidad: los lentos son del modelo realista, los que reptan también (marcha Running_Crawl) y los que corren, del «corredor»
 function newZombie(o) {
-  const s = o.speed, runner = s >= 1.8 || (s >= .95 && Math.random() < .5);
-  return new Zombie(game, K[runner ? 'zombie_runner' : 'zombie_real'], { ...o, def: runner ? RUNNER : REAL });
+  const s = o.speed, x = Math.random();
+  const kind = s < .95 ? (x < .5 ? 'city' : 'real') : s < 1.8 ? (x < .35 ? 'real' : x < .6 ? 'city' : 'runner') : 'runner';
+  const def = { real: REAL, city: CITYZ, runner: RUNNER }[kind];
+  return new Zombie(game, K['zombie_' + (kind === 'real' ? 'real' : kind)], { ...o, def });
 }
 function lightning(x, z) { $('flash').style.transition = 'none'; $('flash').style.opacity = .25; requestAnimationFrame(() => { $('flash').style.transition = 'opacity .4s'; $('flash').style.opacity = 0; }); glow.burst(x, .5, z, 30, new THREE.Color(0x9ad0ff), 3, .3, .5, 2); tone(80, .5, 'sawtooth', .12, -40); }
 
