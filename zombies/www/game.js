@@ -4,9 +4,8 @@ import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
-import { buildBuildings } from './edificios.js';
 import { RGBELoader } from './lib/RGBELoader.js';
-import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ } from './zombis.js';
+import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, QBASIC, QCHUBBY, QARM, QRIB } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -33,6 +32,8 @@ function applyOpts() { Object.assign(opts, { sens: save.opt.sens, invertY: save.
 applyOpts();
 
 /* ---------- motor ---------- */
+// ESTILO: todo el juego usa un único estilo (Kenney + Quaternius, colores planos y pintados). Con true se activan los objetos fotográficos de Poly Haven, que NO combinan con los personajes.
+const REALISTIC = false;
 const cv = $('cv');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
 const PR_HIGH = Math.min(devicePixelRatio, 2.5), PR_LOW = Math.min(devicePixelRatio, 1.25);   // móviles de ahora: casi resolución nativa
@@ -84,12 +85,13 @@ const loader = new GLTFLoader();
 const KITS = ['character-zombie', 'character-skeleton', 'blaster-l', 'blaster-a',
   'gravestone-cross', 'gravestone-round', 'gravestone-broken', 'grave', 'pine', 'pine-crooked', 'lightpost-single', 'fire-basket', 'iron-fence', 'crate-medium', 'crate-small', 'crypt-door',
   'candle-multiple', 'pumpkin-carved', 'rocks', 'debris-wood', 'coffin', 'lantern-candle', 'grenade-a', 'palm-bend', 'palm-straight', 'rocks-a', 'barrel'];
-const CITY = ([ 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
+const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e', 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
 const PROPS = ['street_lamp_01', 'metal_trash_can', 'utility_box_01', 'utility_box_02', 'water_manhole_cover', 'old_tyre', 'covered_car', 'barrel_stove', 'trashbag', 'rusted_wheel_rim_01', 'Barrel_01', 'WetFloorSign_01', 'fire_hydrant', 'concrete_road_barrier_02', 'vintage_grandfather_clock_01', 'Chandelier_01', 'fancy_picture_frame_01', 'hanging_picture_frame_02', 'ornate_mirror_01', 'wine_barrel_01', 'wooden_crate_02', 'treasure_chest', 'ceramic_vase_01', 'cardboard_box_01', 'hand_truck', 'propane_tank', 'old_military_crate', 'metal_toolbox', 'barrel_03'].map(n => 'p_' + n);   // Poly Haven (CC0)
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zombie_real', 'models/z/zombie_real.glb'], ['zombie_runner', 'models/z/zombie_runner.glb'], ['zombie_city', 'models/z/zombie_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb'])).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs0 = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zq_Basic', 'models/z/Zombie_Basic.glb'], ['zq_Chubby', 'models/z/Zombie_Chubby.glb'], ['zq_Arm', 'models/z/Zombie_Arm.glb'], ['zq_Ribcage', 'models/z/Zombie_Ribcage.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(REALISTIC ? PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb']) : []).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs = jobs0;
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
@@ -146,7 +148,7 @@ function buildWorld(mapId) {
   for (const l of LAMPS) scene.remove(l); LAMPS = []; machines.length = 0;
   MAP.loadMap(mapId); resetFlow(); collecting = true;
   const T = MAP.theme(), W = MAP.GW, H = MAP.GH;
-  hemi.intensity = 1.0; moon.intensity = 1.5;
+  hemi.intensity = REALISTIC ? 1.0 : 1.5; moon.intensity = REALISTIC ? 1.5 : 1.9;
   SKY = new THREE.Color(T.sky); scene.background = SKY; scene.fog = new THREE.Fog(SKY, 9, 44);
   moon.position.set(W / 2 - 10, 28, H / 2 - 14); moon.target.position.set(W / 2, 0, H / 2);
   Object.assign(moon.shadow.camera, { left: -SH_R, right: SH_R, top: SH_R, bottom: -SH_R, near: 2, far: 90 }); moon.shadow.camera.updateProjectionMatrix(); moonOff.set(-10, 28, -14);
@@ -159,7 +161,7 @@ function buildWorld(mapId) {
   for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
     if (MAP.grid[MAP.idx(x, z)] !== MAP.FENCE) continue;
     const alongX = isBar(x - 1, z) || isBar(x + 1, z);
-    if (T.city) { queueInst('p_concrete_road_barrier_02', x + .5, z + .5, alongX ? 0 : Math.PI / 2, 1.0); continue; }
+    if (T.city) { queueInst(REALISTIC ? 'p_concrete_road_barrier_02' : 'construction-barrier', x + .5, z + .5, REALISTIC ? (alongX ? 0 : Math.PI / 2) : (alongX ? Math.PI / 2 : 0), REALISTIC ? 1.0 : 4.8); continue; }
     const o = tint(kit('iron-fence', x + .5, z + .5, alongX ? 0 : Math.PI / 2, 1, 0), T.fence); o.scale.set(1.02, 2, 1.4); o.children[0] && o.children[0].position.set(0, 0, .32);
   }
   const postMat = new THREE.MeshStandardMaterial({ color: T.fence, roughness: .6, metalness: .4 });
@@ -197,7 +199,7 @@ function buildWorld(mapId) {
   }
   // exterior: árboles, rocas o cajas alrededor
   if (T.city) {   // horizonte: solares sueltos alrededor del mapa, con los mismos edificios
-    { const far = []; for (let i = 0; i < 46; i++) { const w = 5 + Math.floor(rng() * 6), d = 5 + Math.floor(rng() * 6); let x, z; do { x = Math.floor(-22 + rng() * (W + 44)); z = Math.floor(-22 + rng() * (H + 44)); } while (x + w > -2 && x < W + 2 && z + d > -2 && z < H + 2); far.push({ x0: x, z0: z, x1: x + w - 1, z1: z + d - 1 }); } buildBuildings(level, far, rng); }
+    for (let i = 0; i < 70; i++) { let x, z; do { x = -18 + rng() * (W + 36); z = -18 + rng() * (H + 36); } while (x > 1 && x < W - 1 && z > 1 && z < H - 1); const n = CITY[Math.floor(rng() * 17)]; kit(n, x, z, Math.floor(rng() * 4) * Math.PI / 2, 4 + rng() * 2); }
   }
   else for (let i = 0; i < 90; i++) {
     let x, z; do { x = -16 + rng() * (W + 32); z = -16 + rng() * (H + 32); } while (x > -.5 && x < W + .5 && z > -.5 && z < H + .5);
@@ -215,7 +217,7 @@ function buildWorld(mapId) {
     MAP.OBJ.props.filter(o => o.kind === 'l').forEach((o, i) => {
       const col = [0xffc27a, 0xffb868, 0xffcf8c, 0xffc27a][i % 4], x = o.x + .5, z = o.z + .5;
       const pool = new THREE.Mesh(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); pool.position.set(x, .09, z); pool.renderOrder = 2; pool.userData.cull = true; level.add(pool);
-      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.85, z); bulb.scale.setScalar(1.1); bulb.userData.cull = true; level.add(bulb);
+      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, REALISTIC ? 3.85 : 3.55, z); bulb.scale.setScalar(1.1); bulb.userData.cull = true; level.add(bulb);
       cityLamps.push({ x, z, col });
     });
     // un grupo de luces de verdad que se reparte entre las farolas más cercanas
@@ -237,6 +239,7 @@ const SIZE = {};
 // decoración de los interiores: objetos pegados a las paredes, cuadros y lámparas, sin tapar puertas, ventanas ni máquinas
 function dressInterior(rng) {
   const th = MAP.CFG.theme; if (th === 'ciudad') return;
+  if (!REALISTIC) return dressInteriorKenney(rng, th);
   const floorSets = { nacht: [['wine_barrel_01', 1.25], ['wooden_crate_02', 1.3], ['treasure_chest', 1.15], ['ceramic_vase_01', 2.2], ['vintage_grandfather_clock_01', 1.15]], fabrica: [['cardboard_box_01', 1.7], ['hand_truck', 1.3], ['propane_tank', 1.6], ['old_military_crate', 1.2], ['metal_toolbox', 2], ['barrel_03', 1.3], ['wooden_crate_02', 1.3]], isla: [['wooden_crate_02', 1.3], ['wine_barrel_01', 1.25], ['barrel_03', 1.3], ['treasure_chest', 1.15]] }[th] || [];
   const wallSet = th === 'nacht' ? [['fancy_picture_frame_01', 1.6], ['hanging_picture_frame_02', 1.5], ['ornate_mirror_01', 1.7]] : [];
   const O = MAP.OBJ, keep = [...Object.values(O.perks), O.pap, O.power, ...O.box, ...O.wallbuys, ...MAP.WINDOWS, ...MAP.DOORS.flatMap(d => d.cells.map(([x, z]) => ({ x, z })))].filter(Boolean).map(o => [o.x, o.z]);
@@ -266,17 +269,46 @@ function dressInterior(rng) {
   // lámpara de techo en el centro de cada sala interior grande (solo en la casa)
   if (th === 'nacht') for (const Z of MAP.ZONES) { if (Z.outside || Z.x1 - Z.x0 < 5 || Z.z1 - Z.z0 < 5) continue; kit('p_Chandelier_01', (Z.x0 + Z.x1 + 1) / 2, (Z.z0 + Z.z1 + 1) / 2, rng() * 6, 1.3, MAP.WALL_H - 1.15); }
 }
+// versión del mismo estilo que el resto: barriles y cajas de Kenney junto a las paredes, sin cuadros ni lámparas
+function dressInteriorKenney(rng, th) {
+  const sets = { nacht: [['barrel', .4], ['crate-medium', 1.2], ['crate-small', 1.1], ['coffin', 1.0]], fabrica: [['barrel', .4], ['crate-medium', 1.4], ['crate-small', 1.2]], isla: [['barrel', .4], ['crate-medium', 1.3], ['crate-small', 1.1]] }[th] || [];
+  const O = MAP.OBJ, keep = [...Object.values(O.perks), O.pap, O.power, ...O.box, ...O.wallbuys, ...MAP.WINDOWS, ...MAP.DOORS.flatMap(d => d.cells.map(([x, z]) => ({ x, z })))].filter(Boolean).map(o => [o.x, o.z]);
+  keep.push([Math.floor(O.spawn[0]), Math.floor(O.spawn[1])]);
+  const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], open = (x, z) => MAP.cellAt(x, z) === MAP.FLOOR, placed = [];
+  const inside = (x, z) => { const k = MAP.zoneOf[MAP.idx(x, z)]; return k >= 0 && !MAP.ZONES[k].outside; };
+  let n = 0;
+  for (let z = 1; z < MAP.GH - 1; z++) for (let x = 1; x < MAP.GW - 1; x++) {
+    if (!sets.length || !open(x, z) || !inside(x, z) || n > 26) continue;
+    const walls = N4.filter(([dx, dz]) => MAP.cellAt(x + dx, z + dz) === MAP.WALL); if (walls.length !== 1) continue;
+    let free = 0; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if ((dx || dz) && open(x + dx, z + dz)) free++;
+    if (free < 5 || !keep.every(([a, b]) => Math.hypot(a - x, b - z) > 2.2) || !placed.every(([a, b]) => Math.hypot(a - x, b - z) > 3) || rng() > .15) continue;
+    const [nm, s] = sets[Math.floor(rng() * sets.length)]; if (!K[nm]) continue;
+    kit(nm, x + .5 + walls[0][0] * .15, z + .5 + walls[0][1] * .15, rng() * 6, s); block(x, z); placed.push([x, z]); n++;
+  }
+}
 function sizeOf(n) { if (!SIZE[n]) { const o = K[n].scene; o.updateMatrixWorld(true); SIZE[n] = new THREE.Box3().setFromObject(o).getSize(V3()); } return SIZE[n]; }
 // edificios de Kenney ajustados a cada solar
+function buildCityKenney(rng) {
+  const tall = ['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e'], wide = ['building-j', 'building-k', 'building-n', 'building-e'], sq = [...'abcdfghilm'].map(c => 'building-' + c);
+  for (const b of MAP.OBJ.buildings) {
+    const w = b.x1 - b.x0 + 1, d = b.z1 - b.z0 + 1, ratio = Math.max(w, d) / Math.min(w, d);
+    const pool = ratio > 1.6 ? wide : rng() < .18 ? tall : sq, n = pool[Math.floor(rng() * pool.length)], sz = sizeOf(n);
+    const rot = (w >= d) === (sz.x >= sz.z) ? 0 : Math.PI / 2, sx = rot ? sz.z : sz.x, sd = rot ? sz.x : sz.z;
+    const o = kit(n, (b.x0 + b.x1 + 1) / 2, (b.z0 + b.z1 + 1) / 2, rot + (rng() < .5 ? Math.PI : 0), 1);
+    const k = Math.min(w / sx, d / sd) * 1.02; o.scale.set(rot ? (d / sd) : (w / sx), k * 1.25, rot ? (w / sx) : (d / sd));
+    o.position.y = 0;
+  }
+}
 function buildCity(rng) {
-  buildBuildings(level, MAP.OBJ.buildings, rng);   // fachadas PBR generadas a medida de cada solar
+  buildCityKenney(rng);
 }
 function cityProp(o, rng) {
   const x = o.x + .5, z = o.z + .5;
-  if (o.kind === 't') { if (!tree('tree_small_02', x, z, rng() * 6, 5.5 + rng() * 2.5)) kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5); }
-  else if (o.kind === 'k' && K.p_covered_car) { const c = kit('p_covered_car', x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1 + Math.PI / 2, .62); }
+  if (o.kind === 't') { if (!REALISTIC || !tree('tree_small_02', x, z, rng() * 6, 5.5 + rng() * 2.5)) kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5); }
+  else if (o.kind === 'k' && REALISTIC && K.p_covered_car) { const c = kit('p_covered_car', x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1 + Math.PI / 2, .62); }
   else if (o.kind === 'k') { const n = ['car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance'][Math.floor(rng() * 7)], sz = sizeOf(n); const c = kit(n, x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1, 2.2 / Math.max(sz.x, sz.z)); tintDirty(c, rng); }
-  else if (o.kind === 'l') queueInst('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15);
+  else if (o.kind === 'l') { if (REALISTIC) queueInst('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15); else kit('light-curved', x, z, Math.floor(rng() * 4) * Math.PI / 2, 5.5); }
+  else if (o.kind === 'p' && !REALISTIC) kit(rng() < .6 ? 'dumpster' : 'planter', x, z, rng() * 6, 3.4);
   else if (o.kind === 'p') { const r = rng(); kit(r < .45 ? 'p_metal_trash_can' : r < .7 ? 'p_utility_box_01' : r < .9 ? 'p_utility_box_02' : 'p_fire_hydrant', x, z, Math.floor(rng() * 4) * Math.PI / 2, r < .45 ? 1.15 : 1.2); }
 }
 // coches abandonados: un poco más oscuros y sucios
@@ -288,7 +320,7 @@ function updCityLights(force, dt = 0) {
   if (!cityLamps.length) return; if (!force && (cityT -= dt) > 0) return; cityT = .4;
   const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1];
   const near = [...cityLamps].sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
-  LAMPS.filter(l => l.userData.street).forEach((l, i) => { const o = near[i]; if (!o) { l.intensity = 0; return; } l.position.set(o.x, 3.8, o.z); l.color.set(o.col); l.intensity = 9; });
+  LAMPS.filter(l => l.userData.street).forEach((l, i) => { const o = near[i]; if (!o) { l.intensity = 0; return; } l.position.set(o.x, REALISTIC ? 3.8 : 3.4, o.z); l.color.set(o.col); l.intensity = 9; });
 }
 function tint(o, col) { const c = new THREE.Color(col); o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.copy(c); } }); return o; }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -526,9 +558,12 @@ function spawnZombie() {
 // según la velocidad: los lentos son del modelo realista, los que reptan también (marcha Running_Crawl) y los que corren, del «corredor»
 function newZombie(o) {
   const s = o.speed, x = Math.random();
-  const kind = s < .95 ? (x < .5 ? 'city' : 'real') : s < 1.8 ? (x < .35 ? 'real' : x < .6 ? 'city' : 'runner') : 'runner';
-  const def = { real: REAL, city: CITYZ, runner: RUNNER }[kind];
-  return new Zombie(game, K['zombie_' + (kind === 'real' ? 'real' : kind)], { ...o, def });
+  // cada tipo solo sale en las velocidades que su animación puede cubrir; el esqueleto veloz aparece más en rondas altas
+  const pool = [['Basic', QBASIC, 4, .68, 3.1], ['Chubby', QCHUBBY, 2, .45, 2.1], ['Arm', QARM, 2, .4, 1.8], ['Ribcage', QRIB, s > 1.5 ? 3 : 0, .9, 3.5]].filter(p => p[2] > 0 && s >= p[3] * .8 && s <= p[4] * 1.1);
+  const list = pool.length ? pool : [['Basic', QBASIC, 1, 0, 9]];
+  let r = Math.random() * list.reduce((a, p) => a + p[2], 0), pick = list[0]; for (const p of list) { r -= p[2]; if (r <= 0) { pick = p; break; } }
+  const chubby = pick[0] === 'Chubby';
+  return new Zombie(game, K['zq_' + pick[0]], { ...o, def: pick[1], hp: chubby ? Math.floor(o.hp * 1.7) : o.hp, scale: (o.scale || 1) * (chubby ? 1.12 : 1) });
 }
 function lightning(x, z) { $('flash').style.transition = 'none'; $('flash').style.opacity = .25; requestAnimationFrame(() => { $('flash').style.transition = 'opacity .4s'; $('flash').style.opacity = 0; }); glow.burst(x, .5, z, 30, new THREE.Color(0x9ad0ff), 3, .3, .5, 2); tone(80, .5, 'sawtooth', .12, -40); }
 
@@ -1210,16 +1245,16 @@ function frame() {
 // luz ambiental y reflejos de un HDRI nocturno real (Poly Haven, CC0)
 async function loadEnv() {
   const pm = new THREE.PMREMGenerator(renderer), hdr = await new RGBELoader().loadAsync('models/h/noche.hdr');
-  scene.environment = pm.fromEquirectangular(hdr).texture; scene.environmentIntensity = .12; hdr.dispose(); pm.dispose();
+  scene.environment = pm.fromEquirectangular(hdr).texture; scene.environmentIntensity = REALISTIC ? .12 : .45; hdr.dispose(); pm.dispose();
 }
 async function boot() {
   try { await loadAll(); } catch (e) { $('loadTxt').textContent = 'Error al cargar: ' + e.message; return; }
   $('loadTxt').textContent = 'Preparando el escenario…';
   if (Q.get('map')) save.map = Q.get('map');
   if (Q.get('char')) save.char = Q.get('char');
-  try { await MAP.loadPBR(); } catch (e) { console.warn('PBR', e); }
+  if (REALISTIC) try { await MAP.loadPBR(); } catch (e) { console.warn('PBR', e); }
   try { await loadEnv(); } catch (e) { console.warn('HDRI', e); }
-  try { await loadTrees(); } catch (e) { console.warn('trees', e); }
+  if (REALISTIC) try { await loadTrees(); } catch (e) { console.warn('trees', e); }
   buildWorld(MAP.MAPS[save.map] ? save.map : 'nacht');
   try { setupFX(); } catch (e) { composer = null; }
   await makeThumbs();

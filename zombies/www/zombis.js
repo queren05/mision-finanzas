@@ -76,6 +76,16 @@ REAL.atk = { 'attack-melee-right': { hit: 1.0, end: 1.45 }, 'attack-melee-left':
 RUNNER.atk = { 'attack-melee-right': { hit: 1.0, end: 1.6 }, 'attack-melee-left': { hit: 1.0, end: 1.6 } };
 CITY.atk = { 'attack-melee-right': { hit: 1.0, end: 1.35 }, 'attack-melee-left': { hit: 1.5, end: 1.95 } };
 const ATK_RATE = 1.5;   // los golpes de estas animaciones son lentos: se aceleran para que el zombi no avise tanto
+// zombis de Quaternius (CC0): mismo estilo que el resto del juego. Velocidades y golpes medidos sobre sus animaciones.
+const QCLIPS = { 'attack-melee-right': 'Punch', 'attack-melee-left': 'Idle_Attack', die: 'Death', idle: 'Idle', crouch: 'Idle', 'interact-right': 'Punch', walk: 'Walk', sprint: 'Run' };
+export const QBASIC = { skinned: true, eyes: false, flat: true, head: /^Head$/, clips: QCLIPS, gaits: [{ clip: 'Walk', v: .85, lo: .8, hi: 1.6 }, { clip: 'Run', v: 2.2, lo: .7, hi: 1.4 }],
+  atk: { 'attack-melee-right': { hit: .25, end: .55 }, 'attack-melee-left': { hit: .25, end: .75 } } };
+export const QCHUBBY = { skinned: true, eyes: false, flat: true, head: /^Head$/, clips: QCLIPS, gaits: [{ clip: 'Walk', v: .53, lo: .85, hi: 1.8 }, { clip: 'Run', v: 1.6, lo: .7, hi: 1.3 }],
+  atk: { 'attack-melee-right': { hit: .2, end: .6 }, 'attack-melee-left': { hit: .5, end: 1.1 } } };
+export const QARM = { skinned: true, eyes: false, flat: true, head: /^Head$/, clips: { ...QCLIPS, 'attack-melee-left': 'Run_Attack' }, gaits: [{ clip: 'Walk', v: .55, lo: .85, hi: 1.8 }, { clip: 'Run', v: 1.4, lo: .7, hi: 1.3 }],
+  atk: { 'attack-melee-right': { hit: .3, end: .6 }, 'attack-melee-left': { hit: .4, end: .7 } } };
+export const QRIB = { skinned: true, eyes: false, flat: true, head: /^Head$/, clips: { ...QCLIPS, 'attack-melee-right': 'Jump', 'attack-melee-left': 'Jump', 'interact-right': 'Jump' }, gaits: [{ clip: 'Walk', v: 1.1, lo: .85, hi: 1.5 }, { clip: 'Run', v: 2.5, lo: .75, hi: 1.4 }],
+  atk: { 'attack-melee-right': { hit: .18, end: .37 }, 'attack-melee-left': { hit: .18, end: .37 } } };
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
@@ -91,7 +101,7 @@ export class Zombie {
     o.scale.setScalar(this.k); this.root = new THREE.Group(); this.root.add(o); this.model = o; game.scene.add(this.root);
     o.traverse(m => { if (!this.head && def.head.test(m.name)) this.head = m; });
     // cada zombi con un tono algo distinto
-    const tintC = def.pbr ? new THREE.Color().setScalar(.75 + Math.random() * .25) : def.skinned ? new THREE.Color().setHSL(.3, .1 + Math.random() * .15, .7 + Math.random() * .3) : new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
+    const tintC = def.flat ? new THREE.Color().setScalar(.8 + Math.random() * .2) : def.pbr ? new THREE.Color().setScalar(.75 + Math.random() * .25) : def.skinned ? new THREE.Color().setHSL(.3, .1 + Math.random() * .15, .7 + Math.random() * .3) : new THREE.Color().setHSL(.25 + (Math.random() - .5) * .18, .25 + Math.random() * .3, .55 + Math.random() * .3);
     o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.multiply(tintC); } });
     if (this.head && def.eyes) for (const sx of [-1, 1]) { const e = new THREE.Sprite(EYE_MAT[opt.kind === 'skel' ? 1 : 0]); e.position.set(sx * .045, .085, .118); e.scale.setScalar(.06); this.head.add(e); }
     this.mixer = new THREE.AnimationMixer(o);
