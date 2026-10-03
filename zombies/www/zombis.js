@@ -57,6 +57,16 @@ const id = n => n;
 export const KENNEY = { h: .83, skinned: false, eyes: true, head: /^head$/, walkSpeed: 1.1, runSpeed: 3.2, clips: Object.fromEntries(['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right'].map(n => [n, id(n)])) };
 export const REAL = { skinned: true, eyes: false, head: /Head$/, walkSpeed: .9, runSpeed: 2.2, clips: { walk: ['Armature|Walk', 'Armature|Walk2'], sprint: 'Armature|Walk2', 'attack-melee-right': 'Armature|Attack', 'attack-melee-left': 'Armature|Headbutt', die: ['Armature|Die', 'Armature|Die2'], idle: 'Armature|Idle', crouch: 'Armature|Idle', 'interact-right': 'Armature|Attack' } };
 export const RUNNER = { skinned: true, eyes: false, head: /^Head$/, walkSpeed: 1, runSpeed: 3.4, clips: { walk: 'Zombie|ZombieWalk', sprint: 'Zombie|ZombieRun', 'attack-melee-right': 'Zombie|ZombieBite', 'attack-melee-left': 'Zombie|ZombieBite', die: null, idle: 'Zombie|ZombieIdle', crouch: 'Zombie|ZombieCrawl', 'interact-right': 'Zombie|ZombieBite' } };
+// marchas medidas sobre las animaciones (recorrido del pie respecto a la cadera): el zombi avanza justo lo que cubre su animación, así los pies no patinan
+KENNEY.gaits = [{ clip: 'walk', v: 1.1, lo: .8, hi: 1.5 }, { clip: 'sprint', v: 3.2, lo: .8, hi: 1.4 }];
+REAL.gaits = [{ clip: 'Armature|Walk', v: .35, lo: .85, hi: 1.6 }, { clip: 'Armature|Walk2', v: .55, lo: .85, hi: 1.8 }, { clip: 'Armature|Running_Crawl', v: 1.27, lo: .7, hi: 1.4, crawl: true }];
+RUNNER.gaits = [{ clip: 'Zombie|ZombieWalk', v: .38, lo: .85, hi: 2.2 }, { clip: 'Zombie|ZombieRun', v: 2.09, lo: .55, hi: 1.5 }];
+function pickGait(def, s) {
+  let best = null, bd = 1e9;
+  for (const g of def.gaits) { const lo = g.v * g.lo, hi = g.v * g.hi, d = (s < lo ? lo - s : s > hi ? s - hi : 0) + Math.random() * .05; if (d < bd) { bd = d; best = g; } }
+  return best;
+}
+const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
@@ -80,7 +90,11 @@ export class Zombie {
     this.act = {}; for (const n of ['walk', 'sprint', 'attack-melee-right', 'attack-melee-left', 'die', 'idle', 'crouch', 'interact-right']) { const c = clip(def.clips[n]); if (c) this.act[n] = this.mixer.clipAction(c); }
     for (const n of ['attack-melee-right', 'attack-melee-left', 'die', 'interact-right']) if (this.act[n]) { this.act[n].setLoop(THREE.LoopOnce); this.act[n].clampWhenFinished = true; }
     this.cur = null;
-    this.hp = opt.hp; this.maxHp = opt.hp; this.speed = opt.speed; this.run = opt.speed > 2.2 ? 'sprint' : 'walk';
+    const gait = pickGait(def, opt.speed), sc = opt.scale || 1, gclip = gltf.animations.find(a => a.name === gait.clip);
+    this.act.gait = this.mixer.clipAction(gclip); this.gait = gait; this.hy = gait.crawl ? .42 : 1;
+    this.cv = gait.v * sc;                                                    // m/s que recorre un ciclo de la animación
+    this.gts = THREE.MathUtils.clamp(opt.speed / gait.v / sc * (.94 + Math.random() * .12), gait.lo, gait.hi);   // velocidad de reproducción
+    this.hp = opt.hp; this.maxHp = opt.hp; this.speed = this.cv * this.gts; this.run = 'gait'; this.turnRate = 2.6 + this.speed * .9;
     this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.yaw = 0; this.atkCd = 0; this.atkT = -1; this.groanT = Math.random() * 4 + 1;
     this.state = 'approach'; this.t = 0; this.dead = false; this.win = null; this.boardT = 0; this.stuck = 0;
     this.play(this.run);
@@ -88,7 +102,7 @@ export class Zombie {
   play(n, fade = .2) {
     const a = this.act[n]; if (!a || this.cur === a) return;
     a.reset().play(); if (this.cur) this.cur.crossFadeTo(a, fade, false); this.cur = a;
-    if (n === 'walk') a.timeScale = Math.max(.7, this.speed / this.def.walkSpeed); if (n === 'sprint') a.timeScale = Math.max(.8, this.speed / this.def.runSpeed);
+    a.timeScale = n === 'gait' ? this.gts : 1;
   }
   // aparece fuera de una ventana y va hacia ella
   spawnAtWindow(w) {
@@ -104,7 +118,7 @@ export class Zombie {
     if (this.dead || this.state === 'rise' && this.pos.y < -1) return null;
     const p = this.pos, k = this.hs, y0 = p.y;   // las medidas de abajo son para un zombi de 1,85 m
     let best = null;
-    const test = (y, r, head) => { _s.set(p.x, y0 + y * k, p.z); const t = raySphere(ray, _s, r * k); if (t !== null && t < maxT && (!best || t < best.t)) best = { t, head }; };
+    const hy = this.hy, test = (y, r, head) => { _s.set(p.x, y0 + y * k * hy, p.z); const t = raySphere(ray, _s, r * k * (hy < 1 ? 1.25 : 1)); if (t !== null && t < maxT && (!best || t < best.t)) best = { t, head }; };
     test(1.58, .24, true); test(1.18, .3, false); test(.82, .3, false); test(.42, .26, false);
     return best;
   }
@@ -155,17 +169,25 @@ export class Zombie {
       } else if (d < 1.0 && P.alive && (this.atkCd -= dt) < 0) { this.atkCd = this.kind === 'skel' ? .7 : 1.0; this.atkT = 0; this.atkDone = false; this.play(Math.random() < .5 ? 'attack-melee-right' : 'attack-melee-left', .1); this.cur.reset().play(); }
       else if (d < .8) sp = 0;
     }
-    // moverse hacia el objetivo
+    // moverse hacia el objetivo: primero gira (con velocidad limitada) y solo avanza en la dirección en la que mira, nunca de lado
+    const slow = this.slowT > 0 ? .4 : 1; this.slowT = Math.max(0, (this.slowT || 0) - dt);
     if (tx !== null && sp > 0) {
-      const dx = tx - this.pos.x, dz = tz - this.pos.z, d = Math.hypot(dx, dz) || 1;
-      const slow = this.slowT > 0 ? .4 : 1; this.slowT = Math.max(0, (this.slowT || 0) - dt);
-      this.vel.x = THREE.MathUtils.lerp(this.vel.x, dx / d * sp * slow, Math.min(1, dt * 8)); this.vel.z = THREE.MathUtils.lerp(this.vel.z, dz / d * sp * slow, Math.min(1, dt * 8));
-      this.face(this.vel.x, this.vel.z, dt * 7);
+      const dx = tx - this.pos.x, dz = tz - this.pos.z, want = Math.atan2(dx, dz), diff = angDiff(want, this.yaw);
+      const step = this.turnRate * dt; this.yaw += Math.max(-step, Math.min(step, diff));
+      const al = Math.max(0, Math.cos(angDiff(want, this.yaw))), f = al > .7 ? 1 : al * al * 1.4;   // si aún está girando, casi no avanza
+      const v = sp * slow * f, k = Math.min(1, dt * 7);
+      this.vel.x += (Math.sin(this.yaw) * v - this.vel.x) * k; this.vel.z += (Math.cos(this.yaw) * v - this.vel.z) * k;
     } else { this.vel.multiplyScalar(Math.max(0, 1 - dt * 10)); }
     if (this.state !== 'climb' && this.state !== 'rise') {
       this.pos.x += this.vel.x * dt; this.pos.z += this.vel.z * dt;
       if (this.state === 'chase') collide(this.pos, R);
     }
+    // la animación sigue a la velocidad real: más lento si se frena o gira, quieto (idle) si no se mueve
+    const spd = Math.hypot(this.vel.x, this.vel.z);
+    if (this.cur === this.act.gait) {
+      if (this.state === 'chase' && spd < this.cv * .12 && this.act.idle) this.play('idle', .25);
+      else this.cur.timeScale = Math.max(.25, spd / this.cv);
+    } else if (this.state === 'chase' && this.cur === this.act.idle && spd > this.cv * .3) this.play('gait', .25);
     this.root.position.copy(this.pos); this.root.rotation.y = this.yaw;
     return true;
   }
@@ -201,11 +223,12 @@ export function separate(zs) {
 // número de zombis y vida por ronda (parecido al Black Ops en solitario)
 export function roundCount(r) { return r <= 5 ? [6, 8, 13, 18, 24][r - 1] : Math.floor(24 + (r - 5) * 3.2 + Math.max(0, r - 15) * 2); }
 export function roundHp(r) { return r < 10 ? 150 + 100 * (r - 1) : Math.floor(950 * Math.pow(1.1, r - 9)); }
+// velocidades (m/s) pensadas para las marchas medidas: arrastrado .35-.55, paso rápido hasta ~1, reptando 1-1.7, trote y carrera 1.2-3.1
 export function roundSpeed(r) {
-  const x = Math.random();
-  if (r <= 2) return .9 + Math.random() * .2;
-  if (r <= 4) return x < .6 ? 1.0 : 1.9;
-  if (r <= 7) return x < .25 ? 1.0 : x < .75 ? 2.0 : 3.1;
-  return x < .1 ? 1.1 : x < .4 ? 2.1 : 3.3;
+  const x = Math.random(), u = (a, b) => a + Math.random() * (b - a);
+  if (r <= 2) return x < .7 ? u(.4, .65) : u(.65, .95);
+  if (r <= 4) return x < .45 ? u(.5, .95) : x < .85 ? u(.95, 1.5) : u(1.5, 2.1);
+  if (r <= 7) return x < .2 ? u(.6, .95) : x < .55 ? u(1, 1.7) : u(1.9, 2.5);
+  return x < .1 ? u(.8, 1) : x < .35 ? u(1.2, 1.7) : u(2.2, 3.1);
 }
 export { WINDOWS, WIN };

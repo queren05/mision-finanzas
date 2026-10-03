@@ -425,8 +425,11 @@ function spawnZombie() {
   for (let i = 0; i < wins.length; i++) { s -= weights[i]; if (s <= 0) { w = wins[i]; break; } }
   const zb = newZombie(opts2); zb.spawnAtWindow(w); Z.push(zb); return true;
 }
-// los que corren son del modelo «corredor»; los que andan, del realista
-function newZombie(o) { const run = o.speed > 2.2; return new Zombie(game, K[run ? 'zombie_runner' : 'zombie_real'], { ...o, def: run ? RUNNER : REAL }); }
+// según la velocidad: los lentos son del modelo realista, los que reptan también (marcha Running_Crawl) y los que corren, del «corredor»
+function newZombie(o) {
+  const s = o.speed, runner = s >= 1.8 || (s >= .95 && Math.random() < .5);
+  return new Zombie(game, K[runner ? 'zombie_runner' : 'zombie_real'], { ...o, def: runner ? RUNNER : REAL });
+}
 function lightning(x, z) { $('flash').style.transition = 'none'; $('flash').style.opacity = .25; requestAnimationFrame(() => { $('flash').style.transition = 'opacity .4s'; $('flash').style.opacity = 0; }); glow.burst(x, .5, z, 30, new THREE.Color(0x9ad0ff), 3, .3, .5, 2); tone(80, .5, 'sawtooth', .12, -40); }
 
 /* ---------- ventanas ---------- */
