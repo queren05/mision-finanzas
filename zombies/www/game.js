@@ -4,6 +4,7 @@ import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
+import { RGBELoader } from './lib/RGBELoader.js';
 import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
@@ -1109,11 +1110,18 @@ function frame() {
 }
 
 /* ---------- arranque ---------- */
+// luz ambiental y reflejos de un HDRI nocturno real (Poly Haven, CC0)
+async function loadEnv() {
+  const pm = new THREE.PMREMGenerator(renderer), hdr = await new RGBELoader().loadAsync('models/h/noche.hdr');
+  scene.environment = pm.fromEquirectangular(hdr).texture; scene.environmentIntensity = .12; hdr.dispose(); pm.dispose();
+}
 async function boot() {
   try { await loadAll(); } catch (e) { $('loadTxt').textContent = 'Error al cargar: ' + e.message; return; }
   $('loadTxt').textContent = 'Preparando el escenario…';
   if (Q.get('map')) save.map = Q.get('map');
   if (Q.get('char')) save.char = Q.get('char');
+  try { await MAP.loadPBR(); } catch (e) { console.warn('PBR', e); }
+  try { await loadEnv(); } catch (e) { console.warn('HDRI', e); }
   buildWorld(MAP.MAPS[save.map] ? save.map : 'nacht');
   try { setupFX(); } catch (e) { composer = null; }
   await makeThumbs();

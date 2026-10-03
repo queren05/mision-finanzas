@@ -105,6 +105,13 @@ export const TEX = {
   grass: tex(256, 256, (c, w, h) => { c.fillStyle = '#2f5a24'; c.fillRect(0, 0, w, h); for (let i = 0; i < 4000; i++) { const v = rnd(.7, 1.3); c.fillStyle = `rgba(${60 * v | 0},${110 * v | 0},${40 * v | 0},.7)`; c.fillRect(rnd(0, w), rnd(0, h), 1.5, rnd(2, 5)); } }),
   board: tex(128, 32, (c, w, h) => { c.fillStyle = '#8a6440'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 6; i++) c.fillRect(0, rnd(0, h), w, 1); c.fillStyle = '#3a2a1a'; c.fillRect(6, h / 2 - 3, 6, 6); c.fillRect(w - 12, h / 2 - 3, 6, 6); }),
 };
+// texturas PBR reales (Poly Haven, CC0): color + normales + rugosidad. Si no cargan, se usan las dibujadas de arriba.
+export const PBR = {};
+export async function loadPBR() {
+  const L = new THREE.TextureLoader(), info = await (await fetch('models/t/info.json')).json();
+  const get = (url, srgb) => new Promise(ok => L.load(url, t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; if (srgb) t.colorSpace = THREE.SRGBColorSpace; ok(t); }, undefined, () => ok(null)));
+  await Promise.all(Object.entries(info).map(async ([k, v]) => { const [map, normalMap, roughnessMap] = await Promise.all([get(`models/t/${k}_d.jpg`, true), get(`models/t/${k}_n.jpg`), get(`models/t/${k}_r.jpg`)]); if (map) PBR[k] = { map, normalMap, roughnessMap, size: v.size_m }; }));
+}
 // temas visuales de cada mapa
 export const THEMES = {
   nacht: { wall: 'plaster', wall2: 'brick', floor: 'wood', ground: 'dirt', ext: 'dirt', extCol: 0x6a7060, sky: 0x0b1020, lamp: 0xffc27a, fence: 0x6a6a78, trees: ['pine', 'pine-crooked'] },
@@ -133,14 +140,21 @@ export function buildLevel(scene) {
       const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(cx, kind === 'side' ? .06 : 0, cz); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i), -p.getZ(i)); floorGeos[kind].push(g);
     }
   }
-  const mat = (t, rep, extra = {}) => { const tx = TEX[t].clone(); tx.needsUpdate = true; tx.repeat.set(rep, rep); return new THREE.MeshStandardMaterial({ map: tx, roughness: .92, ...extra }); };
+  const mat = (t, rep, extra = {}) => {
+    const p = PBR[t];
+    if (p) {   // PBR: la repetición sale del tamaño real de la textura (rep > 5 = plano entero, como el suelo de fuera)
+      const r = rep > 5 ? (GW + 60) / p.size : 1 / p.size, set = tx => { if (!tx) return null; tx = tx.clone(); tx.needsUpdate = true; tx.repeat.set(r, r); return tx; };
+      return new THREE.MeshStandardMaterial({ map: set(p.map), normalMap: set(p.normalMap), roughnessMap: set(p.roughnessMap), roughness: 1, ...extra });
+    }
+    const tx = TEX[t].clone(); tx.needsUpdate = true; tx.repeat.set(rep, rep); return new THREE.MeshStandardMaterial({ map: tx, roughness: .92, ...extra });
+  };
   const wm = { a: mat(T.wall, T.wall === 'brick' ? 1 : .5), b: mat(T.wall2, T.wall2 === 'brick' ? 1 : .5) };
-  if (T.wall === 'metal') { wm.a.metalness = .35; wm.a.roughness = .6; }
+  if (T.wall === 'metal') { wm.a.metalness = .35; if (!PBR.metal) wm.a.roughness = .6; }
   for (const k of ['a', 'b']) if (wallGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(wallGeos[k]), wm[k]); m.castShadow = m.receiveShadow = true; level.add(m); }
   const fm = { in: mat(T.floor, .5, { roughness: .85 }), out: mat(T.ground, .5, { roughness: 1 }), side: mat('tiles', .5, { roughness: .9 }), grass: mat('grass', .5, { roughness: 1 }) };
   for (const k of ['in', 'out', 'side', 'grass']) if (floorGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(floorGeos[k]), fm[k]); m.receiveShadow = true; level.add(m); }
   // suelo de fuera
-  const ext = mat(T.ext, 40); ext.color.set(T.extCol);
+  const ext = mat(T.ext, 40); ext.color.set(PBR[T.ext] ? 0xb0b0b0 : T.extCol);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GW + 60, GH + 60), ext); ground.rotation.x = -Math.PI / 2; ground.position.set(GW / 2, -.01, GH / 2); ground.receiveShadow = true; level.add(ground);
   if (T.sea) { const sea = new THREE.Mesh(new THREE.RingGeometry(Math.max(GW, GH) * .75, 140, 64), new THREE.MeshStandardMaterial({ color: 0x0a3a5a, roughness: .2, metalness: .3 })); sea.rotation.x = -Math.PI / 2; sea.position.set(GW / 2, .02, GH / 2); level.add(sea); }
   // vigas del techo en las zonas interiores
