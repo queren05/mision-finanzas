@@ -70,6 +70,12 @@ const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 // zombi de ciudad (Rikindle3D, CC0): texturas PBR; solo lo usamos en las marchas lentas porque su clip de correr viene vacío
 export const CITY = { skinned: true, eyes: false, pbr: true, head: /Head$/, clips: { walk: 'Shamble', sprint: 'Walk', 'attack-melee-right': 'Attack', 'attack-melee-left': 'Attack2', die: ['Death'], idle: ['Idle', 'Idle2'], crouch: 'Idle2', 'interact-right': 'Attack3' },
   gaits: [{ clip: 'Walk', v: .35, lo: .9, hi: 1.5 }, { clip: 'Shamble', v: .64, lo: .85, hi: 1.8 }] };
+// instante (en segundos del clip) en que la mano llega al máximo y en que termina el golpe, medidos sobre cada animación
+KENNEY.atk = { 'attack-melee-right': { hit: .42, end: .9 }, 'attack-melee-left': { hit: .42, end: .9 } };
+REAL.atk = { 'attack-melee-right': { hit: 1.0, end: 1.45 }, 'attack-melee-left': { hit: .5, end: 1.0 } };
+RUNNER.atk = { 'attack-melee-right': { hit: 1.0, end: 1.6 }, 'attack-melee-left': { hit: 1.0, end: 1.6 } };
+CITY.atk = { 'attack-melee-right': { hit: 1.0, end: 1.35 }, 'attack-melee-left': { hit: 1.5, end: 1.95 } };
+const ATK_RATE = 1.5;   // los golpes de estas animaciones son lentos: se aceleran para que el zombi no avise tanto
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
@@ -144,7 +150,7 @@ export class Zombie {
     } else if (this.state === 'tear') {
       const w = this.win; this.face(w.inn[0] - w.out[0], w.inn[1] - w.out[1], dt * 8);
       if (w.boards > 0) {
-        if ((this.boardT -= dt) < 0) { this.boardT = 1.25 * (this.kind === 'skel' ? .5 : 1); this.play(Math.random() < .5 ? 'attack-melee-right' : 'attack-melee-left', .1); this.cur.reset().play(); g.tearBoard(w, this); }
+        if ((this.boardT -= dt) < 0) { this.boardT = 1.25 * (this.kind === 'skel' ? .5 : 1); this.startAttack(); g.tearBoard(w, this); }
       } else { this.state = 'climb'; this.t = 0; this.from = this.pos.clone(); this.play('crouch', .1); }
       // si el jugador está justo al otro lado, le pega a través de la ventana
       if (P.pos.distanceTo(_v.set(w.inn[0] + .5, 0, w.inn[1] + .5)) < 1 && w.boards === 0) this.state = 'climb';
@@ -166,10 +172,10 @@ export class Zombie {
       // atacar
       if (this.atkT >= 0) {
         this.atkT += dt; sp = 0;
-        if (this.atkT > .42 && !this.atkDone) { this.atkDone = true; if (d < 1.35 && P.alive && Math.abs(P.pos.y - this.pos.y) < 1.2) g.hurtPlayer(this); }
-        if (this.atkT > .9) { this.atkT = -1; this.play(this.run, .15); }
+        if (this.atkT > this.atkHit && !this.atkDone) { this.atkDone = true; if (d < 1.35 && P.alive && Math.abs(P.pos.y - this.pos.y) < 1.2) g.hurtPlayer(this); }
+        if (this.atkT > this.atkEnd) { this.atkT = -1; this.play(this.run, .15); }
         this.face(dx, dz, dt * 6);
-      } else if (d < 1.0 && P.alive && (this.atkCd -= dt) < 0) { this.atkCd = this.kind === 'skel' ? .7 : 1.0; this.atkT = 0; this.atkDone = false; this.play(Math.random() < .5 ? 'attack-melee-right' : 'attack-melee-left', .1); this.cur.reset().play(); }
+      } else if (d < 1.0 && P.alive && (this.atkCd -= dt) < 0) { this.atkCd = this.kind === 'skel' ? .7 : 1.0; this.atkT = 0; this.atkDone = false; this.startAttack(); }
       else if (d < .8) sp = 0;
     }
     // moverse hacia el objetivo: primero gira (con velocidad limitada) y solo avanza en la dirección en la que mira, nunca de lado
@@ -193,6 +199,10 @@ export class Zombie {
     } else if (this.state === 'chase' && this.cur === this.act.idle && spd > this.cv * .3) this.play('gait', .25);
     this.root.position.copy(this.pos); this.root.rotation.y = this.yaw;
     return true;
+  }
+  startAttack() {
+    const n = Math.random() < .5 ? 'attack-melee-right' : 'attack-melee-left', a = this.def.atk[n], r = this.def.skinned ? ATK_RATE : 1;
+    this.play(n, .1); this.cur.reset().play(); this.cur.timeScale = r; this.atkHit = a.hit / r; this.atkEnd = a.end / r;
   }
   face(dx, dz, k) { if (Math.abs(dx) + Math.abs(dz) < 1e-4) return; const a = Math.atan2(dx, dz); let d = a - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); this.yaw += d * Math.min(1, k); }
   damage(n, head, from) {
