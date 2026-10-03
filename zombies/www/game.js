@@ -93,10 +93,32 @@ function tree(name, x, z, ry = 0, h = 5) {
   const T = TREES[name]; if (!T) return null;
   const g = new THREE.Group(), s = h / T.v.h, w = T.v.w * s;
   T.mats.forEach((m, i) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.y = h / 2; if (i) p.rotation.y = Math.PI / 2; g.add(p); });
-  g.position.set(x, 0, z); g.rotation.y = ry; level.add(g); return g;
+  g.position.set(x, 0, z); g.rotation.y = ry; if (collecting) g.userData.cull = true; level.add(g); return g;
+}
+// objetos de decoración que se ocultan cuando quedan lejos del jugador (la niebla ya los tapa): menos triángulos y llamadas de dibujo
+let collecting = false, cullList = [], cullT = 0;
+function updCull(force, dt = 0) {
+  if (!cullList.length) return; if (!force && (cullT -= dt) > 0) return; cullT = .3;
+  const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1], R2 = 40 * 40;
+  for (const o of cullList) { const dx = o.position.x - px, dz = o.position.z - pz; o.visible = dx * dx + dz * dz < R2; }
+}
+// muchas copias del mismo modelo (vallas, farolas) en una sola llamada de dibujo por malla
+let instQ = {};
+function queueInst(name, x, z, ry = 0, s = 1) { (instQ[name] = instQ[name] || []).push({ x, z, ry, s }); }
+function flushInst() {
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), P = new THREE.Vector3(), S = new THREE.Vector3();
+  for (const [name, list] of Object.entries(instQ)) {
+    const src = K[name].scene; src.updateMatrixWorld(true); const meshes = []; src.traverse(m => { if (m.isMesh) meshes.push(m); });
+    for (const m of meshes) {
+      const im = new THREE.InstancedMesh(m.geometry, m.material, list.length); im.castShadow = im.receiveShadow = true; im.frustumCulled = false;
+      list.forEach((p, i) => { M.compose(P.set(p.x, 0, p.z), Q.setFromEuler(E.set(0, p.ry, 0)), S.setScalar(p.s)).multiply(m.matrixWorld); im.setMatrixAt(i, M); });
+      level.add(im);
+    }
+  }
+  instQ = {};
 }
 function kit(name, x, z, ry = 0, s = 1, y = 0, parent) {
-  const o = K[name].scene.clone(true); o.position.set(x, y, z); o.rotation.y = ry; o.scale.setScalar(s);
+  const o = K[name].scene.clone(true); o.position.set(x, y, z); o.rotation.y = ry; o.scale.setScalar(s); if (collecting && !parent) o.userData.cull = true;
   o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   (parent || level).add(o); return o;
 }
@@ -109,7 +131,7 @@ const ryOf = f => Math.atan2(f[0], f[1]);
 function buildWorld(mapId) {
   if (level) { scene.remove(level); level = null; }
   for (const l of LAMPS) scene.remove(l); LAMPS = []; machines.length = 0;
-  MAP.loadMap(mapId); resetFlow();
+  MAP.loadMap(mapId); resetFlow(); collecting = true;
   const T = MAP.theme(), W = MAP.GW, H = MAP.GH;
   hemi.intensity = 1.0; moon.intensity = 1.5;
   SKY = new THREE.Color(T.sky); scene.background = SKY; scene.fog = new THREE.Fog(SKY, 9, 44);
@@ -124,7 +146,7 @@ function buildWorld(mapId) {
   for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
     if (MAP.grid[MAP.idx(x, z)] !== MAP.FENCE) continue;
     const alongX = isBar(x - 1, z) || isBar(x + 1, z);
-    if (T.city) { kit('construction-barrier', x + .5, z + .5, alongX ? Math.PI / 2 : 0, 4.8); continue; }
+    if (T.city) { queueInst('construction-barrier', x + .5, z + .5, alongX ? Math.PI / 2 : 0, 4.8); continue; }
     const o = tint(kit('iron-fence', x + .5, z + .5, alongX ? 0 : Math.PI / 2, 1, 0), T.fence); o.scale.set(1.02, 2, 1.4); o.children[0] && o.children[0].position.set(0, 0, .32);
   }
   const postMat = new THREE.MeshStandardMaterial({ color: T.fence, roughness: .6, metalness: .4 });
@@ -141,6 +163,7 @@ function buildWorld(mapId) {
     else if (MAP.CFG.theme === 'fabrica') { crate(o.x, o.z, rng(), true); kit('barrel', o.x + .5 + .3, o.z + .5 - .3, 0, .35); }
     else kit(rng() < .5 ? 'palm-bend' : 'palm-straight', o.x + .5, o.z + .5, rng() * 6, .55);
   }
+  flushInst();
   // tumbas por donde salen zombis
   for (const g of MAP.OBJ.graves) {
     if (MAP.CFG.theme === 'nacht') tint(kit('grave', g.x + .5, g.z + .5, rng() * 3, 1.6), 0x6a5444);
@@ -156,7 +179,7 @@ function buildWorld(mapId) {
       if (MAP.cellAt(x, z) !== MAP.FLOOR || MAP.chAt(x, z) !== 'A') continue;
       if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => MAP.cellAt(x + dx, z + dz) === MAP.BLD)) continue;   // pegado a un edificio
       const [nm, s] = junk[Math.floor(rng() * junk.length)];
-      kit(nm, x + .2 + rng() * .6, z + .2 + rng() * .6, rng() * 6, s); n++;
+      kit(nm, x + .2 + rng() * .6, z + .2 + rng() * .6, rng() * 6, s).traverse(m => { m.castShadow = false; }); n++;
     }
   }
   // exterior: árboles, rocas o cajas alrededor
@@ -179,8 +202,8 @@ function buildWorld(mapId) {
     hemi.intensity = 1.5; moon.intensity = 2.1; hemi.color.set(0x9aa8d8);
     MAP.OBJ.props.filter(o => o.kind === 'l').forEach((o, i) => {
       const col = i % 7 === 3 ? 0x6ad8ff : i % 7 === 5 ? 0xff7ad0 : 0xffc880, x = o.x + .5, z = o.z + .5;
-      const pool = new THREE.Mesh(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); pool.position.set(x, .09, z); pool.renderOrder = 2; level.add(pool);
-      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.85, z); bulb.scale.setScalar(1.1); level.add(bulb);
+      const pool = new THREE.Mesh(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); pool.position.set(x, .09, z); pool.renderOrder = 2; pool.userData.cull = true; level.add(pool);
+      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({ map: poolTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false })); bulb.position.set(x, 3.85, z); bulb.scale.setScalar(1.1); bulb.userData.cull = true; level.add(bulb);
       cityLamps.push({ x, z, col });
     });
     // un grupo de luces de verdad que se reparte entre las farolas más cercanas
@@ -194,6 +217,7 @@ function buildWorld(mapId) {
     else { const b = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 8), bulbMat); b.position.copy(l.position); level.add(b); const c = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .4), new THREE.MeshBasicMaterial({ color: 0x111111 })); c.position.set(x, l.position.y + .3, z); level.add(c); }
   }
   world.bulbMat = bulbMat;
+  collecting = false; cullList = level.children.filter(o => o.userData.cull); updCull(true);
   buildPerks(); buildWallBuys(); buildBox(); buildPap(); buildPower(); buildEggs();
 }
 const SIZE = {};
@@ -216,7 +240,7 @@ function cityProp(o, rng) {
   if (o.kind === 't') { if (!tree('tree_small_02', x, z, rng() * 6, 5.5 + rng() * 2.5)) kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5); }
   else if (o.kind === 'k' && rng() < .4) { const c = kit('p_covered_car', x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1 + Math.PI / 2, .62); }
   else if (o.kind === 'k') { const n = ['car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance'][Math.floor(rng() * 7)], sz = sizeOf(n); const c = kit(n, x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1, 2.2 / Math.max(sz.x, sz.z)); tintDirty(c, rng); }
-  else if (o.kind === 'l') kit('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15);
+  else if (o.kind === 'l') queueInst('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15);
   else if (o.kind === 'p') { const r = rng(); kit(r < .45 ? 'p_metal_trash_can' : r < .7 ? 'p_utility_box_01' : r < .9 ? 'p_utility_box_02' : 'p_fire_hydrant', x, z, Math.floor(rng() * 4) * Math.PI / 2, r < .45 ? 1.15 : 1.2); }
 }
 // coches abandonados: un poco más oscuros y sucios
@@ -902,7 +926,7 @@ function update(dt) {
   // resto
   updBox(dt); updPap(dt); updBoards(dt); updProj(dt); updPowerups(dt); updSong(dt);
   for (const d of MAP.DOORS) if (d.open && d.mesh.visible) { d.anim += dt; d.mesh.position.y = d.anim * d.anim * 6; d.mesh.children.forEach((b, i) => b.rotation.y += dt * (i % 2 ? 3 : -3)); if (d.anim > 1) d.mesh.visible = false; }
-  if (flash.visible && (flash.userData.t -= dt) <= 0) flash.visible = false; updSplats(dt); updCityLights(false, dt);
+  if (flash.visible && (flash.userData.t -= dt) <= 0) flash.visible = false; updSplats(dt); updCityLights(false, dt); updCull(false, dt);
   muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt * 80); boomLight.intensity = Math.max(0, boomLight.intensity - dt * 90);
   for (const l of LAMPS) if (l.userData.fire) { l.intensity = 5 + Math.sin(G.time * 13 + l.position.x) * 1.2 + Math.sin(G.time * 7.3) * .8; if (Math.random() < dt * 6) glow.emit(l.position.x + rnd(-.2, .2), .5, l.position.z + rnd(-.2, .2), rnd(-.2, .2), rnd(1, 2), rnd(-.2, .2), new THREE.Color(0xff8a2a), .14, .7); }
   fx.update(dt); glow.update(dt);
@@ -1194,8 +1218,9 @@ async function testShot() {
   if (G.state === 'play') { updCamera(0); updHudFrame(0); }
   if (Q.has('look')) scene.fog = null;
   if (Q.has('look')) { const [a, b, c, d, e, f] = Q.get('look').split(',').map(Number); camera.position.set(a, b, c); camera.lookAt(d, e, f); camera.fov = +(Q.get('fov') || 50); camera.updateProjectionMatrix(); }
-  draw();
+  renderer.info.autoReset = false; renderer.info.reset(); draw();
   const im = $('shotImg'); im.src = cv.toDataURL(); im.style.display = 'block';
+  window.__scene = scene; window.__info = { ...renderer.info.render, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures };
   document.title = 'LISTO';
 }
 boot();
