@@ -1,7 +1,7 @@
 // Zombis: navegación por el mapa (campo de flujo sobre la rejilla), entrada por ventanas, ataques y muerte.
 import * as THREE from './lib/three.module.min.js';
 import * as SkeletonUtils from './lib/SkeletonUtils.js';
-import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR } from './mapa.js';
+import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR, floorY } from './mapa.js';
 
 export const ZH = 1.3;                // altura de un zombi (un poco más que la gamba de pie)
 const R = .3;                         // radio de colisión
@@ -207,6 +207,7 @@ export class Zombie {
       if (this.state === 'chase' && spd < this.cv * .12 && this.act.idle) this.play('idle', .25);
       else this.cur.timeScale = Math.max(.25, spd / this.cv);
     } else if (this.state === 'chase' && this.cur === this.act.idle && spd > this.cv * .3) this.play('gait', .25);
+    if (this.state === 'chase' || this.state === 'approach') { const ty = floorY(this.pos.x, this.pos.z); this.pos.y += (ty - this.pos.y) * Math.min(1, dt * 12); }   // suben y bajan los bordillos
     this.root.position.copy(this.pos); this.root.rotation.y = this.yaw;
     return true;
   }

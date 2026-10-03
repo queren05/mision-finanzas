@@ -5,7 +5,7 @@ import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
 import { RGBELoader } from './lib/RGBELoader.js';
-import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, QBASIC, QCHUBBY, QARM, QRIB } from './zombis.js';
+import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, KENNEY, QBASIC, QCHUBBY, QARM, QRIB } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -90,7 +90,7 @@ const PROPS = ['street_lamp_01', 'metal_trash_can', 'utility_box_01', 'utility_b
 const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs0 = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zq_Basic', 'models/z/Zombie_Basic.glb'], ['zq_Chubby', 'models/z/Zombie_Chubby.glb'], ['zq_Arm', 'models/z/Zombie_Arm.glb'], ['zq_Ribcage', 'models/z/Zombie_Ribcage.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(REALISTIC ? PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb']) : []).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs0 = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zq_Basic', 'models/z/Zombie_Basic.glb'], ['zq_Chubby', 'models/z/Zombie_Chubby.glb'], ['zq_Arm', 'models/z/Zombie_Arm.glb'], ['zq_Ribcage', 'models/z/Zombie_Ribcage.glb'], ['mc_city', 'models/m/mc_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(REALISTIC ? PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb']) : []).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   const jobs = jobs0;
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
@@ -148,12 +148,22 @@ function buildWorld(mapId) {
   for (const l of LAMPS) scene.remove(l); LAMPS = []; machines.length = 0;
   MAP.loadMap(mapId); resetFlow(); collecting = true;
   const T = MAP.theme(), W = MAP.GW, H = MAP.GH;
-  hemi.intensity = REALISTIC ? 1.0 : 1.5; moon.intensity = REALISTIC ? 1.5 : 1.9;
+  moon.color.set(0xb0c0ff); hemi.groundColor.set(0x2a2018); hemi.intensity = REALISTIC ? 1.0 : 1.5; moon.intensity = REALISTIC ? 1.5 : 1.9;
   SKY = new THREE.Color(T.sky); scene.background = SKY; scene.fog = new THREE.Fog(SKY, 9, 44);
   moon.position.set(W / 2 - 10, 28, H / 2 - 14); moon.target.position.set(W / 2, 0, H / 2);
   Object.assign(moon.shadow.camera, { left: -SH_R, right: SH_R, top: SH_R, bottom: -SH_R, near: 2, far: 90 }); moon.shadow.camera.updateProjectionMatrix(); moonOff.set(-10, 28, -14);
   hemi.color.set(T.wall === 'planks' ? 0x7a9ad0 : 0x8090c0);
   level = MAP.buildLevel(scene);
+  // mapa importado (bloques): un solo modelo con su atlas en píxel nítido
+  if (T.model && K[T.model]) {
+    const o = K[T.model].scene.clone(true), off = MAP.CFG.modelOff || [0, 0, 0]; o.position.set(off[0], off[1], off[2]);
+    o.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; const t = m.material.map; if (t) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapLinearFilter; t.anisotropy = 8; t.needsUpdate = true; } } });
+    level.add(o);
+  }
+  // de día: cielo azul, sol cálido y niebla lejana
+  if (bloom) { bloom.strength = T.day ? .18 : .6; bloom.threshold = T.day ? .97 : .78; }
+  if (T.day) { hemi.intensity = .9; hemi.color.set(0xcfe6ff); hemi.groundColor.set(0x6a5a40); moon.color.set(0xfff0d8); moon.intensity = 1.7; moonOff.set(-18, 34, -10); renderer.toneMappingExposure = .9; scene.fog.near = 35; scene.fog.far = 140; scene.environmentIntensity = .2; }
+  else { moonOff.set(-10, 28, -14); renderer.toneMappingExposure = 1.15; }
   for (const w of MAP.WINDOWS) MAP.buildBoards(level, w);
   for (const d of MAP.DOORS) MAP.buildDoor(level, d);
   // vallas
@@ -201,14 +211,14 @@ function buildWorld(mapId) {
   if (T.city) {   // horizonte: solares sueltos alrededor del mapa, con los mismos edificios
     for (let i = 0; i < 70; i++) { let x, z; do { x = -18 + rng() * (W + 36); z = -18 + rng() * (H + 36); } while (x > 1 && x < W - 1 && z > 1 && z < H - 1); const n = CITY[Math.floor(rng() * 17)]; kit(n, x, z, Math.floor(rng() * 4) * Math.PI / 2, 4 + rng() * 2); }
   }
-  else for (let i = 0; i < 90; i++) {
+  else if (!T.model) for (let i = 0; i < 90; i++) {
     let x, z; do { x = -16 + rng() * (W + 32); z = -16 + rng() * (H + 32); } while (x > -.5 && x < W + .5 && z > -.5 && z < H + .5);
     if (MAP.CFG.theme === 'isla' && (Math.hypot(x - W / 2, z - H / 2) > Math.max(W, H) * .72)) continue;
     if (MAP.CFG.theme === 'fabrica' && rng() < .5) { kit(rng() < .5 ? 'barrel' : 'crate-medium', x, z, rng() * 6, rng() < .5 ? .5 : 1.4); continue; }
     const nm = T.trees[Math.floor(rng() * T.trees.length)], isla = MAP.CFG.theme === 'isla';
     if (!tree(isla ? (rng() < .5 ? 'island_tree_01' : 'island_tree_02') : 'fir_sapling_medium', x, z, rng() * 6, isla ? 4 + rng() * 2 : 7 + rng() * 4)) kit(nm, x, z, rng() * 6, isla ? .5 + rng() * .3 : 1.7 + rng() * 1.2);
   }
-  if (!T.city) for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
+  if (!T.city && !T.model) for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
   // lámparas: una por zona
   const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: T.lamp, emissiveIntensity: .3 });
   cityLamps = [];
@@ -224,7 +234,7 @@ function buildWorld(mapId) {
     for (let i = 0; i < 10; i++) { const l = new THREE.PointLight(0xffc880, 9, 15, 1.3); l.userData.street = true; scene.add(l); LAMPS.push(l); }
     updCityLights(true);
   }
-  if (!T.city) for (const Zn of MAP.ZONES) {
+  if (!T.city && !T.day) for (const Zn of MAP.ZONES) {
     const x = (Zn.x0 + Zn.x1 + 1) / 2, z = (Zn.z0 + Zn.z1 + 1) / 2, l = new THREE.PointLight(Zn.outside ? 0xff8a4a : T.lamp, 0, Math.max(14, (Zn.x1 - Zn.x0 + Zn.z1 - Zn.z0) * .7), 1.4);
     l.position.set(x, Zn.outside ? 1.6 : 2.35, z); scene.add(l); LAMPS.push(l); l.userData.out = Zn.outside;
     if (Zn.outside) { if (MAP.CFG.theme === 'fabrica') kit('lightpost-single', x, z, 0, 1.8); else kit('fire-basket', x, z, 0, 2.2); l.userData.fire = true; MAP.grid[MAP.idx(Math.floor(x), Math.floor(z))] = MAP.PROP; }
@@ -557,6 +567,7 @@ function spawnZombie() {
 }
 // según la velocidad: los lentos son del modelo realista, los que reptan también (marcha Running_Crawl) y los que corren, del «corredor»
 function newZombie(o) {
+  if (MAP.CFG.theme === 'mc') return new Zombie(game, K['character-zombie'], { ...o, def: KENNEY });   // en el mapa de bloques, zombis de bloques
   const s = o.speed, x = Math.random();
   // cada tipo solo sale en las velocidades que su animación puede cubrir; el esqueleto veloz aparece más en rondas altas
   const pool = [['Basic', QBASIC, 4, .68, 3.1], ['Chubby', QCHUBBY, 2, .45, 2.1], ['Arm', QARM, 2, .4, 1.8], ['Ribcage', QRIB, s > 1.5 ? 3 : 0, .9, 3.5]].filter(p => p[2] > 0 && s >= p[3] * .8 && s <= p[4] * 1.1);
@@ -742,9 +753,11 @@ function updSong(dt) {
 /* ---------- disparos ---------- */
 const ray = new THREE.Ray(), _v = V3(), _f = V3(), _r = V3(), _u = V3();
 function solid(x, y, z, forCam) {
-  if (y < 0) return true; if (y > MAP.WALL_H) return false;
+  if (y < MAP.floorY(x, z)) return true;
   const cx = Math.floor(x), cz = Math.floor(z), c = MAP.cellAt(cx, cz);
-  if (c === MAP.WALL || c === MAP.BLD) return true;
+  if (c === MAP.BLD) return y < MAP.topY(x, z);
+  if (y > MAP.WALL_H) return false;
+  if (c === MAP.WALL) return true;
   if (c === MAP.WIN) { const w = MAP.WINDOWS.find(w => w.x === cx && w.z === cz); return !w.fence && (y < .9 || y > 2.0); }
   if (c === MAP.DOOR) return !MAP.DOORS.some(d => d.open && d.cells.some(([a, b]) => a === cx && b === cz));
   if (c === MAP.PROP) return y < (forCam ? .3 : .9);
@@ -956,8 +969,11 @@ function update(dt) {
   const tv = V3().addScaledVector(f, my * sp).addScaledVector(r, mx * sp);
   P.vel.x = lerp(P.vel.x, tv.x, Math.min(1, dt * 12)); P.vel.z = lerp(P.vel.z, tv.z, Math.min(1, dt * 12));
   P.pos.addScaledVector(P.vel, dt); collide(P.pos, .34);
-  if (I.pressed.has('jump') && P.y <= 0 && alive) { P.vy = 4.6; tone(200, .08, 'sine', .05, 100); }
-  P.vy -= 15 * dt; P.y = Math.max(0, P.y + P.vy * dt); if (P.y <= 0) P.vy = 0;
+  const gy = MAP.floorY(P.pos.x, P.pos.z);
+  if (I.pressed.has('jump') && P.y <= gy + .02 && alive) { P.vy = 4.6; tone(200, .08, 'sine', .05, 100); }
+  P.vy -= 15 * dt; P.y += P.vy * dt;
+  if (P.y < gy) { if (gy - P.y > .05 && P.vy <= 0) P.y += (gy - P.y) * Math.min(1, dt * 16); else P.y = gy; P.vy = Math.max(0, P.vy); if (P.y > gy - .01) P.y = gy; }   // sube los escalones suavemente
+  P.pos.y = P.y;
   // empujar a los zombis que pisas
   for (const z of Z) { if (z.dead || z.state !== 'chase') continue; const dx = P.pos.x - z.pos.x, dz = P.pos.z - z.pos.z, d = Math.hypot(dx, dz); if (d < .6 && d > 1e-4) { P.pos.x += dx / d * (.6 - d); P.pos.z += dz / d * (.6 - d); } }
   collide(P.pos, .34);

@@ -12,6 +12,10 @@ export { MAPS };
 export const WALL_H = 2.7;
 export const VOID = 0, FLOOR = 1, WALL = 2, WIN = 3, DOOR = 4, OUT = 5, FENCE = 6, PROP = 7, BLD = 8;
 export let GW = 1, GH = 1, grid = new Uint8Array(1), zoneOf = new Int8Array(1), ZONES = [], DOORS = [], WINDOWS = [], OBJ = {}, CFG = null, MAPID = '', ROWS = [];
+// alturas por casilla (mapas importados con aceras y escalones): suelo y techo de cada casilla en metros
+let FLOORY = new Float32Array(1), TOPY = new Float32Array(1);
+export const floorY = (x, z) => { const cx = Math.floor(x), cz = Math.floor(z); return (cx < 0 || cz < 0 || cx >= GW || cz >= GH) ? 0 : FLOORY[cz * GW + cx]; };
+export const topY = (x, z) => { const cx = Math.floor(x), cz = Math.floor(z); return (cx < 0 || cz < 0 || cx >= GW || cz >= GH) ? WALL_H : TOPY[cz * GW + cx]; };
 export const chAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? ' ' : ROWS[z][x];
 export const idx = (x, z) => z * GW + x;
 export const cellAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? VOID : grid[idx(x, z)];
@@ -29,6 +33,8 @@ export function loadMap(id) {
   ZONES = letters.map((l, i) => ({ id: l, name: CFG.zones[l] || l.toUpperCase(), outside: rows.join('').includes(l.toUpperCase()), open: i === 0, x0: 1e9, x1: -1, z0: 1e9, z1: -1 }));
   const zi = c => letters.indexOf(c.toLowerCase());
   const nearZone = (x, z) => { for (const [dx, dz] of [...N4, [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const c = ch(x + dx, z + dz); if (isZone(c)) return zi(c); } return CFG.defaultZone ? zi(CFG.defaultZone) : -1; };
+  FLOORY = new Float32Array(GW * GH); TOPY = new Float32Array(GW * GH).fill(WALL_H);
+  if (CFG.heights) for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) { const v = (CFG.heights[z].charCodeAt(x) - 64) / 2 - 2, c = rows[z][x]; if (c === 'H' || c === 'g') { TOPY[z * GW + x] = Math.max(1.2, v + 1); } else if (c !== ' ' && c !== '=' && c !== 'v') FLOORY[z * GW + x] = Math.max(0, v); }
   OBJ = { spawn: [0, 0], perks: {}, pap: null, power: null, box: [], eggs: [], graves: [], props: [], wallbuys: [], buildings: [] };
   const doorCells = {}; WINDOWS = [];
   for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
@@ -117,6 +123,7 @@ export const THEMES = {
   nacht: { wall: 'plaster', wall2: 'brick', floor: 'wood', ground: 'dirt', ext: 'dirt', extCol: 0x6a7060, sky: 0x0b1020, lamp: 0xffc27a, fence: 0x6a6a78, trees: ['pine', 'pine-crooked'] },
   fabrica: { wall: 'metal', wall2: 'brick', floor: 'concrete', ground: 'asphalt', ext: 'asphalt', extCol: 0x9a9a9a, sky: 0x10141c, lamp: 0xd8e8ff, fence: 0x8a8a90, trees: ['pine'] },
   ciudad: { wall: 'brick', wall2: 'brick', floor: 'tiles', ground: 'asphalt', ext: 'asphalt', extCol: 0x6a6a6e, sky: 0x101826, lamp: 0xffe0a0, fence: 0xd8a020, trees: [], city: true },
+  mc: { wall: 'brick', wall2: 'brick', floor: 'tiles', ground: 'grass', ext: 'grass', extCol: 0x5e8a46, sky: 0x8ec8ff, lamp: 0xfff4dc, fence: 0x6a6a72, trees: [], day: true, model: 'mc_city' },
   isla: { wall: 'planks', wall2: 'planks', floor: 'woodLight', ground: 'sand', ext: 'sand', extCol: 0xb8a070, sky: 0x0a1830, lamp: 0xffa04a, fence: 0x8a5a32, trees: ['palm-bend', 'palm-straight'], sea: true },
 };
 export const theme = () => THEMES[CFG.theme];
@@ -128,6 +135,7 @@ export function buildLevel(scene) {
   const box = (x, y, z, w, h, d) => { const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, n = g.attributes.normal; for (let i = 0; i < uv.count; i++) { const ny = Math.abs(n.getY(i)), nx = Math.abs(n.getX(i)); uv.setXY(i, uv.getX(i) * (ny > .5 || nx > .5 ? d : w), uv.getY(i) * (ny > .5 ? d : h) + (ny > .5 ? 0 : (y - h / 2))); } g.translate(x, y, z); return g; };
   const outdoorCell = (x, z) => { const k = zoneOf[idx(x, z)]; return k >= 0 && ZONES[k].outside; };
   for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
+    if (T.model) break;
     const c = grid[idx(x, z)], cx = x + .5, cz = z + .5;
     if (c === WALL) { let ext = false; for (const [dx, dz] of N4) if (cellAt(x + dx, z + dz) === OUT) ext = true; wallGeos[ext ? 'b' : 'a'].push(box(cx, WALL_H / 2, cz, 1, WALL_H, 1)); }
     if (c === WIN) { const w = WINDOWS.find(w => w.x === x && w.z === z); if (!w.fence) { wallGeos.b.push(box(cx, .45, cz, 1, .9, 1)); wallGeos.b.push(box(cx, 2.35, cz, 1, .7, 1)); } }
@@ -155,11 +163,11 @@ export function buildLevel(scene) {
   for (const k of ['in', 'out', 'side', 'grass']) if (floorGeos[k].length) { const m = new THREE.Mesh(mergeGeometries(floorGeos[k]), fm[k]); m.receiveShadow = true; level.add(m); }
   // suelo de fuera
   const ext = mat(T.ext, 40); ext.color.set(PBR[T.ext] ? 0xb0b0b0 : T.extCol);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(GW + 60, GH + 60), ext); ground.rotation.x = -Math.PI / 2; ground.position.set(GW / 2, -.01, GH / 2); ground.receiveShadow = true; level.add(ground);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(GW + 60, GH + 60), ext); ground.rotation.x = -Math.PI / 2; ground.position.set(GW / 2, T.model ? -1.05 : -.01, GH / 2); ground.receiveShadow = true; level.add(ground);
   if (T.sea) { const sea = new THREE.Mesh(new THREE.RingGeometry(Math.max(GW, GH) * .75, 140, 64), new THREE.MeshStandardMaterial({ color: 0x0a3a5a, roughness: .2, metalness: .3 })); sea.rotation.x = -Math.PI / 2; sea.position.set(GW / 2, .02, GH / 2); level.add(sea); }
   // vigas del techo en las zonas interiores
   const beamMat = new THREE.MeshStandardMaterial({ color: T.wall === 'metal' ? 0x3a4048 : 0x4a3020, roughness: .9, metalness: T.wall === 'metal' ? .4 : 0 });
-  for (const Z of ZONES) if (!Z.outside && Z.x1 >= 0) for (let x = Z.x0; x <= Z.x1 + 1; x += 3) { const b = new THREE.Mesh(new THREE.BoxGeometry(.18, .22, Z.z1 - Z.z0 + 3), beamMat); b.position.set(x, WALL_H - .1, (Z.z0 + Z.z1 + 1) / 2); level.add(b); }
+  if (!T.model) for (const Z of ZONES) if (!Z.outside && Z.x1 >= 0) for (let x = Z.x0; x <= Z.x1 + 1; x += 3) { const b = new THREE.Mesh(new THREE.BoxGeometry(.18, .22, Z.z1 - Z.z0 + 3), beamMat); b.position.set(x, WALL_H - .1, (Z.z0 + Z.z1 + 1) / 2); level.add(b); }
   return level;
 }
 // tablones de una ventana (6), de abajo arriba; se quitan y se ponen de uno en uno
