@@ -80,6 +80,21 @@ async function loadAll() {
   let done = 0;
   await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
 }
+// árboles reales de Poly Haven convertidos en dos planos cruzados con su foto (los originales tienen millones de triángulos)
+const TREES = {};
+async function loadTrees() {
+  const info = await (await fetch('models/i/info.json')).json(), L = new THREE.TextureLoader();
+  await Promise.all(Object.entries(info).map(async ([k, v]) => {
+    const tx = await Promise.all([0, 1].map(i => new Promise(ok => L.load(`models/i/${k}_${i}.png`, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; ok(t); }, undefined, () => ok(null)))));
+    if (tx[0] && tx[1]) TREES[k] = { v, mats: tx.map(map => new THREE.MeshStandardMaterial({ map, alphaTest: .45, side: THREE.DoubleSide, roughness: 1, metalness: 0 })) };
+  }));
+}
+function tree(name, x, z, ry = 0, h = 5) {
+  const T = TREES[name]; if (!T) return null;
+  const g = new THREE.Group(), s = h / T.v.h, w = T.v.w * s;
+  T.mats.forEach((m, i) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.y = h / 2; if (i) p.rotation.y = Math.PI / 2; g.add(p); });
+  g.position.set(x, 0, z); g.rotation.y = ry; level.add(g); return g;
+}
 function kit(name, x, z, ry = 0, s = 1, y = 0, parent) {
   const o = K[name].scene.clone(true); o.position.set(x, y, z); o.rotation.y = ry; o.scale.setScalar(s);
   o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -153,7 +168,8 @@ function buildWorld(mapId) {
     let x, z; do { x = -16 + rng() * (W + 32); z = -16 + rng() * (H + 32); } while (x > -.5 && x < W + .5 && z > -.5 && z < H + .5);
     if (MAP.CFG.theme === 'isla' && (Math.hypot(x - W / 2, z - H / 2) > Math.max(W, H) * .72)) continue;
     if (MAP.CFG.theme === 'fabrica' && rng() < .5) { kit(rng() < .5 ? 'barrel' : 'crate-medium', x, z, rng() * 6, rng() < .5 ? .5 : 1.4); continue; }
-    kit(T.trees[Math.floor(rng() * T.trees.length)], x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .5 + rng() * .3 : 1.7 + rng() * 1.2);
+    const nm = T.trees[Math.floor(rng() * T.trees.length)], isla = MAP.CFG.theme === 'isla';
+    if (!tree(isla ? (rng() < .5 ? 'island_tree_01' : 'island_tree_02') : 'fir_sapling_medium', x, z, rng() * 6, isla ? 4 + rng() * 2 : 7 + rng() * 4)) kit(nm, x, z, rng() * 6, isla ? .5 + rng() * .3 : 1.7 + rng() * 1.2);
   }
   if (!T.city) for (let i = 0; i < 16; i++) { let x, z; do { x = -6 + rng() * (W + 12); z = -6 + rng() * (H + 12); } while (x > -1 && x < W + 1 && z > -1 && z < H + 1); kit(MAP.CFG.theme === 'isla' ? 'rocks-a' : 'rocks', x, z, rng() * 6, MAP.CFG.theme === 'isla' ? .25 : 1.5 + rng()); }
   // lámparas: una por zona
@@ -197,7 +213,7 @@ function buildCity(rng) {
 }
 function cityProp(o, rng) {
   const x = o.x + .5, z = o.z + .5;
-  if (o.kind === 't') kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5);
+  if (o.kind === 't') { if (!tree('tree_small_02', x, z, rng() * 6, 5.5 + rng() * 2.5)) kit(rng() < .6 ? 'tree-large' : 'tree-small', x, z, rng() * 6, 5 + rng() * 1.5); }
   else if (o.kind === 'k' && rng() < .4) { const c = kit('p_covered_car', x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1 + Math.PI / 2, .62); }
   else if (o.kind === 'k') { const n = ['car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance'][Math.floor(rng() * 7)], sz = sizeOf(n); const c = kit(n, x, z, (rng() < .5 ? 0 : Math.PI) + rng() * .2 - .1, 2.2 / Math.max(sz.x, sz.z)); tintDirty(c, rng); }
   else if (o.kind === 'l') kit('p_street_lamp_01', x, z, Math.floor(rng() * 4) * Math.PI / 2, 1.15);
@@ -1141,6 +1157,7 @@ async function boot() {
   if (Q.get('char')) save.char = Q.get('char');
   try { await MAP.loadPBR(); } catch (e) { console.warn('PBR', e); }
   try { await loadEnv(); } catch (e) { console.warn('HDRI', e); }
+  try { await loadTrees(); } catch (e) { console.warn('trees', e); }
   buildWorld(MAP.MAPS[save.map] ? save.map : 'nacht');
   try { setupFX(); } catch (e) { composer = null; }
   await makeThumbs();
