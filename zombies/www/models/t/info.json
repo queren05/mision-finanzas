@@ -46,5 +46,17 @@
  "grass": {
   "id": "leafy_grass",
   "size_m": 2.0
+ },
+ "dbrick": {
+  "id": "red_bricks_04",
+  "size_m": 2.5
+ },
+ "cwall": {
+  "id": "concrete_wall_004",
+  "size_m": 2.0
+ },
+ "stucco": {
+  "id": "grey_plaster_03",
+  "size_m": 1.0
  }
 }
