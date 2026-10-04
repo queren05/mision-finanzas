@@ -7,13 +7,13 @@ name: Mini app (APK Android)
 on:
   push:
     branches: [app]
-    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**', 'gambi/**', 'road/**', 'hill/**', 'merge/**', 'zombies/**', 'tank/**', 'brainrot/**', '.github/workflows/android.yml']
+    paths: ['bolita/**', 'coche/**', 'cuentas/**', 'tung/**', 'gambi/**', 'road/**', 'hill/**', 'merge/**', 'tank/**', 'brainrot/**', '.github/workflows/android.yml']
   workflow_dispatch:
     inputs:
       app:
         description: "Carpeta de la app (o «todas»)"
         type: choice
-        options: [todas, bolita, coche, cuentas, tung, gambi, road, hill, merge, zombies, tank, brainrot]
+        options: [todas, bolita, coche, cuentas, tung, gambi, road, hill, merge, tank, brainrot]
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
       - id: d
         run: |
-          ALL='bolita coche cuentas tung gambi road hill merge zombies tank brainrot'
+          ALL='bolita coche cuentas tung gambi road hill merge tank brainrot'
           if [ "${{ inputs.app }}" = todas ]; then L="$ALL"
           elif [ -n "${{ inputs.app }}" ]; then L="${{ inputs.app }}"
           else

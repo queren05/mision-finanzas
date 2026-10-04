@@ -139,6 +139,7 @@ func _keep_in_map(delta: float) -> void:
 	if safe_t > 0.0: return
 	safe_t = 0.2
 	var map = get_world_3d().navigation_map
+	if NavigationServer3D.map_get_iteration_id(map) == 0: return   # la navegación aún no está lista
 	var q = NavigationServer3D.map_get_closest_point(map, global_position)
 	var off = Vector2(q.x - global_position.x, q.z - global_position.z).length()
 	if global_position.y < q.y - 3.0 or off > 2.6:

@@ -23,8 +23,8 @@ env:
   NAME: Shrimp Zombies
   BUNDLE: es.david.shrimpzombies
   # mientras se desarrolla, publica en una release aparte y no toca KSign; al terminar: TAG=zombies-latest y KSIGN=si
-  TAG: zombiesgd-dev
-  KSIGN: "no"
+  TAG: zombies-latest
+  KSIGN: "si"
   DESC: "Supervivencia por rondas contra zombis estilo Black Ops: mapas por zonas, armas de pared, caja misteriosa, ventajas y Pack-a-Punch. Compatible con mando."
 
 jobs:
