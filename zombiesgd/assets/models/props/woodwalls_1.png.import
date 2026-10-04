@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1f2jya6w2dmo"
-path="res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.ctex"
+path.s3tc="res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.s3tc.ctex"
+path.etc2="res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "e2f9bc25ed0c5a2dd49d2f415345c1db"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/props/woodwalls_1.png"
-dest_files=["res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.ctex"]
+dest_files=["res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.s3tc.ctex", "res://.godot/imported/woodwalls_1.png-3c2296c87e7ca83de1de721d34a5b02e.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

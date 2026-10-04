@@ -7,7 +7,8 @@ var level = 1
 var weapon_kills = {}          # id -> bajas totales
 var camo = {}                  # id -> camuflaje elegido
 var best = {}                  # mapa -> mejor ronda
-var settings = { "sens": 1.0, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0 }
+var settings = { "sens": 1.0, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false }
+var character = "gamba"
 # opciones de la próxima partida
 var sel_map = "prison"
 var start_round = 1
@@ -24,12 +25,12 @@ func load_game() -> void:
 	xp = int(d.get("xp", 0)); level = int(d.get("level", 1))
 	weapon_kills = d.get("weapon_kills", {}); camo = d.get("camo", {}); best = d.get("best", {})
 	for k in d.get("settings", {}): settings[k] = d["settings"][k]
-	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", "")
+	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", ""); character = d.get("character", "gamba")
 
 func save_game() -> void:
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify({ "xp": xp, "level": level, "weapon_kills": weapon_kills, "camo": camo, "best": best, "settings": settings,
-		"sel_map": sel_map, "start_round": start_round, "start_weapon": start_weapon, "start_perk": start_perk }))
+		"sel_map": sel_map, "start_round": start_round, "start_weapon": start_weapon, "start_perk": start_perk, "character": character }))
 
 ## suma experiencia y devuelve los niveles subidos
 func add_xp(n: int) -> int:

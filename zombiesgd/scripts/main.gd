@@ -16,13 +16,13 @@ func _ready() -> void:
 		var kv = a.split("=", true, 1); args[kv[0]] = kv[1] if kv.size() > 1 else "1"
 	if args.has("menushot"): _menu_shots(); return
 	if args.has("test"):
-		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1"))
+		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1")); GS.settings.third = args.has("tp"); Controls.device = args.get("dev", Controls.device); GS.character = args.get("char", GS.character)
 		start_game(); return
 	to_menu()
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_maps", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_maps", "_chars", "_options", "_armory", "_settings"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -74,7 +74,7 @@ func _run_test() -> void:
 			print("T%d %s" % [i / 30, ds])
 		if not is_instance_valid(game) or not p.alive: break
 	get_viewport().disable_3d = false
-	if args.has("clean"): game.hud.visible = false; p.vm.visible = false
+	if args.has("clean"): game.hud.visible = false; p.set_physics_process(false); p.vm.visible = false; p.body.visible = false
 	if args.has("watchz"):
 		var zz = null; var bd = 99.0
 		for z in game.zombies:
@@ -89,6 +89,11 @@ func _run_test() -> void:
 	for k in 3: await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	if args.has("shot"): get_viewport().get_texture().get_image().save_png(args.shot)
+	if args.has("pauseshot"):
+		game.pause(true)
+		for k in 4: await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(args.pauseshot)
 	if args.has("inspect"):
 		var k = 0
 		for it in game.interactables:
@@ -113,6 +118,30 @@ func _run_test() -> void:
 ## prueba de todos los elementos: compra puertas, corriente, bebidas, armas, caja y Pack-a-Punch
 func _scenario(p: Player) -> void:
 	p.points = 200000
+	if args.has("reach"):
+		var sp0 = p.global_position
+		for it in game.interactables:
+			if it is Interactables.Door: it.open_now(true)
+		game.power_on = true
+		for k in 30: await get_tree().physics_frame
+		# alcance real: desde algún punto transitable cerca de cada cosa, el jugador debe poder usarla
+		var nav = p.get_world_3d().navigation_map
+		for it in game.interactables:
+			if it is Interactables.Door: continue
+			var ok = false
+			for a in 16:
+				var r = 0.8 + (a / 8) * 0.6
+				var cand = it.global_position + Vector3(cos(a * TAU / 8), 0, sin(a * TAU / 8)) * r
+				var q = NavigationServer3D.map_get_closest_point(nav, cand)
+				if args.has("dbg") and it is Interactables.PackAPunch: print("  pap cand ", cand, " q ", q)
+				if q.distance_to(cand) > 1.5: continue
+				p.global_position = q + Vector3(0, 0.05, 0)
+				await get_tree().physics_frame
+				var got = game.find_interactable(p)
+				if got == it: ok = true; break
+				if args.has("dbg") and it is Interactables.PackAPunch: print("  pap? p=", p.global_position, " q=", q, " can=", it.can_use(p), " got=", got, " prompt=", it.prompt(p))
+			print("ALCANCE ", it.get_script().get_global_name() if false else str(it.get("id") if it.get("id") != null else it.get("gun") if it.get("gun") != null else it.name), " ", it.global_position, " ", "ok" if ok else "NO SE PUEDE USAR")
+		p.global_position = sp0
 	var log = []
 	for it in game.interactables:
 		if it is Interactables.Door: it.use(p); log.append("puerta %d abierta=%s" % [it.idx, it.open])
@@ -133,6 +162,7 @@ func _scenario(p: Player) -> void:
 			it.use(p); for k in 260: await get_tree().physics_frame
 			it.use(p); log.append("pap: %s" % [p.weapons.map(func(w): return w.id + ("+" if w.pap else ""))])
 	print("ESCENARIO\n  " + "\n  ".join(log)); print("ventajas ", p.perks, " puntos ", p.points)
+
 
 func _bot(p: Player) -> void:
 	var best = null; var bd = 99.0

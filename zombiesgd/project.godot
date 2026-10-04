@@ -24,6 +24,9 @@ pointing/emulate_touch_from_mouse=true
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size.mobile=4096
+lights_and_shadows/positional_shadow/atlas_size.mobile=1024
+textures/default_filters/anisotropic_filtering_level=2
 
 [autoload]
 
@@ -34,3 +37,8 @@ Controls="*res://scripts/controls.gd"
 Guns="*res://scripts/guns.gd"
 Zombies="*res://scripts/zombies_lib.gd"
 Fx="*res://scripts/fx.gd"
+
+[physics]
+
+common/physics_ticks_per_second=60
+common/max_physics_steps_per_frame=4

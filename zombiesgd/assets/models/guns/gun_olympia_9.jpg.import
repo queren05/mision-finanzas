@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dowgc6uiqm0cv"
-path="res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.ctex"
+path.s3tc="res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d02da9f47933a02ca46b5042a65fd2a0"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_olympia_9.jpg"
-dest_files=["res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.ctex"]
+dest_files=["res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.s3tc.ctex", "res://.godot/imported/gun_olympia_9.jpg-3bfa4effa63a35909bda4e52bd20a76e.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

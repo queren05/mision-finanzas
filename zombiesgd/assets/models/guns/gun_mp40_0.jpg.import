@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://p6xd5tcx334t"
-path="res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.ctex"
+path.s3tc="res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "2bf8427e02e674e3f5852a8769c872aa"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_mp40_0.jpg"
-dest_files=["res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.ctex"]
+dest_files=["res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.s3tc.ctex", "res://.godot/imported/gun_mp40_0.jpg-5ac4586cd0dd70d607c90a4347190894.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

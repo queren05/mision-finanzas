@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfrfx8rlo5e3k"
-path="res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.ctex"
+path.s3tc="res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "e3213e9f6238ca688aec44a07215a142"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_m1911_7.jpg"
-dest_files=["res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.ctex"]
+dest_files=["res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.s3tc.ctex", "res://.godot/imported/gun_m1911_7.jpg-889f45f6c60d7cdc61fe805137015c1b.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

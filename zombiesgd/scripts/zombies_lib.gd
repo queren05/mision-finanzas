@@ -15,7 +15,8 @@ func make(kind: String) -> Node3D:
 	var tint = Color.from_hsv(0.25 + randf_range(-0.04, 0.04), randf_range(0.0, 0.12), randf_range(0.8, 1.0))
 	for m in n.find_children("*", "MeshInstance3D", true, false):
 		var mi: MeshInstance3D = m
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if GS.settings.get("quality", "alta") == "alta" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = 70.0; mi.visibility_range_end_margin = 5.0
 		for si in mi.mesh.get_surface_count():
 			var src = mi.get_active_material(si)
 			if src is StandardMaterial3D:

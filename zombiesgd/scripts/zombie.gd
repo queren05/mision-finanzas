@@ -37,6 +37,9 @@ var dbg_align = 0.0
 var stuck_t = 0.0
 var last_check = Vector3.ZERO
 var check_t = 0.0
+var anim_acc = 0.0
+var anim_frame = 0
+var lod = 0                  # 0 cerca, 1 media distancia, 2 lejos o fuera de pantalla
 
 func setup(g: Node, kind: String, pos: Vector3, health: float, speed: float) -> void:
 	game = g; hp = health; max_speed = speed
@@ -45,6 +48,9 @@ func setup(g: Node, kind: String, pos: Vector3, health: float, speed: float) -> 
 	var cs = CollisionShape3D.new(); var cap = CapsuleShape3D.new(); cap.radius = 0.3; cap.height = HEIGHT; cs.shape = cap; cs.position.y = HEIGHT / 2; add_child(cs)
 	model = Zombies.make(kind); add_child(model)
 	anim = model.find_child("AnimationPlayer", true, false)
+	# optimización: la animación se avanza a mano, más a menudo cuanto más cerca y visible está
+	if anim: anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	anim_frame = randi() % 4
 	skel = _find_skel(model)
 	if skel:
 		for i in skel.get_bone_count():
@@ -96,12 +102,25 @@ func take_hit(dmg: float, at: Vector3, head: bool, by: Node, kind := "bullet") -
 	return false
 
 func _die(head: bool, by: Node, kind: String) -> void:
-	dead = true; state = "dead"; t = 0.0
+	dead = true; state = "dead"; t = 0.0; lod = 0
 	collision_layer = 0; collision_mask = MapBuilder.LAYER_WORLD
 	agent.avoidance_enabled = false
 	_play("Death", 0.12, 1.15)
 	Sfx.play_at("z_death%d" % randi_range(1, 3), global_position + Vector3(0, 1.4, 0), 0.8)
 	game.on_zombie_killed(self, head, by, kind)
+
+func _process(delta: float) -> void:
+	if anim == null: return
+	anim_acc += delta; anim_frame += 1
+	var every = [1, 2, 4][lod]
+	if anim_frame % every == 0: anim.advance(anim_acc); anim_acc = 0.0
+
+func _update_lod() -> void:
+	var cam: Camera3D = game.player.cam
+	var to = global_position + Vector3(0, 1.0, 0) - cam.global_position
+	var d = to.length()
+	var on_screen = d < 3.0 or to.normalized().dot(-cam.global_transform.basis.z) > 0.35
+	lod = 0 if (d < 14.0 and on_screen) else (1 if (d < 30.0 and on_screen) else 2)
 
 func _physics_process(delta: float) -> void:
 	t += delta
@@ -130,7 +149,7 @@ func _physics_process(delta: float) -> void:
 		if atk_t >= atk_hit and not atk_done:
 			atk_done = true
 			if global_position.distance_to(P.global_position) < 1.45 and abs(P.global_position.y - global_position.y) < 1.2 and P.alive:
-				P.take_damage(45.0 if not ("jugg" in P.perks) else 45.0)
+				P.take_damage(55.0)   # como en Black Ops: 2 golpes te tumban, 5 con Juggernog
 				Sfx.play_at("z_hit%d" % randi_range(1, 2), P.global_position + Vector3(0, 1.2, 0), 0.8)
 		if atk_t >= atk_end: atk_t = -1.0; _play(gait, 0.2, gait_rate)
 		_face(to_p, delta * 6.0); rotation.y = yaw
@@ -144,8 +163,9 @@ func _physics_process(delta: float) -> void:
 		return
 	repath_t -= delta
 	if repath_t <= 0.0:
-		repath_t = 0.25 + randf() * 0.1
+		repath_t = (0.25 if d < 15.0 else 0.6) + randf() * 0.1   # los lejanos recalculan el camino menos a menudo
 		agent.target_position = P.global_position
+		_update_lod()
 	var want = Vector3.ZERO
 	if not agent.is_navigation_finished():
 		var nxt = agent.get_next_path_position()

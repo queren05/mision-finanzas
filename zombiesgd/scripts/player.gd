@@ -46,6 +46,12 @@ var spread_add = 0.0
 var fire_prev = false
 var nade_t = 0.0
 var interact_target: Node = null
+var third = false
+var body: Node3D                    # personaje (se ve en tercera persona y su sombra en primera)
+var body_gun: Node3D
+var body_len = 1.5
+var tp_dist = 2.6
+var body_third = null
 
 func _ready() -> void:
 	collision_layer = MapBuilder.LAYER_PLAYER
@@ -58,6 +64,33 @@ func _ready() -> void:
 	muzzle_light = OmniLight3D.new(); muzzle_light.light_color = Color(1, 0.75, 0.4); muzzle_light.omni_range = 6; muzzle_light.light_energy = 0; cam.add_child(muzzle_light); muzzle_light.position = Vector3(0.15, -0.1, -0.9)
 	flash = Sprite3D.new(); flash.texture = _flash_tex(); flash.pixel_size = 0.0016; flash.billboard = BaseMaterial3D.BILLBOARD_ENABLED; flash.visible = false
 	flash.modulate = Color(1, 0.85, 0.55); flash.shaded = false; flash.no_depth_test = true; flash.render_priority = 10; cam.add_child(flash)
+	_build_body()
+	third = bool(GS.settings.get("third", false))
+
+## el personaje elegido, tumbado como una gamba de verdad y mirando hacia delante
+func _build_body() -> void:
+	var c: Dictionary = Data.CHARACTERS.get(GS.character, Data.CHARACTERS["gamba"])
+	var scn: PackedScene = load("res://assets/models/chars/%s.glb" % c.file)
+	body = Node3D.new(); add_child(body)
+	var piv = Node3D.new(); body.add_child(piv)
+	var m: Node3D = scn.instantiate(); piv.add_child(m)
+	piv.rotation_degrees.y = 0.0 if float(c.head) > 0 else 180.0   # en el modelo importado la cabeza mira a -Z (o a +Z si head es -1)
+	var lo = Vector3.INF; var hi = -Vector3.INF
+	for mi in m.find_children("*", "MeshInstance3D", true, false):
+		var t = Transform3D.IDENTITY; var n: Node = mi
+		while n != null and n != body:
+			if n is Node3D: t = (n as Node3D).transform * t
+			n = n.get_parent()
+		var b: AABB = t * (mi as MeshInstance3D).get_aabb(); lo = lo.min(b.position); hi = hi.max(b.end)
+	var L = max(hi.x - lo.x, hi.z - lo.z); var k = float(c.len) / max(0.001, L)
+	piv.scale = Vector3.ONE * k
+	piv.position = -Vector3((lo.x + hi.x) / 2, lo.y, (lo.z + hi.z) / 2) * k
+	body_len = float(c.len)
+	for mi in m.find_children("*", "MeshInstance3D", true, false): (mi as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+func toggle_view() -> void:
+	third = not third; GS.settings.third = third; GS.save_game()
+	Sfx.play("click", 0.5)
 
 func setup(start_weapon: String, start_perk: String) -> void:
 	weapons = [_new_w(start_weapon, false)]
@@ -85,6 +118,7 @@ func _physics_process(delta: float) -> void:
 	_look(delta)
 	_move(delta)
 	_health(delta)
+	if Controls.was_pressed("view"): toggle_view()
 	if alive and not downed:
 		_weapon(delta)
 		_interact()
@@ -185,7 +219,7 @@ func _weapon(delta: float) -> void:
 			var need: int = int(stat("mag")) - int(w.mag); var take: int = min(need, int(w.res))
 			w.mag += take; w.res -= take
 			game.hud.update_ammo()
-	if Controls.was_pressed("reload") and reload_t <= 0.0 and w.mag < int(stat("mag")) and w.res > 0 and swap_t <= 0.0: _start_reload()
+	if Controls.was_pressed("reload") and not (interact_target != null and Controls.device == "pad") and reload_t <= 0.0 and w.mag < int(stat("mag")) and w.res > 0 and swap_t <= 0.0: _start_reload()
 	if Controls.was_pressed("swap") and weapons.size() > 1 and reload_t <= 0.0:
 		cur = (cur + 1) % weapons.size(); _equip(); swap_t = 0.55
 	if Controls.was_pressed("knife") and knife_t <= 0.0: _knife()
@@ -280,6 +314,9 @@ func _equip() -> void:
 	var w = cur_w()
 	gun_node = Guns.make_view(w.id, w.pap)
 	vm.add_child(gun_node)
+	if body_gun: body_gun.queue_free()
+	body_gun = Guns.make_world(w.id); body.add_child(body_gun)
+	body_gun.position = Vector3(0.12, 0.42, -body_len * 0.42 - float(Data.WEAPONS[w.id].len) * 0.3)
 	if game and game.hud: game.hud.update_ammo()
 
 # ------------------------------------------------------------------ interacción
@@ -290,6 +327,22 @@ func _interact() -> void:
 
 # ------------------------------------------------------------------ vista del arma
 func _view(delta: float) -> void:
+	_body_anim(delta)
+	if third and not downed:
+		# por encima del hombro; si hay una pared detrás, la cámara se acerca para no atravesarla
+		var pivot = global_position + Vector3(0, 1.15, 0)
+		var aim = -cam.global_transform.basis.z
+		var basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
+		var want = pivot + basis * Vector3(0.55, 0.35, lerp(tp_dist, 1.2, ads))
+		var q = PhysicsRayQueryParameters3D.create(pivot, want, MapBuilder.LAYER_WORLD | MapBuilder.LAYER_BARRIER); q.exclude = [get_rid()]
+		var hit = get_world_3d().direct_space_state.intersect_ray(q)
+		var dest = want if hit.is_empty() else hit.position + (pivot - want).normalized() * 0.25
+		cam.global_position = cam.global_position.lerp(dest, min(1.0, delta * 18.0)) if cam.position.length() > 0.3 else dest
+		vm.visible = false; flash.visible = false
+		cam.fov = lerp(float(GS.settings.fov), float(GS.settings.fov) * 0.7, ads)
+		game.hud.set_scope(false)
+		return
+	cam.position = Vector3.ZERO; vm.visible = true
 	var w = cur_w() if weapons.size() > 0 else null
 	var scope: bool = w != null and stat("scope") == true and ads > 0.9
 	cam.fov = lerp(float(GS.settings.fov), 22.0 if scope else float(GS.settings.fov) * 0.78, ads)
@@ -312,6 +365,21 @@ func _view(delta: float) -> void:
 	vm.position = vm.position.lerp(p, min(1.0, delta * 18.0))
 	vm.rotation = vm.rotation.lerp(rot, min(1.0, delta * 14.0))
 	flash.position = vm.position + Vector3(0, 0.02, -len * 0.85)
+
+func _body_anim(delta: float) -> void:
+	if body == null: return
+	var spd = Vector2(velocity.x, velocity.z).length()
+	if body_third != third:   # solo cuando cambia la vista
+		body_third = third
+		for mi in body.find_children("*", "MeshInstance3D", true, false):
+			(mi as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if third else GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	# andar: balanceo y cabeceo de la gamba; apuntar: se inclina hacia donde miras
+	body.position.y = abs(sin(bob_t * 1.0)) * 0.05 * min(1.0, spd / 3.0)
+	body.rotation.z = sin(bob_t) * 0.06 * min(1.0, spd / 3.0)
+	body.rotation.x = lerp(body.rotation.x, clamp(pitch * 0.35, -0.3, 0.3) + (0.6 if downed else 0.0), min(1.0, delta * 8.0))
+	if body_gun:
+		body_gun.rotation.x = pitch * 0.65 - body.rotation.x
+		body_gun.visible = not downed
 
 func _flash_tex() -> Texture2D:
 	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)

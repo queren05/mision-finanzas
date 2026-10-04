@@ -65,10 +65,14 @@ func _build_environment() -> void:
 	env.glow_enabled = true; env.glow_intensity = 0.35; env.glow_strength = 0.8; env.glow_bloom = 0.0; env.glow_hdr_threshold = 1.6
 	env.adjustment_enabled = true; env.adjustment_contrast = 1.06; env.adjustment_saturation = float(e.get("saturation", 0.85))
 	var we = WorldEnvironment.new(); we.environment = env; add_child(we)
+	apply_quality(env)
 	var sun = DirectionalLight3D.new(); sun.light_color = _col(e.get("sun_color", [1.0, 0.92, 0.8])); sun.light_energy = float(e.get("sun", 1.1))
 	var sr: Array = e.get("sun_rot", [-42, 35]); sun.rotation_degrees = Vector3(sr[0], sr[1], 0)
 	sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 45.0
 	sun.shadow_blur = 1.5; sun.shadow_bias = 0.03; sun.shadow_normal_bias = 1.2
+	var q = GS.settings.get("quality", "alta")
+	sun.shadow_enabled = q != "baja"
+	if q == "media": sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL; sun.directional_shadow_max_distance = 30.0
 	add_child(sun)
 	var lp = "res://assets/maps/%s/nav/lights.json" % map_id
 	if FileAccess.file_exists(lp):
@@ -76,6 +80,18 @@ func _build_environment() -> void:
 			var o = OmniLight3D.new(); o.position = Vector3(c[0], c[1], c[2]); o.light_color = Color(1.0, 0.74, 0.5); o.omni_range = 10.0; o.light_energy = 2.4; o.omni_attenuation = 1.2; add_child(o)
 	for l in cfg.get("lights", []):
 		var o = OmniLight3D.new(); o.position = MapBuilder.v3(l.pos); o.light_color = _col(l.get("color", [1, 0.85, 0.65])); o.omni_range = float(l.get("range", 8)); o.light_energy = float(l.get("energy", 1.2)); o.shadow_enabled = false; add_child(o)
+
+## calidad gráfica: escala de render, suavizado, sombras y resplandor (alta / media / baja)
+func apply_quality(e: Environment) -> void:
+	var q = GS.settings.get("quality", "alta")
+	var vp = get_viewport()
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q != "alta" else Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
+	vp.msaa_3d = Viewport.MSAA_2X if q == "alta" else Viewport.MSAA_DISABLED
+	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
+	RenderingServer.directional_shadow_atlas_set_size(4096 if q == "alta" else 2048, true)
+	e.glow_enabled = q != "baja"
+	Engine.max_fps = 60
 
 func _col(a) -> Color: return Color(float(a[0]), float(a[1]), float(a[2]))
 
@@ -217,12 +233,23 @@ func _build_interactables() -> void:
 const PERK_YAW := { "jugg": 0, "revive": 0, "speed": 0, "dtap": 0, "mule": 0, "stamin": 0 }
 
 func find_interactable(p: Player) -> Node:
+	# solo lo que está a tu altura (no se compra desde el piso de arriba) y sin una pared en medio
 	var best: Node = null; var bd = 99.0
 	for it in interactables:
-		if not is_instance_valid(it) or not it.can_use(p): continue
-		var d = (it.global_position - p.global_position).length()
-		var tp: String = it.prompt(p)
-		if tp != "" and d < bd: bd = d; best = it
+		if not is_instance_valid(it): continue
+		var dv: Vector3 = it.global_position - p.global_position
+		if abs(dv.x) > 6.0 or abs(dv.z) > 6.0 or dv.y < -1.6 or dv.y > 2.6: continue
+		if not it.can_use(p): continue
+		var d = Vector2(dv.x, dv.z).length()
+		if d < bd and it.prompt(p) != "": bd = d; best = it
+	if best and not (best is Interactables.Door):
+		var from = p.global_position + Vector3(0, 1.3, 0)
+		var to: Vector3 = best.global_position + Vector3(0, 0.6, 0)
+		var dir = to - from; var L = dir.length()
+		if L > 0.5:
+			var h = ray_world(from, dir / L, L)
+			# vale si no hay nada o si lo que toca es la propia máquina o la pared donde está
+			if h != Vector3.INF and Vector2(h.x - to.x, h.z - to.z).length() > 1.1: return null
 	return best
 
 func turn_power_on() -> void:
@@ -449,6 +476,7 @@ func dust(at: Vector3) -> void: Fx.dust(self, at)
 # ------------------------------------------------------------------ pausa y fin
 func pause(on: bool) -> void:
 	paused = on; get_tree().paused = on; hud.show_pause(on)
+	Controls.consume()   # que el botón que ha reanudado no vuelva a pausar ni dispare
 
 func _on_player_died() -> void:
 	var stats = { "map": map_id, "round": round_n, "kills": player.kills, "heads": player.headshots, "time": time, "points": player.points }

@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1lmbrx2tns6l"
-path="res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.ctex"
+path.s3tc="res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.s3tc.ctex"
+path.etc2="res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "46d46a19e60669ffc1728984c5b98237"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/maps/isla/isla_24.jpg"
-dest_files=["res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.ctex"]
+dest_files=["res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.s3tc.ctex", "res://.godot/imported/isla_24.jpg-f1771bf5a73bb3efaba725ad31ac9300.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

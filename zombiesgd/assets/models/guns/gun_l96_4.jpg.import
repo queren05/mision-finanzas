@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b4bxyratnhvv2"
-path="res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.ctex"
+path.s3tc="res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "c7a0d3c17e11b9b39df1108d174134f0"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_l96_4.jpg"
-dest_files=["res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.ctex"]
+dest_files=["res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.s3tc.ctex", "res://.godot/imported/gun_l96_4.jpg-05d987261e703b8714e9781ba9e3bbb9.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

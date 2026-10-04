@@ -74,11 +74,15 @@ static func xp_for_level(lv: int) -> int: return int(XP_PER_LEVEL_BASE * pow(lv,
 const UNLOCKS := [
 	{ "level": 1, "kind": "start_weapon", "id": "m1911", "text": "M1911 (arma inicial)" },
 	{ "level": 3, "kind": "start_round", "id": "5", "text": "Empezar en la ronda 5" },
+	{ "level": 4, "kind": "character", "id": "chaqueta", "text": "Personaje: Gamba con Chaqueta" },
 	{ "level": 5, "kind": "start_weapon", "id": "python", "text": "Empezar con la Python" },
+	{ "level": 8, "kind": "character", "id": "langostino", "text": "Personaje: Langostino" },
 	{ "level": 7, "kind": "start_round", "id": "10", "text": "Empezar en la ronda 10" },
 	{ "level": 9, "kind": "start_weapon", "id": "mp5k", "text": "Empezar con el MP5K" },
 	{ "level": 11, "kind": "start_perk", "id": "revive", "text": "Empezar con Quick Revive" },
+	{ "level": 12, "kind": "character", "id": "langosta", "text": "Personaje: Langosta" },
 	{ "level": 13, "kind": "start_round", "id": "15", "text": "Empezar en la ronda 15" },
+	{ "level": 16, "kind": "character", "id": "cangrejo", "text": "Personaje: Bogavante" },
 	{ "level": 15, "kind": "start_weapon", "id": "m16", "text": "Empezar con el M16" },
 	{ "level": 18, "kind": "start_round", "id": "20", "text": "Empezar en la ronda 20" },
 	{ "level": 20, "kind": "start_perk", "id": "jugg", "text": "Empezar con Juggernog" },
@@ -95,6 +99,16 @@ const CAMOS := [
 	{ "id": "gold", "name": "Oro", "kills": 500, "color": Color(1.0, 0.78, 0.3), "metal": 1.0, "rough": 0.25 },
 	{ "id": "diamond", "name": "Diamante", "kills": 1000, "color": Color(0.75, 0.9, 1.0), "metal": 1.0, "rough": 0.1, "pattern": "facets" },
 ]
+
+# ---------------------------------------------------------------- personajes (los de la versión anterior)
+# head: hacia dónde mira la cabeza en el modelo original (+1 = +X, -1 = -X); len = largo en metros
+const CHARACTERS := {
+	"gamba": { "name": "Gamba", "file": "gamba", "head": 1, "len": 1.5, "level": 1, "desc": "La de siempre. Rosa, valiente y con antenas larguísimas." },
+	"chaqueta": { "name": "Gamba con Chaqueta", "file": "gamba_chaqueta", "head": 1, "len": 1.5, "level": 4, "desc": "Va de uniforme. Lista para la guerra." },
+	"langostino": { "name": "Langostino", "file": "langostino", "head": 1, "len": 1.4, "level": 8, "desc": "Un langostino de verdad, cocido y de mal humor." },
+	"langosta": { "name": "Langosta", "file": "langosta_a", "head": -1, "len": 1.5, "level": 12, "desc": "Roja como un tomate y el doble de dura." },
+	"cangrejo": { "name": "Bogavante", "file": "langosta_c", "head": -1, "len": 1.6, "level": 16, "desc": "El jefe del fondo del mar." },
+}
 
 # ---------------------------------------------------------------- mapas
 const MAPS := ["prison", "mansion", "isla"]

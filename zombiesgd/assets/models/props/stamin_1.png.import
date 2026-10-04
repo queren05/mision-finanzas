@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkh2aeu57xc6n"
-path="res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.ctex"
+path.s3tc="res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.s3tc.ctex"
+path.etc2="res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "b49cfb021680b3fb1fe42fc26b0a22b0"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/props/stamin_1.png"
-dest_files=["res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.ctex"]
+dest_files=["res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.s3tc.ctex", "res://.godot/imported/stamin_1.png-3695f0f60db4446062189ed31a9b0a37.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

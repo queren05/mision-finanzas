@@ -10,6 +10,8 @@ var look_ids = {}               # índice -> última posición
 var btn_touch = {}              # índice -> nombre del botón
 var buttons = []                # [{name, pos(rel), r, label}]
 var use_visible = false
+var margin_left = 40.0
+var margin_right = 40.0
 const STICK_R := 85.0
 
 func _ready() -> void:
@@ -25,14 +27,15 @@ func _ready() -> void:
 		{ "name": "grenade", "off": Vector2(-280, -300), "r": 34.0, "label": "GRAN" },
 		{ "name": "use", "off": Vector2(-420, -110), "r": 48.0, "label": "USAR" },
 		{ "name": "pause", "off": Vector2(0, 0), "r": 30.0, "label": "II", "top_left": true },
+		{ "name": "view", "off": Vector2(78, 0), "r": 30.0, "label": "VISTA", "top_left": true },
 	]
 
 func set_use_visible(on: bool) -> void:
 	if on != use_visible: use_visible = on; queue_redraw()
 
 func _bpos(b: Dictionary) -> Vector2:
-	if b.get("top_left", false): return Vector2(50, 50)
-	return size + b.off
+	if b.get("top_left", false): return Vector2(margin_left + 14, 50) + b.off
+	return size + b.off - Vector2(margin_right - 40.0, 0)
 
 func _active() -> bool: return visible and Controls.device == "touch"
 
@@ -47,7 +50,7 @@ func _input(e: InputEvent) -> void:
 					btn_touch[e.index] = b.name; Controls.press_touch(b.name, true)
 					if b.name == "fire": look_ids[e.index] = e.position
 					queue_redraw(); return
-			if e.position.x < size.x * 0.42 and stick_id < 0:
+			if e.position.x < size.x * 0.45 and e.position.y > 110 and stick_id < 0:
 				stick_id = e.index; stick_origin = e.position; stick_pos = e.position
 			else:
 				look_ids[e.index] = e.position

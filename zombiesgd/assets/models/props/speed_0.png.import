@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bi3d12utoaud5"
-path="res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.ctex"
+path.s3tc="res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.s3tc.ctex"
+path.etc2="res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "fc9d63ff4681dfa6f8f557c537b56be1"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/props/speed_0.png"
-dest_files=["res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.ctex"]
+dest_files=["res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.s3tc.ctex", "res://.godot/imported/speed_0.png-b3ba0fdc4c6257b94849d0a57864ad79.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

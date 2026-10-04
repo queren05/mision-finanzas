@@ -226,7 +226,7 @@ class Door extends Base:
 		if open: return false
 		var l = to_local(p.global_position)
 		var size: Vector3 = dsize
-		return abs(l.x) < size.x / 2 + 0.5 and abs(l.z) < 2.0
+		return abs(l.x) < size.x / 2 + 0.5 and abs(l.z) < 2.0 and abs(l.y) < size.y + 1.0
 	func prompt(_p: Player) -> String: return "Pulsa USAR: despejar el paso [%d]" % cost
 	func use(p: Player) -> void:
 		if open: return

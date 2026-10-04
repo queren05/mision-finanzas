@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://chhrvy7yd7ga"
-path="res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.ctex"
+path.s3tc="res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d8eda4cc4a163d53e7655aa2467f793d"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_commando_3.jpg"
-dest_files=["res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.ctex"]
+dest_files=["res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.s3tc.ctex", "res://.godot/imported/gun_commando_3.jpg-6d42ca19ff3120f3d45a0899c8825827.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

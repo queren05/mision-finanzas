@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dvsy1gdvi2phi"
-path="res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.ctex"
+path.s3tc="res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.s3tc.ctex"
+path.etc2="res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "95949bb05f8dbfe15c76ce7b1a95801f"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/guns/gun_ak74u_1.jpg"
-dest_files=["res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.ctex"]
+dest_files=["res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.s3tc.ctex", "res://.godot/imported/gun_ak74u_1.jpg-6944857d8497a0c3a4578e6e072115b7.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
