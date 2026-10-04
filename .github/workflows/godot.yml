@@ -88,8 +88,8 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
           gh release upload "$TAG" "out/$APP.ipa" "out/$APP-icon.png" --clobber
           BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
-          [ "$KSIGN" = si ] && sh scripts/fuente.sh "$APP" "$NAME" "$BUNDLE" "2.0.${{ github.run_number }}" "${{ github.run_number }}" \
-            "$BASE/$APP.ipa" "$(stat -f%z out/$APP.ipa)" "$BASE/$APP-icon.png" "$DESC"
+          if [ "$KSIGN" = si ]; then sh scripts/fuente.sh "$APP" "$NAME" "$BUNDLE" "2.0.${{ github.run_number }}" "${{ github.run_number }}" \
+            "$BASE/$APP.ipa" "$(stat -f%z out/$APP.ipa)" "$BASE/$APP-icon.png" "$DESC"; fi
 
   android:
     runs-on: ubuntu-latest
