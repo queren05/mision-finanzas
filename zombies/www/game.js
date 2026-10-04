@@ -5,7 +5,9 @@ import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
 import { buildBuildings } from './edificios.js';
+import * as COL from './colision.js';
 import { RGBELoader } from './lib/RGBELoader.js';
+import { keepOut } from './zombis.js';
 import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, KENNEY, QBASIC, QCHUBBY, QARM, QRIB, ZRA, ZRC } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
@@ -133,6 +135,8 @@ function flushInst() {
       list.forEach((p, i) => { M.compose(P.set(p.x, 0, p.z), Q.setFromEuler(E.set(0, p.ry, 0)), S.setScalar(p.s)).multiply(m.matrixWorld); im.setMatrixAt(i, M); });
       level.add(im);
     }
+    const tmp = src.clone(true);
+    for (const p of list) { if (MAP.cellAt(Math.floor(p.x), Math.floor(p.z)) === MAP.FENCE) continue; tmp.position.set(p.x, 0, p.z); tmp.rotation.set(0, p.ry, 0); tmp.scale.setScalar(p.s); COL.addFromObject(tmp, { circle: name.includes('lamp') || name.includes('light'), r: name.includes('lamp') ? .16 : undefined }); }
   }
   instQ = {};
 }
@@ -150,7 +154,7 @@ const ryOf = f => Math.atan2(f[0], f[1]);
 function buildWorld(mapId) {
   if (level) { scene.remove(level); level = null; }
   for (const l of LAMPS) scene.remove(l); LAMPS = []; machines.length = 0;
-  MAP.loadMap(mapId); resetFlow(); collecting = true;
+  MAP.loadMap(mapId); resetFlow(); COL.clearObstacles(); collecting = true;
   const T = MAP.theme(), W = MAP.GW, H = MAP.GH;
   moon.color.set(0xb0c0ff); hemi.groundColor.set(0x2a2018); hemi.intensity = REALISTIC ? 1.0 : 1.5; moon.intensity = REALISTIC ? 1.5 : 1.9;
   SKY = new THREE.Color(T.sky); scene.background = SKY; scene.fog = new THREE.Fog(SKY, 9, 44);
@@ -162,7 +166,7 @@ function buildWorld(mapId) {
   if (T.model && K[T.model]) {
     const o = K[T.model].scene.clone(true), off = MAP.CFG.modelOff || [0, 0, 0]; o.position.set(off[0], off[1], off[2]);
     o.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; const t = m.material.map; if (t) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapLinearFilter; t.anisotropy = 8; t.needsUpdate = true; } } });
-    level.add(o);
+    o.userData.noCol = true; level.add(o);
   }
   // de día: cielo azul, sol cálido y niebla lejana
   if (bloom) { bloom.strength = T.day ? .18 : .6; bloom.threshold = T.day ? .97 : .78; }
@@ -249,6 +253,7 @@ function buildWorld(mapId) {
   dressInterior(rng);
   collecting = false; cullList = level.children.filter(o => o.userData.cull); updCull(true);
   buildPerks(); buildWallBuys(); buildBox(); buildPap(); buildPower(); buildEggs();
+  registerSolids(); resetFlow();
 }
 const SIZE = {};
 // decoración de los interiores: objetos pegados a las paredes, cuadros y lámparas, sin tapar puertas, ventanas ni máquinas
@@ -299,6 +304,22 @@ function dressInteriorKenney(rng, th) {
     const [nm, s] = sets[Math.floor(rng() * sets.length)]; if (!K[nm]) continue;
     kit(nm, x + .5 + walls[0][0] * .15, z + .5 + walls[0][1] * .15, rng() * 6, s); block(x, z); placed.push([x, z]); n++;
   }
+}
+// formas de colisión de todo lo que hay en la zona jugable (según su geometría real)
+function registerSolids() {
+  const skipCells = new Set([...MAP.OBJ.box, ...MAP.OBJ.graves].map(o => o.x + ',' + o.z)), doorMeshes = new Set(MAP.DOORS.map(d => d.mesh));
+  const boards = new Set(MAP.WINDOWS.flatMap(w => w.meshes || []));
+  for (const o of level.children) {
+    if (o.userData.obs || o.userData.noCol || doorMeshes.has(o) || boards.has(o) || o.isSprite || o.isInstancedMesh || o.isLight) continue;
+    if (o.isMesh && !o.userData.solid) continue;                 // suelos, muros fusionados, charcos de luz, carteles
+    const cx = Math.floor(o.position.x), cz = Math.floor(o.position.z), c = MAP.cellAt(cx, cz);
+    if (c !== MAP.FLOOR && c !== MAP.PROP) continue;               // fuera del área de juego o ya es muro
+    if (skipCells.has(cx + ',' + cz)) continue;
+    o.userData.obs = o.userData.tree ? COL.addCircle(o.position.x, o.position.z, .28, 0, 4) : COL.addFromObject(o, { maxHalf: 3.5 });
+  }
+  // casillas: con forma propia se pueden pisar; si el objeto la llena, no sirve para buscar camino
+  for (const s of COL.obstacles()) { const cx = Math.floor(s.x), cz = Math.floor(s.z); if (MAP.cellAt(cx, cz) === MAP.PROP) MAP.HASOBS[MAP.idx(cx, cz)] = 1; }
+  for (let z = 0; z < MAP.GH; z++) for (let x = 0; x < MAP.GW; x++) { const c = MAP.cellAt(x, z); if ((c === MAP.FLOOR || c === MAP.PROP) && COL.blocksCell(x, z)) MAP.NOPATH[MAP.idx(x, z)] = 1; }
 }
 function sizeOf(n) { if (!SIZE[n]) { const o = K[n].scene; o.updateMatrixWorld(true); SIZE[n] = new THREE.Box3().setFromObject(o).getSize(V3()); } return SIZE[n]; }
 // edificios de Kenney ajustados a cada solar
@@ -510,7 +531,7 @@ function setGunMesh() {
 }
 function resetPlayer() {
   Object.assign(P, {
-    pos: V3(MAP.OBJ.spawn[0], 0, MAP.OBJ.spawn[1]), vel: V3(), y: 0, vy: 0, yaw: 0, pitch: -.05, hp: 100, maxHp: 100, alive: true, downT: 0, points: Q.has('pts') ? +Q.get('pts') : 500,
+    pos: V3(MAP.OBJ.spawn[0], 0, MAP.OBJ.spawn[1]), okPos: null, vel: V3(), y: 0, vy: 0, yaw: 0, pitch: -.05, hp: 100, maxHp: 100, alive: true, downT: 0, points: Q.has('pts') ? +Q.get('pts') : 500,
     weapons: [{ id: 'm1911', pap: false, mag: 8, res: 32 }], cur: 0, perks: [], nades: 2, reloadT: 0, fireT: 0, knifeT: -1, swapT: 0, nadeT: 0, adsK: 0, hurtT: 9, regen: 0,
     kills: 0, heads: 0, revives: 0, reviveUses: 0, shake: 0, recoil: 0, firePrev: false, ph: 0, snap: null, aimPrev: false, buildCap: 0, buildT: 0, usePrev: false,
   });
@@ -784,6 +805,7 @@ function updSong(dt) {
 /* ---------- disparos ---------- */
 const ray = new THREE.Ray(), _v = V3(), _f = V3(), _r = V3(), _u = V3();
 function solid(x, y, z, forCam) {
+  const vs = MAP.voxSolid(x, y, z); if (vs !== null) return vs;
   if (y < MAP.floorY(x, z)) return true;
   const cx = Math.floor(x), cz = Math.floor(z), c = MAP.cellAt(cx, cz);
   if (c === MAP.BLD) return y < MAP.topY(x, z);
@@ -791,7 +813,8 @@ function solid(x, y, z, forCam) {
   if (c === MAP.WALL) return true;
   if (c === MAP.WIN) { const w = MAP.WINDOWS.find(w => w.x === cx && w.z === cz); return !w.fence && (y < .9 || y > 2.0); }
   if (c === MAP.DOOR) return !MAP.DOORS.some(d => d.open && d.cells.some(([a, b]) => a === cx && b === cz));
-  if (c === MAP.PROP) return y < (forCam ? .3 : .9);
+  if (COL.inside(x, y, z)) return true;
+  if (c === MAP.PROP) return !MAP.HASOBS[MAP.idx(cx, cz)] && y < (forCam ? .3 : .9);
   return false;
 }
 function wallT(o, d, max) { for (let t = .05; t < max; t += .07) if (solid(o.x + d.x * t, o.y + d.y * t, o.z + d.z * t)) return t; return max; }
@@ -953,6 +976,7 @@ function grabPowerup(type) {
 
 /* ---------- daño al jugador ---------- */
 function hurtPlayer(z) {
+  if (Q.has('god')) return;
   if (!P.alive) return;
   P.hp -= 50; P.hurtT = 0; S.hurt(); rumble(.9, .7, 200); P.shake = Math.max(P.shake, .6);
   if (P.hp <= 0) goDown();
@@ -999,7 +1023,8 @@ function update(dt) {
   if (!alive) sp = 0;
   const tv = V3().addScaledVector(f, my * sp).addScaledVector(r, mx * sp);
   P.vel.x = lerp(P.vel.x, tv.x, Math.min(1, dt * 12)); P.vel.z = lerp(P.vel.z, tv.z, Math.min(1, dt * 12));
-  P.pos.addScaledVector(P.vel, dt); collide(P.pos, .34);
+  P.okPos = P.okPos || P.pos.clone();
+  P.pos.addScaledVector(P.vel, dt); collide(P.pos, .34); COL.resolve(P.pos, .34, P.y); collide(P.pos, .34); keepOut(P.pos, P.okPos);
   const gy = MAP.floorY(P.pos.x, P.pos.z);
   if (I.pressed.has('jump') && P.y <= gy + .02 && alive) { P.vy = 4.6; tone(200, .08, 'sine', .05, 100); }
   P.vy -= 15 * dt; P.y += P.vy * dt;
@@ -1007,7 +1032,7 @@ function update(dt) {
   P.pos.y = P.y;
   // empujar a los zombis que pisas
   for (const z of Z) { if (z.dead || z.state !== 'chase') continue; const dx = P.pos.x - z.pos.x, dz = P.pos.z - z.pos.z, d = Math.hypot(dx, dz); if (d < .6 && d > 1e-4) { P.pos.x += dx / d * (.6 - d); P.pos.z += dz / d * (.6 - d); } }
-  collide(P.pos, .34);
+  collide(P.pos, .34); COL.resolve(P.pos, .34, P.y); collide(P.pos, .34); keepOut(P.pos, P.okPos); P.okPos.copy(P.pos);
   // acciones
   const w = curW();
   P.fireT -= dt; P.swapT -= dt; P.nadeT -= dt;
@@ -1034,7 +1059,7 @@ function update(dt) {
   // zombis
   flow(P.pos.x, P.pos.z);
   for (let i = Z.length - 1; i >= 0; i--) if (!Z[i].update(dt, P)) { Z[i].dispose(); Z.splice(i, 1); }
-  separate(Z);
+  separate(Z, dt);
   // rondas
   if (G.breakT > 0) { G.breakT -= dt; if (G.breakT <= 0) startRound(G.round + 1); }
   else {
@@ -1324,6 +1349,7 @@ async function testShot() {
   for (let i = 0; i < steps; i++) {
     I.pressed.clear(); I.held.clear(); I.lx = I.ly = 0; I.mx = Q.has('mx') ? +Q.get('mx') : 0; I.my = Q.has('my') ? +Q.get('my') : 0; I.fire = Q.has('fire'); I.aim = Q.has('ads'); I.sprint = false;
     if (Q.has('use') && i === 2) I.pressed.add('use');
+    if (Q.has('wander')) { I.my = .55; P.yaw += Math.sin(i * .013) * .03 + .006; }   // pruebas: el jugador da vueltas por el mapa
     if (Q.has('nade') && i % 90 === 45) I.pressed.add('nade');
     if (Q.has('knife') && i % 20 === 10) I.pressed.add('knife');
     if (Q.has('bot') && G.state === 'play') {   // piloto automático: apunta al zombi más cercano que se vea y dispara
@@ -1332,15 +1358,27 @@ async function testShot() {
       if (Q.has('repair') && curInt && curInt.hold) I.held.add('use');
     }
     if (G.state === 'play') update(dt); else if (G.state === 'menu') updMenu(dt);
+    if (Q.has('trace2')) { window.__t2 = window.__t2 || {}; for (const z of Z) { z.__id = z.__id || Math.random().toString(36).slice(2, 7); (window.__t2[z.__id] = window.__t2[z.__id] || []).push([i, z.state, +z.pos.x.toFixed(2), +z.pos.y.toFixed(2), +z.pos.z.toFixed(2)]); } }
+    if (Q.has('trace')) { window.__tr = window.__tr || {}; for (const z of Z) { if (z.dead || z.state !== 'chase') continue; z.__id = z.__id || Math.random().toString(36).slice(2, 7); (window.__tr[z.__id] = window.__tr[z.__id] || []).push([+z.pos.x.toFixed(3), +z.pos.z.toFixed(3), +z.yaw.toFixed(3), i]); } window.__pl = window.__pl || []; window.__pl.push([+P.pos.x.toFixed(2), +P.pos.z.toFixed(2)]); }
   }
   if (Q.has('again')) { if (G.state !== 'over') gameOver(); startGame(); for (let i = 0; i < 30; i++) update(dt); }
   if (Q.has('ads')) P.adsK = 1;
   if (G.state === 'play') { updCamera(0); updHudFrame(0); }
+  if (Q.has('dbg')) {   // depuración: formas de colisión (rojo) y casillas que bloquean (azul)
+    const pts = [];
+    for (const s of COL.obstacles()) {
+      const P2 = s.type === 'c' ? [...Array(16)].map((_, i) => [s.x + Math.cos(i / 16 * 6.283) * s.r, s.z + Math.sin(i / 16 * 6.283) * s.r]) : [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const lx = a * s.hx, lz = b * s.hz; return [s.x + lx * s.c + lz * s.s, s.z - lx * s.s + lz * s.c]; });
+      for (let i = 0; i < P2.length; i++) { const p = P2[i], q = P2[(i + 1) % P2.length]; pts.push(p[0], 1.2, p[1], q[0], 1.2, q[1]); }
+    }
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); scene.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xff2020, depthTest: false })));
+    const bm = new THREE.MeshBasicMaterial({ color: 0x2060ff, transparent: true, opacity: .35, depthTest: false }), bg = new THREE.PlaneGeometry(.96, .96).rotateX(-Math.PI / 2);
+    for (let z = 0; z < MAP.GH; z++) for (let x = 0; x < MAP.GW; x++) { const c = MAP.cellAt(x, z); if (c === MAP.OUT || c === MAP.VOID || MAP.moveOk(x, z)) continue; const m = new THREE.Mesh(bg, bm); m.position.set(x + .5, 1.25, z + .5); m.renderOrder = 9; scene.add(m); }
+  }
   if (Q.has('look')) scene.fog = null;
   if (Q.has('look')) { const [a, b, c, d, e, f] = Q.get('look').split(',').map(Number); camera.position.set(a, b, c); camera.lookAt(d, e, f); camera.fov = +(Q.get('fov') || 50); camera.updateProjectionMatrix(); }
   renderer.info.autoReset = false; renderer.info.reset(); draw();
   const im = $('shotImg'); im.src = cv.toDataURL(); im.style.display = 'block';
-  window.__scene = scene; window.__cam = camera; window.__fx = () => ({ bloom, composer }); window.__draw = () => { draw(); const im = $('shotImg'); im.src = cv.toDataURL(); }; window.__info = { ...renderer.info.render, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures };
+  window.__Z = Z; window.__scene = scene; window.__cam = camera; window.__fx = () => ({ bloom, composer }); window.__draw = () => { draw(); const im = $('shotImg'); im.src = cv.toDataURL(); }; window.__info = { ...renderer.info.render, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures };
   document.title = 'LISTO';
 }
 boot();

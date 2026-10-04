@@ -1,7 +1,8 @@
 // Zombis: navegación por el mapa (campo de flujo sobre la rejilla), entrada por ventanas, ataques y muerte.
 import * as THREE from './lib/three.module.min.js';
 import * as SkeletonUtils from './lib/SkeletonUtils.js';
-import { GW, GH, idx, cellAt, walkable, WINDOWS, WIN, FLOOR, DOOR, floorY } from './mapa.js';
+import { GW, GH, idx, cellAt, walkable, moveOk, WINDOWS, WIN, FLOOR, DOOR, floorY } from './mapa.js';
+import { resolve as resolveObs } from './colision.js';
 
 export const ZH = 1.3;                // altura de un zombi (un poco más que la gamba de pie)
 const R = .3;                         // radio de colisión
@@ -35,8 +36,20 @@ export function clearLine(ax, az, bx, bz) {
   for (let i = 1; i < n; i++) { const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t; if (!walkable(Math.floor(x), Math.floor(z))) return false; }
   return true;
 }
+// nunca acabar con el centro dentro de un muro: si pasa, volver a la última posición buena (por ejes, para seguir deslizando)
+export function keepOut(p, prev, ok = moveOk) {
+  if (ok(Math.floor(p.x), Math.floor(p.z))) return;
+  if (ok(Math.floor(p.x), Math.floor(prev.z))) { p.z = prev.z; return; }
+  if (ok(Math.floor(prev.x), Math.floor(p.z))) { p.x = prev.x; return; }
+  p.x = prev.x; p.z = prev.z;
+}
+// línea libre con el ancho de un zombi (centro y dos bordes)
+export function clearWide(ax, az, bx, bz, r) {
+  const dx = bx - ax, dz = bz - az, d = Math.hypot(dx, dz) || 1, px = -dz / d * r, pz = dx / d * r;
+  return clearLine(ax, az, bx, bz) && clearLine(ax + px, az + pz, bx + px, bz + pz) && clearLine(ax - px, az - pz, bx - px, bz - pz);
+}
 // empuja un círculo fuera de las casillas que no se pueden pisar
-export function collide(p, r, ok = walkable) {
+export function collide(p, r, ok = moveOk) {
   const cx = Math.floor(p.x), cz = Math.floor(p.z);
   for (let z = cz - 1; z <= cz + 1; z++) for (let x = cx - 1; x <= cx + 1; x++) {
     if (ok(x, z)) continue;
@@ -178,11 +191,17 @@ export class Zombie {
       const dx = P.pos.x - this.pos.x, dz = P.pos.z - this.pos.z, d = Math.hypot(dx, dz);
       if (d < 6 && clearLine(this.pos.x, this.pos.z, P.pos.x, P.pos.z)) { tx = P.pos.x; tz = P.pos.z; }
       else {
-        const cx = Math.floor(this.pos.x), cz = Math.floor(this.pos.z); let bi = -1, bd = dist[idx(cx, cz)];
-        if (cellAt(cx, cz) !== FLOOR && cellAt(cx, cz) !== DOOR) bd = 32000;
-        for (const [ddx, ddz] of N8) { const nx = cx + ddx, nz = cz + ddz; if (!walkable(nx, nz)) continue; if (ddx && ddz && (!walkable(cx + ddx, cz) || !walkable(cx, cz + ddz))) continue; const v = dist[idx(nx, nz)]; if (v < bd) { bd = v; bi = idx(nx, nz); } }
-        if (bi >= 0) { tx = bi % GW + .5; tz = Math.floor(bi / GW) + .5; }
-        else { tx = P.pos.x; tz = P.pos.z; }
+        // bajar por el campo de flujo varias casillas y apuntar a la más lejana que se vea en línea recta con el ancho del zombi: camino suave, sin zigzag
+        let cx = Math.floor(this.pos.x), cz = Math.floor(this.pos.z), cur = idx(cx, cz), bd = walkable(cx, cz) ? dist[cur] : 32000, got = false;
+        for (let step = 0; step < 10; step++) {
+          const x = cur % GW, z = (cur - x) / GW; let bi = -1;
+          for (const [ddx, ddz] of N8) { const nx = x + ddx, nz = z + ddz; if (!walkable(nx, nz)) continue; if (ddx && ddz && (!walkable(x + ddx, z) || !walkable(x, z + ddz))) continue; const v = dist[idx(nx, nz)]; if (v < bd) { bd = v; bi = idx(nx, nz); } }
+          if (bi < 0) break;
+          const bx = bi % GW + .5, bz = Math.floor(bi / GW) + .5;
+          if (step > 0 && !clearWide(this.pos.x, this.pos.z, bx, bz, R)) break;
+          tx = bx; tz = bz; got = true; cur = bi; if (bd === 0) break;
+        }
+        if (!got) { tx = P.pos.x; tz = P.pos.z; }
       }
       // atacar
       if (this.atkT >= 0) {
@@ -204,7 +223,8 @@ export class Zombie {
     } else { this.vel.multiplyScalar(Math.max(0, 1 - dt * 10)); }
     if (this.state !== 'climb' && this.state !== 'rise') {
       this.pos.x += this.vel.x * dt; this.pos.z += this.vel.z * dt;
-      if (this.state === 'chase') collide(this.pos, R);
+      if (this.state === 'chase') { collide(this.pos, R); resolveObs(this.pos, R, this.pos.y); collide(this.pos, R); keepOut(this.pos, this.prevOk || this.pos); }
+      if (this.state === 'chase' && moveOk(Math.floor(this.pos.x), Math.floor(this.pos.z))) (this.prevOk = this.prevOk || this.pos.clone()).copy(this.pos);
     }
     // la animación sigue a la velocidad real: más lento si se frena o gira, quieto (idle) si no se mueve
     const spd = Math.hypot(this.vel.x, this.vel.z);
@@ -240,11 +260,12 @@ function raySphere(ray, c, r) {
   if (h < 0) return null; const t = -b - Math.sqrt(h); return t > 0 ? t : null;
 }
 // separa a los zombis que se apelotonan
-export function separate(zs) {
+export function separate(zs, dt = 1 / 60) {
+  const k0 = Math.min(1, dt * 9);   // se reparte la corrección en varios fotogramas: sin tirones
   for (let i = 0; i < zs.length; i++) { const a = zs[i]; if (a.dead || a.state === 'climb' || a.state === 'rise') continue;
     for (let j = i + 1; j < zs.length; j++) { const b = zs[j]; if (b.dead || b.state === 'climb' || b.state === 'rise') continue;
-      const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, d2 = dx * dx + dz * dz, m = .62;
-      if (d2 < m * m && d2 > 1e-6) { const d = Math.sqrt(d2), k = (m - d) / d * .5; a.pos.x -= dx * k; a.pos.z -= dz * k; b.pos.x += dx * k; b.pos.z += dz * k; }
+      const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, d2 = dx * dx + dz * dz, m = .58;
+      if (d2 < m * m && d2 > 1e-6) { const d = Math.sqrt(d2), k = (m - d) / d * .5 * k0, wa = a.atkT >= 0 ? .3 : 1, wb = b.atkT >= 0 ? .3 : 1; a.pos.x -= dx * k * wa; a.pos.z -= dz * k * wa; b.pos.x += dx * k * wb; b.pos.z += dz * k * wb; }
     }
   }
 }

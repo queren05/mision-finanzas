@@ -16,10 +16,23 @@ export let GW = 1, GH = 1, grid = new Uint8Array(1), zoneOf = new Int8Array(1), 
 let FLOORY = new Float32Array(1), TOPY = new Float32Array(1);
 export const floorY = (x, z) => { const cx = Math.floor(x), cz = Math.floor(z); return (cx < 0 || cz < 0 || cx >= GW || cz >= GH) ? 0 : FLOORY[cz * GW + cx]; };
 export const topY = (x, z) => { const cx = Math.floor(x), cz = Math.floor(z); return (cx < 0 || cz < 0 || cx >= GW || cz >= GH) ? WALL_H : TOPY[cz * GW + cx]; };
+// vóxeles (mapas de bloques): un bit por bloque sólido en cada columna, para que disparos y cámara choquen con lo que se ve
+let VOX = null;
+export function voxSolid(x, y, z) {
+  if (!VOX) return null; const cx = Math.floor(x) - VOX.off, cz = Math.floor(z) - VOX.off;
+  if (cx < 0 || cz < 0 || cx >= VOX.n || cz >= VOX.n) return null; const vy = Math.floor(y) - VOX.y0; if (vy < 0) return true; if (vy >= 32) return false;
+  return ((VOX.b[cz * VOX.n + cx] >>> vy) & 1) === 1;
+}
 export const chAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? ' ' : ROWS[z][x];
 export const idx = (x, z) => z * GW + x;
 export const cellAt = (x, z) => (x < 0 || z < 0 || x >= GW || z >= GH) ? VOID : grid[idx(x, z)];
-export function walkable(x, z) { const c = cellAt(x, z); if (c === FLOOR) return true; if (c === DOOR) return DOORS.some(d => d.open && d.cells.some(([a, b]) => a === x && b === z)); return false; }
+// HASOBS: la casilla de un objeto tiene su forma de colisión real (se puede pisar lo que no ocupa); NOPATH: casilla ocupada casi entera por un objeto
+export let HASOBS = new Uint8Array(1), NOPATH = new Uint8Array(1);
+const doorOpen = (x, z) => DOORS.some(d => d.open && d.cells.some(([a, b]) => a === x && b === z));
+// para buscar camino (zombis)
+export function walkable(x, z) { const c = cellAt(x, z); if (c === FLOOR) return !NOPATH[idx(x, z)]; if (c === PROP) return HASOBS[idx(x, z)] && !NOPATH[idx(x, z)]; if (c === DOOR) return doorOpen(x, z); return false; }
+// para moverse (jugador y zombis): los objetos con forma propia se resuelven aparte, la casilla no cuenta
+export function moveOk(x, z) { const c = cellAt(x, z); if (c === FLOOR) return true; if (c === PROP) return !!HASOBS[idx(x, z)]; if (c === DOOR) return doorOpen(x, z); return false; }
 const PERK_CH = { Q: 'revive', J: 'jugg', S: 'speed', T: 'dtap', U: 'stamin', K: 'mule' };
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const isZone = ch => /[a-fA-F]/.test(ch) || ch === 'h';   // G (tumba), H (edificio) y g (arma de pared) no son zonas
@@ -33,6 +46,8 @@ export function loadMap(id) {
   ZONES = letters.map((l, i) => ({ id: l, name: CFG.zones[l] || l.toUpperCase(), outside: rows.join('').includes(l.toUpperCase()), open: i === 0, x0: 1e9, x1: -1, z0: 1e9, z1: -1 }));
   const zi = c => letters.indexOf(c.toLowerCase());
   const nearZone = (x, z) => { for (const [dx, dz] of [...N4, [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const c = ch(x + dx, z + dz); if (isZone(c)) return zi(c); } return CFG.defaultZone ? zi(CFG.defaultZone) : -1; };
+  VOX = CFG.vox ? { n: CFG.vox.n, y0: CFG.vox.y0, off: CFG.vox.off, b: new Uint32Array(Uint8Array.from(atob(CFG.vox.b), c => c.charCodeAt(0)).buffer) } : null;
+  HASOBS = new Uint8Array(GW * GH); NOPATH = new Uint8Array(GW * GH);
   FLOORY = new Float32Array(GW * GH); TOPY = new Float32Array(GW * GH).fill(WALL_H);
   if (CFG.heights) for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) { const v = (CFG.heights[z].charCodeAt(x) - 64) / 2 - 2, c = rows[z][x]; if (c === 'H' || c === 'g') { TOPY[z * GW + x] = Math.max(1.2, v + 1); } else if (c !== ' ' && c !== '=' && c !== 'v') FLOORY[z * GW + x] = Math.max(0, v); }
   OBJ = { spawn: [0, 0], perks: {}, pap: null, power: null, box: [], eggs: [], graves: [], props: [], wallbuys: [], buildings: [] };
