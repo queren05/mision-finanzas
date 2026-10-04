@@ -29,7 +29,7 @@ env:
 
 jobs:
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +55,10 @@ jobs:
           mkdir -p "$T" && unzip -qo tpl.tpz -d "$RUNNER_TEMP/tpl" && cp -R "$RUNNER_TEMP/tpl/templates/"* "$T/"
           echo "GODOT_BIN=$HOME/godot-dl/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
 
+      - name: Usar el Xcode más reciente (Godot 4.7 necesita el SDK de iOS 26)
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); [ -n "$X" ] || X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"; xcodebuild -version
       - name: Exportar el proyecto de Xcode
         working-directory: zombiesgd
         run: |
@@ -66,6 +70,7 @@ jobs:
       - name: Compilar sin firma
         working-directory: zombiesgd/build/ios
         run: |
+          set -o pipefail
           PRJ=$(ls -d *.xcodeproj | head -1); SCHEME="${PRJ%.xcodeproj}"
           PL="$SCHEME/$SCHEME-Info.plist"
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL" || true
@@ -75,6 +80,7 @@ jobs:
             MARKETING_VERSION=2.0.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} build | tail -30
           APPDIR=$(find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 2 -name '*.app' -type d | head -1)
           test -d "$APPDIR"
+          test -f "$APPDIR/Info.plist" && test -x "$APPDIR/$SCHEME"   # nunca publicar una app sin ejecutable
           mkdir -p "$RUNNER_TEMP/pkg/Payload" "$GITHUB_WORKSPACE/out"
           cp -R "$APPDIR" "$RUNNER_TEMP/pkg/Payload/"
           (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/$APP.ipa" Payload)

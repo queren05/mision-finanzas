@@ -252,6 +252,7 @@ function buildWorld(mapId) {
   world.bulbMat = bulbMat;
   dressInterior(rng);
   collecting = false; cullList = level.children.filter(o => o.userData.cull); updCull(true);
+  window.__staticCount = level.children.length; window.__level = level; window.__MAP = MAP;
   buildPerks(); buildWallBuys(); buildBox(); buildPap(); buildPower(); buildEggs();
   registerSolids(); resetFlow();
 }
