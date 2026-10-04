@@ -62,17 +62,23 @@ func was_pressed(b: String) -> bool: return pressed.get(b, false)
 func poll(delta: float) -> void:
 	var kb = Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_W)) - float(Input.is_key_pressed(KEY_S)))
 	# todos los mandos conectados (las consolas portátiles a veces dan a sus controles otro número que no es el 0)
-	var pad = Vector2.ZERO; var rs = Vector2.ZERO
+	var pad = Vector2.ZERO
 	for j in Input.get_connected_joypads():
 		var a = Vector2(Input.get_joy_axis(j, JOY_AXIS_LEFT_X), -Input.get_joy_axis(j, JOY_AXIS_LEFT_Y))
-		var b = Vector2(Input.get_joy_axis(j, JOY_AXIS_RIGHT_X), Input.get_joy_axis(j, JOY_AXIS_RIGHT_Y))
 		if a.length() > pad.length(): pad = a
-		if b.length() > rs.length(): rs = b
 	pad = _deadzone(pad, 0.16)
-	rs = _deadzone(rs, 0.12)
-	if pad != Vector2.ZERO or rs != Vector2.ZERO: device = "pad"
+	if pad != Vector2.ZERO: device = "pad"
 	move = touch_move + kb + pad
 	if move.length() > 1.0: move = move.normalized()
+
+## la mirada se lee en cada fotograma de dibujo (no en los pasos de física): apuntar va fino aunque bajen los fps
+func poll_look(delta: float) -> void:
+	var rs = Vector2.ZERO
+	for j in Input.get_connected_joypads():
+		var b = Vector2(Input.get_joy_axis(j, JOY_AXIS_RIGHT_X), Input.get_joy_axis(j, JOY_AXIS_RIGHT_Y))
+		if b.length() > rs.length(): rs = b
+	rs = _deadzone(rs, 0.12)
+	if rs != Vector2.ZERO: device = "pad"
 	# stick derecho: curva suave para apuntar fino y aceleración al llevarlo a tope (como en los Call of Duty)
 	var mag = rs.length()
 	look_boost = move_toward(look_boost, 1.0 if mag > 0.95 else 0.0, delta * (2.5 if mag > 0.95 else 6.0))
@@ -82,6 +88,9 @@ func poll(delta: float) -> void:
 	look += touch_look + Vector2(-lv.x * ps, -lv.y * ps * 0.8 * (-1.0 if GS.settings.invert else 1.0))
 	touch_look = Vector2.ZERO
 
+func take_look() -> Vector2:
+	var l = look; look = Vector2.ZERO; return l
+
 ## zona muerta radial: por debajo no se mueve, por encima va de 0 a 1 sin saltos
 func _deadzone(v: Vector2, dz: float) -> Vector2:
 	var l = v.length()
@@ -90,4 +99,4 @@ func _deadzone(v: Vector2, dz: float) -> Vector2:
 
 ## lo llama el jugador al final del fotograma
 func consume() -> void:
-	look = Vector2.ZERO; pressed.clear()
+	pressed.clear()

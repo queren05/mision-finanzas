@@ -34,3 +34,11 @@ Música (OpenGameArt.org):
   "Boss Battle #6 Metal" de nene — CC0
 Voces de los personajes: generadas con Piper TTS (voces es_ES davefx, es_ES sharvard y es_MX claude, proyecto rhasspy/piper-voices).
 Campanas de ronda: sintetizadas para el juego.
+
+— Añadido en la versión 2.2 —
+Comando (personaje): "Modern Army Soldier with +24 pro Animations" de abdlilah ben (m152027350) — https://sketchfab.com/3d-models/modern-army-soldier-with-24-pro-animations-37566d930fa7404f87847b7fca8dca97 — CC-BY 4.0
+Brazos en primera persona: "Animated FPS hands (rifle animation pack)" y "FPS pistol animations" de Cransh (ccransh) — Sketchfab — CC-BY 4.0
+Disparos: "Chaingun, pistol, rifle, shotgun shots" de qubodup (CC-BY 3.0) y "Gunshots" de dklon (CC-BY 3.0), OpenGameArt.org
+Recargas: "Gun reload sounds" de springyspringo (CC0) y "Shotgun Reload Sound effects" de zer0sol (CC0), OpenGameArt.org
+Pasos: "Footsteps on different surfaces" de congusbongus (CC-BY 3.0); impactos y aterrizaje: "FPS Placeholder Sounds" de Jack Menhorn (CC-BY 3.0)
+Explosiones: "2 High Quality Explosions" de qubodup (CC-BY 3.0), OpenGameArt.org

@@ -8,7 +8,7 @@ var weapon_kills = {}          # id -> bajas totales
 var camo = {}                  # id -> camuflaje elegido
 var best = {}                  # mapa -> mejor ronda
 var settings = { "sens": 1.0, "ads_sens": 0.7, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false, "left_fire": false, "btn_scale": 1.1, "btn_alpha": 0.8, "vibration": true, "ads_toggle": true }
-var character = "gamba"
+var character = "comando"
 var stats = {}                 # contadores para los desafíos
 var done = {}                  # desafío -> true
 var title = ""
@@ -29,13 +29,14 @@ func load_game() -> void:
 	xp = int(d.get("xp", 0)); level = int(d.get("level", 1))
 	weapon_kills = d.get("weapon_kills", {}); camo = d.get("camo", {}); best = d.get("best", {})
 	for k in d.get("settings", {}): settings[k] = d["settings"][k]
-	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", ""); character = d.get("character", "gamba")
+	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", ""); character = d.get("character", "comando")
 	stats = d.get("stats", {}); done = d.get("done", {}); title = d.get("title", ""); card = d.get("card", "")
+	if int(d.get("version", 1)) < 3: character = "comando"   # la 2.2 estrena el soldado: pasa a ser el personaje de todos
 
 func save_game() -> void:
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify({ "xp": xp, "level": level, "weapon_kills": weapon_kills, "camo": camo, "best": best, "settings": settings,
-		"sel_map": sel_map, "start_round": start_round, "start_weapon": start_weapon, "start_perk": start_perk, "character": character, "stats": stats, "done": done, "title": title, "card": card }))
+		"sel_map": sel_map, "start_round": start_round, "start_weapon": start_weapon, "start_perk": start_perk, "character": character, "stats": stats, "done": done, "title": title, "card": card, "version": 3 }))
 
 ## suma experiencia y devuelve los niveles subidos
 func add_xp(n: int) -> int:

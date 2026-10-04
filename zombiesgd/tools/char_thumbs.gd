@@ -11,13 +11,19 @@ func _initialize() -> void:
 	for id in Data.CHARACTERS:
 		var c = Data.CHARACTERS[id]
 		var piv = Node3D.new(); w.add_child(piv)
-		var m: Node3D = load("res://assets/models/chars/%s.glb" % c.file).instantiate(); piv.add_child(m)
-		piv.rotation_degrees.y = (0.0 if float(c.head) > 0 else 180.0) + 145.0
+		var cm = load("res://scripts/character_model.gd").new(); piv.add_child(cm); cm.setup(id)
+		piv.rotation_degrees.y = 145.0
+		var m: Node3D = cm
+		if cm.human:
+			cm.set_weapon("m16")
+			for q in 3: await process_frame
+			cm.update(0.016, 0.0, false, false, false, 0.0)
 		await process_frame
 		var lo = Vector3.INF; var hi = -Vector3.INF
 		for mi in m.find_children("*", "MeshInstance3D", true, false):
 			var b: AABB = mi.global_transform * mi.get_aabb(); lo = lo.min(b.position); hi = hi.max(b.end)
 		var ctr = (lo + hi) / 2; var size = (hi - lo).length()
+		if cm.human: ctr = Vector3(0, 0.95, 0); size = 2.4
 		cam.position = ctr + Vector3(0, size * 0.25, size * 1.55); cam.look_at(ctr)
 		for k in 3: await process_frame
 		await RenderingServer.frame_post_draw

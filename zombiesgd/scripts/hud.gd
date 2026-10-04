@@ -255,7 +255,12 @@ func toast(title: String, text: String) -> void:
 	var tw = pc.create_tween(); tw.tween_property(pc, "modulate:a", 1.0, 0.25); tw.tween_interval(3.5); tw.tween_property(pc, "modulate:a", 0.0, 0.5); tw.tween_callback(pc.queue_free)
 
 func banner(t: String, sub: String, dur: float) -> void: banner_lbl.text = t; banner_sub.text = sub; banner_t = dur
-func hitmarker(kill: bool, head: bool) -> void: hit_t = 0.18; hit_kill = kill; hit_head = head
+func hitmarker(kill: bool, head: bool) -> void:
+	hit_t = 0.18; hit_kill = kill; hit_head = head
+	# sonido de impacto como en Call of Duty: clic al acertar, campanita a la cabeza y golpe seco al matar
+	if kill: Sfx.play("killmark", 0.7)
+	if head: Sfx.play("headshot", 0.45)
+	elif not kill: Sfx.play("hitmark", 0.5)
 func hurt_flash() -> void: hurt_t = 0.5
 func white_flash() -> void: white_rect.color.a = 0.9
 func set_scope(on: bool) -> void: scope_rect.visible = on

@@ -639,6 +639,7 @@ func shoot_ray(from: Vector3, dir: Vector3, rng: float, by: Player) -> Dictionar
 		if head: dmg *= float(Player.stat_of(w.id, w.pap, "head"))
 		var k = damage_zombie(z, dmg, res.position, head, "bullet", w.id)
 		out.hit = true; out.kill = k; out.head = head
+		Sfx.play_at("hit_body", res.position, 0.55, randf_range(0.9, 1.15))
 	else:
 		impact(res.position, res.normal)
 	return out
@@ -735,11 +736,14 @@ func nearest_zombie(p: Vector3, r: float) -> Zombie:
 # ------------------------------------------------------------------ explosiones, granadas, proyectiles y gas
 ## explosión del jugador local (granada, Mustang & Sally, Rayo Gamba): daña a los zombis cercanos
 func explode(at: Vector3, radius: float, dmg: float, _by = null, kind := "explo", wid := "") -> void:
+	if OS.get_cmdline_user_args().has("verbose"): print("EXPLOSIÓN en ", at, " zombis cerca ", zombies.filter(func(z): return is_instance_valid(z) and not z.dead and z.global_position.distance_to(at) < radius).size())
 	for z in zombies.duplicate():
 		if is_instance_valid(z) and not z.dead and z.global_position.distance_to(at) < radius:
 			damage_zombie(z, dmg, z.global_position + Vector3(0, 1, 0), false, kind, wid)
 	Fx.explosion(self, at)
-	Sfx.play_at("shot_rifle", at, 1.0, 0.45)
+	Sfx.play_at("explosion", at, 1.0, randf_range(0.9, 1.05))
+	var dd = player.global_position.distance_to(at)
+	if dd < 18.0: player.shake = min(1.0, player.shake + (1.0 - dd / 18.0))
 
 func throw_grenade(from: Vector3, vel: Vector3, by: Node) -> void:
 	# si hay una pared delante, sale desde este lado (antes aparecía detrás y se perdía)

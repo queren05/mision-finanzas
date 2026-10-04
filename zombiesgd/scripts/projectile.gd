@@ -55,6 +55,7 @@ func _physics_process(d: float) -> void:
 	_impact(hit.position, hit.collider)
 
 func _impact(at: Vector3, col: Object) -> void:
+	if OS.get_cmdline_user_args().has("verbose"): print("IMPACTO en ", at, " contra ", col, " (", col.get_parent().name if col and col.get_parent() else "", ")")
 	var c: Color = data.get("color", Color.GREEN)
 	if data.has("bubble"):
 		# la burbuja atrapa a todos los de alrededor

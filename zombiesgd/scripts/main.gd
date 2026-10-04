@@ -92,6 +92,19 @@ func _run_test() -> void:
 		await get_tree().create_timer(0.5).timeout
 		var at = game._random_nav_near(p.global_position, 5.0, 7.0)
 		game.make_zombie("a", args.spawn, at, 1000.0, 0.9 if args.spawn != "dog" else 5.0)
+	if args.has("gun"): p.give_weapon(args.gun); await get_tree().create_timer(1.0).timeout
+	if args.has("feet"):   # altura de los pies de los zombis respecto al suelo de verdad
+		get_viewport().disable_3d = true
+		await get_tree().create_timer(25.0).timeout
+		for z in game.zombies:
+			if not is_instance_valid(z) or z.dead or z.state != "chase": continue
+			var fl = game.ray_world(z.global_position + Vector3(0, 1.0, 0), Vector3.DOWN, 5.0)
+			var lo = INF
+			for k in z.skel.get_bone_count():
+				var n = z.skel.get_bone_name(k)
+				if n.contains("Foot") or n.contains("Toe"): lo = min(lo, (z.skel.global_transform * z.skel.get_bone_global_pose(k).origin).y)
+			print("PIES tipo=%s nodo-suelo=%.2f pie-suelo=%.2f anim=%s" % [z.type, z.global_position.y - fl.y, lo - fl.y, z.anim.current_animation])
+		get_tree().quit(); return
 	if args.has("mechanics"): await _mechanics(p); get_tree().quit(); return
 	if args.has("netdown"):   # el cliente cae y espera a que le levanten
 		get_viewport().disable_3d = true
@@ -221,7 +234,7 @@ func _dummy(p: Player, dist := 4.0, type := "normal", hp := 100.0) -> Zombie:
 func _aim_at(p: Player, z: Node3D, h := 1.2) -> void:
 	var to: Vector3 = (z.global_position + Vector3(0, h, 0)) - p.cam.global_position
 	p.yaw = atan2(-to.x, -to.z); p.pitch = asin(clamp(to.normalized().y, -1, 1))
-	p.rotation.y = p.yaw; p.head.rotation.x = p.pitch
+	p.sync_head()
 
 func _fire(n_frames: int) -> void:
 	for k in n_frames:
@@ -271,10 +284,10 @@ func _mechanics(p: Player) -> void:
 	# --- tiro a la cabeza
 	z = await _dummy(p, 5.0, "normal", 2000.0); _aim_at(p, z, 0.0)
 	var hz = z.head_pos(); var to = hz - p.cam.global_position
-	p.yaw = atan2(-to.x, -to.z); p.pitch = asin(clamp(to.normalized().y, -1, 1)); p.rotation.y = p.yaw; p.head.rotation.x = p.pitch
+	p.yaw = atan2(-to.x, -to.z); p.pitch = asin(clamp(to.normalized().y, -1, 1)); p.sync_head()
 	var hp0 = z.hp
 	Controls.touch_held["ads"] = true; await _frames(30)
-	to = z.head_pos() - p.cam.global_position; p.yaw = atan2(-to.x, -to.z); p.pitch = asin(clamp(to.normalized().y, -1, 1)); p.rotation.y = p.yaw; p.head.rotation.x = p.pitch; p.recoil = Vector2.ZERO
+	to = z.head_pos() - p.cam.global_position; p.yaw = atan2(-to.x, -to.z); p.pitch = asin(clamp(to.normalized().y, -1, 1)); p.sync_head(); p.recoil = Vector2.ZERO
 	Controls.touch_held["fire"] = true; await _frames(2); Controls.touch_held["fire"] = false; await _frames(5)
 	Controls.touch_held["ads"] = false
 	_ok("tiro a la cabeza hace más daño", hp0 - z.hp > 60.0, "daño %.0f" % (hp0 - z.hp))

@@ -12,13 +12,21 @@ var music_track = ""
 var duck = 1.0
 
 func _ready() -> void:
+	# bus de efectos con un poco de reverberación y un compresor: los disparos suenan con cuerpo y no saturan
+	if AudioServer.get_bus_index("Efectos") < 0:
+		AudioServer.add_bus(); var b = AudioServer.bus_count - 1; AudioServer.set_bus_name(b, "Efectos"); AudioServer.set_bus_send(b, "Master")
+		var rv = AudioEffectReverb.new(); rv.room_size = 0.45; rv.damping = 0.6; rv.wet = 0.12; rv.dry = 1.0; rv.spread = 0.8
+		AudioServer.add_bus_effect(b, rv)
+		var cp = AudioEffectCompressor.new(); cp.threshold = -10.0; cp.ratio = 4.0; cp.attack_us = 20.0; cp.release_ms = 180.0
+		AudioServer.add_bus_effect(b, cp)
+		var lim = AudioEffectLimiter.new(); lim.ceiling_db = -0.5; AudioServer.add_bus_effect(AudioServer.get_bus_index("Master"), lim)
 	for f in DirAccess.get_files_at("res://assets/sfx"):
 		var n = f.trim_suffix(".import")
 		if n.ends_with(".ogg") and not streams.has(n.get_basename()): streams[n.get_basename()] = load("res://assets/sfx/" + n)
 	for i in 16:
-		var p = AudioStreamPlayer.new(); add_child(p); pool2d.append(p)
+		var p = AudioStreamPlayer.new(); p.bus = "Efectos"; add_child(p); pool2d.append(p)
 	for i in 24:
-		var p = AudioStreamPlayer3D.new(); p.max_distance = 45.0; p.unit_size = 6.0; add_child(p); pool3d.append(p)
+		var p = AudioStreamPlayer3D.new(); p.max_distance = 45.0; p.unit_size = 6.0; p.bus = "Efectos"; p.attenuation_filter_cutoff_hz = 6000.0; add_child(p); pool3d.append(p)
 	ambient = AudioStreamPlayer.new(); add_child(ambient)
 	music = AudioStreamPlayer.new(); add_child(music); music.process_mode = Node.PROCESS_MODE_ALWAYS
 	sting = AudioStreamPlayer.new(); add_child(sting); sting.process_mode = Node.PROCESS_MODE_ALWAYS

@@ -186,6 +186,9 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		# el cuerpo cae al suelo (aunque muera en el aire o en una escalera)
 		velocity = Vector3.ZERO
+		if t < 0.1:
+			var r = get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(global_position + Vector3(0, 0.6, 0), global_position - Vector3(0, 1.5, 0), MapBuilder.LAYER_WORLD))
+			if not r.is_empty(): global_position.y = r.position.y
 		_lie_down(delta)
 		if t > 6.5: queue_free()
 		return
@@ -304,13 +307,21 @@ func net_update(pos: Vector3, yaw_: float, code: int, speed: float, lift: float)
 ## rendimiento: los zombis no usan la física para moverse (era lo que más costaba con muchos en pantalla);
 ## avanzan sobre la malla de navegación, que ya evita paredes y huecos, y se pegan a su altura
 var nav_map: RID
+var floor_t = 0
+var floor_y = 0.0
 func _nav_move(delta: float) -> void:
 	var want = global_position + Vector3(velocity.x, 0, velocity.z) * delta
 	if not nav_map.is_valid(): nav_map = get_world_3d().navigation_map
 	var q = NavigationServer3D.map_get_closest_point(nav_map, want + Vector3(0, 0.4, 0))
 	if q == Vector3.ZERO and NavigationServer3D.map_get_iteration_id(nav_map) == 0: return
 	if Vector2(q.x - want.x, q.z - want.z).length() > 1.0: q = Vector3(want.x, q.y, want.z) if abs(q.y - want.y) < 1.0 else global_position
-	global_position = Vector3(q.x, lerp(global_position.y, q.y, min(1.0, delta * 15.0)), q.z)
+	# la malla de navegación va un poco por encima del suelo: los pies se apoyan en el suelo de verdad (un rayo hacia abajo)
+	floor_t -= 1
+	if floor_t <= 0:
+		floor_t = 1 if lod == 0 else 3
+		var r = get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(q.x, q.y + 0.6, q.z), Vector3(q.x, q.y - 1.2, q.z), MapBuilder.LAYER_WORLD))
+		floor_y = r.position.y if not r.is_empty() else q.y - 0.15
+	global_position = Vector3(q.x, lerp(global_position.y, floor_y, min(1.0, delta * 18.0)), q.z)
 
 func _gravity(delta: float) -> void:
 	if not is_on_floor(): velocity.y -= 18.0 * delta
