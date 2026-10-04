@@ -4,8 +4,9 @@ import { GLTFLoader } from './lib/GLTFLoader.js';
 import { Shrimp, PLAYERS } from './modelos.js';
 import { Particles } from './particulas.js';
 import * as MAP from './mapa.js';
+import { buildBuildings } from './edificios.js';
 import { RGBELoader } from './lib/RGBELoader.js';
-import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, KENNEY, QBASIC, QCHUBBY, QARM, QRIB } from './zombis.js';
+import { Zombie, flow, resetFlow, separate, collide, roundCount, roundHp, roundSpeed, REAL, RUNNER, CITY as CITYZ, KENNEY, QBASIC, QCHUBBY, QARM, QRIB, ZRA, ZRC } from './zombis.js';
 import { GUNS, BOX_POOL, PERKS, PU_NAME } from './armas.js';
 import { S, ambient, cfg as AUD, tone } from './audio.js';
 import { EffectComposer } from './lib/EffectComposer.js';
@@ -33,7 +34,7 @@ applyOpts();
 
 /* ---------- motor ---------- */
 // ESTILO: todo el juego usa un único estilo (Kenney + Quaternius, colores planos y pintados). Con true se activan los objetos fotográficos de Poly Haven, que NO combinan con los personajes.
-const REALISTIC = false;
+const REALISTIC = true;
 const cv = $('cv');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
 const PR_HIGH = Math.min(devicePixelRatio, 2.5), PR_LOW = Math.min(devicePixelRatio, 1.25);   // móviles de ahora: casi resolución nativa
@@ -57,6 +58,9 @@ let gradePass = null;
 function setupFX() {
   const rt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 4 });   // MSAA también con posprocesado
   composer = new EffectComposer(renderer, rt); composer.addPass(new RenderPass(scene, camera));
+  // antes del resplandor: limitar los píxeles con brillo exagerado (reflejos especulares muy cerca de una luz) que si no lo inundan todo
+  composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); c.rgb = clamp(c.rgb, 0., 6.); if (any(isnan(c.rgb))) c.rgb = vec3(0.); gl_FragColor = c; }' }));
   bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .6, .45, .78); composer.addPass(bloom);
   gradePass = new ShaderPass(GRADE); composer.addPass(gradePass); composer.addPass(new OutputPass()); resize();
 }
@@ -87,13 +91,13 @@ const KITS = ['character-zombie', 'character-skeleton', 'blaster-l', 'blaster-a'
   'candle-multiple', 'pumpkin-carved', 'rocks', 'debris-wood', 'coffin', 'lantern-candle', 'grenade-a', 'palm-bend', 'palm-straight', 'rocks-a', 'barrel'];
 const CITY = [...'abcdefghijklmn'].map(c => 'building-' + c).concat(['building-skyscraper-a', 'building-skyscraper-c', 'building-skyscraper-e', 'tree-large', 'tree-small', 'dumpster', 'light-curved', 'traffic-light', 'construction-barrier', 'construction-cone', 'planter', 'car-sedan', 'car-taxi', 'car-police', 'car-van', 'car-suv', 'car-truck', 'car-ambulance']);
 const PROPS = ['street_lamp_01', 'metal_trash_can', 'utility_box_01', 'utility_box_02', 'water_manhole_cover', 'old_tyre', 'covered_car', 'barrel_stove', 'trashbag', 'rusted_wheel_rim_01', 'Barrel_01', 'WetFloorSign_01', 'fire_hydrant', 'concrete_road_barrier_02', 'vintage_grandfather_clock_01', 'Chandelier_01', 'fancy_picture_frame_01', 'hanging_picture_frame_02', 'ornate_mirror_01', 'wine_barrel_01', 'wooden_crate_02', 'treasure_chest', 'ceramic_vase_01', 'cardboard_box_01', 'hand_truck', 'propane_tank', 'old_military_crate', 'metal_toolbox', 'barrel_03'].map(n => 'p_' + n);   // Poly Haven (CC0)
-const GUN_FILES = [...new Set(Object.values(GUNS).map(g => g.model).filter(m => m.startsWith('g/')))];
+const GUN_FILES = [...new Set(Object.values(GUNS).flatMap(g => [g.model, g.rmodel]).filter(m => m && (m.startsWith('g/') || m.startsWith('w/'))))];
 const K = {}, CH = {};
 async function loadAll() {
-  const jobs0 = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zq_Basic', 'models/z/Zombie_Basic.glb'], ['zq_Chubby', 'models/z/Zombie_Chubby.glb'], ['zq_Arm', 'models/z/Zombie_Arm.glb'], ['zq_Ribcage', 'models/z/Zombie_Ribcage.glb'], ['mc_city', 'models/m/mc_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(REALISTIC ? PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb']) : []).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
+  const jobs0 = KITS.map(n => [n, 'models/k/' + n + '.glb']).concat([['zr_A', 'models/z/zr_A.glb'], ['zr_C', 'models/z/zr_C.glb'], ['mc_city', 'models/m/mc_city.glb']]).concat(CITY.map(n => [n, 'models/c/' + n + '.glb'])).concat(REALISTIC ? PROPS.map(n => [n, 'models/p/' + n.slice(2) + '.glb']) : []).concat(GUN_FILES.map(n => [n, 'models/' + n + '.glb'])).concat([['gamba', PLAYERS.gamba.file]]);
   const jobs = jobs0;
   let done = 0;
-  await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, ko))));
+  await Promise.all(jobs.map(([n, url]) => new Promise((ok, ko) => loader.load(url, g => { if (n === 'gamba') CH.gamba = g; else K[n] = g; $('loadBar').style.width = (++done / jobs.length * 100) + '%'; ok(); }, undefined, e => n.startsWith('w/') ? (++done, ok()) : ko(e)))));   // un arma realista que falte no rompe la carga
 }
 // árboles reales de Poly Haven convertidos en dos planos cruzados con su foto (los originales tienen millones de triángulos)
 const TREES = {};
@@ -108,14 +112,14 @@ function tree(name, x, z, ry = 0, h = 5) {
   const T = TREES[name]; if (!T) return null;
   const g = new THREE.Group(), s = h / T.v.h, w = T.v.w * s;
   T.mats.forEach((m, i) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.y = h / 2; if (i) p.rotation.y = Math.PI / 2; g.add(p); });
-  g.position.set(x, 0, z); g.rotation.y = ry; if (collecting) g.userData.cull = true; level.add(g); return g;
+  g.position.set(x, 0, z); g.rotation.y = ry; g.userData.tree = true; if (collecting) g.userData.cull = true; level.add(g); return g;
 }
 // objetos de decoración que se ocultan cuando quedan lejos del jugador (la niebla ya los tapa): menos triángulos y llamadas de dibujo
 let collecting = false, cullList = [], cullT = 0;
 function updCull(force, dt = 0) {
   if (!cullList.length) return; if (!force && (cullT -= dt) > 0) return; cullT = .3;
   const px = P.pos ? P.pos.x : MAP.OBJ.spawn[0], pz = P.pos ? P.pos.z : MAP.OBJ.spawn[1], R = save.opt.gfx === 'low' ? 28 : 40, R2 = R * R;
-  for (const o of cullList) { const dx = o.position.x - px, dz = o.position.z - pz; o.visible = dx * dx + dz * dz < R2; }
+  for (const o of cullList) { const dx = o.position.x - px, dz = o.position.z - pz, d2 = dx * dx + dz * dz; o.visible = d2 < R2 && !(o.userData.tree && FP && d2 < 4.4); }   // un árbol pegado a la cámara en primera persona solo tapa la vista
 }
 // muchas copias del mismo modelo (vallas, farolas) en una sola llamada de dibujo por malla
 let instQ = {};
@@ -209,7 +213,8 @@ function buildWorld(mapId) {
   }
   // exterior: árboles, rocas o cajas alrededor
   if (T.city) {   // horizonte: solares sueltos alrededor del mapa, con los mismos edificios
-    for (let i = 0; i < 70; i++) { let x, z; do { x = -18 + rng() * (W + 36); z = -18 + rng() * (H + 36); } while (x > 1 && x < W - 1 && z > 1 && z < H - 1); const n = CITY[Math.floor(rng() * 17)]; kit(n, x, z, Math.floor(rng() * 4) * Math.PI / 2, 4 + rng() * 2); }
+    if (REALISTIC && MAP.PBR.brick) { const far = []; for (let i = 0; i < 46; i++) { const w = 5 + Math.floor(rng() * 6), d = 5 + Math.floor(rng() * 6); let x, z; do { x = Math.floor(-22 + rng() * (W + 44)); z = Math.floor(-22 + rng() * (H + 44)); } while (x + w > -2 && x < W + 2 && z + d > -2 && z < H + 2); far.push({ x0: x, z0: z, x1: x + w - 1, z1: z + d - 1 }); } buildBuildings(level, far, rng); }
+    else for (let i = 0; i < 70; i++) { let x, z; do { x = -18 + rng() * (W + 36); z = -18 + rng() * (H + 36); } while (x > 1 && x < W - 1 && z > 1 && z < H - 1); const n = CITY[Math.floor(rng() * 17)]; kit(n, x, z, Math.floor(rng() * 4) * Math.PI / 2, 4 + rng() * 2); }
   }
   else if (!T.model) for (let i = 0; i < 90; i++) {
     let x, z; do { x = -16 + rng() * (W + 32); z = -16 + rng() * (H + 32); } while (x > -.5 && x < W + .5 && z > -.5 && z < H + .5);
@@ -277,7 +282,6 @@ function dressInterior(rng) {
     const o = kit('p_' + nm, x + .5 + f[0] * .53, x * 0 + z + .5 + f[1] * .53, Math.atan2(f[0], f[1]), s); o.position.y = 1.35 + rng() * .3; placed.push([x, z]); nw++;
   }
   // lámpara de techo en el centro de cada sala interior grande (solo en la casa)
-  if (th === 'nacht') for (const Z of MAP.ZONES) { if (Z.outside || Z.x1 - Z.x0 < 5 || Z.z1 - Z.z0 < 5) continue; kit('p_Chandelier_01', (Z.x0 + Z.x1 + 1) / 2, (Z.z0 + Z.z1 + 1) / 2, rng() * 6, 1.3, MAP.WALL_H - 1.15); }
 }
 // versión del mismo estilo que el resto: barriles y cajas de Kenney junto a las paredes, sin cuadros ni lámparas
 function dressInteriorKenney(rng, th) {
@@ -310,7 +314,7 @@ function buildCityKenney(rng) {
   }
 }
 function buildCity(rng) {
-  buildCityKenney(rng);
+  if (REALISTIC && MAP.PBR.brick) buildBuildings(level, MAP.OBJ.buildings, rng); else buildCityKenney(rng);
 }
 function cityProp(o, rng) {
   const x = o.x + .5, z = o.z + .5;
@@ -375,11 +379,37 @@ function machinesPower() { for (const m of machines) { const on = power || m.id 
 /* ---------- armas: modelos ---------- */
 // devuelve el arma mirando hacia -z, centrada y con su largo real (G.len, en metros)
 const GUN_CACHE = {};
+// coloca un arma descargada en cualquier postura: eje largo = cañón (-z), segundo eje = alto (+y); la boca es el extremo más fino
+// y la empuñadura/cargador cuelgan hacia abajo
+function orientGun(src, G0) {
+  src.updateMatrixWorld(true); const pts = [], v = V3();
+  src.traverse(m => { if (!m.isMesh || !m.geometry.attributes.position) return; const p = m.geometry.attributes.position, step = Math.max(1, Math.floor(p.count / 4000)); for (let i = 0; i < p.count; i += step) pts.push(v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld).clone()); });
+  if (!pts.length) return;
+  const ax = ['x', 'y', 'z'], ext = ax.map(k => { let lo = 1e9, hi = -1e9; for (const p of pts) { lo = Math.min(lo, p[k]); hi = Math.max(hi, p[k]); } return [lo, hi, hi - lo]; });
+  const order = [0, 1, 2].sort((a, b) => ext[b][2] - ext[a][2]), L = order[0], Hh = order[1];
+  const unit = i => [V3(1, 0, 0), V3(0, 1, 0), V3(0, 0, 1)][i];
+  let zA = unit(L), yA = unit(Hh);
+  // boca: el extremo (15 % del largo) con menos altura
+  const [l0, l1, len] = ext[L], hk = ax[Hh], band = (from, to) => { let lo = 1e9, hi = -1e9; for (const p of pts) { const t = p[ax[L]]; if (t >= from && t <= to) { lo = Math.min(lo, p[hk]); hi = Math.max(hi, p[hk]); } } return hi - lo; };
+  const hLo = band(l0, l0 + len * .15), hHi = band(l1 - len * .15, l1);
+  if (hHi < hLo) zA = zA.clone().negate();          // la boca debe quedar en -z: el eje z apunta hacia la culata
+  // de pie: el perfil de arriba (cañón, corredera) es casi recto y el de abajo irregular (gatillo, cargador, empuñadura)
+  const NS = 24, tops = Array(NS).fill(-1e9), bots = Array(NS).fill(1e9);
+  for (const p of pts) { const s = Math.min(NS - 1, Math.floor((p[ax[L]] - l0) / len * NS)); tops[s] = Math.max(tops[s], p[hk]); bots[s] = Math.min(bots[s], p[hk]); }
+  const vr = arr => { const a = arr.filter(x => Math.abs(x) < 1e8); const m = a.reduce((s, x) => s + x, 0) / a.length; return a.reduce((s, x) => s + (x - m) ** 2, 0) / a.length; };
+  if (vr(tops) > vr(bots)) yA = yA.clone().negate();
+  if (G0.rflip) zA = zA.clone().negate();
+  if (G0.rswap) { const t = zA; zA = yA.clone().negate(); yA = t; }   // modelos cuyo eje largo no es el cañón
+  const xA = V3().crossVectors(yA, zA), R = new THREE.Matrix4().set(xA.x, xA.y, xA.z, 0, yA.x, yA.y, yA.z, 0, zA.x, zA.y, zA.z, 0, 0, 0, 0, 1);
+  src.quaternion.setFromRotationMatrix(R).premultiply(new THREE.Quaternion());   // filas = ejes viejos que pasan a x, y, z
+}
 function gunModel(id, pap) {
   const G0 = GUNS[id], key = id + (pap ? '+' : '');
   if (!GUN_CACHE[key]) {
-    const src = K[G0.model].scene.clone(true), inner = new THREE.Group(); inner.add(src);
-    if (G0.model.startsWith('g/')) src.rotation.y = Math.PI / 2; else src.rotation.y = Math.PI;   // Quaternius apunta a +x, Kenney a +z
+    const real = REALISTIC && G0.rmodel && K[G0.rmodel], mk = real ? G0.rmodel : G0.model;
+    const src = K[mk].scene.clone(true), inner = new THREE.Group(); inner.add(src);
+    if (real) orientGun(src, G0);   // cañón hacia delante, empuñadura hacia abajo
+    else if (G0.model.startsWith('g/')) src.rotation.y = Math.PI / 2; else src.rotation.y = Math.PI;   // Quaternius apunta a +x, Kenney a +z
     inner.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(inner), s = b.getSize(V3()), c = b.getCenter(V3());
     src.position.sub(c); inner.scale.setScalar(G0.len / s.z); const outer = new THREE.Group(); outer.add(inner);
     src.traverse(m => { if (m.isMesh) { m.castShadow = true; if (pap) { m.material = m.material.clone(); m.material.emissive = new THREE.Color(0x7a1aff); m.material.emissiveIntensity = .55; m.material.color.lerp(new THREE.Color(0x8a5aff), .4); } } });
@@ -568,6 +598,7 @@ function spawnZombie() {
 // según la velocidad: los lentos son del modelo realista, los que reptan también (marcha Running_Crawl) y los que corren, del «corredor»
 function newZombie(o) {
   if (MAP.CFG.theme === 'mc') return new Zombie(game, K['character-zombie'], { ...o, def: KENNEY });   // en el mapa de bloques, zombis de bloques
+  if (REALISTIC) { const a = Math.random() < .5; return new Zombie(game, K[a ? 'zr_A' : 'zr_C'], { ...o, def: a ? ZRA : ZRC }); }   // zombis realistas
   const s = o.speed, x = Math.random();
   // cada tipo solo sale en las velocidades que su animación puede cubrir; el esqueleto veloz aparece más en rondas altas
   const pool = [['Basic', QBASIC, 4, .68, 3.1], ['Chubby', QCHUBBY, 2, .45, 2.1], ['Arm', QARM, 2, .4, 1.8], ['Ribcage', QRIB, s > 1.5 ? 3 : 0, .9, 3.5]].filter(p => p[2] > 0 && s >= p[3] * .8 && s <= p[4] * 1.1);
@@ -1309,7 +1340,7 @@ async function testShot() {
   if (Q.has('look')) { const [a, b, c, d, e, f] = Q.get('look').split(',').map(Number); camera.position.set(a, b, c); camera.lookAt(d, e, f); camera.fov = +(Q.get('fov') || 50); camera.updateProjectionMatrix(); }
   renderer.info.autoReset = false; renderer.info.reset(); draw();
   const im = $('shotImg'); im.src = cv.toDataURL(); im.style.display = 'block';
-  window.__scene = scene; window.__info = { ...renderer.info.render, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures };
+  window.__scene = scene; window.__cam = camera; window.__fx = () => ({ bloom, composer }); window.__draw = () => { draw(); const im = $('shotImg'); im.src = cv.toDataURL(); }; window.__info = { ...renderer.info.render, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures };
   document.title = 'LISTO';
 }
 boot();

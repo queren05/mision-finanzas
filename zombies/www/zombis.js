@@ -86,6 +86,11 @@ export const QARM = { skinned: true, eyes: false, flat: true, head: /^Head$/, cl
   atk: { 'attack-melee-right': { hit: .3, end: .6 }, 'attack-melee-left': { hit: .4, end: .7 } } };
 export const QRIB = { skinned: true, eyes: false, flat: true, head: /^Head$/, clips: { ...QCLIPS, 'attack-melee-right': 'Jump', 'attack-melee-left': 'Jump', 'interact-right': 'Jump' }, gaits: [{ clip: 'Walk', v: 1.1, lo: .85, hi: 1.5 }, { clip: 'Run', v: 2.5, lo: .75, hi: 1.4 }],
   atk: { 'attack-melee-right': { hit: .18, end: .37 }, 'attack-melee-left': { hit: .18, end: .37 } } };
+// zombis realistas (Sketchfab, CC-BY) con animaciones de Mixamo reasignadas: velocidades y golpes medidos sobre esas animaciones
+const RCLIPS = { walk: 'Shamble', sprint: 'Run', 'attack-melee-right': 'Attack', 'attack-melee-left': 'Attack2', die: 'Death', idle: ['Idle', 'Idle2'], crouch: 'Idle2', 'interact-right': 'Attack3' };
+const RGAITS = [{ clip: 'Walk', v: .27, lo: .9, hi: 1.8 }, { clip: 'Shamble', v: .35, lo: .85, hi: 2.6 }, { clip: 'Run', v: 1.8, lo: .65, hi: 1.6 }];
+export const ZRA = { skinned: true, eyes: false, pbr: true, head: /Head(_\d+)?$/, clips: RCLIPS, gaits: RGAITS, atk: { 'attack-melee-right': { hit: 1.0, end: 1.35 }, 'attack-melee-left': { hit: 1.5, end: 1.95 } } };
+export const ZRC = { ...ZRA };
 const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, '#fff'); g.addColorStop(.25, '#ffd040'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const EYE_MAT = [new THREE.SpriteMaterial({ map: eyeTex, color: 0xffb030, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }), new THREE.SpriteMaterial({ map: eyeTex, color: 0x60c8ff, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })];
 const _v = new THREE.Vector3(), _s = new THREE.Vector3();
