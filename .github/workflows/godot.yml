@@ -1,0 +1,141 @@
+# Compila Shrimp Zombies (Godot, carpeta zombiesgd/) como app nativa:
+#  - iPhone: .ipa SIN FIRMAR (Godot genera el proyecto de Xcode y se compila sin firma) para instalar con KSign.
+#  - Android: .apk firmado con scripts/android-release.p12.
+# Se publican en la release "zombies-latest" (sustituyen a la versión web) y se actualiza la fuente de KSign.
+name: Shrimp Zombies (Godot)
+
+on:
+  push:
+    branches: [app]
+    paths: ['zombiesgd/**', '.github/workflows/godot.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: miniapp-fuente
+  cancel-in-progress: false
+
+env:
+  GODOT: 4.7.2
+  APP: zombies
+  NAME: Shrimp Zombies
+  BUNDLE: es.david.shrimpzombies
+  # mientras se desarrolla, publica en una release aparte y no toca KSign; al terminar: TAG=zombies-latest y KSIGN=si
+  TAG: zombiesgd-dev
+  KSIGN: "no"
+  DESC: "Supervivencia por rondas contra zombis estilo Black Ops: mapas por zonas, armas de pared, caja misteriosa, ventajas y Pack-a-Punch. Compatible con mando."
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Godot y plantillas de exportación
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/godot-dl
+          key: godot-mac-${{ env.GODOT }}
+      - name: Descargar Godot
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-dl && cd ~/godot-dl
+          curl -sL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_macos.universal.zip"
+          curl -sL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_export_templates.tpz"
+      - name: Instalar
+        run: |
+          cd ~/godot-dl && unzip -qo godot.zip
+          T="$HOME/Library/Application Support/Godot/export_templates/${GODOT}.stable"
+          mkdir -p "$T" && unzip -qo tpl.tpz -d "$RUNNER_TEMP/tpl" && cp -R "$RUNNER_TEMP/tpl/templates/"* "$T/"
+          echo "GODOT_BIN=$HOME/godot-dl/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+
+      - name: Exportar el proyecto de Xcode
+        working-directory: zombiesgd
+        run: |
+          "$GODOT_BIN" --headless --import --path . || true
+          mkdir -p build/ios
+          "$GODOT_BIN" --headless --path . --export-release "iOS" build/ios/ShrimpZombies.ipa
+          ls build/ios
+
+      - name: Compilar sin firma
+        working-directory: zombiesgd/build/ios
+        run: |
+          PRJ=$(ls -d *.xcodeproj | head -1); SCHEME="${PRJ%.xcodeproj}"
+          PL="$SCHEME/$SCHEME-Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL" || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $NAME" "$PL" || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $NAME" "$PL"
+          xcodebuild -project "$PRJ" -scheme "$SCHEME" -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" \
+            MARKETING_VERSION=2.0.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} build | tail -30
+          APPDIR=$(find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 2 -name '*.app' -type d | head -1)
+          test -d "$APPDIR"
+          mkdir -p "$RUNNER_TEMP/pkg/Payload" "$GITHUB_WORKSPACE/out"
+          cp -R "$APPDIR" "$RUNNER_TEMP/pkg/Payload/"
+          (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/$APP.ipa" Payload)
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Publicar el .ipa y actualizar la fuente de KSign
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp zombiesgd/icon.png "out/$APP-icon.png"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
+          gh release upload "$TAG" "out/$APP.ipa" "out/$APP-icon.png" --clobber
+          BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
+          [ "$KSIGN" = si ] && sh scripts/fuente.sh "$APP" "$NAME" "$BUNDLE" "2.0.${{ github.run_number }}" "${{ github.run_number }}" \
+            "$BASE/$APP.ipa" "$(stat -f%z out/$APP.ipa)" "$BASE/$APP-icon.png" "$DESC"
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Godot y plantillas de exportación
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/godot-dl
+          key: godot-linux-${{ env.GODOT }}
+      - name: Descargar Godot
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-dl && cd ~/godot-dl
+          curl -sL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_linux.x86_64.zip"
+          curl -sL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_export_templates.tpz"
+      - name: Instalar
+        run: |
+          cd ~/godot-dl && unzip -qo godot.zip
+          T="$HOME/.local/share/godot/export_templates/${GODOT}.stable"
+          mkdir -p "$T" && unzip -qo tpl.tpz -d "$RUNNER_TEMP/tpl" && cp -R "$RUNNER_TEMP/tpl/templates/"* "$T/"
+          echo "GODOT_BIN=$HOME/godot-dl/Godot_v${GODOT}-stable_linux.x86_64" >> $GITHUB_ENV
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' "$ANDROID_SDK_ROOT" "$JAVA_HOME" > ~/.config/godot/editor_settings-4.7.tres
+      - name: Exportar el .apk firmado
+        working-directory: zombiesgd
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ github.workspace }}/scripts/android-release.p12
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: gambas
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: gambas-apps
+        run: |
+          "$GODOT_BIN" --headless --import --path . || true
+          mkdir -p build/android "$GITHUB_WORKSPACE/out"
+          "$GODOT_BIN" --headless --path . --export-release "Android" "$GITHUB_WORKSPACE/out/$APP.apk"
+          ls -la "$GITHUB_WORKSPACE/out"
+      - name: Publicar el .apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
+          gh release upload "$TAG" "out/$APP.apk" --clobber
