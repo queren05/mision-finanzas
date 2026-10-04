@@ -45,7 +45,11 @@ var pending = {}               # peticiones al servidor esperando respuesta: "id
 var pus = {}                   # potenciadores en el suelo: id -> nodo
 var next_pu = 1
 var gum_uses = 0
-var low_quality = false               # chicles comprados esta ronda
+var low_quality = false
+var base_scale = 1.0
+var dyn_scale = 1.0          # resolución dinámica: baja sola si los fps caen
+var fps_acc = 0.0
+var fps_frames = 0               # chicles comprados esta ronda
 
 func start(id: String) -> void:
 	map_id = id
@@ -146,15 +150,31 @@ func _build_environment() -> void:
 	for l in cfg.get("lights", []):
 		var o = OmniLight3D.new(); o.position = MapBuilder.v3(l.pos); o.light_color = _col(l.get("color", [1, 0.85, 0.65])); o.omni_range = float(l.get("range", 8)); o.light_energy = float(l.get("energy", 1.2)); o.shadow_enabled = false; add_child(o)
 
+## resolución dinámica: cada 2 s mira los fps; por debajo de ~50 baja la resolución 3D (hasta el 55 %), y la sube si va sobrado
+func _dynamic_resolution(delta: float) -> void:
+	fps_acc += delta; fps_frames += 1
+	if fps_acc < 2.0: return
+	var fps = fps_frames / fps_acc; fps_acc = 0.0; fps_frames = 0
+	var target = 58.0 if OS.has_feature("mobile") else 55.0
+	if fps < target - 8.0 and dyn_scale > 0.55: dyn_scale = max(0.55, dyn_scale - 0.1)
+	elif fps > target + 1.0 and dyn_scale < 1.0: dyn_scale = min(1.0, dyn_scale + 0.05)
+	else: return
+	var vp = get_viewport()
+	vp.scaling_3d_scale = base_scale * dyn_scale
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if vp.scaling_3d_scale < 0.99 else Viewport.SCALING_3D_MODE_BILINEAR
+
 ## calidad gráfica: escala de render, suavizado, sombras y resplandor (alta / media / baja)
 func apply_quality(e: Environment) -> void:
 	var q = GS.settings.get("quality", "alta")
 	low_quality = q == "baja"
 	var vp = get_viewport()
 	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q != "alta" else Viewport.SCALING_3D_MODE_BILINEAR
-	vp.scaling_3d_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
+	base_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
+	dyn_scale = 1.0
+	vp.scaling_3d_scale = base_scale
 	vp.mesh_lod_threshold = { "alta": 1.0, "media": 2.5, "baja": 5.0 }[q]   # modelos simplificados antes cuanto más baja la calidad
-	vp.msaa_3d = Viewport.MSAA_4X if q == "alta" else (Viewport.MSAA_2X if q == "media" else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato
+	var pc = not OS.has_feature("mobile")
+	vp.msaa_3d = (Viewport.MSAA_2X if pc else Viewport.MSAA_4X) if q == "alta" else (Viewport.MSAA_2X if q == "media" and not pc else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato; en PC con resoluciones altas, no
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
 	RenderingServer.directional_shadow_atlas_set_size(4096 if q == "alta" else 2048, true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM if q == "alta" else RenderingServer.SHADOW_QUALITY_SOFT_LOW)
@@ -162,7 +182,7 @@ func apply_quality(e: Environment) -> void:
 		sun.shadow_enabled = q != "baja"
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if q == "alta" else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	e.glow_enabled = q != "baja"
-	Engine.max_fps = 60
+	Engine.max_fps = 60 if OS.has_feature("mobile") else 0   # en PC manda la sincronización vertical
 
 func _col(a) -> Color: return Color(float(a[0]), float(a[1]), float(a[2]))
 
@@ -432,6 +452,7 @@ func _end_round() -> void:
 
 func _process(delta: float) -> void:
 	if not player: return
+	_dynamic_resolution(delta)
 	if paused and not Net.active: return
 	time += delta
 	insta = max(0.0, insta - delta); dpoints = max(0.0, dpoints - delta); fire_sale = max(0.0, fire_sale - delta)

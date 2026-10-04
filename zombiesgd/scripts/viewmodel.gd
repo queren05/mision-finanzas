@@ -149,7 +149,11 @@ func _attach_gun() -> void:
 	# apuntar: el centro de la parte de arriba del arma pasa al centro de la pantalla
 	var cam_xf: Transform3D = (get_parent() as Node3D).global_transform if get_parent() is Node3D else global_transform
 	var c: Vector3 = cam_xf.affine_inverse() * want.origin
-	ads_off = Vector3(-c.x, -0.052 - c.y, 0.05 if kind == "rifle" else 0.04)
+	# al apuntar, el borde de arriba del arma queda justo por debajo de la cruz: se ve a lo que apuntas
+	var top_y = 0.05
+	var ab: AABB = Guns._aabb(gun)
+	if ab.size.y > 0.0: top_y = ab.end.y
+	ads_off = Vector3(-c.x, -0.022 - top_y - c.y, 0.03)
 
 func _play(what: String, blend := 0.15, speed := 1.0) -> void:
 	if ap == null: return
@@ -162,7 +166,7 @@ func _play(what: String, blend := 0.15, speed := 1.0) -> void:
 
 func fire() -> void:
 	_play("shoot", 0.02, 1.0)
-	kick_v += 9.0
+	kick_v = min(kick_v + 9.0, 30.0)
 
 func reload(duration: float) -> void:
 	var a: String = KITS[kind].reload
@@ -177,8 +181,13 @@ func update(delta: float, speed: float, sprinting: bool, ads: float, reloading: 
 		elif speed > 0.5 and ads < 0.5: _play("walk", 0.2, clamp(speed / 4.5, 0.6, 1.4))
 		else: _play("idle", 0.25)
 	# retroceso con muelle (sube y vuelve)
-	kick_v += (-kick * 120.0 - kick_v * 16.0) * delta
-	kick += kick_v * delta
+	# en pasos pequeños: con pocos fps un solo paso grande hacía que el muelle se disparase (brazos volando)
+	var steps = int(ceil(min(delta, 0.25) / 0.005))
+	var h = min(delta, 0.25) / max(1, steps)
+	for i in steps:
+		kick_v += (-kick * 120.0 - kick_v * 16.0) * h
+		kick += kick_v * h
+	kick = clamp(kick, -0.5, 1.5); kick_v = clamp(kick_v, -40.0, 40.0)
 	# balanceo: el arma se queda un poco atrás al girar la cámara
 	sway = sway.lerp(Vector2(clamp(-look.x * 3.0, -0.06, 0.06), clamp(-look.y * 3.0, -0.05, 0.05)), min(1.0, delta * 10.0))
 	bob_t += delta * min(speed, 7.0) * (1.6 if sprinting else 1.2)

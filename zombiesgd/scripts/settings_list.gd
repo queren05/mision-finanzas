@@ -21,6 +21,7 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 		_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)
 		_slider(list, font_ui, "Opacidad de los botones", 0.3, 1.0, "btn_alpha", changed)
 		_toggle(list, font_bo, font_ui, "Vibración", "vibration", "SÍ", "NO", changed)
+	_toggle(list, font_bo, font_ui, "Mostrar FPS", "show_fps", "SÍ", "NO", changed)
 	if not OS.has_feature("mobile"):
 		_toggle(list, font_bo, font_ui, "Pantalla completa (F11)", "fullscreen", "SÍ", "NO", func(k): Controls.apply_window(); changed.call(k))
 	_slider(list, font_ui, "Efectos de sonido", 0, 1, "sfx", changed)

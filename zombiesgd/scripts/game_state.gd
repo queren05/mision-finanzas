@@ -7,7 +7,7 @@ var level = 1
 var weapon_kills = {}          # id -> bajas totales
 var camo = {}                  # id -> camuflaje elegido
 var best = {}                  # mapa -> mejor ronda
-var settings = { "sens": 1.0, "ads_sens": 0.7, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false, "left_fire": false, "btn_scale": 1.1, "btn_alpha": 0.8, "vibration": true, "ads_toggle": true, "fullscreen": false }
+var settings = { "sens": 1.0, "ads_sens": 0.7, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false, "left_fire": false, "btn_scale": 1.1, "btn_alpha": 0.8, "vibration": true, "ads_toggle": true, "fullscreen": false, "show_fps": false, "auto_q": false }
 var character = "comando"
 var stats = {}                 # contadores para los desafíos
 var done = {}                  # desafío -> true
@@ -19,7 +19,14 @@ var start_round = 1
 var start_weapon = "m1911"
 var start_perk = ""
 
-func _ready() -> void: load_game()
+func _ready() -> void:
+	load_game()
+	# la primera vez, calidad según la tarjeta gráfica (integrada o de móvil: media)
+	if not settings.get("auto_q", false):
+		settings.auto_q = true
+		var t = RenderingServer.get_video_adapter_type()
+		settings.quality = "media" if t == RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU or OS.has_feature("mobile") else "alta"
+		save_game()
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH): return

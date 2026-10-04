@@ -52,6 +52,7 @@ var gums_box: HBoxContainer
 var egg_lbl: Label
 var team_lbl: Label
 var team_t = 0.0
+var fps_lbl: Label
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -108,6 +109,7 @@ func _ready() -> void:
 	egg_lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); egg_lbl.offset_left = -300; egg_lbl.offset_right = 300; egg_lbl.offset_top = 96; egg_lbl.offset_bottom = 140
 	team_lbl = _label(font_ui, 20, Color(0.6, 0.85, 1.0)); root.add_child(team_lbl)
 	team_lbl.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT); team_lbl.offset_top = 90; team_lbl.offset_left = 40; team_lbl.offset_right = 400; team_lbl.offset_bottom = 220
+	fps_lbl = _label(font_ui, 18, Color(0.6, 1, 0.6)); root.add_child(fps_lbl); fps_lbl.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT); fps_lbl.offset_left = 200; fps_lbl.offset_top = 8
 	# avisos de desafíos completados (arriba en el centro)
 	toast_box = VBoxContainer.new(); toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; toast_box.add_theme_constant_override("separation", 8); root.add_child(toast_box)
 	toast_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); toast_box.offset_left = -330; toast_box.offset_right = 330; toast_box.offset_top = 16; toast_box.offset_bottom = 200
@@ -157,6 +159,8 @@ func _process(d: float) -> void:
 		if p.downed: downed_box.get_node("sub").text = ("Te levantas en %d…" % ceil(3.5 - p.down_t)) if p.revives_left > 0 else ""
 	white_rect.color.a = max(0.0, white_rect.color.a - d * 0.8)
 	team_t -= d
+	fps_lbl.visible = GS.settings.get("show_fps", false)
+	if fps_lbl.visible: fps_lbl.text = "%d FPS · %d%%" % [Engine.get_frames_per_second(), int(get_viewport().scaling_3d_scale * 100)]
 	if team_t <= 0.0 and game:
 		team_t = 0.4
 		var lines = []

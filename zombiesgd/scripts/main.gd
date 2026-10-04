@@ -94,6 +94,9 @@ func _run_test() -> void:
 		var at = game._random_nav_near(p.global_position, 5.0, 7.0)
 		game.make_zombie("a", args.spawn, at, 1000.0, 0.9 if args.spawn != "dog" else 5.0)
 	if args.has("gun"): p.give_weapon(args.gun); await get_tree().create_timer(1.0).timeout
+	if args.has("adsdbg"):
+		Controls.touch_held["ads"] = true; await get_tree().create_timer(1.0).timeout
+		print("VMDBG holder ", p.vm.holder.transform.origin, " ads_off ", p.vm.ads_off, " base ", p.vm.base_xf.origin, " ads ", p.ads, " arma ", p.vm.gun.global_position if p.vm.gun else null, " cam ", p.cam.global_position)
 	if args.has("feet"):   # altura de los pies de los zombis respecto al suelo de verdad
 		get_viewport().disable_3d = true
 		await get_tree().create_timer(25.0).timeout
