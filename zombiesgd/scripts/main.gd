@@ -248,6 +248,7 @@ func _fire(n_frames: int) -> void:
 
 func _mechanics(p: Player) -> void:
 	game.max_alive = 0; game.to_spawn = 0; game.break_t = 999.0   # sin zombis de la ronda: los pone la prueba
+	Controls.device = "touch"   # la prueba mueve con el joystick táctil (correr = llevarlo al borde)
 	get_viewport().disable_3d = true
 	game.god = false
 	await _frames(30)
