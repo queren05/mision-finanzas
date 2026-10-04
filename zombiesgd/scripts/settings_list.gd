@@ -15,13 +15,19 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 	_slider(list, font_ui, "Campo de visión", 60, 95, "fov", changed)
 	_toggle(list, font_bo, font_ui, "Ayuda al apuntar", "aim_assist", "SÍ", "NO", changed)
 	_toggle(list, font_bo, font_ui, "Invertir eje vertical", "invert", "SÍ", "NO", changed)
-	_toggle(list, font_bo, font_ui, "Apuntar (pantalla táctil)", "ads_toggle", "TOCAR", "MANTENER", changed)
-	_toggle(list, font_bo, font_ui, "Botón de disparo a la izquierda", "left_fire", "SÍ", "NO", changed)
-	_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)
-	_slider(list, font_ui, "Opacidad de los botones", 0.3, 1.0, "btn_alpha", changed)
-	_toggle(list, font_bo, font_ui, "Vibración", "vibration", "SÍ", "NO", changed)
+	if DisplayServer.is_touchscreen_available():   # opciones de pantalla táctil (en el móvil)
+		_toggle(list, font_bo, font_ui, "Apuntar (pantalla táctil)", "ads_toggle", "TOCAR", "MANTENER", changed)
+		_toggle(list, font_bo, font_ui, "Botón de disparo a la izquierda", "left_fire", "SÍ", "NO", changed)
+		_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)
+		_slider(list, font_ui, "Opacidad de los botones", 0.3, 1.0, "btn_alpha", changed)
+		_toggle(list, font_bo, font_ui, "Vibración", "vibration", "SÍ", "NO", changed)
+	if not OS.has_feature("mobile"):
+		_toggle(list, font_bo, font_ui, "Pantalla completa (F11)", "fullscreen", "SÍ", "NO", func(k): Controls.apply_window(); changed.call(k))
 	_slider(list, font_ui, "Efectos de sonido", 0, 1, "sfx", changed)
 	_slider(list, font_ui, "Ambiente", 0, 1, "music", changed)
+	if not OS.has_feature("mobile"):
+		var help = _label("Teclado y ratón:  WASD moverse · ratón apuntar · clic izq. disparar · clic der. apuntar · R recargar · F o E usar · Q o rueda cambiar de arma · G granada · V cuchillo · Espacio saltar · Mayús correr · C agacharse (corriendo: deslizarse) · T vista · Esc pausa · F11 pantalla completa.\nMando: gatillos disparar/apuntar · A saltar · X recargar/usar · Y cambiar arma · B agacharse · RB granada · R3 cuchillo · L3 correr · Select vista · Start pausa.", font_ui, 19, Color(0.8, 0.77, 0.7))
+		help.autowrap_mode = TextServer.AUTOWRAP_WORD; help.custom_minimum_size = Vector2(780, 0); list.add_child(help)
 	return first
 
 static func _label(text: String, f: Font, size: int, c: Color) -> Label:

@@ -1,6 +1,7 @@
 # Compila Shrimp Zombies (Godot, carpeta zombiesgd/) como app nativa:
 #  - iPhone: .ipa SIN FIRMAR (Godot genera el proyecto de Xcode y se compila sin firma) para instalar con KSign.
 #  - Android: .apk firmado con scripts/android-release.p12.
+#  - PC: Windows (.exe) y Linux, cada uno en un .zip con el juego dentro del ejecutable.
 # Se publican en la release "zombies-latest" (sustituyen a la versión web) y se actualiza la fuente de KSign.
 name: Shrimp Zombies (Godot)
 
@@ -147,3 +148,49 @@ jobs:
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
           gh release upload "$TAG" "out/$APP.apk" --clobber
+
+  pc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Godot y plantillas de exportación
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/godot-dl
+          key: godot-linux-${{ env.GODOT }}
+      - name: Descargar Godot
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-dl && cd ~/godot-dl
+          curl -sL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_linux.x86_64.zip"
+          curl -sL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT}-stable/Godot_v${GODOT}-stable_export_templates.tpz"
+      - name: Instalar
+        run: |
+          cd ~/godot-dl && unzip -qo godot.zip
+          T="$HOME/.local/share/godot/export_templates/${GODOT}.stable"
+          mkdir -p "$T" && unzip -qo tpl.tpz -d "$RUNNER_TEMP/tpl" && cp -R "$RUNNER_TEMP/tpl/templates/"* "$T/"
+          echo "GODOT_BIN=$HOME/godot-dl/Godot_v${GODOT}-stable_linux.x86_64" >> $GITHUB_ENV
+      - name: Exportar Windows y Linux
+        working-directory: zombiesgd
+        run: |
+          set -o pipefail
+          "$GODOT_BIN" --headless --import --path . || true
+          mkdir -p build/windows build/linux "$GITHUB_WORKSPACE/out"
+          "$GODOT_BIN" --headless --path . --export-release "Windows" build/windows/ShrimpZombies.exe
+          "$GODOT_BIN" --headless --path . --export-release "Linux" build/linux/ShrimpZombies.x86_64
+          test -s build/windows/ShrimpZombies.exe && test -s build/linux/ShrimpZombies.x86_64   # nunca publicar uno vacío
+          cp assets/CREDITOS.txt build/windows/CREDITOS.txt; cp assets/CREDITOS.txt build/linux/CREDITOS.txt
+          chmod +x build/linux/ShrimpZombies.x86_64
+          (cd build/windows && zip -q -9 "$GITHUB_WORKSPACE/out/$APP-windows.zip" ShrimpZombies.exe CREDITOS.txt)
+          (cd build/linux && zip -q -9 "$GITHUB_WORKSPACE/out/$APP-linux.zip" ShrimpZombies.x86_64 CREDITOS.txt)
+          ls -la "$GITHUB_WORKSPACE/out"
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
+          gh release upload "$TAG" "out/$APP-windows.zip" "out/$APP-linux.zip" --clobber

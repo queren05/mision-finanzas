@@ -18,6 +18,7 @@ var look_boost = 0.0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not DisplayServer.is_touchscreen_available(): device = "kb"
+	apply_window.call_deferred()
 	# menús con mando: cruceta y también el stick izquierdo (por si el mando no los trae)
 	for e in [["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0], ["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0]]:
 		var ev = InputEventJoypadMotion.new(); ev.axis = e[1]; ev.axis_value = e[2]; ev.device = -1
@@ -41,6 +42,7 @@ func _input(e: InputEvent) -> void:
 		elif e.button_index == MOUSE_BUTTON_RIGHT: _setb("ads", e.pressed)
 		elif e.button_index == MOUSE_BUTTON_WHEEL_UP and e.pressed: pressed["swap"] = true
 	elif e is InputEventKey and not e.echo:
+		if e.pressed and (e.keycode == KEY_F11 or (e.keycode == KEY_ENTER and e.alt_pressed)): toggle_fullscreen(); return
 		var map = { KEY_R: "reload", KEY_F: "use", KEY_E: "use", KEY_1: "swap", KEY_2: "swap", KEY_Q: "swap", KEY_V: "knife", KEY_G: "grenade", KEY_SPACE: "jump", KEY_SHIFT: "sprint", KEY_C: "crouch", KEY_CTRL: "crouch", KEY_ESCAPE: "pause", KEY_P: "pause", KEY_T: "view" }
 		if map.has(e.keycode): _setb(map[e.keycode], e.pressed); device = "kb"
 	elif e is InputEventJoypadButton:
@@ -50,6 +52,14 @@ func _input(e: InputEvent) -> void:
 	elif e is InputEventJoypadMotion:
 		if e.axis == JOY_AXIS_TRIGGER_RIGHT: _setb("fire", e.axis_value > 0.4); device = "pad"
 		elif e.axis == JOY_AXIS_TRIGGER_LEFT: _setb("ads", e.axis_value > 0.4); device = "pad"
+
+## PC: pantalla completa (F11 o Alt+Intro, y en Ajustes)
+func toggle_fullscreen() -> void:
+	GS.settings.fullscreen = not GS.settings.get("fullscreen", false); GS.save_game(); apply_window()
+
+func apply_window() -> void:
+	if OS.has_feature("mobile"): return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if GS.settings.get("fullscreen", false) else DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _setb(b: String, on: bool) -> void:
 	if on and not held.get(b, false): pressed[b] = true
