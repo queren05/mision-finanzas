@@ -11,17 +11,27 @@ func _ready() -> void:
 			img.set_pixel(x, y, Color(1, 1, 1, clamp(1.0 - d, 0.0, 1.0) ** 1.6))
 	soft_tex = ImageTexture.create_from_image(img)
 
-func _burst(parent: Node, at: Vector3, n: int, color: Color, vel: float, size: float, life: float, grav: float, dir := Vector3.UP, spread := 60.0, unshaded := false) -> void:
-	var p = CPUParticles3D.new()
-	p.one_shot = true; p.emitting = false; p.amount = n; p.lifetime = life; p.explosiveness = 0.95
+var quads = {}
+var fade: Gradient
+## rendimiento: una malla y un material por tipo de partícula (antes se creaban en cada disparo)
+func _quad(color: Color, size: float, unshaded: bool) -> QuadMesh:
+	var key = "%s|%.2f|%s" % [color.to_html(), size, unshaded]
+	if quads.has(key): return quads[key]
 	var q = QuadMesh.new(); q.size = Vector2(size, size)
 	var mat = StandardMaterial3D.new(); mat.albedo_texture = soft_tex; mat.albedo_color = color; mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; mat.vertex_color_use_as_albedo = true
 	if unshaded: mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	q.material = mat; p.mesh = q
+	q.material = mat; quads[key] = q
+	return q
+
+func _burst(parent: Node, at: Vector3, n: int, color: Color, vel: float, size: float, life: float, grav: float, dir := Vector3.UP, spread := 60.0, unshaded := false) -> void:
+	var p = CPUParticles3D.new()
+	p.one_shot = true; p.emitting = false; p.amount = n; p.lifetime = life; p.explosiveness = 0.95
+	p.mesh = _quad(color, size, unshaded)
 	p.direction = dir; p.spread = spread; p.initial_velocity_min = vel * 0.4; p.initial_velocity_max = vel
 	p.gravity = Vector3(0, -grav, 0); p.scale_amount_min = 0.6; p.scale_amount_max = 1.4
-	var g = Gradient.new(); g.set_color(0, Color(1, 1, 1, 1)); g.set_color(1, Color(1, 1, 1, 0)); p.color_ramp = g
+	if fade == null: fade = Gradient.new(); fade.set_color(0, Color(1, 1, 1, 1)); fade.set_color(1, Color(1, 1, 1, 0))
+	p.color_ramp = fade
 	parent.add_child(p); p.global_position = at; p.emitting = true
 	get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
 
@@ -40,3 +50,12 @@ func explosion(parent: Node, at: Vector3) -> void:
 	_burst(parent, at, 18, Color(0.18, 0.17, 0.16, 0.85), 2.5, 1.4, 1.6, -0.6, Vector3.UP, 90.0)
 	var l = OmniLight3D.new(); l.light_color = Color(1, 0.6, 0.3); l.omni_range = 9; l.light_energy = 6; parent.add_child(l); l.global_position = at + Vector3(0, 0.5, 0)
 	var tw = l.create_tween(); tw.tween_property(l, "light_energy", 0.0, 0.35); tw.tween_callback(l.queue_free)
+
+func gas(parent: Node, at: Vector3) -> void:
+	_burst(parent, at, 30, Color(0.45, 0.85, 0.25, 0.75), 3.0, 1.2, 1.8, -0.4, Vector3.UP, 180.0)
+
+func pop(parent: Node, at: Vector3, color: Color) -> void:
+	_burst(parent, at, 16, Color(color.r, color.g, color.b, 0.8), 4.0, 0.18, 0.5, 2.0, Vector3.UP, 180.0, true)
+
+func sparkle(parent: Node, at: Vector3, color: Color) -> void:
+	_burst(parent, at, 8, color, 1.2, 0.12, 0.8, -0.5, Vector3.UP, 180.0, true)

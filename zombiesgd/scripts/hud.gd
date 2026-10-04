@@ -48,6 +48,10 @@ var timers_key = ""
 var toast_box: VBoxContainer
 var pause_main: Control
 var pause_settings: Control
+var gums_box: HBoxContainer
+var egg_lbl: Label
+var team_lbl: Label
+var team_t = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -71,6 +75,7 @@ func _ready() -> void:
 	points_lbl = _label(font_bo, 40, Color.WHITE); pbar.add_child(points_lbl)
 	bottom_left.add_child(points_box)
 	perks_box = HBoxContainer.new(); perks_box.add_theme_constant_override("separation", 6); perks_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; bottom_left.add_child(perks_box)
+	gums_box = HBoxContainer.new(); gums_box.add_theme_constant_override("separation", 6); gums_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; bottom_left.add_child(gums_box)
 	round_ctl = _Round.new(); round_ctl.hud = self; round_ctl.custom_minimum_size = Vector2(260, 118); round_ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE; bottom_left.add_child(round_ctl)
 	# el arma
 	gun_box = VBoxContainer.new(); gun_box.alignment = BoxContainer.ALIGNMENT_END; gun_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; gun_box.add_theme_constant_override("separation", -4)
@@ -98,6 +103,11 @@ func _ready() -> void:
 	root.add_child(downed_box); downed_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER); downed_box.offset_left = -400; downed_box.offset_right = 400; downed_box.offset_top = -170; downed_box.offset_bottom = -70
 	var dl = _label(font_bo, 56, RED2); dl.text = "¡HAS CAÍDO!"; dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; downed_box.add_child(dl)
 	var ds = _label(font_ui, 24, TXT); ds.name = "sub"; ds.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; downed_box.add_child(ds)
+	# cuenta atrás del easter egg y compañeros de cooperativo
+	egg_lbl = _label(font_bo, 30, Color(1, 0.75, 0.3)); egg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; root.add_child(egg_lbl)
+	egg_lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); egg_lbl.offset_left = -300; egg_lbl.offset_right = 300; egg_lbl.offset_top = 96; egg_lbl.offset_bottom = 140
+	team_lbl = _label(font_ui, 20, Color(0.6, 0.85, 1.0)); root.add_child(team_lbl)
+	team_lbl.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT); team_lbl.offset_top = 90; team_lbl.offset_left = 40; team_lbl.offset_right = 400; team_lbl.offset_bottom = 220
 	# avisos de desafíos completados (arriba en el centro)
 	toast_box = VBoxContainer.new(); toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; toast_box.add_theme_constant_override("separation", 8); root.add_child(toast_box)
 	toast_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); toast_box.offset_left = -330; toast_box.offset_right = 330; toast_box.offset_top = 16; toast_box.offset_bottom = 200
@@ -116,6 +126,7 @@ func _layout() -> void:
 		gun_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT); gun_box.offset_top = -170; gun_box.offset_bottom = -22; gun_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	gun_box.offset_right = -mr; gun_box.offset_left = -mr - 460
 	touch_layer.margin_left = ml; touch_layer.margin_right = mr; touch_layer.queue_redraw()
+	team_lbl.offset_left = ml + 4
 	last_device = Controls.device
 
 func _label(f: Font, size: int, c: Color) -> Label:
@@ -139,12 +150,25 @@ func _process(d: float) -> void:
 		var p: Player = game.player
 		var low: float = 1.0 - p.hp / p.max_hp
 		(hurt_rect.material as ShaderMaterial).set_shader_parameter("a", clamp(low * 0.95 + hurt_t, 0.0, 1.0) if not p.downed else 0.95)
-		cross.modulate.a = 1.0 - p.ads
+		cross.ads = p.ads if not scope_rect.visible else 0.0; cross.hidden_scope = scope_rect.visible
 		cross.spread = p.spread_add
 		touch_layer.set_use_visible(p.interact_target != null)
 		downed_box.visible = p.downed
 		if p.downed: downed_box.get_node("sub").text = ("Te levantas en %d…" % ceil(3.5 - p.down_t)) if p.revives_left > 0 else ""
 	white_rect.color.a = max(0.0, white_rect.color.a - d * 0.8)
+	team_t -= d
+	if team_t <= 0.0 and game:
+		team_t = 0.4
+		var lines = []
+		for k in game.remotes:
+			var r = game.remotes[k]
+			lines.append("%s %s" % [r.pname, "· CAÍDO" if r.downed else ("· MUERTO" if not r.alive else "· %d%%" % int(r.hp * 100))])
+		team_lbl.text = "\n".join(lines)
+		# chicles activos con su tiempo
+		for c in gums_box.get_children():
+			if c.has_meta("g") and game.player.gums.has(c.get_meta("g")):
+				var left = game.player.gums[c.get_meta("g")]
+				(c.get_child(0) as Label).text = Data.GUMS[c.get_meta("g")].name.substr(0, 1) + ("" if left < 0 else " %d" % ceil(left))
 	round_flash = max(0.0, round_flash - d); round_ctl.queue_redraw()
 
 # ------------------------------------------------------------------ actualizar
@@ -208,6 +232,17 @@ func show_prompt(t: String) -> void:
 	txt = r.sub(txt, "[color=#ffcc33][b]$1[/b][/color]", true)
 	prompt_lbl.text = "[center]%s[/center]" % txt
 
+func update_gums() -> void:
+	for c in gums_box.get_children(): c.queue_free()
+	for id in game.player.gums:
+		var pc = PanelContainer.new(); pc.set_meta("g", id); pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var sb = StyleBoxFlat.new(); sb.bg_color = Data.GUMS[id].color.darkened(0.2); sb.set_corner_radius_all(16); sb.content_margin_left = 10; sb.content_margin_right = 10
+		sb.border_color = Color(1, 1, 1, 0.5); sb.set_border_width_all(2); pc.add_theme_stylebox_override("panel", sb)
+		var l = _label(font_bo, 18, Color.WHITE); l.text = Data.GUMS[id].name.substr(0, 1); pc.add_child(l); gums_box.add_child(pc)
+
+func egg_timer(t: float) -> void:
+	egg_lbl.text = ("AGUANTA: %d" % ceil(t)) if t > 0 else ("¡MATA AL GUARDIÁN!" if t > -0.5 and t != 0.0 else "")
+
 func toast(title: String, text: String) -> void:
 	var pc = PanelContainer.new(); pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0.04, 0.04, 0.06, 0.85); sb.border_color = GOLD; sb.border_width_left = 5; sb.set_corner_radius_all(6)
@@ -242,7 +277,7 @@ func _build_pause() -> void:
 	var sv = VBoxContainer.new(); sv.alignment = BoxContainer.ALIGNMENT_CENTER; sv.add_theme_constant_override("separation", 10); sv.visible = false; pause_panel.add_child(sv)
 	sv.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); sv.offset_top = 16; sv.offset_bottom = -16; pause_settings = sv
 	var st = _label(font_bo, 52, RED2); st.text = "AJUSTES"; st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; sv.add_child(st)
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var cc = CenterContainer.new(); cc.add_child(sc); sv.add_child(cc)
 	var first = SettingsList.build(sc, font_bo, font_ui, _on_setting)
 	first.name = "first"
@@ -334,14 +369,25 @@ class _Hit extends Control:
 		for v in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 			draw_line(v * 7, v * s, Color(0, 0, 0, 0.6), 5.0); draw_line(v * 7, v * s, c, 3.0)
 
+## mira: las cuatro rayas se abren al disparar; al apuntar se cierran en un punto rojo (punto de mira tipo holográfico)
 class _Cross extends Control:
 	var spread = 0.0
+	var ads = 0.0
+	var hidden_scope = false
 	func _process(_d: float) -> void: queue_redraw()
 	func _draw() -> void:
-		var g = 8.0 + spread * 6.0
-		for v in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
-			draw_line(v * g, v * (g + 11), Color(0, 0, 0, 0.55), 4.0); draw_line(v * g, v * (g + 11), Color(1, 1, 1, 0.9), 2.0)
-		draw_circle(Vector2.ZERO, 1.6, Color(1, 1, 1, 0.9))
+		if hidden_scope: return
+		var a = 1.0 - ads
+		if a > 0.02:
+			var g = (8.0 + spread * 6.0) * a + 2.0
+			for v in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+				draw_line(v * g, v * (g + 11 * a), Color(0, 0, 0, 0.55 * a), 4.0); draw_line(v * g, v * (g + 11 * a), Color(1, 1, 1, 0.9 * a), 2.0)
+		if ads > 0.3:
+			var k = clamp((ads - 0.3) / 0.5, 0.0, 1.0)
+			draw_arc(Vector2.ZERO, 9.0, 0, TAU, 32, Color(1, 0.15, 0.1, 0.55 * k), 1.5, true)
+			draw_circle(Vector2.ZERO, 2.6, Color(0, 0, 0, 0.5 * k)); draw_circle(Vector2.ZERO, 2.0, Color(1, 0.15, 0.1, k))
+		else:
+			draw_circle(Vector2.ZERO, 1.6, Color(1, 1, 1, 0.9))
 
 class _ScopeDraw extends Control:
 	func _draw() -> void:

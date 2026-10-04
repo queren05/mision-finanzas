@@ -20,3 +20,17 @@ Juggernog, Quick Revive y Speed Cola «World at War» · Double Tap (orenfaz) ·
 TEXTURAS: Poly Haven (CC0) · SONIDO: OpenGameArt (CC0 / CC-BY 3.0: «FPS Placeholder Sounds» jalastram, «6 Zombie Sounds», «Fleshy Fight Sounds», «Footsteps on different surfaces», «Abandoned Building Ambience»)
 FUENTES: Black Ops One y Oswald (SIL Open Font License)
 MOTOR: Godot Engine (MIT)
+
+— Añadido en la versión 2.1 —
+Mapa «La Lonja»: "Abandoned Warehouse" de Arsen Ismailov (fdgasd7) — https://sketchfab.com/3d-models/abandoned-warehouse-698a34300af34095ac6593f348585daa — CC-BY 4.0
+Perro infernal: "Hellhound" de Kolbaca — https://sketchfab.com/3d-models/hellhound-2b661389de024343b17cab26e75c108f — CC-BY 4.0
+Música (OpenGameArt.org):
+  "Ambient Horror Track 01" de cleytonkauffman — CC0
+  "Eternal Terror" (Dark Horror Ambient Piano Choir) de isao / DOVA-SYNDROME — OGA-BY 3.0
+  "Bleeding Out" de haeldb — CC0
+  "Dark Ambient Loop 13" de mundosound — CC-BY 3.0
+  "Bio-Hazard" de centurionofwar — CC0
+  "I Became a Zombie" de megupets — CC0
+  "Boss Battle #6 Metal" de nene — CC0
+Voces de los personajes: generadas con Piper TTS (voces es_ES davefx, es_ES sharvard y es_MX claude, proyecto rhasspy/piper-voices).
+Campanas de ronda: sintetizadas para el juego.

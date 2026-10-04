@@ -53,6 +53,13 @@ var body_len = 1.5
 var tp_dist = 2.4
 var body_third = null
 var crouch = false
+var step_smooth = 0.0              # al subir un escalón la cámara sube poco a poco
+var land_dip = 0.0
+var was_floor = true
+var gums = {}                       # chicles activos: id -> segundos que quedan (-1 = hasta que se gaste)
+var revive_t = 0.0                  # reanimando a un compañero
+var revive_peer = 0
+var bleed = 30.0                    # cooperativo: segundos para que te reanimen antes de morir
 var crouch_k = 0.0
 var slide_t = 0.0
 var slide_dir = Vector3.ZERO
@@ -155,15 +162,18 @@ func _move(delta: float) -> void:
 	if sprint and crouch and slide_t <= 0.0: crouch = false
 	if sprint and crouch and slide_t > 0.0: sprint = false
 	crouch_k = move_toward(crouch_k, 1.0 if (crouch or downed) else 0.0, delta * 6.0)
-	head.position.y = lerp(EYE, 1.05, crouch_k)
-	var base = 4.1 if not downed else 0.9
+	step_smooth = move_toward(step_smooth, 0.0, delta * 2.8)
+	land_dip = move_toward(land_dip, 0.0, delta * 1.2)
+	head.position.y = lerp(EYE, 1.05, crouch_k) + step_smooth - land_dip
+	var base = 4.5 if not downed else 0.9
 	var spd = base * (1.55 if sprint else 1.0) * lerp(1.0, 0.6, ads) * (0.82 if mv.y < -0.1 else 1.0)
 	if "stamin" in perks: spd *= 1.12
+	if gums.has("patas"): spd *= 1.22
 	if crouch and slide_t <= 0.0: spd *= 0.55
-	stamina = clamp(stamina + (-delta / (8.0 if "stamin" in perks else 4.0) if sprint else delta / 3.0), 0.0, 1.0)
+	stamina = clamp(stamina + (-delta / (14.0 if "stamin" in perks else 7.0) if sprint else delta / 2.5), 0.0, 1.0)
 	var fwd = -transform.basis.z; var right = transform.basis.x
 	var want = (fwd * mv.y + right * mv.x) * spd
-	var acc = 14.0 if is_on_floor() else 3.0
+	var acc = (16.0 if want.length() > 0.1 else 11.0) if is_on_floor() else 3.5
 	if slide_t > 0.0:
 		slide_t -= delta
 		var k = slide_t / SLIDE_TIME
@@ -178,14 +188,19 @@ func _move(delta: float) -> void:
 	else:
 		velocity.y -= 18.0 * delta
 	var pre = global_position
+	var vy = velocity.y
 	move_and_slide()
+	if is_on_floor() and not was_floor and vy < -4.0: land_dip = clamp(-vy * 0.012, 0.0, 0.12); Sfx.play("land", 0.5)
+	was_floor = is_on_floor()
 	# escalones: si se choca contra algo bajo estando en el suelo, intenta subirlo (hasta 45 cm)
 	if is_on_floor() and is_on_wall() and Vector2(want.x, want.z).length() > 0.5:
 		var step = Vector3(want.x, 0, want.z).normalized() * 0.25
 		var up = Vector3(0, 0.46, 0)
 		if not test_move(global_transform, up) and not test_move(global_transform.translated(up), step):
+			var y0 = global_position.y
 			global_position += up + step
 			apply_floor_snap()
+			step_smooth = clamp(step_smooth - (global_position.y - y0), -0.5, 0.0)
 	if sprint and Vector2(velocity.x, velocity.z).length() > 3: bob_t += delta * 13.0
 	elif Vector2(velocity.x, velocity.z).length() > 0.5: bob_t += delta * 9.0
 	if Vector2(velocity.x, velocity.z).length() > 0.6 and is_on_floor():
@@ -212,26 +227,79 @@ func _health(delta: float) -> void:
 	_keep_in_map(delta)
 	hurt_t += delta
 	if alive and not downed and hurt_t > 3.0: hp = min(max_hp, hp + delta * 70.0)
+	for g in gums.keys():
+		if gums[g] > 0.0:
+			gums[g] -= delta
+			if gums[g] <= 0.0: gums.erase(g); game.hud.update_gums()
 	if downed:
 		down_t += delta
-		if revives_left > 0 and down_t > 3.5: _revive()
+		if Net.is_coop():
+			# en cooperativo te tienen que levantar los compañeros (o te levantas tú con Quick Revive)
+			if revives_left > 0 and down_t > 3.5: _revive()
+			elif down_t > bleed and alive: _die_coop()
+		elif revives_left > 0 and down_t > 3.5: _revive()
 		elif revives_left <= 0 and down_t > 2.2 and alive: alive = false; died.emit()
 
 func take_damage(n: float) -> void:
 	if not alive or downed or game.god: return
+	if gums.has("caparazon"): n *= 0.5
 	hp -= n; hurt_t = 0.0
 	if GS.settings.get("vibration", true): Input.vibrate_handheld(90)
 	Sfx.play("pain%d" % randi_range(1, 2), 0.7)
 	game.hud.hurt_flash()
 	if hp <= 0:
-		hp = 0; downed = true; down_t = 0.0; downs += 1
-		revives_left = 1 if "revive" in perks else 0
+		hp = 0
+		if gums.has("vuelta"):   # chicle: te levantas al momento
+			gums.erase("vuelta"); hp = max_hp; game.hud.update_gums(); game.hud.banner("¡SEGUNDA OPORTUNIDAD!", "", 2.0); Sfx.play("powerup", 1.0); return
+		downed = true; down_t = 0.0; downs += 1; crouch = false
+		revives_left = 1 if ("revive" in perks and not Net.is_coop()) else 0
 		perks.clear(); max_hp = 100.0
 		game.hud.update_perks(perks)
+		Voice.say("down")
+		if Net.active: Net.life.rpc("down")
 
 func _revive() -> void:
 	downed = false; hp = max_hp; revives_left = 0
 	game.hud.banner("¡TE HAS LEVANTADO!", "Has perdido tus ventajas", 2.5)
+	if Net.active: Net.life.rpc("up")
+
+## un compañero te ha reanimado
+func revived_by_friend() -> void:
+	if not downed or not alive: return
+	downed = false; hp = max_hp * 0.6
+	game.hud.banner("¡TE HAN LEVANTADO!", "Has perdido tus ventajas", 2.5)
+	Net.life.rpc("up")
+
+## cooperativo: te has desangrado; vuelves en la siguiente ronda
+func _die_coop() -> void:
+	alive = false; downed = false
+	Net.life.rpc("dead")
+	game.hud.banner("HAS MUERTO", "Volverás en la siguiente ronda si tus compañeros aguantan", 4.0)
+
+## vuelve a la partida al empezar una ronda (cooperativo)
+func respawn(at: Vector3) -> void:
+	alive = true; downed = false; hp = 100.0; max_hp = 100.0; perks.clear(); gums.clear()
+	weapons = [_new_w("m1911", false)]; cur = 0; _equip(); grenades = 2
+	global_position = at; velocity = Vector3.ZERO
+	game.hud.update_perks(perks); game.hud.update_gums()
+	if Net.active: Net.life.rpc("up")
+
+## bits para la red: caído, muerto, agachado, apuntando, tercera persona
+func state_flags() -> int:
+	return (1 if downed else 0) | (2 if not alive else 0) | (4 if crouch else 0) | (8 if ads > 0.5 else 0)
+
+# ------------------------------------------------------------------ chicles
+func give_gum(id: String) -> void:
+	var g: Dictionary = Data.GUMS[id]
+	game.stat("gums")
+	game.hud.banner(g.name.to_upper(), g.desc, 2.5); Sfx.play("powerup", 0.9, 1.4)
+	match id:
+		"recarga": refill_ammo(); return
+		"marea": game.request_nuke(); return
+	gums[id] = float(g.dur)
+	game.hud.update_gums()
+
+func gum(id: String) -> bool: return gums.has(id)
 
 # ------------------------------------------------------------------ armas
 func _weapon(delta: float) -> void:
@@ -242,7 +310,7 @@ func _weapon(delta: float) -> void:
 	spread_add = move_toward(spread_add, 0.0, delta * 6.0)
 	# recarga
 	if reload_t > 0.0:
-		reload_t -= delta * (2.0 if "speed" in perks else 1.0)
+		reload_t -= delta * (2.0 if "speed" in perks else 1.0) * (1.5 if gums.has("patas") else 1.0)
 		if reload_t <= 0.0:
 			var need: int = int(stat("mag")) - int(w.mag); var take: int = min(need, int(w.res))
 			w.mag += take; w.res -= take
@@ -263,13 +331,15 @@ func _weapon(delta: float) -> void:
 
 func _start_reload() -> void:
 	reload_t = float(stat("reload")); Sfx.play(str(stat("reload_snd")), 0.7)
+	Voice.say("noammo" if cur_w().res <= int(stat("mag")) else "reload")
 
 func _shoot() -> void:
 	var w = cur_w()
-	w.mag -= 1
+	if not gums.has("eterno"): w.mag -= 1
 	var rpm = float(stat("rpm")) * (1.33 if "dtap" in perks else 1.0)
 	fire_cd = 60.0 / rpm
 	Sfx.play(str(stat("sound")), 0.9, 1.0 if not w.pap else 0.85)
+	if Net.active: Net.p_shot.rpc(str(stat("sound")), 1.0 if not w.pap else 0.85)
 	var rc = float(stat("recoil"))
 	recoil += Vector2(randf_range(-0.3, 0.3) * rc * 0.01, rc * 0.018 * (0.6 if ads > 0.5 else 1.0))
 	kick = 1.0; spread_add = min(spread_add + 0.6, 3.0)
@@ -280,6 +350,10 @@ func _shoot() -> void:
 	var pellets = int(stat("pellets"))
 	var dmg = float(stat("dmg")) * (1.0 if not ("dtap" in perks) else 1.15)
 	var hit_any = false; var kill_any = false; var head_any = false
+	var proj = stat("projectile")
+	if proj != null:   # armas maravilla: disparan un proyectil
+		game.fire_projectile(self, cam.global_position - cam.global_transform.basis.z * 0.4 + cam.global_transform.basis.x * 0.12 - cam.global_transform.basis.y * 0.08, -cam.global_transform.basis.z, proj, dmg, w.id)
+		pellets = 0
 	for i in pellets:
 		var dir = -cam.global_transform.basis.z
 		var sp = deg_to_rad(base_spread) * sqrt(randf())
@@ -299,7 +373,9 @@ func _shoot() -> void:
 func _knife() -> void:
 	knife_t = 0.6; Sfx.play("knife", 0.8)
 	var z = game.nearest_zombie(global_position + Vector3(0, 1, 0) - transform.basis.z * 0.8, 1.4)
-	if z: z.take_hit(150.0 if not ("jugg" in perks) else 150.0, z.global_position + Vector3(0, 1.2, 0), false, self, "knife"); game.hud.hitmarker(z.dead, false)
+	if z:
+		var k = game.damage_zombie(z, 1e9 if gums.has("pinza") else 150.0, z.global_position + Vector3(0, 1.2, 0), false, "knife", "")
+		game.hud.hitmarker(k, false)
 
 func _throw_grenade() -> void:
 	grenades -= 1; nade_t = 1.0; game.hud.update_ammo()
@@ -334,6 +410,7 @@ func give_perk(id: String) -> void:
 	if game and game.hud: game.hud.update_perks(perks)
 
 func add_points(n: int) -> void:
+	if n > 0 and gums.has("doble"): n *= 2
 	points += n; points_changed.emit(points, n)
 
 func _equip() -> void:
@@ -350,6 +427,21 @@ func _equip() -> void:
 
 # ------------------------------------------------------------------ interacción
 func _interact() -> void:
+	# reanimar a un compañero caído: mantener USAR a su lado
+	var friend = game.downed_friend_near(global_position)
+	if friend:
+		interact_target = friend
+		var need = 1.6 if "revive" in perks else 3.2
+		if Controls.is_held("use"):
+			revive_t += get_physics_process_delta_time()
+			game.hud.show_prompt("Reanimando a %s… %d%%" % [friend.pname, int(revive_t / need * 100)])
+			if revive_t >= need:
+				revive_t = 0.0; Net.revive_peer.rpc_id(friend.peer); add_points(100); game.stat("revives"); Voice.say("revive")
+		else:
+			revive_t = 0.0
+			game.hud.show_prompt("Mantén pulsado USAR para reanimar a %s" % friend.pname)
+		return
+	revive_t = 0.0
 	interact_target = game.find_interactable(self)
 	game.hud.show_prompt(interact_target.prompt(self) if interact_target else "")
 	if interact_target and Controls.was_pressed("use"): interact_target.use(self)
@@ -408,7 +500,7 @@ func _body_anim(delta: float) -> void:
 	body.rotation.x = lerp(body.rotation.x, clamp(pitch * 0.35, -0.3, 0.3) + (0.6 if downed else 0.0), min(1.0, delta * 8.0))
 	if body_gun:
 		body_gun.rotation.x = pitch * 0.65 - body.rotation.x
-		body_gun.visible = not downed
+		body_gun.visible = third and not downed   # en primera persona solo se ve el arma de la mano
 
 func _flash_tex() -> Texture2D:
 	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)

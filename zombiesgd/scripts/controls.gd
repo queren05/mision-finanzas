@@ -13,9 +13,18 @@ var touch_held = {}
 var mouse_captured = false
 const BUTTONS := ["fire", "ads", "reload", "use", "swap", "knife", "grenade", "jump", "sprint", "crouch", "pause"]
 
+var look_boost = 0.0
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not DisplayServer.is_touchscreen_available(): device = "kb"
+	# menús con mando: cruceta y también el stick izquierdo (por si el mando no los trae)
+	for e in [["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0], ["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0]]:
+		var ev = InputEventJoypadMotion.new(); ev.axis = e[1]; ev.axis_value = e[2]; ev.device = -1
+		if not InputMap.action_has_event(e[0], ev): InputMap.action_add_event(e[0], ev)
+	for e in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B], ["ui_up", JOY_BUTTON_DPAD_UP], ["ui_down", JOY_BUTTON_DPAD_DOWN], ["ui_left", JOY_BUTTON_DPAD_LEFT], ["ui_right", JOY_BUTTON_DPAD_RIGHT]]:
+		var ev = InputEventJoypadButton.new(); ev.button_index = e[1]; ev.device = -1
+		if not InputMap.action_has_event(e[0], ev): InputMap.action_add_event(e[0], ev)
 
 func press_touch(b: String, on: bool) -> void:
 	if on and not touch_held.get(b, false): pressed[b] = true
@@ -52,17 +61,32 @@ func was_pressed(b: String) -> bool: return pressed.get(b, false)
 ## lo llama el jugador al principio de cada fotograma físico
 func poll(delta: float) -> void:
 	var kb = Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_W)) - float(Input.is_key_pressed(KEY_S)))
-	var pad = Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), -Input.get_joy_axis(0, JOY_AXIS_LEFT_Y))
-	if pad.length() < 0.15: pad = Vector2.ZERO
-	var rs = Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
-	if rs.length() < 0.12: rs = Vector2.ZERO
-	else: device = "pad"
-	if pad != Vector2.ZERO: device = "pad"
+	# todos los mandos conectados (las consolas portátiles a veces dan a sus controles otro número que no es el 0)
+	var pad = Vector2.ZERO; var rs = Vector2.ZERO
+	for j in Input.get_connected_joypads():
+		var a = Vector2(Input.get_joy_axis(j, JOY_AXIS_LEFT_X), -Input.get_joy_axis(j, JOY_AXIS_LEFT_Y))
+		var b = Vector2(Input.get_joy_axis(j, JOY_AXIS_RIGHT_X), Input.get_joy_axis(j, JOY_AXIS_RIGHT_Y))
+		if a.length() > pad.length(): pad = a
+		if b.length() > rs.length(): rs = b
+	pad = _deadzone(pad, 0.16)
+	rs = _deadzone(rs, 0.12)
+	if pad != Vector2.ZERO or rs != Vector2.ZERO: device = "pad"
 	move = touch_move + kb + pad
 	if move.length() > 1.0: move = move.normalized()
-	var ps = 3.2 * float(GS.settings.sens) * delta
-	look += touch_look + Vector2(-rs.x * abs(rs.x) * ps, -rs.y * abs(rs.y) * ps * (-1.0 if GS.settings.invert else 1.0))
+	# stick derecho: curva suave para apuntar fino y aceleración al llevarlo a tope (como en los Call of Duty)
+	var mag = rs.length()
+	look_boost = move_toward(look_boost, 1.0 if mag > 0.95 else 0.0, delta * (2.5 if mag > 0.95 else 6.0))
+	var curve = pow(mag, 1.7) * (1.0 + look_boost * 0.7)
+	var ps = 3.4 * float(GS.settings.sens) * delta
+	var lv = rs.normalized() * curve if mag > 0.0 else Vector2.ZERO
+	look += touch_look + Vector2(-lv.x * ps, -lv.y * ps * 0.8 * (-1.0 if GS.settings.invert else 1.0))
 	touch_look = Vector2.ZERO
+
+## zona muerta radial: por debajo no se mueve, por encima va de 0 a 1 sin saltos
+func _deadzone(v: Vector2, dz: float) -> Vector2:
+	var l = v.length()
+	if l < dz: return Vector2.ZERO
+	return v / l * min(1.0, (l - dz) / (1.0 - dz))
 
 ## lo llama el jugador al final del fotograma
 func consume() -> void:

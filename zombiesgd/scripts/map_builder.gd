@@ -51,6 +51,8 @@ static func build_scene(cfg: Dictionary, parent: Node3D) -> Node3D:
 		body.collision_layer = LAYER_SOFT if is_soft else LAYER_WORLD
 		body.collision_mask = 0
 		mi.add_child(body)
+	# geometría añadida a mano (tabiques, contenedores, cajas, mesas...) con su colisión
+	if cfg.has("build"): parent.add_child(build_extra(cfg.build))
 	# paredes invisibles (bordes del mapa, huecos que no se deben cruzar)
 	for b in cfg.get("walls", []):
 		parent.add_child(make_box(Vector3(b[0], b[1], b[2]), Vector3(b[3], b[4], b[5]), float(b[6]) if b.size() > 6 else 0.0, LAYER_SOFT))
@@ -116,3 +118,54 @@ static func nav_settings() -> NavigationMesh:
 	nm.edge_max_error = 1.0
 	nm.region_min_size = 1.0
 	return nm
+
+# ------------------------------------------------------------------ geometría añadida (mapas que necesitan tabiques y decorado)
+## (sin caché estática: guardar recursos en variables estáticas bloquea el cierre del juego)
+static func extra_mat(name: String, cache: Dictionary) -> StandardMaterial3D:
+	if cache.has(name): return cache[name]
+	var m = StandardMaterial3D.new(); m.uv1_triplanar = true; m.uv1_scale = Vector3(0.5, 0.5, 0.5); m.roughness = 0.85
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var T = "res://assets/maps/lonja/textures/"
+	match name:
+		"corrugated": m.albedo_texture = load(T + "rusty_metal_plate_corrugated_baseColor.jpeg"); m.uv1_scale = Vector3(0.35, 0.35, 0.35); m.metallic = 0.3
+		"wall": m.albedo_texture = load(T + "factory_wall_baseColor.jpeg"); m.normal_enabled = true; m.normal_texture = load(T + "factory_wall_normal.png"); m.uv1_scale = Vector3(0.25, 0.25, 0.25)
+		"concrete": m.albedo_texture = load(T + "WarehouseMainConcrete_baseColor.jpeg") if ResourceLoader.exists(T + "WarehouseMainConcrete_baseColor.jpeg") else null; m.albedo_color = Color(0.55, 0.54, 0.52); m.uv1_scale = Vector3(0.15, 0.15, 0.15)
+		"asphalt": m.albedo_color = Color(0.2, 0.2, 0.21); m.albedo_texture = load(T + "WarehouseMainConcrete_baseColor.jpeg") if ResourceLoader.exists(T + "WarehouseMainConcrete_baseColor.jpeg") else null; m.uv1_scale = Vector3(0.1, 0.1, 0.1)
+		"rust": m.albedo_texture = load(T + "MetalRusted_baseColor.jpeg"); m.normal_enabled = true; m.normal_texture = load(T + "MetalRusted_normal.jpeg"); m.metallic = 0.4
+		"wood": m.albedo_texture = load("res://assets/textures/planks_d.jpg"); m.normal_enabled = true; m.normal_texture = load("res://assets/textures/planks_n.jpg"); m.uv1_scale = Vector3(0.7, 0.7, 0.7)
+		"crate_blue": m.albedo_color = Color(0.12, 0.35, 0.65); m.roughness = 0.6
+		"crate_red": m.albedo_color = Color(0.7, 0.15, 0.1); m.roughness = 0.6
+		"white": m.albedo_color = Color(0.82, 0.84, 0.86); m.albedo_texture = load(T + "MetalRusted_baseColor.jpeg"); m.uv1_scale = Vector3(0.2, 0.2, 0.2); m.albedo_color = Color(1.6, 1.65, 1.7)
+		"steel": m.albedo_color = Color(0.6, 0.62, 0.65); m.metallic = 0.7; m.roughness = 0.35
+		"cont_red": m.albedo_texture = load(T + "rusty_metal_plate_corrugated_baseColor.jpeg"); m.albedo_color = Color(1.3, 0.45, 0.35); m.uv1_scale = Vector3(0.3, 0.3, 0.3)
+		"cont_blue": m.albedo_texture = load(T + "rusty_metal_plate_corrugated_baseColor.jpeg"); m.albedo_color = Color(0.45, 0.65, 1.2); m.uv1_scale = Vector3(0.3, 0.3, 0.3)
+		"cont_green": m.albedo_texture = load(T + "rusty_metal_plate_corrugated_baseColor.jpeg"); m.albedo_color = Color(0.55, 1.0, 0.55); m.uv1_scale = Vector3(0.3, 0.3, 0.3)
+		"water": m.albedo_color = Color(0.05, 0.12, 0.16); m.metallic = 0.6; m.roughness = 0.15
+		"fish": m.albedo_color = Color(0.75, 0.78, 0.8); m.metallic = 0.5; m.roughness = 0.3
+		"ice": m.albedo_color = Color(0.85, 0.92, 1.0); m.roughness = 0.2
+	cache[name] = m
+	return m
+
+## piezas: {t:"box"|"cyl", p:[x,y,z] (centro de la base), s:[ancho,alto,fondo] (cyl: [radio,alto]), r:giro en grados, m:material, c:colisión (por defecto sí)}
+static func build_extra(list: Array) -> Node3D:
+	var root = Node3D.new(); root.name = "Extra"
+	var cache = {}
+	for e in list:
+		var mi = MeshInstance3D.new()
+		var s: Array = e.s
+		var shape: Shape3D
+		if e.t == "cyl":
+			var cm = CylinderMesh.new(); cm.top_radius = float(s[0]); cm.bottom_radius = float(s[0]); cm.height = float(s[1]); cm.radial_segments = 20; mi.mesh = cm
+			var cs = CylinderShape3D.new(); cs.radius = float(s[0]); cs.height = float(s[1]); shape = cs
+		else:
+			var bm = BoxMesh.new(); bm.size = Vector3(float(s[0]), float(s[1]), float(s[2])); mi.mesh = bm
+			var bs = BoxShape3D.new(); bs.size = bm.size; shape = bs
+		mi.material_override = extra_mat(String(e.get("m", "concrete")), cache)
+		var h = float(s[1])
+		var node = Node3D.new(); node.position = v3(e.p) + Vector3(0, h / 2, 0); node.rotation_degrees.y = float(e.get("r", 0)); root.add_child(node)
+		node.add_child(mi)
+		if max(float(s[0]), h) < 0.9: mi.visibility_range_end = 50.0
+		if e.get("c", true):
+			var body = StaticBody3D.new(); body.collision_layer = LAYER_WORLD; body.collision_mask = 0
+			var col = CollisionShape3D.new(); col.shape = shape; body.add_child(col); node.add_child(body)
+	return root

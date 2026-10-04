@@ -49,9 +49,18 @@ const WEAPONS := {
 	"l96": { "name": "L96A1", "class": "francotirador", "model": "gun_l96", "len": 1.15, "dmg": 900, "head": 3.0, "rpm": 55, "mag": 5, "res": 40, "reload": 3.4,
 		"spread": 8.0, "ads_spread": 0.0, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_rifle2", "reload_snd": "reload_rifle", "recoil": 5.0, "range": 200, "scope": true,
 		"pap": { "name": "Destructor", "dmg": 3000, "mag": 8, "res": 60 } },
+	# armas maravilla (solo en la caja, muy raras)
+	"raygun": { "name": "Rayo Gamba", "class": "maravilla", "model": "proc_raygun", "len": 0.42, "dmg": 1100, "head": 1.0, "rpm": 180, "mag": 20, "res": 160, "reload": 2.6,
+		"spread": 0.8, "ads_spread": 0.3, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_pistol", "reload_snd": "reload_pistol", "recoil": 1.0, "range": 80,
+		"projectile": { "speed": 55.0, "splash": 1.8, "splash_dmg": 700, "color": Color(0.3, 1.0, 0.35) },
+		"pap": { "name": "Rayo Gamba Mk II", "dmg": 2600, "mag": 40, "res": 240, "projectile": { "speed": 70.0, "splash": 2.4, "splash_dmg": 1800, "color": Color(1.0, 0.25, 0.25) } } },
+	"bubble": { "name": "Burbujeador", "class": "maravilla", "model": "proc_bubble", "len": 0.62, "dmg": 0, "head": 1.0, "rpm": 70, "mag": 4, "res": 24, "reload": 3.2,
+		"spread": 0.5, "ads_spread": 0.2, "auto": false, "pellets": 1, "cost": 0, "sound": "shotgun_pump", "reload_snd": "reload_lmg", "recoil": 2.0, "range": 60,
+		"projectile": { "speed": 16.0, "bubble": 3.0, "color": Color(0.5, 0.85, 1.0) },
+		"pap": { "name": "Burbujeador XL", "mag": 8, "res": 48, "projectile": { "speed": 20.0, "bubble": 4.5, "color": Color(1.0, 0.5, 0.9) } } },
 }
 # la caja: armas que pueden salir (las de pared también), más peso = más probable
-const BOX_POOL := { "rpk": 3, "galil": 4, "commando": 4, "spas": 3, "l96": 2, "python": 2, "ak74u": 2, "m16": 2, "mp5k": 2, "stakeout": 2, "mp40": 1, "olympia": 1, "m14": 1 }
+const BOX_POOL := { "raygun": 1, "bubble": 1, "rpk": 3, "galil": 4, "commando": 4, "spas": 3, "l96": 2, "python": 2, "ak74u": 2, "m16": 2, "mp5k": 2, "stakeout": 2, "mp40": 1, "olympia": 1, "m14": 1 }
 
 # ---------------------------------------------------------------- ventajas (bebidas)
 const PERKS := {
@@ -61,6 +70,40 @@ const PERKS := {
 	"revive": { "name": "Quick Revive", "cost": 1500, "color": Color(0.2, 0.55, 1.0), "desc": "Te levantas una vez al caer" },
 	"stamin": { "name": "Stamin-Up", "cost": 2000, "color": Color(1.0, 0.55, 0.15), "desc": "Corres más y más tiempo" },
 	"mule": { "name": "Mule Kick", "cost": 4000, "color": Color(0.25, 0.55, 0.3), "desc": "Llevas un tercer arma" },
+}
+
+# ---------------------------------------------------------------- chicles (como los GobbleGum de Black Ops 3)
+# dur: segundos que dura (0 = al momento, -1 = se gasta al ocurrir algo)
+const GUMS := {
+	"eterno": { "name": "Cargador Eterno", "desc": "No gastas balas durante 60 s", "dur": 60.0, "color": Color(0.95, 0.75, 0.15), "level": 1 },
+	"doble": { "name": "Doble Ración", "desc": "Tus puntos valen el doble 60 s", "dur": 60.0, "color": Color(0.3, 0.85, 0.35), "level": 1 },
+	"recarga": { "name": "Recarga Total", "desc": "Munición al máximo ahora", "dur": 0.0, "color": Color(0.85, 0.85, 0.85), "level": 2 },
+	"vuelta": { "name": "Segunda Oportunidad", "desc": "Si caes, te levantas al instante", "dur": -1.0, "color": Color(0.2, 0.55, 1.0), "level": 3 },
+	"patas": { "name": "Patas de Langosta", "desc": "Corres y recargas más rápido 90 s", "dur": 90.0, "color": Color(1.0, 0.45, 0.15), "level": 5 },
+	"caja": { "name": "Caja Generosa", "desc": "La próxima caja da un arma maravilla", "dur": -1.0, "color": Color(0.6, 0.3, 1.0), "level": 8 },
+	"marea": { "name": "Marea Roja", "desc": "Mata a todos los zombis cercanos", "dur": 0.0, "color": Color(0.9, 0.1, 0.1), "level": 12 },
+	"pinza": { "name": "Pinza Mortal", "desc": "Matas de un golpe 45 s", "dur": 45.0, "color": Color(0.95, 0.95, 0.95), "level": 16 },
+	"caparazon": { "name": "Caparazón", "desc": "Recibes la mitad de daño 60 s", "dur": 60.0, "color": Color(0.55, 0.35, 0.2), "level": 20 },
+}
+
+# ---------------------------------------------------------------- easter egg principal (historia de cada mapa)
+const EGG := {
+	"prison": { "part": "pieza de la radio", "parts": "piezas de la radio", "item": "la radio del alcaide", "altar": "la máquina Pack-a-Punch",
+		"intro": "El alcaide escondió una radio por la cárcel. Si la montas, quizá alguien venga a por vosotros.",
+		"defend": "¡La señal atrae a algo enorme! Aguanta junto a la radio.",
+		"end": "El Bruto ha caído. La radio emite una voz: «Aquí la Patrulla Gamba… vamos a por vosotros». FIN… por ahora." },
+	"mansion": { "part": "página del diario", "parts": "páginas del diario", "item": "el diario del conde", "altar": "la máquina Pack-a-Punch",
+		"intro": "El conde de la mansión dejó su diario roto en pedazos. Reúnelo y descubre qué invocó.",
+		"defend": "Al leer el diario en voz alta, la mansión tiembla. ¡Algo despierta!",
+		"end": "El guardián del conde ha caído. El diario se quema solo y la mansión queda en silencio. FIN… por ahora." },
+	"isla": { "part": "trozo del mapa del tesoro", "parts": "trozos del mapa", "item": "el mapa del tesoro", "altar": "la máquina Pack-a-Punch",
+		"intro": "Un pirata enterró algo en la isla. Junta los trozos de su mapa.",
+		"defend": "¡Cavar ha despertado al guardián del tesoro! Defiéndete.",
+		"end": "El guardián cae y el cofre se abre: dentro hay una gamba de oro. FIN… por ahora." },
+	"lonja": { "part": "lata dorada", "parts": "latas doradas", "item": "la máquina conservera", "altar": "la máquina Pack-a-Punch",
+		"intro": "En la lonja se enlataba algo más que marisco. Encuentra las latas doradas.",
+		"defend": "La conservera arranca sola… y de dentro sale algo. ¡Aguanta!",
+		"end": "El monstruo de la lonja ha caído. Las latas se abren: estaban llenas de antídoto. FIN… por ahora." },
 }
 
 # ---------------------------------------------------------------- potenciadores
@@ -74,24 +117,31 @@ static func xp_for_level(lv: int) -> int: return int(XP_PER_LEVEL_BASE * pow(lv,
 const UNLOCKS := [
 	{ "level": 1, "kind": "start_weapon", "id": "m1911", "text": "M1911 (arma inicial)" },
 	{ "level": 2, "kind": "title", "id": "superviviente", "text": "Título: Superviviente" },
+	{ "level": 2, "kind": "gum", "id": "recarga", "text": "Chicle: Recarga Total" },
 	{ "level": 3, "kind": "start_round", "id": "5", "text": "Empezar en la ronda 5" },
+	{ "level": 3, "kind": "gum", "id": "vuelta", "text": "Chicle: Segunda Oportunidad" },
 	{ "level": 4, "kind": "character", "id": "chaqueta", "text": "Personaje: Gamba con Chaqueta" },
 	{ "level": 5, "kind": "start_weapon", "id": "python", "text": "Empezar con la Python" },
+	{ "level": 5, "kind": "gum", "id": "patas", "text": "Chicle: Patas de Langosta" },
 	{ "level": 6, "kind": "card", "id": "oxido", "text": "Tarjeta: Óxido" },
 	{ "level": 7, "kind": "start_round", "id": "10", "text": "Empezar en la ronda 10" },
 	{ "level": 8, "kind": "character", "id": "langostino", "text": "Personaje: Langostino" },
+	{ "level": 8, "kind": "gum", "id": "caja", "text": "Chicle: Caja Generosa" },
 	{ "level": 9, "kind": "start_weapon", "id": "mp5k", "text": "Empezar con el MP5K" },
 	{ "level": 10, "kind": "points", "id": "250", "text": "+250 puntos al empezar" },
 	{ "level": 11, "kind": "start_perk", "id": "revive", "text": "Empezar con Quick Revive" },
 	{ "level": 12, "kind": "character", "id": "langosta", "text": "Personaje: Langosta" },
+	{ "level": 12, "kind": "gum", "id": "marea", "text": "Chicle: Marea Roja" },
 	{ "level": 13, "kind": "start_round", "id": "15", "text": "Empezar en la ronda 15" },
 	{ "level": 14, "kind": "title", "id": "cazazombis", "text": "Título: Cazazombis" },
 	{ "level": 15, "kind": "start_weapon", "id": "m16", "text": "Empezar con el M16" },
 	{ "level": 16, "kind": "character", "id": "cangrejo", "text": "Personaje: Bogavante" },
+	{ "level": 16, "kind": "gum", "id": "pinza", "text": "Chicle: Pinza Mortal" },
 	{ "level": 17, "kind": "card", "id": "abismo", "text": "Tarjeta: Abismo" },
 	{ "level": 18, "kind": "start_round", "id": "20", "text": "Empezar en la ronda 20" },
 	{ "level": 19, "kind": "points", "id": "500", "text": "+500 puntos al empezar" },
 	{ "level": 20, "kind": "start_perk", "id": "jugg", "text": "Empezar con Juggernog" },
+	{ "level": 20, "kind": "gum", "id": "caparazon", "text": "Chicle: Caparazón" },
 	{ "level": 22, "kind": "title", "id": "pescador", "text": "Título: Pescador de Muertos" },
 	{ "level": 23, "kind": "card", "id": "sangre", "text": "Tarjeta: Sangre" },
 	{ "level": 25, "kind": "start_round", "id": "25", "text": "Empezar en la ronda 25" },
@@ -113,7 +163,7 @@ const CARDS := { "": [Color(0.12, 0.13, 0.16), Color(0.05, 0.05, 0.07)], "oxido"
 var CHALLENGES = []
 func _init() -> void:
 	var add = func(id, text, stat, goals, xps):
-		for i in goals.size(): CHALLENGES.append({ "id": "%s_%d" % [id, i], "text": text % goals[i], "stat": stat, "goal": goals[i], "xp": xps[i], "tier": i })
+		for i in goals.size(): CHALLENGES.append({ "id": "%s_%d" % [id, i], "text": (text % goals[i]) if text.contains("%d") else text, "stat": stat, "goal": goals[i], "xp": xps[i], "tier": i })
 	add.call("kills", "Mata %d zombis", "kills", [100, 500, 2000, 5000], [500, 1500, 4000, 8000])
 	add.call("heads", "Mata %d zombis de un tiro a la cabeza", "heads", [50, 250, 1000], [600, 2000, 5000])
 	add.call("knife", "Mata %d zombis con el cuchillo", "knife", [25, 100, 300], [600, 1800, 4000])
@@ -126,6 +176,13 @@ func _init() -> void:
 	add.call("doors", "Abre %d puertas", "doors", [20, 100], [500, 1500])
 	add.call("powerups", "Recoge %d potenciadores", "powerups", [10, 50], [500, 1500])
 	add.call("games", "Juega %d partidas", "games", [5, 25, 100], [400, 1500, 5000])
+	add.call("dogs", "Mata %d perros infernales", "dogs", [20, 100, 300], [600, 1800, 4000])
+	add.call("brutes", "Mata %d Brutos", "brutes", [1, 10, 30], [800, 2500, 6000])
+	add.call("gums", "Mastica %d chicles", "gums", [5, 30, 100], [400, 1500, 4000])
+	add.call("revives", "Reanima %d veces a un compañero", "revives", [1, 10, 50], [500, 1500, 4000])
+	for m in [["prison", "la Penitenciaría"], ["mansion", "la Mansión"], ["isla", "Isla Gamba"], ["lonja", "la Lonja"]]:
+		add.call("egg_" + m[0], "Completa el easter egg de " + m[1], "egg_" + m[0], [1], [5000])
+		add.call("song_" + m[0], "Encuentra la canción oculta de " + m[1], "song_" + m[0], [1], [1000])
 	for id in WEAPONS:
 		add.call("w_" + id, "Mata %d zombis con " + WEAPONS[id].name, "w:" + id, [75, 300], [700, 2000])
 
@@ -151,4 +208,4 @@ const CHARACTERS := {
 }
 
 # ---------------------------------------------------------------- mapas
-const MAPS := ["prison", "mansion", "isla"]
+const MAPS := ["prison", "mansion", "isla", "lonja"]

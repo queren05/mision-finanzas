@@ -1,9 +1,12 @@
 extends Node3D
 ## Potenciador que cae de un zombi: gira, parpadea antes de desaparecer y se coge al pasar por encima.
+## En cooperativo lo confirma el servidor (para que no lo cojan dos a la vez).
 
 var game: Node
+var id = 0
 var kind = "max_ammo"
 var t = 0.0
+var asked = false
 var icon: Label3D
 var light: OmniLight3D
 const ICONS := { "max_ammo": "MUNICIÓN", "insta_kill": "☠", "double_points": "x2", "nuke": "☢", "carpenter": "🔨", "fire_sale": "$" }
@@ -17,7 +20,9 @@ func _process(d: float) -> void:
 	t += d
 	icon.position.y = sin(t * 3.0) * 0.08
 	icon.visible = t < 22.0 or int(t * 8.0) % 2 == 0
-	if t > 28.0: queue_free(); return
+	if t > 28.0:
+		game.pus.erase(id); queue_free(); return
 	var p: Player = game.player
-	if p and p.global_position.distance_to(global_position - Vector3(0, 0.9, 0)) < 1.3:
-		game.apply_powerup(kind); queue_free()
+	if not asked and p and p.alive and p.global_position.distance_to(global_position - Vector3(0, 0.9, 0)) < 1.3:
+		asked = true; game.take_powerup(id)
+		get_tree().create_timer(1.0).timeout.connect(func(): asked = false)

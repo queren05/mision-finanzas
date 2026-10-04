@@ -1,11 +1,14 @@
 extends Node3D
-## Una partida: mapa, zonas y navegación, jugador, rondas, zombis, potenciadores, efectos y fin de partida.
+## Una partida: mapa, zonas y navegación, jugadores (también en cooperativo por wifi), rondas (con rondas de perros,
+## Brutos e Hinchados), zombis, armas maravilla, chicles, potenciadores, easter egg, canción oculta y fin de partida.
+## En cooperativo el servidor manda en el mundo y avisa a los demás con eventos (ver net.gd).
 
 signal finished(stats: Dictionary)
 
 var cfg: Dictionary
 var map_id = ""
 var player: Player
+var remotes = {}               # peer -> RemotePlayer
 var hud: Node
 var paused = false
 var over = false
@@ -21,16 +24,28 @@ var nav_regions = {}           # id -> NavigationRegion3D
 var interactables: Array = []
 var doors: Array = []
 var zombies: Array = []
+var zmap = {}                  # zid -> Zombie
+var next_zid = 1
 var round_n = 0
 var to_spawn = 0
 var spawn_t = 0.0
 var break_t = 0.0
+var started = false
 var drops = 0
 var time = 0.0
 var max_alive = 24
 var hide_nodes = {}            # puerta -> nodos del mapa que se esconden al abrirla
 var env: Environment
 var sun: DirectionalLight3D
+# rondas especiales
+var dog_round = false
+var next_dog_round = 0
+var brutes_left = 0
+var pending = {}               # peticiones al servidor esperando respuesta: "idx:acción" -> callback
+var pus = {}                   # potenciadores en el suelo: id -> nodo
+var next_pu = 1
+var gum_uses = 0
+var low_quality = false               # chicles comprados esta ronda
 
 func start(id: String) -> void:
 	map_id = id
@@ -41,7 +56,17 @@ func start(id: String) -> void:
 	_build_interactables()
 	player = Player.new(); player.game = self; add_child(player)
 	var sp = cfg.spawn
-	player.global_position = MapBuilder.v3(sp); player.yaw = deg_to_rad(float(sp[3]) if sp.size() > 3 else 0.0)
+	var my_slot = 0
+	if Net.active:
+		Net.game = self
+		var ids = Net.players.keys(); ids.sort()
+		my_slot = ids.find(Net.my_id())
+		for pid in ids:
+			if pid == Net.my_id(): continue
+			var rp = RemotePlayer.new(); rp.peer = pid; rp.pname = Net.players[pid].name; rp.character = Net.players[pid].character; rp.game = self
+			add_child(rp); remotes[pid] = rp
+			rp.global_position = _slot_pos(sp, ids.find(pid))
+	player.global_position = _slot_pos(sp, my_slot); player.yaw = deg_to_rad(float(sp[3]) if sp.size() > 3 else 0.0)
 	hud = preload("res://scripts/hud.gd").new(); hud.game = self; add_child(hud)
 	player.setup(GS.start_weapon, GS.start_perk)
 	player.points = 500 + (GS.start_round - 1) * 450 + GS.start_points_bonus()
@@ -51,8 +76,38 @@ func start(id: String) -> void:
 	player.points_changed.connect(func(p, dl): hud.update_points(p, dl))
 	hud.update_points(player.points, 0); hud.update_ammo(); hud.update_perks(player.perks)
 	Sfx.play_ambient(cfg.get("ambient", "amb1"))
+	Sfx.music_map(map_id)
 	round_n = GS.start_round - 1
+	next_dog_round = max(round_n + 1, 0) + randi_range(5, 7)
+	if not Net.active: all_loaded()
+	elif Net.is_host(): Net.loaded()
+	else: Net.loaded.rpc_id(1)
+
+## posición de salida de cada jugador (en círculo alrededor del punto de inicio)
+func _slot_pos(sp: Array, slot: int) -> Vector3:
+	var base = MapBuilder.v3(sp)
+	if slot <= 0: return base
+	var a = slot * TAU / 4.0
+	var p = base + Vector3(cos(a), 0, sin(a)) * 1.3
+	var map = get_world_3d().navigation_map
+	if NavigationServer3D.map_get_iteration_id(map) > 0:
+		var q = NavigationServer3D.map_get_closest_point(map, p)
+		if q.distance_to(p) < 1.0: return q + Vector3(0, 0.1, 0)
+	return p
+
+## todos han cargado: el servidor arranca las rondas y prepara el easter egg
+func all_loaded() -> void:
+	if not Net.is_host(): return
+	started = true
 	break_t = 2.5
+	_egg_setup()
+
+func _host() -> bool: return Net.is_host()
+
+## manda un evento del mundo a todos (y lo aplica aquí)
+func evt(name: String, data: Variant = null) -> void:
+	if Net.active: Net.world_evt.rpc(name, data)
+	else: on_world_evt(name, data)
 
 # ------------------------------------------------------------------ escenario e iluminación
 func _build_environment() -> void:
@@ -94,9 +149,11 @@ func _build_environment() -> void:
 ## calidad gráfica: escala de render, suavizado, sombras y resplandor (alta / media / baja)
 func apply_quality(e: Environment) -> void:
 	var q = GS.settings.get("quality", "alta")
+	low_quality = q == "baja"
 	var vp = get_viewport()
 	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q != "alta" else Viewport.SCALING_3D_MODE_BILINEAR
 	vp.scaling_3d_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
+	vp.mesh_lod_threshold = { "alta": 1.0, "media": 2.5, "baja": 5.0 }[q]   # modelos simplificados antes cuanto más baja la calidad
 	vp.msaa_3d = Viewport.MSAA_4X if q == "alta" else (Viewport.MSAA_2X if q == "media" else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
 	RenderingServer.directional_shadow_atlas_set_size(4096 if q == "alta" else 2048, true)
@@ -228,6 +285,10 @@ func _build_interactables() -> void:
 		var pl = place(cfg.power, 0.08)
 		var n = Interactables.Power.new(); add_child(n); n.global_position = pl.pos; n.rotation_degrees.y = pl.yaw; n.build(self); interactables.append(n)
 	else: power_on = true
+	# máquina de chicles (cerca de la salida si el mapa no dice dónde)
+	var gp: Dictionary = cfg.get("gum", { "near": [float(cfg.spawn[0]) - 2.5, float(cfg.spawn[2]) - 1.5], "y": float(cfg.spawn[1]) })
+	var plg = place(gp, 0.35)
+	var gm = Interactables.GumMachine.new(); add_child(gm); gm.global_position = plg.pos; gm.rotation_degrees.y = plg.yaw; gm.build(self); interactables.append(gm)
 	var i = 0
 	for d in cfg.get("doors", []):
 		var dd = d.duplicate()
@@ -246,10 +307,11 @@ func _build_interactables() -> void:
 # hacia dónde mira de fábrica el frente de cada máquina (para que el cartel quede al frente)
 const PERK_YAW := { "jugg": 0, "revive": 0, "speed": 0, "dtap": 0, "mule": 0, "stamin": 0 }
 
+
 func find_interactable(p: Player) -> Node:
 	# solo lo que está a tu altura (no se compra desde el piso de arriba) y sin una pared en medio
 	var best: Node = null; var bd = 99.0
-	for it in interactables:
+	for it in interactables + egg_nodes:
 		if not is_instance_valid(it): continue
 		var dv: Vector3 = it.global_position - p.global_position
 		if abs(dv.x) > 6.0 or abs(dv.z) > 6.0 or dv.y < -1.6 or dv.y > 2.6: continue
@@ -267,7 +329,72 @@ func find_interactable(p: Player) -> Node:
 	return best
 
 func turn_power_on() -> void:
+	if power_on: return
 	power_on = true; hud.banner("CORRIENTE ENCENDIDA", "Las máquinas ya funcionan", 3.0); Sfx.play("powerup", 1.0, 0.5)
+	Voice.say("power")
+
+# ------------------------------------------------------------------ jugadores (local y compañeros)
+## todos los que pueden ser objetivo de los zombis
+func all_players() -> Array:
+	var out: Array = [player]
+	for k in remotes: out.append(remotes[k])
+	return out
+
+func target_for(from: Vector3) -> Node3D:
+	var best: Node3D = null; var bd = INF
+	for p in all_players():
+		if not p.alive or p.downed: continue
+		var d = p.global_position.distance_squared_to(from)
+		if d < bd: bd = d; best = p
+	return best
+
+func can_attack(p: Node3D) -> bool: return p != null and p.alive and not p.downed
+
+func damage_player(p: Node3D, dmg: float) -> void:
+	if p == player: player.take_damage(dmg)
+	elif p is RemotePlayer: Net.hurt.rpc_id(p.peer, dmg)
+
+func downed_friend_near(at: Vector3) -> RemotePlayer:
+	for k in remotes:
+		var r: RemotePlayer = remotes[k]
+		if r.alive and r.downed and r.global_position.distance_to(at) < 2.0: return r
+	return null
+
+func on_remote_state(peer: int, pos: Vector3, yaw: float, pitch: float, flags: int, wid: String, hp: float) -> void:
+	if remotes.has(peer): remotes[peer].net_state(pos, yaw, pitch, flags, wid, hp)
+
+func on_remote_shot(peer: int, sound: String, pitch: float) -> void:
+	if remotes.has(peer):
+		Sfx.play_at(sound, remotes[peer].global_position + Vector3(0, 1.2, 0), 0.8, pitch)
+		remotes[peer].muzzle()
+
+func remove_remote(peer: int) -> void:
+	if remotes.has(peer):
+		hud.toast("COOPERATIVO", "%s ha salido de la partida" % remotes[peer].pname)
+		remotes[peer].queue_free(); remotes.erase(peer)
+		if _host(): _check_all_down()
+
+## un jugador cae, se levanta o muere
+func on_life(peer: int, state: String) -> void:
+	if peer != Net.my_id() and remotes.has(peer):
+		var r: RemotePlayer = remotes[peer]
+		r.downed = state == "down"; r.alive = state != "dead"
+		if state == "down": hud.toast("¡COMPAÑERO CAÍDO!", "%s necesita ayuda" % r.pname)
+	if _host(): _check_all_down()
+
+## si no queda nadie en pie, se acaba la partida para todos
+func _check_all_down() -> void:
+	if over or not started: return
+	for p in all_players():
+		if p.alive and not p.downed: return
+	if Net.active: Net.game_over.rpc()
+	else: on_game_over()
+
+var ending = false
+func on_game_over() -> void:
+	if over: return
+	ending = true
+	_on_player_died()
 
 # ------------------------------------------------------------------ rondas (como en Black Ops)
 static func round_count(r: int) -> int:
@@ -283,17 +410,34 @@ static func round_speed(r: int) -> float:
 	if r <= 8: return randf_range(0.6, 0.9) if x < 0.2 else randf_range(1.9, 2.8)
 	return randf_range(2.3, 2.9) if x < 0.35 else randf_range(2.9, 3.6)
 
+func _nplayers() -> int: return all_players().size()
+
+## servidor: empieza la ronda siguiente (con perros cada pocas rondas y Brutos a partir de la 8)
 func _next_round() -> void:
-	round_n += 1; to_spawn = round_count(round_n); spawn_t = 1.0; drops = 0
-	_challenges(GS.max_stat("round_" + map_id, round_n))
-	hud.set_round(round_n, true)
-	Sfx.play("z_roar3", 0.9, 0.7)
+	round_n += 1; drops = 0
+	dog_round = round_n == next_dog_round
+	var mult = 1.0 + 0.5 * (_nplayers() - 1)   # más zombis con más jugadores
+	if dog_round:
+		next_dog_round = round_n + randi_range(4, 6)
+		to_spawn = int((6 + round_n * 0.6) * (0.8 + 0.4 * _nplayers()))
+	else:
+		to_spawn = int(round_count(round_n) * mult)
+	brutes_left = 0 if dog_round or round_n < 8 else (1 + (1 if _nplayers() > 2 else 0) if round_n % 4 == 0 else (1 if randf() < 0.25 else 0))
+	spawn_t = 1.0 if not dog_round else 4.0
+	evt("round", { "n": round_n, "phase": "start", "dogs": dog_round })
+
+func _end_round() -> void:
+	break_t = 9.0 if not dog_round else 11.0
+	evt("round", { "n": round_n, "phase": "end", "dogs": dog_round })
 
 func _process(delta: float) -> void:
-	if paused or not player: return
+	if not player: return
+	if paused and not Net.active: return
 	time += delta
 	insta = max(0.0, insta - delta); dpoints = max(0.0, dpoints - delta); fire_sale = max(0.0, fire_sale - delta)
 	hud.update_timers(insta, dpoints, fire_sale)
+	_egg_process(delta)
+	if not _host() or not started or over: return
 	if break_t > 0.0:
 		break_t -= delta
 		if break_t <= 0.0: _next_round()
@@ -302,22 +446,70 @@ func _process(delta: float) -> void:
 	var alive = zombies.filter(func(z): return not z.dead).size()
 	if to_spawn > 0:
 		spawn_t -= delta
-		if spawn_t <= 0.0 and alive < max_alive:
+		var cap = max_alive if not dog_round else 2 * _nplayers() + 4
+		if spawn_t <= 0.0 and alive < cap:
 			if _spawn_zombie(): to_spawn -= 1
-			spawn_t = max(0.35, 2.2 - round_n * 0.12) * randf_range(0.7, 1.2)
-	elif alive == 0:
-		break_t = 9.0; hud.set_round(round_n, false); Sfx.play("z_roar1", 0.5, 0.5)
-		player.refill_grenades()
+			var rate = max(0.35, 2.2 - round_n * 0.12) * randf_range(0.7, 1.2)
+			if dog_round: rate = randf_range(1.2, 2.4)
+			if egg.step == 4: rate *= 0.5   # defendiendo el easter egg: vienen más rápido
+			spawn_t = rate
+	elif alive == 0 and egg.step != 4 and egg.step != 5:
+		_end_round()
+
+## punto de interés para hacer aparecer zombis: un jugador vivo al azar
+func _focus() -> Vector3:
+	var list = all_players().filter(func(p): return p.alive and not p.downed)
+	if list.is_empty(): return player.global_position
+	return list[randi() % list.size()].global_position
+
+func _near_any_player(p: Vector3, r: float) -> bool:
+	for pl in all_players():
+		if pl.global_position.distance_to(p) < r: return true
+	return false
 
 func _spawn_zombie() -> bool:
-	if cfg.has("auto_zones"): return _spawn_in_rooms()
-	var pz = zone_at(player.global_position)
+	var type = "normal"
+	if dog_round: type = "dog"
+	elif brutes_left > 0 and to_spawn <= max(3, to_spawn / 2): type = "brute"; brutes_left -= 1
+	elif round_n >= 6 and randf() < 0.07: type = "bloat"
+	var pos = _spawn_point(type)
+	if pos == Vector3.INF:
+		if type == "brute": brutes_left += 1
+		return false
+	var hp = round_hp(round_n) * (1.0 + 0.25 * (_nplayers() - 1))
+	var speed = round_speed(round_n)
+	if type == "dog": speed = 6.5 if round_n > 8 else 5.0
+	elif type == "brute": speed = 0.9
+	elif type == "bloat": speed = min(speed, 0.85)
+	make_zombie("a" if randf() < 0.5 else "c", type, pos, hp, speed)
+	return true
+
+## crea un enemigo en el servidor y avisa a los demás
+func make_zombie(kind: String, type: String, pos: Vector3, hp: float, speed: float) -> Zombie:
+	var z = Zombie.new(); z.zid = next_zid; next_zid += 1
+	add_child(z)
+	z.setup(self, kind, pos, hp, speed, type)
+	zombies.append(z); zmap[z.zid] = z
+	if Net.active: Net.z_spawn.rpc(z.zid, kind, type, pos, speed)
+	if type == "brute":
+		hud.toast("¡CUIDADO!", "Ha aparecido un Bruto"); Sfx.play_at("z_roar3", pos + Vector3(0, 2, 0), 1.0, 0.55)
+	return z
+
+func _spawn_point(type: String) -> Vector3:
+	var focus = _focus()
+	if type == "dog":   # los perros aparecen cerca de los jugadores, con un rayo
+		for attempt in 12:
+			var p = _random_nav_near(focus, 6.0, 14.0)
+			if p != Vector3.INF and not _near_any_player(p, 5.0) and _reachable_from(p, focus): return p
+		return Vector3.INF
+	if cfg.has("auto_zones"): return _spawn_in_rooms(focus)
+	var pz = zone_at(focus)
 	var cands = []
 	for id in zones:
 		if not zones[id].open: continue
 		for s in zones[id].spawns:
-			var d: float = s.distance_to(player.global_position)
-			if d < 8.0 or d > 32.0: continue
+			var d: float = s.distance_to(focus)
+			if d < 8.0 or d > 32.0 or _near_any_player(s, 6.0): continue
 			var w = 3.0 if id == pz else 1.0
 			if not _visible_from_player(s + Vector3(0, 1.2, 0)): w *= 2.0
 			cands.append([s, w / (1.0 + abs(d - 15.0) * 0.12)])
@@ -325,30 +517,25 @@ func _spawn_zombie() -> bool:
 		for id in zones:
 			if not zones[id].open: continue
 			for s2 in zones[id].spawns:
-				if s2.distance_to(player.global_position) >= 3.5: cands.append([s2, 1.0])
+				if s2.distance_to(focus) >= 3.5: cands.append([s2, 1.0])
 			if cands.is_empty() and nav_regions.has(id + "_0"):
 				var p2 = NavigationServer3D.region_get_random_point(nav_regions[id + "_0"].get_rid(), 1, true)
-				if p2.distance_to(player.global_position) >= 5.0: cands.append([p2, 1.0])
-	if cands.is_empty(): return false
+				if p2.distance_to(focus) >= 5.0: cands.append([p2, 1.0])
+	if cands.is_empty(): return Vector3.INF
 	var tot = 0.0
 	for c in cands: tot += c[1]
 	var r = randf() * tot; var pos: Vector3 = cands[0][0]
 	for c in cands:
 		r -= c[1]
 		if r <= 0.0: pos = c[0]; break
-	pos += Vector3(randf_range(-0.8, 0.8), 0, randf_range(-0.8, 0.8))
-	var z = Zombie.new()
-	add_child(z)
-	z.setup(self, "a" if randf() < 0.5 else "c", pos, round_hp(round_n), round_speed(round_n))
-	zombies.append(z)
-	return true
+	return pos + Vector3(randf_range(-0.8, 0.8), 0, randf_range(-0.8, 0.8))
 
-func _spawn_in_rooms() -> bool:
-	var pz = zone_at(player.global_position)
+func _spawn_in_rooms(focus: Vector3) -> Vector3:
+	var pz = zone_at(focus)
 	var opts = []
 	for id in zones:
 		if zones[id].open and zones[id].playable: opts.append([id, zones[id].area * (3.0 if id == pz else 1.0)])
-	if opts.is_empty(): return false
+	if opts.is_empty(): return Vector3.INF
 	for attempt in 14:
 		var tot = 0.0
 		for o in opts: tot += o[1]
@@ -358,34 +545,78 @@ func _spawn_in_rooms() -> bool:
 			if r <= 0.0: pick = o[0]; break
 		var reg: NavigationRegion3D = zones[pick].region
 		var p = NavigationServer3D.region_get_random_point(reg.get_rid(), 1, true)
-		var d = p.distance_to(player.global_position)
-		if d < 7.0 or d > 30.0: continue
+		var d = p.distance_to(focus)
+		if d < 7.0 or d > 30.0 or _near_any_player(p, 6.0): continue
 		if _visible_from_player(p + Vector3(0, 1.2, 0)) and attempt < 10: continue
-		if not _reachable(p): continue
-		var z = Zombie.new(); add_child(z)
-		z.setup(self, "a" if randf() < 0.5 else "c", p + Vector3(0, 0.05, 0), round_hp(round_n), round_speed(round_n))
-		zombies.append(z); return true
-	return false
+		if not _reachable_from(p, focus): continue
+		return p + Vector3(0, 0.05, 0)
+	return Vector3.INF
+
+## punto transitable al azar entre dos distancias de "c"
+func _random_nav_near(c: Vector3, rmin: float, rmax: float) -> Vector3:
+	var map = get_world_3d().navigation_map
+	for k in 8:
+		var a = randf() * TAU; var r = randf_range(rmin, rmax)
+		var want = c + Vector3(cos(a) * r, 0, sin(a) * r)
+		var q = NavigationServer3D.map_get_closest_point(map, want)
+		if q.distance_to(want) < 2.5 and abs(q.y - c.y) < 3.0: return q + Vector3(0, 0.05, 0)
+	return Vector3.INF
 
 ## hay camino de verdad desde ese punto hasta el jugador (descarta huecos bajo el suelo y rincones sueltos)
-func _reachable(p: Vector3) -> bool:
+func _reachable_from(p: Vector3, to: Vector3) -> bool:
 	var map = get_world_3d().navigation_map
-	var path = NavigationServer3D.map_get_path(map, p, player.global_position, true)
-	return path.size() > 0 and path[path.size() - 1].distance_to(player.global_position) < 1.8
+	var path = NavigationServer3D.map_get_path(map, p, to, true)
+	return path.size() > 0 and path[path.size() - 1].distance_to(to) < 1.8
+
+func _reachable(p: Vector3) -> bool: return _reachable_from(p, player.global_position)
 
 func respawn_zombie(z: Zombie) -> void:
-	var n = zombies.size()
-	if _spawn_zombie():
-		var nz: Zombie = zombies[zombies.size() - 1]
-		nz.hp = z.hp; nz.max_speed = z.max_speed
-		zombies.erase(z); z.queue_free()
+	if z.type == "dog" or z.type == "brute": return
+	var pos = _spawn_point(z.type)
+	if pos == Vector3.INF: return
+	var nz = make_zombie(z.kind, z.type, pos, z.max_hp, z.max_speed)
+	nz.hp = z.hp
+	_remove_zombie(z)
+
+func _remove_zombie(z: Zombie) -> void:
+	zombies.erase(z); zmap.erase(z.zid)
+	if Net.active: Net.z_dead.rpc(-z.zid, false)   # id negativo: desaparece sin animación
+	z.queue_free()
 
 func _visible_from_player(p: Vector3) -> bool:
 	var to = p - player.cam.global_position
 	if to.normalized().dot(-player.cam.global_transform.basis.z) < 0.5: return false
 	return ray_world(player.cam.global_position, to.normalized(), to.length()) == Vector3.INF
 
-# ------------------------------------------------------------------ disparos
+# ------------------------------------------------------------------ zombis en red
+func send_zombie_snapshot() -> void:
+	var data = PackedFloat32Array()
+	for z in zombies:
+		if not is_instance_valid(z) or z.dead: continue
+		data.append_array([z.zid, z.global_position.x, z.global_position.y, z.global_position.z, z.yaw, z.anim_code(), z.anim.speed_scale if z.anim else 1.0, z.model.position.y])
+	Net.z_snap.rpc(data)
+
+func on_z_spawn(zid: int, kind: String, type: String, pos: Vector3, speed: float) -> void:
+	if _host() or zmap.has(zid): return
+	var z = Zombie.new(); z.zid = zid
+	add_child(z); z.setup(self, kind, pos, 100.0, speed, type, true)
+	zombies.append(z); zmap[zid] = z
+
+func on_z_snap(data: PackedFloat32Array) -> void:
+	var i = 0
+	while i + 7 < data.size():
+		var z = zmap.get(int(data[i]))
+		if z and is_instance_valid(z): z.net_update(Vector3(data[i + 1], data[i + 2], data[i + 3]), data[i + 4], int(data[i + 5]), data[i + 6], data[i + 7])
+		i += 8
+
+func on_z_dead(zid: int, head: bool) -> void:
+	var z = zmap.get(abs(zid))
+	if z == null or not is_instance_valid(z): return
+	zmap.erase(abs(zid))
+	if zid < 0: zombies.erase(z); z.queue_free()
+	else: z.die_visual(head)
+
+# ------------------------------------------------------------------ disparos y daño
 ## rayo de bala: atraviesa vallas y cristal, se para en muros y zombis
 func shoot_ray(from: Vector3, dir: Vector3, rng: float, by: Player) -> Dictionary:
 	var space = get_world_3d().direct_space_state
@@ -393,21 +624,90 @@ func shoot_ray(from: Vector3, dir: Vector3, rng: float, by: Player) -> Dictionar
 	q.exclude = [by.get_rid()]
 	var res = space.intersect_ray(q)
 	var out = { "hit": false, "kill": false, "head": false }
+	if Engine.has_meta("dbg_shots"): print("RAYO ", "nada" if res.is_empty() else str(res.collider) + " " + str(res.collider.get_parent().name if res.collider.get_parent() else "") + " en " + str(res.position))
 	if res.is_empty(): return out
 	var col = res.collider
 	if col is Zombie:
 		var z: Zombie = col
 		var hp_pos = z.head_pos()
-		var head: bool = res.position.distance_to(hp_pos) < 0.24 or res.position.y > hp_pos.y - 0.08
+		# cabeza: el recorrido de la bala pasa cerca del hueso de la cabeza (más fiable que el punto donde toca la cápsula)
+		var rel = hp_pos - from
+		var miss = (rel - dir * rel.dot(dir)).length()
+		var head: bool = miss < 0.2 * (1.4 if z.type == "brute" else 1.0) or res.position.y > hp_pos.y - 0.05
 		var w = by.cur_w()
 		var dmg = float(Player.stat_of(w.id, w.pap, "dmg"))
 		if head: dmg *= float(Player.stat_of(w.id, w.pap, "head"))
-		if insta > 0.0: dmg = 1e9
-		var k = z.take_hit(dmg, res.position, head, by)
+		var k = damage_zombie(z, dmg, res.position, head, "bullet", w.id)
 		out.hit = true; out.kill = k; out.head = head
 	else:
 		impact(res.position, res.normal)
 	return out
+
+## daño hecho por el jugador local: en el servidor se aplica, en un cliente se manda al servidor
+func damage_zombie(z: Zombie, dmg: float, at: Vector3, head: bool, kind: String, wid: String) -> bool:
+	if z == null or z.dead: return false
+	if insta > 0.0 or player.gum("pinza"):
+		if kind != "bubble": dmg = 1e9
+	if _host():
+		if kind == "bubble": _bubble(z, Net.my_id(), wid); return false
+		return z.take_hit(dmg, at, head, Net.my_id(), kind, wid)
+	z.take_hit(dmg, at, head, Net.my_id(), kind, wid)   # en la marioneta solo sale la sangre
+	Net.hit.rpc_id(1, z.zid, dmg, head, kind, wid)
+	return false
+
+func on_net_hit(peer: int, zid: int, dmg: float, head: bool, kind: String, wid: String) -> void:
+	var z = zmap.get(zid)
+	if z == null or not is_instance_valid(z) or z.dead: return
+	if kind == "bubble": _bubble(z, peer, wid); return
+	z.take_hit(dmg, z.global_position + Vector3(0, 1.2, 0), head, peer, kind, wid)
+
+## burbuja del Burbujeador: el zombi flota unos segundos y revienta
+func _bubble(z: Zombie, by: int, wid: String) -> void:
+	if z.bubbled > 0.0: return
+	z.bubbled = 2.6 if z.type != "brute" else 1.0
+	get_tree().create_timer(z.bubbled).timeout.connect(func():
+		if is_instance_valid(z) and not z.dead:
+			evt("pop", z.global_position + Vector3(0, 1.4, 0))
+			z.take_hit(1e9 if z.type != "brute" else z.max_hp * 0.12, z.global_position + Vector3(0, 1.4, 0), false, by, "bubble", wid))
+
+func on_zombie_hurt(_z: Zombie, by, kind: String, wid: String) -> void:
+	if kind == "bullet" or kind == "proj": award(by, 10, false, false, kind, wid, _z.type)
+
+func on_zombie_killed(z: Zombie, head: bool, by, kind: String, wid: String) -> void:
+	zmap.erase(z.zid)
+	if Net.active: Net.z_dead.rpc(z.zid, head)
+	var pts = 130 if kind == "knife" else (100 if head else 60)
+	pts += int(Zombie.TYPE_DATA[z.type].pts)
+	award(by, pts * (2 if dpoints > 0 else 1), true, head, kind, wid, z.type)
+	if z.type == "brute":
+		_drop_powerup(z.global_position, "")
+		if egg.step == 5 and z.zid == egg.boss: _egg_done()
+	elif z.type == "dog":
+		var left = zombies.filter(func(o): return is_instance_valid(o) and not o.dead and o.type == "dog").size()
+		if to_spawn == 0 and left == 0: _drop_powerup(z.global_position, "max_ammo")   # el último perro deja munición
+	elif drops < 4 and randf() < 0.035: _drop_powerup(z.global_position, "")
+
+## puntos y bajas para quien ha dado el golpe (puede ser otro móvil)
+func award(by, pts: int, kill: bool, head: bool, kind: String, wid: String, ztype := "normal") -> void:
+	if by == null or (by is int and by <= 0): return
+	if by == Net.my_id(): on_award(pts, kill, head, kind + ":" + ztype, wid)
+	elif Net.active: Net.award.rpc_id(by, pts, kill, head, kind + ":" + ztype, wid)
+
+func on_award(pts: int, kill: bool, head: bool, kind_type: String, wid: String) -> void:
+	var parts = kind_type.split(":"); var kind = parts[0]; var ztype = parts[1] if parts.size() > 1 else "normal"
+	player.add_points(pts)
+	if not kill: return
+	player.kills += 1
+	if head: player.headshots += 1
+	if (kind == "bullet" or kind == "proj" or kind == "bubble") and Data.WEAPONS.has(wid): _challenges(GS.add_kill(wid))
+	stat("kills")
+	if head: stat("heads")
+	if kind == "knife": stat("knife")
+	if kind == "explo" or kind == "proj": stat("explo")
+	if ztype == "dog": stat("dogs")
+	if ztype == "brute": stat("brutes"); Voice.say("brute")
+	if not _host(): hud.hitmarker(true, head)
+	if player.kills % 25 == 0: Voice.say("streak")
 
 func ray_world(from: Vector3, dir: Vector3, rng: float) -> Vector3:
 	var q = PhysicsRayQueryParameters3D.create(from, from + dir * rng, MapBuilder.LAYER_WORLD | MapBuilder.LAYER_BARRIER)
@@ -432,60 +732,309 @@ func nearest_zombie(p: Vector3, r: float) -> Zombie:
 			if d < bd: bd = d; best = z
 	return best
 
-func on_zombie_hurt(_z: Zombie, by: Node, kind: String) -> void:
-	if by is Player and kind == "bullet": by.add_points(10 * (2 if dpoints > 0 else 1))
-
-func on_zombie_killed(z: Zombie, head: bool, by: Node, kind: String) -> void:
-	if by is Player:
-		var pts = 130 if kind == "knife" else (100 if head else 60)
-		by.add_points(pts * (2 if dpoints > 0 else 1))
-		by.kills += 1
-		if head: by.headshots += 1
-		if kind == "bullet": _challenges(GS.add_kill(by.cur_w().id))
-		stat("kills")
-		if head: stat("heads")
-		if kind == "knife": stat("knife")
-		if kind == "explo": stat("explo")
-	if drops < 4 and randf() < 0.035: _drop_powerup(z.global_position)
-
-# ------------------------------------------------------------------ explosiones y granadas
-func explode(at: Vector3, radius: float, dmg: float, by: Node) -> void:
-	for z in zombies:
+# ------------------------------------------------------------------ explosiones, granadas, proyectiles y gas
+## explosión del jugador local (granada, Mustang & Sally, Rayo Gamba): daña a los zombis cercanos
+func explode(at: Vector3, radius: float, dmg: float, _by = null, kind := "explo", wid := "") -> void:
+	for z in zombies.duplicate():
 		if is_instance_valid(z) and not z.dead and z.global_position.distance_to(at) < radius:
-			z.take_hit(dmg if insta <= 0 else 1e9, z.global_position + Vector3(0, 1, 0), false, by, "explo")
+			damage_zombie(z, dmg, z.global_position + Vector3(0, 1, 0), false, kind, wid)
 	Fx.explosion(self, at)
 	Sfx.play_at("shot_rifle", at, 1.0, 0.45)
 
 func throw_grenade(from: Vector3, vel: Vector3, by: Node) -> void:
+	# si hay una pared delante, sale desde este lado (antes aparecía detrás y se perdía)
+	var eye = player.cam.global_position
+	var h = ray_world(eye, (from - eye).normalized(), eye.distance_to(from) + 0.15)
+	if h != Vector3.INF: from = h - (from - eye).normalized() * 0.2
 	var g = RigidBody3D.new(); g.collision_layer = 0; g.collision_mask = MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT | MapBuilder.LAYER_BARRIER
-	g.mass = 0.4; g.physics_material_override = PhysicsMaterial.new(); g.physics_material_override.bounce = 0.35
-	var cs = CollisionShape3D.new(); var sp = SphereShape3D.new(); sp.radius = 0.06; cs.shape = sp; g.add_child(cs)
-	var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.06; sm.height = 0.12; m.mesh = sm
-	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.25, 0.3, 0.2); mat.roughness = 0.6; m.material_override = mat; g.add_child(m)
+	g.mass = 0.4; g.physics_material_override = PhysicsMaterial.new(); g.physics_material_override.bounce = 0.3; g.physics_material_override.friction = 0.8
+	g.continuous_cd = true   # no atraviesa el suelo aunque vaya rápida
+	g.linear_damp = 0.3; g.angular_damp = 2.0
+	var cs = CollisionShape3D.new(); var sp = SphereShape3D.new(); sp.radius = 0.08; cs.shape = sp; g.add_child(cs)
+	var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.08; sm.height = 0.16; m.mesh = sm
+	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.35, 0.42, 0.28); mat.roughness = 0.5; mat.metallic = 0.3; m.material_override = mat; g.add_child(m)
+	var led = OmniLight3D.new(); led.light_color = Color(1, 0.2, 0.1); led.omni_range = 1.2; led.light_energy = 1.5; g.add_child(led)   # lucecita para verla
 	add_child(g); g.global_position = from; g.linear_velocity = vel
+	var last_ok = from
+	var tw = create_tween().set_loops(11); tw.tween_property(led, "light_energy", 0.2, 0.1); tw.tween_property(led, "light_energy", 1.8, 0.1)
 	get_tree().create_timer(2.2).timeout.connect(func():
-		if is_instance_valid(g): explode(g.global_position, 4.5, 400.0 + round_n * 60.0, by); g.queue_free())
+		if not is_instance_valid(g): return
+		var at = g.global_position
+		if at.y < from.y - 15.0: at = last_ok   # se ha caído del mapa: explota donde estaba
+		explode(at, 4.5, 400.0 + round_n * 60.0, by); g.queue_free())
+	get_tree().create_timer(0.3).timeout.connect(func(): if is_instance_valid(g): last_ok = g.global_position)
+
+func fire_projectile(by: Player, from: Vector3, dir: Vector3, proj: Dictionary, dmg: float, wid: String) -> void:
+	var p = preload("res://scripts/projectile.gd").new()
+	p.game = self; p.owner_player = by; p.dir = dir; p.data = proj; p.dmg = dmg; p.wid = wid
+	add_child(p); p.global_position = from
+
+## el Hinchado revienta: gas que hace daño a los que estén cerca
+func gas_burst(at: Vector3, authoritative: bool) -> void:
+	Fx.gas(self, at); Sfx.play_at("z_hit2", at, 1.0, 0.5)
+	if player.global_position.distance_to(at) < 2.8: player.take_damage(35.0)
+	if not authoritative: return
+	for z in zombies.duplicate():
+		if is_instance_valid(z) and not z.dead and z.type != "brute" and z.global_position.distance_to(at) < 2.6:
+			z.take_hit(400.0, z.global_position + Vector3(0, 1, 0), false, 0, "gas")
+
+## rayo de los perros infernales
+func lightning(at: Vector3) -> void:
+	var l = OmniLight3D.new(); l.light_color = Color(0.6, 0.75, 1.0); l.omni_range = 14.0; l.light_energy = 8.0; add_child(l); l.global_position = at + Vector3(0, 3, 0)
+	var beam = MeshInstance3D.new(); var cm = CylinderMesh.new(); cm.top_radius = 0.05; cm.bottom_radius = 0.25; cm.height = 30; beam.mesh = cm
+	var bm = StandardMaterial3D.new(); bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; bm.albedo_color = Color(0.75, 0.85, 1.0, 0.85); bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; bm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	beam.material_override = bm; add_child(beam); beam.global_position = at + Vector3(0, 15, 0)
+	Sfx.play_at("shot_rifle2", at, 1.0, 0.4)
+	var tw = create_tween(); tw.tween_property(l, "light_energy", 0.0, 0.5); tw.parallel().tween_property(bm, "albedo_color:a", 0.0, 0.5)
+	tw.tween_callback(func(): l.queue_free(); beam.queue_free())
 
 # ------------------------------------------------------------------ potenciadores
-func _drop_powerup(at: Vector3) -> void:
+func _drop_powerup(at: Vector3, kind: String) -> void:
+	if not _host(): return
 	drops += 1
-	var kind: String = Data.POWERUPS[randi() % Data.POWERUPS.size()]
-	var pu = preload("res://scripts/powerup.gd").new(); pu.game = self; pu.kind = kind; add_child(pu); pu.global_position = at + Vector3(0, 0.9, 0)
+	if kind == "": kind = Data.POWERUPS[randi() % Data.POWERUPS.size()]
+	var id = next_pu; next_pu += 1
+	evt("pu", [id, at + Vector3(0, 0.9, 0), kind])
 
-func apply_powerup(kind: String) -> void:
-	stat("powerups")
+## un potenciador se coge: lo confirma el servidor y se aplica en todos
+func take_powerup(id: int) -> void:
+	world_request(null, "pu_take", id, func(_r): pass)
+
+func apply_powerup(kind: String, by: int) -> void:
+	if by == Net.my_id(): stat("powerups")
 	hud.banner(Data.POWERUP_NAMES[kind], "", 2.0); Sfx.play("powerup", 1.0)
+	Voice.say("powerup_" + kind)
 	match kind:
 		"max_ammo": player.refill_ammo()
 		"insta_kill": insta = 30.0
 		"double_points": dpoints = 30.0
 		"fire_sale": fire_sale = 30.0
 		"nuke":
-			for z in zombies:
-				if is_instance_valid(z) and not z.dead: z.take_hit(1e9, z.global_position + Vector3(0, 1, 0), false, null, "nuke")
+			if _host():
+				for z in zombies.duplicate():
+					if is_instance_valid(z) and not z.dead and z.type != "brute": z.take_hit(1e9, z.global_position + Vector3(0, 1, 0), false, 0, "nuke")
 			player.add_points(400)
 			hud.white_flash()
 		"carpenter": player.add_points(200)
+
+## chicle Marea Roja: mata a los zombis cercanos al jugador (lo hace el servidor)
+func request_nuke() -> void:
+	world_request(null, "gum_nuke", player.global_position, func(_r): pass)
+
+# ------------------------------------------------------------------ peticiones al servidor
+## el jugador local quiere cambiar algo del mundo; en el servidor se hace al momento, en un cliente se pregunta
+func world_request(it: Node, action: String, arg: Variant, on_ok: Callable) -> void:
+	var idx = interactables.find(it) if it != null else -1
+	if _host():
+		var res: Dictionary = world_do(Net.my_id(), idx, action, arg)
+		if res.ok: on_ok.call(res.get("result"))
+		else: Sfx.play("dryfire", 0.6)
+		return
+	var key = "%d:%s" % [idx, action]
+	if pending.has(key): return
+	pending[key] = on_ok
+	Net.world_req.rpc_id(1, idx, action, arg)
+	get_tree().create_timer(3.0).timeout.connect(func(): pending.erase(key))
+
+func on_world_req(peer: int, idx: int, action: String, arg: Variant) -> void:
+	var res: Dictionary = world_do(peer, idx, action, arg)
+	Net.world_res.rpc_id(peer, idx, action, res.ok, res.get("result"))
+
+func on_world_res(idx: int, action: String, ok: bool, result: Variant) -> void:
+	var key = "%d:%s" % [idx, action]
+	var cb = pending.get(key); pending.erase(key)
+	if not ok: Sfx.play("dryfire", 0.6); return
+	if cb is Callable and cb.is_valid(): cb.call(result)
+
+## servidor: hace el cambio (si se puede) y avisa a todos
+func world_do(peer: int, idx: int, action: String, arg: Variant) -> Dictionary:
+	if idx >= 0:
+		if idx >= interactables.size() or not is_instance_valid(interactables[idx]): return { "ok": false }
+		return interactables[idx].world_do(peer, action, arg)
+	match action:
+		"pu_take":
+			if not pus.has(arg): return { "ok": false }
+			evt("pu_take", [arg, pus[arg].kind, peer]); return { "ok": true }
+		"gum_nuke":
+			for z in zombies.duplicate():
+				if is_instance_valid(z) and not z.dead and z.type != "brute" and z.global_position.distance_to(arg) < 22.0:
+					z.take_hit(1e9, z.global_position + Vector3(0, 1, 0), false, peer, "nuke")
+			evt("flash", null); return { "ok": true }
+		"egg_part", "egg_build", "egg_start", "plush": return _egg_do(peer, action, arg)
+	return { "ok": false }
+
+## eventos del mundo (llegan a todos los móviles)
+func on_world_evt(name: String, data: Variant) -> void:
+	match name:
+		"door":
+			if data < doors.size() and not doors[data].open: doors[data].open_now()
+		"power":
+			turn_power_on()
+			for it in interactables:
+				if it is Interactables.Power: it.lever.rotation_degrees.x = 60
+		"box_roll", "box_taken", "pap_insert", "pap_take":
+			var it = interactables[int(data.i)] if data is Dictionary else interactables[int(data)]
+			it.on_evt(name, data)
+		"round": _on_round_evt(data)
+		"pu":
+			var pu = preload("res://scripts/powerup.gd").new(); pu.game = self; pu.kind = data[2]; pu.id = data[0]; add_child(pu); pu.global_position = data[1]
+			pus[data[0]] = pu
+		"pu_take":
+			var n = pus.get(data[0])
+			if n and is_instance_valid(n): n.queue_free()
+			pus.erase(data[0])
+			apply_powerup(data[1], int(data[2]))
+		"pop": Fx.pop(self, data, Color(0.5, 0.85, 1.0)); Sfx.play_at("dryfire", data, 1.0, 1.8)
+		"flash": hud.white_flash(); Sfx.play("powerup", 1.0, 0.4)
+		"egg": _egg_evt(data)
+		"song": _song_play()
+
+func _on_round_evt(d: Dictionary) -> void:
+	round_n = int(d.n)
+	if d.phase == "start":
+		dog_round = bool(d.dogs)
+		gum_uses = 0
+		hud.set_round(round_n, true)
+		if dog_round:
+			hud.banner("¡RONDA DE PERROS!", "Vienen los perros infernales", 3.0); Sfx.music_sting("dogs"); Voice.say("dogs")
+			var tw = create_tween(); tw.tween_property(env, "fog_density", float(cfg.get("env", {}).get("fog_density", 0.012)) * 3.0, 3.0)
+			env.fog_light_color = Color(0.55, 0.3, 0.2)
+		else:
+			Sfx.music_sting("round_start")
+			if round_n > 1: Voice.say("round")
+		# los que murieron vuelven a la partida (cooperativo)
+		if not player.alive and Net.is_coop(): player.respawn(_respawn_spot())
+	else:
+		hud.set_round(round_n, false); Sfx.music_sting("round_end")
+		player.refill_grenades()
+		if dog_round:
+			var tw = create_tween(); tw.tween_property(env, "fog_density", float(cfg.get("env", {}).get("fog_density", 0.012)), 4.0)
+			env.fog_light_color = _col(cfg.get("env", {}).get("fog", [0.4, 0.42, 0.45]))
+			dog_round = false
+
+func _respawn_spot() -> Vector3:
+	for k in remotes:
+		if remotes[k].alive and not remotes[k].downed: return remotes[k].global_position + Vector3(1, 0.2, 0)
+	return MapBuilder.v3(cfg.spawn)
+
+# ------------------------------------------------------------------ easter egg principal y canción oculta
+var egg = { "step": 0, "parts": [], "found": [], "bench": Vector3.ZERO, "defend_t": 0.0, "boss": -1, "plush": [], "plush_found": [] }
+var egg_nodes: Array = []
+
+## servidor: elige dónde están las piezas y las gambas de peluche y se lo dice a todos
+func _egg_setup() -> void:
+	if not Data.EGG.has(map_id): return
+	var spots = _spread_points(6)
+	if spots.size() < 6: return
+	var bench = place({ "near": [cfg.spawn[0] + 2.0, cfg.spawn[2] + 2.0], "y": cfg.spawn[1] }, 0.45)
+	evt("egg", { "setup": true, "parts": spots.slice(0, 3), "plush": spots.slice(3, 6), "bench": bench.pos, "bench_yaw": bench.yaw })
+
+## puntos repartidos por todo el mapa (en zonas distintas, incluidas las que aún están cerradas)
+func _spread_points(n: int) -> Array:
+	var regs = []
+	for id in nav_regions: regs.append(nav_regions[id])
+	var spawn = MapBuilder.v3(cfg.spawn)
+	# primero muy separados; si el mapa es pequeño (Isla Gamba) se van juntando un poco
+	for spacing in [8.0, 5.0, 3.0, 1.5]:
+		var out = []
+		for attempt in 400:
+			if out.size() >= n: break
+			var r: NavigationRegion3D = regs[randi() % regs.size()]
+			var nm: NavigationMesh = r.navigation_mesh
+			if nm == null or nm.get_polygon_count() == 0: continue
+			var verts = nm.get_vertices(); var poly = nm.get_polygon(randi() % nm.get_polygon_count())
+			var p = Vector3.ZERO
+			for vi in poly: p += verts[vi]
+			p = r.global_transform * (p / poly.size())
+			var ok = p.distance_to(spawn) > min(6.0, spacing + 1.0)
+			for o in out:
+				if o.distance_to(p) < spacing: ok = false
+			if ok: out.append(p)
+		if out.size() >= n: return out
+	return []
+
+func _egg_evt(d: Dictionary) -> void:
+	var E: Dictionary = Data.EGG[map_id]
+	if d.has("setup"):
+		egg.parts = d.parts; egg.plush = d.plush; egg.bench = d.bench
+		egg.found = [false, false, false]; egg.plush_found = [false, false, false]
+		for k in 3:
+			var it = Interactables.EggPart.new(); add_child(it); it.global_position = egg.parts[k]; it.build(self, k, E.part); egg_nodes.append(it)
+		for k in 3:
+			var pl = Interactables.Plush.new(); add_child(pl); pl.global_position = egg.plush[k]; pl.build(self, k); egg_nodes.append(pl)
+		var b = Interactables.EggBench.new(); add_child(b); b.global_position = egg.bench; b.rotation_degrees.y = float(d.bench_yaw); b.build(self); egg_nodes.append(b)
+		return
+	if d.has("part"):
+		egg.found[int(d.part)] = true
+		for n in egg_nodes:
+			if is_instance_valid(n) and n is Interactables.EggPart and n.k == int(d.part): n.queue_free()
+		var c = egg.found.count(true)
+		hud.toast("EASTER EGG", "Has encontrado %s (%d/3)" % [E.part, c])
+		Sfx.play("powerup", 0.8, 1.6)
+		if c == 1: hud.banner("¿QUÉ ES ESTO?", E.intro, 6.0)
+	if d.has("step"):
+		egg.step = int(d.step)
+		match egg.step:
+			3: hud.banner("¡MONTADO!", "Has montado %s. Actívalo en la mesa de trabajo cuando estéis listos." % E.item, 5.0)
+			4: hud.banner("¡AGUANTA 60 SEGUNDOS!", E.defend, 5.0); Sfx.music_sting("egg"); egg.defend_t = 60.0; Voice.say("egg")
+			5: hud.banner("¡EL GUARDIÁN!", "Mata al Bruto para terminar", 4.0)
+			6:
+				hud.banner("¡EASTER EGG COMPLETADO!", E.end, 9.0); Sfx.music_sting("egg_end")
+				stat("egg_" + map_id)
+				for pk in Data.PERKS: player.give_perk(pk)   # premio: todas las bebidas
+				player.add_points(5000)
+	if d.has("plush"):
+		egg.plush_found[int(d.plush)] = true
+		for n in egg_nodes:
+			if is_instance_valid(n) and n is Interactables.Plush and n.k == int(d.plush): n.queue_free()
+		Sfx.play("dryfire", 1.0, 2.2)
+
+func _egg_do(peer: int, action: String, arg: Variant) -> Dictionary:
+	match action:
+		"egg_part":
+			var k = int(arg)
+			if egg.found.size() < 3 or egg.found[k]: return { "ok": false }
+			egg.found[k] = true
+			evt("egg", { "part": k })
+			if egg.found.count(true) == 3: evt("egg", { "step": 2 })
+			return { "ok": true }
+		"egg_build":
+			if egg.step != 2: return { "ok": false }
+			evt("egg", { "step": 3 }); return { "ok": true }
+		"egg_start":
+			if egg.step != 3 or not power_on: return { "ok": false }
+			evt("egg", { "step": 4 }); to_spawn = max(to_spawn, 30); break_t = 0.0
+			return { "ok": true }
+		"plush":
+			var k = int(arg)
+			if egg.plush_found.size() < 3 or egg.plush_found[k]: return { "ok": false }
+			egg.plush_found[k] = true
+			evt("egg", { "plush": k })
+			if egg.plush_found.count(true) == 3: evt("song", null)
+			return { "ok": true }
+	return { "ok": false }
+
+func _egg_process(delta: float) -> void:
+	if egg.step == 4:
+		egg.defend_t -= delta
+		hud.egg_timer(egg.defend_t)
+		if _host() and egg.defend_t <= 0.0:
+			# aparece el guardián: un Bruto con muchísima vida
+			var p = _random_nav_near(egg.bench, 5.0, 10.0)
+			if p == Vector3.INF: p = egg.bench + Vector3(0, 0.1, 0)
+			var z = make_zombie("a", "brute", p, round_hp(max(round_n, 10)) * 2.5 * _nplayers(), 1.1)
+			egg.boss = z.zid
+			evt("egg", { "step": 5 })
+	elif egg.step == 5:
+		hud.egg_timer(-1.0)
+
+func _egg_done() -> void:
+	evt("egg", { "step": 6 })
+
+func _song_play() -> void:
+	stat("song_" + map_id)
+	hud.toast("CANCIÓN OCULTA", "¡Has encontrado las tres gambas de peluche!")
+	Sfx.music_song()
 
 # ------------------------------------------------------------------ efectos
 func blood(at: Vector3, head: bool) -> void: Fx.blood(self, at, head)
@@ -510,14 +1059,20 @@ func _challenges(list: Array) -> void:
 		completed.append(c)
 		if hud: hud.toast("DESAFÍO COMPLETADO", "%s  ·  +%d XP" % [c.text, c.xp])
 
+## en solitario la pausa para el juego; en cooperativo solo abre el menú (el mundo sigue)
 func pause(on: bool) -> void:
 	if on: GS.save_game()
-	paused = on; get_tree().paused = on; hud.show_pause(on)
+	paused = on
+	if not Net.is_coop(): get_tree().paused = on
+	hud.show_pause(on)
 	Controls.consume()   # que el botón que ha reanudado no vuelva a pausar ni dispare
 
 func _on_player_died() -> void:
+	# en cooperativo, la partida acaba cuando no queda nadie en pie (lo decide el servidor)
+	if Net.is_coop() and not ending: return
 	if over: return
 	over = true
+	Sfx.music_sting("game_over")
 	var stats = { "map": map_id, "round": round_n, "kills": player.kills, "heads": player.headshots, "time": time, "points": player.points }
 	var xp = player.kills * 10 + player.headshots * 5 + round_n * 100
 	GS.add_xp(xp); stats["xp"] = xp + completed.reduce(func(a, c): return a + int(c.xp), 0); stats["levels"] = GS.level - level0; stats["challenges"] = completed
@@ -525,3 +1080,8 @@ func _on_player_died() -> void:
 	GS.save_game()
 	hud.show_game_over(stats)
 	finished.emit(stats)
+
+func _all_out() -> bool:
+	for p in all_players():
+		if p.alive and not p.downed: return false
+	return true

@@ -37,6 +37,8 @@ Controls="*res://scripts/controls.gd"
 Guns="*res://scripts/guns.gd"
 Zombies="*res://scripts/zombies_lib.gd"
 Fx="*res://scripts/fx.gd"
+Net="*res://scripts/net.gd"
+Voice="*res://scripts/voice.gd"
 
 [physics]
 

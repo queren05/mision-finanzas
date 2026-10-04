@@ -7,6 +7,8 @@ var cache = {}      # id -> Node3D orientado (plantilla)
 func _template(id: String) -> Node3D:
 	if cache.has(id): return cache[id]
 	var d: Dictionary = Data.WEAPONS[id]
+	if String(d.model).begins_with("proc_"):
+		cache[id] = _proc(String(d.model), float(d.len)); return cache[id]
 	var scn: PackedScene = load("res://assets/models/guns/%s.glb" % d.model)
 	var src: Node3D = scn.instantiate()
 	var holder = Node3D.new(); holder.add_child(src)
@@ -111,3 +113,36 @@ func make_view(id: String, pap: bool) -> Node3D:
 ## copia para el mundo (paredes, caja): sin trucos de primera persona
 func make_world(id: String) -> Node3D:
 	return _template(id).duplicate()
+
+## armas maravilla hechas a mano con piezas sencillas (el cañón apunta a -Z)
+func _proc(kind: String, L: float) -> Node3D:
+	var holder = Node3D.new()
+	var metal = StandardMaterial3D.new(); metal.albedo_color = Color(0.75, 0.72, 0.68); metal.metallic = 0.85; metal.roughness = 0.3
+	var red = StandardMaterial3D.new(); red.albedo_color = Color(0.7, 0.08, 0.06); red.metallic = 0.4; red.roughness = 0.35
+	var glow = StandardMaterial3D.new(); glow.emission_enabled = true
+	var add = func(mesh: Mesh, mat: Material, pos: Vector3, rot := Vector3.ZERO):
+		var m = MeshInstance3D.new(); m.mesh = mesh; m.set_surface_override_material(0, mat); m.position = pos; m.rotation = rot; holder.add_child(m)
+	if kind == "proc_raygun":
+		glow.albedo_color = Color(0.3, 1.0, 0.35); glow.emission = Color(0.3, 1.0, 0.35); glow.emission_energy_multiplier = 2.0
+		var body = CylinderMesh.new(); body.top_radius = 0.045; body.bottom_radius = 0.06; body.height = L * 0.7
+		add.call(body, red, Vector3(0, 0.02, 0), Vector3(-PI / 2, 0, 0))
+		for k in 3:   # aros del emisor
+			var t = TorusMesh.new(); t.inner_radius = 0.045; t.outer_radius = 0.07
+			add.call(t, metal, Vector3(0, 0.02, -L * 0.12 - k * 0.07), Vector3(PI / 2, 0, 0))
+		var tip = SphereMesh.new(); tip.radius = 0.035; tip.height = 0.07
+		add.call(tip, glow, Vector3(0, 0.02, -L * 0.38))
+		var fin = BoxMesh.new(); fin.size = Vector3(0.012, 0.09, 0.14)
+		add.call(fin, metal, Vector3(0, 0.08, L * 0.12))
+		var grip = BoxMesh.new(); grip.size = Vector3(0.04, 0.13, 0.05)
+		add.call(grip, metal, Vector3(0, -0.07, L * 0.15), Vector3(0.3, 0, 0))
+	else:
+		glow.albedo_color = Color(0.5, 0.85, 1.0, 0.7); glow.emission = Color(0.4, 0.75, 1.0); glow.emission_energy_multiplier = 1.2; glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		var tank = SphereMesh.new(); tank.radius = 0.09; tank.height = 0.18
+		add.call(tank, glow, Vector3(0, 0.1, L * 0.1))
+		var tube = CylinderMesh.new(); tube.top_radius = 0.035; tube.bottom_radius = 0.05; tube.height = L * 0.75
+		add.call(tube, metal, Vector3(0, 0.0, -L * 0.05), Vector3(-PI / 2, 0, 0))
+		var bell = CylinderMesh.new(); bell.top_radius = 0.09; bell.bottom_radius = 0.04; bell.height = 0.1
+		add.call(bell, red, Vector3(0, 0.0, -L * 0.45), Vector3(-PI / 2, 0, 0))
+		var grip = BoxMesh.new(); grip.size = Vector3(0.045, 0.14, 0.05)
+		add.call(grip, red, Vector3(0, -0.08, L * 0.2), Vector3(0.3, 0, 0))
+	return holder

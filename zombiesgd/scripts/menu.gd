@@ -17,6 +17,7 @@ const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
 	"mansion": { "name": "La Mansión", "desc": "Dos plantas, biblioteca, salón de baile y dormitorios. Cada puerta que abras deja entrar a más." },
 	"isla": { "name": "Isla Gamba", "desc": "La cabaña, el muelle, el bar y el faro de la isla. El clásico de siempre." },
+	"lonja": { "name": "La Lonja", "desc": "Una nave de marisco abandonada: subastas, cámaras frigoríficas, la oficina de arriba y el patio de carga." },
 }
 
 func _ready() -> void:
@@ -54,7 +55,7 @@ func _lbl(text: String, f: Font, size: int, c: Color) -> Label:
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85)); l.add_theme_constant_override("shadow_offset_y", 4); l.add_theme_constant_override("shadow_offset_x", 0)
 	return l
 
-func _btn(text: String, cb: Callable, w := 470, centered := false, size := 30) -> Button:
+func _btn(text: String, cb: Callable, w := 470, centered := false, size := 27) -> Button:
 	return MenuStyle.button(text, cb, font_bo, size, w, centered)
 
 # ------------------------------------------------------------------ portada
@@ -63,13 +64,14 @@ func _home() -> void:
 	var m = MenuStyle.safe_margins(get_viewport())
 	var left = VBoxContainer.new(); left.alignment = BoxContainer.ALIGNMENT_CENTER; left.add_theme_constant_override("separation", 2)
 	page.add_child(left); left.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE); left.offset_left = m.x + 10; left.offset_right = m.x + 660
-	left.add_child(_lbl("SHRIMP", font_bo, 54, Color(1, 0.6, 0.48)))
-	var logo2 = _lbl("ZOMBIES", font_bo, 116, RED2); logo2.add_theme_color_override("font_outline_color", Color(0.25, 0, 0)); logo2.add_theme_constant_override("outline_size", 4)
+	left.add_child(_lbl("SHRIMP", font_bo, 44, Color(1, 0.6, 0.48)))
+	var logo2 = _lbl("ZOMBIES", font_bo, 96, RED2); logo2.add_theme_color_override("font_outline_color", Color(0.25, 0, 0)); logo2.add_theme_constant_override("outline_size", 4)
 	logo2.add_theme_constant_override("line_spacing", -24); left.add_child(logo2)
 	left.add_child(_lbl(MAP_INFO[GS.sel_map].name.to_upper(), font_bo, 22, BEIGE))
-	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 16); left.add_child(gap)
+	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 6); left.add_child(gap)
 	var play = _btn("JUGAR", _options); left.add_child(play)
 	left.add_child(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps))
+	left.add_child(_btn("COOPERATIVO", _coop))
 	left.add_child(_btn("PROGRESO", _progress))
 	left.add_child(_btn("PERSONAJE", _chars))
 	left.add_child(_btn("ARMERÍA", _armory))
@@ -211,7 +213,7 @@ func _cycler(list: VBoxContainer, label: String, opts: Array, cur: String, kind:
 func _armory() -> void:
 	var v = _page("ARMERÍA", _home)
 	var hint = _lbl("Camuflajes: se desbloquean con bajas de cada arma. Pulsa un arma para cambiarlo.", font_ui, 20, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1200, 430); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(1200, 430); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var g = GridContainer.new(); g.columns = 3; g.add_theme_constant_override("h_separation", 14); g.add_theme_constant_override("v_separation", 8); sc.add_child(g)
 	var first: Button = null
 	for id in Data.WEAPONS:
@@ -236,7 +238,7 @@ func _armory() -> void:
 
 func _settings() -> void:
 	var v = _page("AJUSTES", func(): GS.save_game(); _home())
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var first = SettingsList.build(sc, font_bo, font_ui, func(_k): pass)
 	v.add_child(_center(_btn("VOLVER", func(): GS.save_game(); _home(), 300, true)))
 	first.grab_focus()
@@ -262,11 +264,11 @@ func _progress(tab := 0) -> void:
 	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	(t0 if tab == 0 else t1).grab_focus()
 
-const KIND_NAMES := { "start_weapon": "ARMA INICIAL", "start_round": "RONDA INICIAL", "start_perk": "VENTAJA INICIAL", "character": "PERSONAJE", "title": "TÍTULO", "card": "TARJETA", "points": "PUNTOS" }
+const KIND_NAMES := { "start_weapon": "ARMA INICIAL", "start_round": "RONDA INICIAL", "start_perk": "VENTAJA INICIAL", "character": "PERSONAJE", "title": "TÍTULO", "card": "TARJETA", "points": "PUNTOS", "gum": "CHICLE" }
 
 ## camino de niveles con su recompensa (como un pase de batalla, pero para siempre); los títulos y tarjetas se equipan pulsándolos
 func _rewards(v: VBoxContainer) -> void:
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1200, 330); sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(1200, 330); sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var h = HBoxContainer.new(); h.add_theme_constant_override("separation", 12); sc.add_child(h)
 	var cur_card: Control = null
 	for u in Data.UNLOCKS:
@@ -289,7 +291,7 @@ func _rewards(v: VBoxContainer) -> void:
 			if not got: img.modulate = Color(0.3, 0.3, 0.3)
 			c.add_child(img)
 		else:
-			var ic = _lbl({ "start_weapon": "▲", "start_round": "Ⅴ", "start_perk": "✚", "title": "❝", "card": "▬", "points": "+" }.get(u.kind, "★"), font_bo, 56, Color.WHITE if got else Color(0.4, 0.4, 0.42))
+			var ic = _lbl({ "start_weapon": "▲", "start_round": "Ⅴ", "start_perk": "✚", "title": "❝", "card": "▬", "points": "+", "gum": "●" }.get(u.kind, "★"), font_bo, 56, Color.WHITE if got else Color(0.4, 0.4, 0.42))
 			ic.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(ic)
 		var kn = _lbl(KIND_NAMES.get(u.kind, ""), font_ui, 16, BEIGE); kn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(kn)
 		var tx = _lbl(u.text.split(": ")[-1], font_bo, 19, Color(0.95, 0.92, 0.86) if got else Color(0.55, 0.55, 0.55)); tx.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -311,7 +313,7 @@ func _rewards(v: VBoxContainer) -> void:
 		if is_instance_valid(sc) and is_instance_valid(cur_card): sc.scroll_horizontal = int(max(0.0, cur_card.position.x - 400))
 
 func _challenge_list(v: VBoxContainer) -> void:
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1200, 340); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(1200, 340); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var g = GridContainer.new(); g.columns = 2; g.add_theme_constant_override("h_separation", 14); g.add_theme_constant_override("v_separation", 10); sc.add_child(g)
 	var list = GS.visible_challenges()
 	# primero los que faltan (en su orden), al final los completados
@@ -337,9 +339,115 @@ func _challenge_list(v: VBoxContainer) -> void:
 		pc.focus_entered.connect(func(): sc.ensure_control_visible(pc))
 		g.add_child(pc)
 
+# ------------------------------------------------------------------ cooperativo por wifi
+var coop_msg = ""
+func _coop() -> void:
+	Net.start_discovery()
+	if not Net.hosts_changed.is_connected(_coop_refresh): Net.hosts_changed.connect(_coop_refresh)
+	if not Net.lobby_changed.is_connected(_lobby_refresh): Net.lobby_changed.connect(_lobby_refresh)
+	if not Net.join_failed.is_connected(_on_join_failed): Net.join_failed.connect(_on_join_failed)
+	if not Net.left.is_connected(_on_left): Net.left.connect(_on_left)
+	if Net.active: _lobby(); return
+	var v = _page("COOPERATIVO", func(): Net.stop_discovery(); _home())
+	v.set_meta("coop", true)
+	var info = _lbl("De 2 a 4 jugadores en la misma wifi (iPhone y Android pueden jugar juntos).", font_ui, 21, BEIGE); info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(info)
+	var nh = HBoxContainer.new(); nh.alignment = BoxContainer.ALIGNMENT_CENTER; nh.add_theme_constant_override("separation", 12); v.add_child(nh)
+	nh.add_child(_lbl("Tu nombre:", font_ui, 24, Color(0.95, 0.92, 0.86)))
+	var name_edit = LineEdit.new(); name_edit.text = GS.settings.get("name", Net.my_name); name_edit.custom_minimum_size = Vector2(320, 50); name_edit.max_length = 14
+	name_edit.add_theme_font_override("font", font_bo); name_edit.add_theme_font_size_override("font_size", 24)
+	name_edit.text_changed.connect(func(t): GS.settings.name = t; Net.my_name = t if t != "" else "Jugador")
+	nh.add_child(name_edit)
+	var create = _btn("CREAR PARTIDA", func():
+		if Net.host(): _lobby()
+		else: coop_msg = "No se pudo crear la partida"; _coop(), 460, true)
+	v.add_child(_center(create))
+	var t = _lbl("PARTIDAS EN TU WIFI", font_bo, 26, GOLD); t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(t)
+	var list = VBoxContainer.new(); list.name = "hosts"; list.add_theme_constant_override("separation", 6); v.add_child(_center(list))
+	_fill_hosts(list)
+	var ih = HBoxContainer.new(); ih.alignment = BoxContainer.ALIGNMENT_CENTER; ih.add_theme_constant_override("separation", 12); v.add_child(ih)
+	ih.add_child(_lbl("¿No aparece? IP del anfitrión:", font_ui, 22, BEIGE))
+	var ip = LineEdit.new(); ip.placeholder_text = "192.168.1.20"; ip.custom_minimum_size = Vector2(260, 50); ip.add_theme_font_size_override("font_size", 24); ih.add_child(ip)
+	ih.add_child(MenuStyle.button("UNIRSE", func(): coop_msg = "Conectando…"; Net.join(ip.text.strip_edges()); _wait_join(), font_bo, 26, 180, true))
+	if coop_msg != "":
+		var m = _lbl(coop_msg, font_ui, 22, RED2); m.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(m)
+	v.add_child(_center(_btn("VOLVER", func(): Net.stop_discovery(); _home(), 300, true)))
+	create.grab_focus()
+
+func _fill_hosts(list: VBoxContainer) -> void:
+	for c in list.get_children(): c.queue_free()
+	if Net.hosts.is_empty():
+		list.add_child(_lbl("Buscando partidas…", font_ui, 21, Color(0.6, 0.58, 0.52)))
+	for ip in Net.hosts:
+		var h = Net.hosts[ip]
+		var txt = "%s  ·  %s  ·  %d/4" % [str(h.name).to_upper(), MAP_INFO.get(h.map, {"name": h.map}).name.to_upper(), int(h.n)]
+		list.add_child(MenuStyle.button(txt, func(): coop_msg = "Conectando…"; Net.join(ip); _wait_join(), font_bo, 24, 620, true))
+
+func _coop_refresh() -> void:
+	if page and page.get_child_count() > 0 and page.get_child(0).has_meta("coop"):
+		var l = page.find_child("hosts", true, false)
+		if l: _fill_hosts(l)
+
+func _wait_join() -> void:
+	await get_tree().create_timer(6.0).timeout
+	if Net.active and Net.players.is_empty(): Net.leave(); coop_msg = "No hay respuesta. ¿Estáis en la misma wifi?"; _coop()
+
+func _on_join_failed(msg: String) -> void: coop_msg = msg; _coop()
+func _on_left() -> void:
+	if is_inside_tree(): coop_msg = "Te has desconectado de la partida"; _coop()
+
+## sala: los jugadores, el mapa y (si eres el anfitrión) el botón de empezar
+func _lobby() -> void:
+	Net.stop_discovery()
+	var v = _page("SALA", func(): Net.leave(); coop_msg = ""; _coop())
+	v.set_meta("lobby", true)
+	if Net.is_host():
+		var ipl = _lbl("Tu IP para que se unan: %s" % Net.local_ip(), font_ui, 22, GOLD); ipl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(ipl)
+	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 6); v.add_child(_center(list))
+	var ids = Net.players.keys(); ids.sort()
+	for id in ids:
+		var pl = Net.players[id]
+		var row = HBoxContainer.new(); row.add_theme_constant_override("separation", 16)
+		var img = TextureRect.new(); img.custom_minimum_size = Vector2(120, 64); img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var cp = "res://assets/ui/char_%s.png" % pl.character
+		if ResourceLoader.exists(cp): img.texture = load(cp)
+		row.add_child(img)
+		row.add_child(_lbl("%s%s  ·  nivel %d" % [str(pl.name).to_upper(), "  (anfitrión)" if id == 1 else "", int(pl.get("level", 1))], font_bo, 26, Color(1, 0.82, 0.48) if id == Net.my_id() else Color(0.92, 0.9, 0.85)))
+		list.add_child(row)
+	var mh = HBoxContainer.new(); mh.alignment = BoxContainer.ALIGNMENT_CENTER; mh.add_theme_constant_override("separation", 20); v.add_child(mh)
+	mh.add_child(_lbl("Mapa: %s  ·  Ronda %d" % [MAP_INFO.get(Net.lobby.map, {"name": "?"}).name.to_upper(), int(Net.lobby.start_round)], font_bo, 26, GOLD))
+	var first: Control = null
+	if Net.is_host():
+		var cm = MenuStyle.button("CAMBIAR MAPA", func():
+			var i = Data.MAPS.find(Net.lobby.map); Net.set_lobby(Data.MAPS[(i + 1) % Data.MAPS.size()], int(Net.lobby.start_round)), font_bo, 24, 300, true)
+		mh.add_child(cm)
+		var go = _btn("EMPEZAR PARTIDA", func():
+			if Net.players.size() < 2: coop_msg = ""; _toast_lobby("Espera a que se una alguien (o juega en solitario)"); return
+			Net.start_match(), 480, true, 36)
+		v.add_child(_center(go)); first = go
+	else:
+		var w = _lbl("Esperando a que el anfitrión empiece…", font_ui, 22, BEIGE); w.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(w)
+	var ch = _btn("PERSONAJE: %s" % Data.CHARACTERS[GS.character].name.to_upper(), func():
+		var ok = Data.CHARACTERS.keys().filter(func(k): return GS.level >= int(Data.CHARACTERS[k].level))
+		GS.character = ok[(ok.find(GS.character) + 1) % ok.size()]; GS.save_game()
+		if Net.is_host(): Net.set_character(GS.character)
+		else: Net.set_character.rpc_id(1, GS.character)
+		_lobby(), 460, true, 28)
+	v.add_child(_center(ch))
+	v.add_child(_center(_btn("SALIR DE LA SALA", func(): Net.leave(); coop_msg = ""; _coop(), 360, true)))
+	(first if first else ch).grab_focus()
+
+func _toast_lobby(t: String) -> void:
+	var l = _lbl(t, font_ui, 22, RED2); l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; l.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM); l.offset_top = -80; l.offset_left = -500; l.offset_right = 500
+	page.add_child(l)
+	get_tree().create_timer(3.0).timeout.connect(func(): if is_instance_valid(l): l.queue_free())
+
+func _lobby_refresh() -> void:
+	if not is_inside_tree(): return
+	if Net.active and not Net.players.is_empty(): _lobby()
+
 func _credits() -> void:
 	var v = _page("CRÉDITOS", _home)
 	var f = FileAccess.open("res://assets/CREDITOS.txt", FileAccess.READ)
-	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1100, 440); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(1100, 440); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var l = _lbl(f.get_as_text() if f else "", font_ui, 19, Color(0.88, 0.85, 0.78)); l.autowrap_mode = TextServer.AUTOWRAP_WORD; l.custom_minimum_size = Vector2(1080, 0); sc.add_child(l)
 	var back = _btn("VOLVER", _home, 300, true); v.add_child(_center(back)); back.grab_focus()
