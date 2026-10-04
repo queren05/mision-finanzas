@@ -14,6 +14,10 @@ var model: Node3D
 var anim: AnimationPlayer
 var skel: Skeleton3D
 var head_bone = -1
+var hips_bone = -1
+var fall_off = 0.0
+var rise_off = 0.0
+var state_rise_off = false
 var agent: NavigationAgent3D
 var hp = 150.0
 var max_speed = 0.6
@@ -55,7 +59,8 @@ func setup(g: Node, kind: String, pos: Vector3, health: float, speed: float) -> 
 	if skel:
 		for i in skel.get_bone_count():
 			var n = skel.get_bone_name(i)
-			if n.contains("Head") and not n.contains("Top"): head_bone = i; break
+			if n.contains("Head") and not n.contains("Top") and head_bone < 0: head_bone = i
+			if n.contains("Hips") and hips_bone < 0: hips_bone = i
 	agent = NavigationAgent3D.new()
 	agent.radius = 0.32; agent.height = HEIGHT; agent.path_desired_distance = 0.6; agent.target_desired_distance = 0.9
 	agent.avoidance_enabled = true; agent.neighbor_distance = 3.5; agent.max_neighbors = 8; agent.time_horizon_agents = 1.2; agent.max_speed = speed * 1.2
@@ -102,6 +107,7 @@ func take_hit(dmg: float, at: Vector3, head: bool, by: Node, kind := "bullet") -
 	return false
 
 func _die(head: bool, by: Node, kind: String) -> void:
+	rise_off = model.position.y; state_rise_off = true
 	dead = true; state = "dead"; t = 0.0; lod = 0
 	collision_layer = 0; collision_mask = MapBuilder.LAYER_WORLD
 	agent.avoidance_enabled = false
@@ -125,7 +131,14 @@ func _update_lod() -> void:
 func _physics_process(delta: float) -> void:
 	t += delta
 	if dead:
-		if t > 4.5: model.position.y -= delta * 0.6
+		# el cuerpo cae al suelo (aunque muera en el aire o en una escalera)
+		velocity.x = 0.0; velocity.z = 0.0; _gravity(delta); move_and_slide()
+		# algunas animaciones de muerte no bajan la cadera: se baja el cuerpo hasta quedar tumbado en el suelo
+		if hips_bone >= 0 and t > 0.35:
+			var hy = (skel.global_transform * skel.get_bone_global_pose(hips_bone).origin).y - model.global_position.y
+			var want = min(0.0, 0.24 - hy) * clamp((t - 0.35) / 0.8, 0.0, 1.0)
+			fall_off = lerp(fall_off, want, min(1.0, delta * 10.0))
+		model.position.y = fall_off + rise_off - (max(0.0, t - 4.5) * 0.6)
 		if t > 6.5: queue_free()
 		return
 	var P: Player = game.player

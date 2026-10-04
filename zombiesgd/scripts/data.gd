@@ -73,22 +73,62 @@ static func xp_for_level(lv: int) -> int: return int(XP_PER_LEVEL_BASE * pow(lv,
 # qué se desbloquea en cada nivel
 const UNLOCKS := [
 	{ "level": 1, "kind": "start_weapon", "id": "m1911", "text": "M1911 (arma inicial)" },
+	{ "level": 2, "kind": "title", "id": "superviviente", "text": "Título: Superviviente" },
 	{ "level": 3, "kind": "start_round", "id": "5", "text": "Empezar en la ronda 5" },
 	{ "level": 4, "kind": "character", "id": "chaqueta", "text": "Personaje: Gamba con Chaqueta" },
 	{ "level": 5, "kind": "start_weapon", "id": "python", "text": "Empezar con la Python" },
-	{ "level": 8, "kind": "character", "id": "langostino", "text": "Personaje: Langostino" },
+	{ "level": 6, "kind": "card", "id": "oxido", "text": "Tarjeta: Óxido" },
 	{ "level": 7, "kind": "start_round", "id": "10", "text": "Empezar en la ronda 10" },
+	{ "level": 8, "kind": "character", "id": "langostino", "text": "Personaje: Langostino" },
 	{ "level": 9, "kind": "start_weapon", "id": "mp5k", "text": "Empezar con el MP5K" },
+	{ "level": 10, "kind": "points", "id": "250", "text": "+250 puntos al empezar" },
 	{ "level": 11, "kind": "start_perk", "id": "revive", "text": "Empezar con Quick Revive" },
 	{ "level": 12, "kind": "character", "id": "langosta", "text": "Personaje: Langosta" },
 	{ "level": 13, "kind": "start_round", "id": "15", "text": "Empezar en la ronda 15" },
-	{ "level": 16, "kind": "character", "id": "cangrejo", "text": "Personaje: Bogavante" },
+	{ "level": 14, "kind": "title", "id": "cazazombis", "text": "Título: Cazazombis" },
 	{ "level": 15, "kind": "start_weapon", "id": "m16", "text": "Empezar con el M16" },
+	{ "level": 16, "kind": "character", "id": "cangrejo", "text": "Personaje: Bogavante" },
+	{ "level": 17, "kind": "card", "id": "abismo", "text": "Tarjeta: Abismo" },
 	{ "level": 18, "kind": "start_round", "id": "20", "text": "Empezar en la ronda 20" },
+	{ "level": 19, "kind": "points", "id": "500", "text": "+500 puntos al empezar" },
 	{ "level": 20, "kind": "start_perk", "id": "jugg", "text": "Empezar con Juggernog" },
+	{ "level": 22, "kind": "title", "id": "pescador", "text": "Título: Pescador de Muertos" },
+	{ "level": 23, "kind": "card", "id": "sangre", "text": "Tarjeta: Sangre" },
 	{ "level": 25, "kind": "start_round", "id": "25", "text": "Empezar en la ronda 25" },
+	{ "level": 27, "kind": "title", "id": "rey", "text": "Título: Rey del Marisco" },
+	{ "level": 28, "kind": "points", "id": "750", "text": "+750 puntos al empezar" },
 	{ "level": 30, "kind": "start_weapon", "id": "galil", "text": "Empezar con la Galil" },
+	{ "level": 32, "kind": "card", "id": "eter", "text": "Tarjeta: Éter" },
+	{ "level": 35, "kind": "title", "id": "leyenda", "text": "Título: Leyenda de la Isla" },
+	{ "level": 40, "kind": "card", "id": "oro", "text": "Tarjeta: Oro" },
+	{ "level": 45, "kind": "points", "id": "1000", "text": "+1000 puntos al empezar" },
+	{ "level": 50, "kind": "title", "id": "inmortal", "text": "Título: Inmortal" },
 ]
+const TITLES := { "": "Recluta", "superviviente": "Superviviente", "cazazombis": "Cazazombis", "pescador": "Pescador de Muertos", "rey": "Rey del Marisco", "leyenda": "Leyenda de la Isla", "inmortal": "Inmortal" }
+# tarjetas de jugador: degradado de dos colores
+const CARDS := { "": [Color(0.12, 0.13, 0.16), Color(0.05, 0.05, 0.07)], "oxido": [Color(0.55, 0.25, 0.08), Color(0.12, 0.05, 0.02)], "abismo": [Color(0.05, 0.3, 0.45), Color(0.01, 0.04, 0.1)],
+	"sangre": [Color(0.6, 0.03, 0.05), Color(0.1, 0.0, 0.01)], "eter": [Color(0.45, 0.2, 0.75), Color(0.05, 0.02, 0.15)], "oro": [Color(0.95, 0.7, 0.2), Color(0.3, 0.17, 0.02)] }
+
+# desafíos: se completan una vez y dan experiencia (stat "w:<arma>" = bajas con esa arma, "round_<mapa>" = mejor ronda)
+var CHALLENGES = []
+func _init() -> void:
+	var add = func(id, text, stat, goals, xps):
+		for i in goals.size(): CHALLENGES.append({ "id": "%s_%d" % [id, i], "text": text % goals[i], "stat": stat, "goal": goals[i], "xp": xps[i], "tier": i })
+	add.call("kills", "Mata %d zombis", "kills", [100, 500, 2000, 5000], [500, 1500, 4000, 8000])
+	add.call("heads", "Mata %d zombis de un tiro a la cabeza", "heads", [50, 250, 1000], [600, 2000, 5000])
+	add.call("knife", "Mata %d zombis con el cuchillo", "knife", [25, 100, 300], [600, 1800, 4000])
+	add.call("explo", "Mata %d zombis con explosivos", "explo", [25, 150, 500], [600, 2000, 4500])
+	for m in [["prison", "la Penitenciaría"], ["mansion", "la Mansión"], ["isla", "Isla Gamba"]]:
+		add.call("round_" + m[0], "Llega a la ronda %d en " + m[1], "round_" + m[0], [10, 20, 30], [800, 2500, 6000])
+	add.call("perks", "Bebe %d refrescos", "perks", [10, 50, 150], [500, 1500, 3500])
+	add.call("box", "Usa la caja misteriosa %d veces", "box", [10, 50, 150], [500, 1500, 3500])
+	add.call("pap", "Mejora %d armas en el Pack-a-Punch", "pap", [5, 25, 75], [800, 2500, 5000])
+	add.call("doors", "Abre %d puertas", "doors", [20, 100], [500, 1500])
+	add.call("powerups", "Recoge %d potenciadores", "powerups", [10, 50], [500, 1500])
+	add.call("games", "Juega %d partidas", "games", [5, 25, 100], [400, 1500, 5000])
+	for id in WEAPONS:
+		add.call("w_" + id, "Mata %d zombis con " + WEAPONS[id].name, "w:" + id, [75, 300], [700, 2000])
+
 # camuflajes: se ganan con bajas de cada arma (como en los Black Ops)
 const CAMOS := [
 	{ "id": "none", "name": "Ninguno", "kills": 0, "color": Color(1, 1, 1), "metal": 0.0, "rough": 1.0 },
@@ -107,7 +147,7 @@ const CHARACTERS := {
 	"chaqueta": { "name": "Gamba con Chaqueta", "file": "gamba_chaqueta", "head": 1, "len": 1.5, "level": 4, "desc": "Va de uniforme. Lista para la guerra." },
 	"langostino": { "name": "Langostino", "file": "langostino", "head": 1, "len": 1.4, "level": 8, "desc": "Un langostino de verdad, cocido y de mal humor." },
 	"langosta": { "name": "Langosta", "file": "langosta_a", "head": -1, "len": 1.5, "level": 12, "desc": "Roja como un tomate y el doble de dura." },
-	"cangrejo": { "name": "Bogavante", "file": "langosta_c", "head": -1, "len": 1.6, "level": 16, "desc": "El jefe del fondo del mar." },
+	"cangrejo": { "name": "Bogavante", "file": "langosta_c", "head": 1, "len": 1.6, "level": 16, "desc": "El jefe del fondo del mar." },
 }
 
 # ---------------------------------------------------------------- mapas

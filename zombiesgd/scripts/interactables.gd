@@ -82,6 +82,7 @@ class Perk extends Base:
 	func use(p: Player) -> void:
 		if id in p.perks or not powered(): return
 		if pay(p, int(Data.PERKS[id].cost)):
+			game.stat("perks")
 			p.give_perk(id); game.hud.banner(Data.PERKS[id].name.to_upper(), Data.PERKS[id].desc, 2.0)
 
 # ------------------------------------------------------------------ caja misteriosa
@@ -117,7 +118,9 @@ class MysteryBox extends Base:
 		return ""
 	func use(p: Player) -> void:
 		if state == "idle":
-			if pay(p, cost()): state = "rolling"; st = 0.0; buyer = p; uses += 1; Sfx.play("powerup", 0.8, 0.7)
+			if pay(p, cost()):
+				state = "rolling"; st = 0.0; buyer = p; uses += 1; Sfx.play("powerup", 0.8, 0.7)
+				game.stat("box")
 		elif state == "offer" and buyer == p:
 			p.give_weapon(offer); _clear(); state = "idle"
 	func _clear() -> void:
@@ -176,6 +179,7 @@ class PackAPunch extends Base:
 		if holding.size() > 0 and who == p: p.give_weapon(holding.id, true); holding = {}; return
 		if p.cur_w().pap: return
 		if pay(p, 5000):
+			game.stat("pap")
 			holding = p.cur_w().duplicate(); who = p
 			p.weapons.remove_at(p.cur)
 			if p.weapons.is_empty(): p.weapons.append(p._new_w("m1911", false))
@@ -230,7 +234,9 @@ class Door extends Base:
 	func prompt(_p: Player) -> String: return "Pulsa USAR: despejar el paso [%d]" % cost
 	func use(p: Player) -> void:
 		if open: return
-		if pay(p, cost): open_now()
+		if pay(p, cost):
+			open_now()
+			game.stat("doors")
 	func open_now(silent = false) -> void:
 		open = true; anim_t = 0.0
 		if blocker: blocker.queue_free()

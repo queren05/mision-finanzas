@@ -8,6 +8,9 @@ var map_id = ""
 var player: Player
 var hud: Node
 var paused = false
+var over = false
+var level0 = 1
+var completed = []          # desafíos completados en esta partida
 var god = false
 var power_on = false
 var fire_sale = 0.0
@@ -27,6 +30,7 @@ var time = 0.0
 var max_alive = 24
 var hide_nodes = {}            # puerta -> nodos del mapa que se esconden al abrirla
 var env: Environment
+var sun: DirectionalLight3D
 
 func start(id: String) -> void:
 	map_id = id
@@ -40,7 +44,9 @@ func start(id: String) -> void:
 	player.global_position = MapBuilder.v3(sp); player.yaw = deg_to_rad(float(sp[3]) if sp.size() > 3 else 0.0)
 	hud = preload("res://scripts/hud.gd").new(); hud.game = self; add_child(hud)
 	player.setup(GS.start_weapon, GS.start_perk)
-	player.points = 500 + (GS.start_round - 1) * 450
+	player.points = 500 + (GS.start_round - 1) * 450 + GS.start_points_bonus()
+	level0 = GS.level
+	stat("games")
 	player.died.connect(_on_player_died)
 	player.points_changed.connect(func(p, dl): hud.update_points(p, dl))
 	hud.update_points(player.points, 0); hud.update_ammo(); hud.update_perks(player.perks)
@@ -68,11 +74,15 @@ func _build_environment() -> void:
 	apply_quality(env)
 	var sun = DirectionalLight3D.new(); sun.light_color = _col(e.get("sun_color", [1.0, 0.92, 0.8])); sun.light_energy = float(e.get("sun", 1.1))
 	var sr: Array = e.get("sun_rot", [-42, 35]); sun.rotation_degrees = Vector3(sr[0], sr[1], 0)
-	sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 45.0
-	sun.shadow_blur = 1.5; sun.shadow_bias = 0.03; sun.shadow_normal_bias = 1.2
+	# sombras: 4 cascadas mezcladas, suaves y no del todo negras
+	sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS; sun.directional_shadow_max_distance = 60.0
+	sun.directional_shadow_split_1 = 0.08; sun.directional_shadow_split_2 = 0.22; sun.directional_shadow_split_3 = 0.5; sun.directional_shadow_blend_splits = true
+	sun.shadow_blur = 1.2; sun.shadow_bias = 0.04; sun.shadow_normal_bias = 1.5; sun.shadow_opacity = 0.82
+	sun.directional_shadow_pancake_size = 30.0
 	var q = GS.settings.get("quality", "alta")
 	sun.shadow_enabled = q != "baja"
-	if q == "media": sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL; sun.directional_shadow_max_distance = 30.0
+	if q == "media": sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 40.0; sun.directional_shadow_split_1 = 0.2
+	self.sun = sun
 	add_child(sun)
 	var lp = "res://assets/maps/%s/nav/lights.json" % map_id
 	if FileAccess.file_exists(lp):
@@ -87,9 +97,13 @@ func apply_quality(e: Environment) -> void:
 	var vp = get_viewport()
 	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q != "alta" else Viewport.SCALING_3D_MODE_BILINEAR
 	vp.scaling_3d_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
-	vp.msaa_3d = Viewport.MSAA_2X if q == "alta" else Viewport.MSAA_DISABLED
+	vp.msaa_3d = Viewport.MSAA_4X if q == "alta" else (Viewport.MSAA_2X if q == "media" else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
 	RenderingServer.directional_shadow_atlas_set_size(4096 if q == "alta" else 2048, true)
+	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM if q == "alta" else RenderingServer.SHADOW_QUALITY_SOFT_LOW)
+	if sun:
+		sun.shadow_enabled = q != "baja"
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if q == "alta" else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	e.glow_enabled = q != "baja"
 	Engine.max_fps = 60
 
@@ -271,12 +285,12 @@ static func round_speed(r: int) -> float:
 
 func _next_round() -> void:
 	round_n += 1; to_spawn = round_count(round_n); spawn_t = 1.0; drops = 0
+	_challenges(GS.max_stat("round_" + map_id, round_n))
 	hud.set_round(round_n, true)
 	Sfx.play("z_roar3", 0.9, 0.7)
 
 func _process(delta: float) -> void:
 	if paused or not player: return
-	if Controls.was_pressed("pause"): pause(true)
 	time += delta
 	insta = max(0.0, insta - delta); dpoints = max(0.0, dpoints - delta); fire_sale = max(0.0, fire_sale - delta)
 	hud.update_timers(insta, dpoints, fire_sale)
@@ -427,7 +441,11 @@ func on_zombie_killed(z: Zombie, head: bool, by: Node, kind: String) -> void:
 		by.add_points(pts * (2 if dpoints > 0 else 1))
 		by.kills += 1
 		if head: by.headshots += 1
-		if kind == "bullet": GS.add_kill(by.cur_w().id)
+		if kind == "bullet": _challenges(GS.add_kill(by.cur_w().id))
+		stat("kills")
+		if head: stat("heads")
+		if kind == "knife": stat("knife")
+		if kind == "explo": stat("explo")
 	if drops < 4 and randf() < 0.035: _drop_powerup(z.global_position)
 
 # ------------------------------------------------------------------ explosiones y granadas
@@ -455,6 +473,7 @@ func _drop_powerup(at: Vector3) -> void:
 	var pu = preload("res://scripts/powerup.gd").new(); pu.game = self; pu.kind = kind; add_child(pu); pu.global_position = at + Vector3(0, 0.9, 0)
 
 func apply_powerup(kind: String) -> void:
+	stat("powerups")
 	hud.banner(Data.POWERUP_NAMES[kind], "", 2.0); Sfx.play("powerup", 1.0)
 	match kind:
 		"max_ammo": player.refill_ammo()
@@ -474,14 +493,34 @@ func impact(at: Vector3, n: Vector3) -> void: Fx.impact(self, at, n)
 func dust(at: Vector3) -> void: Fx.dust(self, at)
 
 # ------------------------------------------------------------------ pausa y fin
+## un ajuste cambiado desde la pausa se aplica al momento
+func on_setting_changed(k: String) -> void:
+	match k:
+		"quality": apply_quality(env)
+		"third": player.third = bool(GS.settings.third)
+		"music": Sfx.set_ambient_volume()
+		"fov": player.cam.fov = float(GS.settings.fov)
+		"btn_scale", "btn_alpha", "left_fire": hud.touch_layer.queue_redraw()
+
+## contadores de los desafíos
+func stat(key: String, n := 1) -> void: _challenges(GS.add_stat(key, n))
+
+func _challenges(list: Array) -> void:
+	for c in list:
+		completed.append(c)
+		if hud: hud.toast("DESAFÍO COMPLETADO", "%s  ·  +%d XP" % [c.text, c.xp])
+
 func pause(on: bool) -> void:
+	if on: GS.save_game()
 	paused = on; get_tree().paused = on; hud.show_pause(on)
 	Controls.consume()   # que el botón que ha reanudado no vuelva a pausar ni dispare
 
 func _on_player_died() -> void:
+	if over: return
+	over = true
 	var stats = { "map": map_id, "round": round_n, "kills": player.kills, "heads": player.headshots, "time": time, "points": player.points }
 	var xp = player.kills * 10 + player.headshots * 5 + round_n * 100
-	stats["xp"] = xp; stats["levels"] = GS.add_xp(xp)
+	GS.add_xp(xp); stats["xp"] = xp + completed.reduce(func(a, c): return a + int(c.xp), 0); stats["levels"] = GS.level - level0; stats["challenges"] = completed
 	if round_n > int(GS.best.get(map_id, 0)): GS.best[map_id] = round_n; stats["record"] = true
 	GS.save_game()
 	hud.show_game_over(stats)

@@ -50,8 +50,13 @@ var third = false
 var body: Node3D                    # personaje (se ve en tercera persona y su sombra en primera)
 var body_gun: Node3D
 var body_len = 1.5
-var tp_dist = 2.6
+var tp_dist = 2.4
 var body_third = null
+var crouch = false
+var crouch_k = 0.0
+var slide_t = 0.0
+var slide_dir = Vector3.ZERO
+const SLIDE_TIME := 0.75
 
 func _ready() -> void:
 	collision_layer = MapBuilder.LAYER_PLAYER
@@ -74,7 +79,7 @@ func _build_body() -> void:
 	body = Node3D.new(); add_child(body)
 	var piv = Node3D.new(); body.add_child(piv)
 	var m: Node3D = scn.instantiate(); piv.add_child(m)
-	piv.rotation_degrees.y = 0.0 if float(c.head) > 0 else 180.0   # en el modelo importado la cabeza mira a -Z (o a +Z si head es -1)
+	piv.rotation_degrees.y = 180.0 if float(c.head) > 0 else 0.0   # que la cabeza mire hacia delante (-Z), de espaldas a la cámara
 	var lo = Vector3.INF; var hi = -Vector3.INF
 	for mi in m.find_children("*", "MeshInstance3D", true, false):
 		var t = Transform3D.IDENTITY; var n: Node = mi
@@ -115,6 +120,8 @@ func max_guns() -> int: return 3 if "mule" in perks else 2
 func _physics_process(delta: float) -> void:
 	Controls.poll(delta)
 	if game.paused: Controls.consume(); return
+	# la pausa se mira aquí: si se mirase en _process, la física ya habría gastado la pulsación
+	if Controls.was_pressed("pause") and not game.over: game.pause(true); return
 	_look(delta)
 	_move(delta)
 	_health(delta)
@@ -128,7 +135,7 @@ func _physics_process(delta: float) -> void:
 func _look(delta: float) -> void:
 	var lk = Controls.look
 	if GS.settings.aim_assist and Controls.device != "kb" and game.zombie_under_crosshair(cam, 40.0): lk *= 0.55
-	if ads > 0.5: lk *= 0.7
+	if ads > 0.5: lk *= float(GS.settings.get("ads_sens", 0.7))
 	yaw += lk.x; pitch = clamp(pitch + lk.y, deg_to_rad(-85), deg_to_rad(85))
 	pitch += recoil.y * delta * 10.0; yaw += recoil.x * delta * 10.0
 	recoil = recoil.lerp(Vector2.ZERO, min(1.0, delta * 14.0))
@@ -138,16 +145,36 @@ func _move(delta: float) -> void:
 	var mv = Controls.move if alive and not downed else Vector2.ZERO
 	var sprint = Controls.is_held("sprint") or (Controls.device == "touch" and mv.y > 0.92)
 	sprint = sprint and mv.y > 0.4 and ads < 0.3 and reload_t <= 0.0 and stamina > 0.05
+	# agacharse; si vas corriendo, te deslizas (como en Call of Duty)
+	if Controls.was_pressed("crouch") and alive and not downed:
+		var hv = Vector3(velocity.x, 0, velocity.z)
+		if not crouch and is_on_floor() and hv.length() > 5.0:
+			slide_t = SLIDE_TIME; slide_dir = hv.normalized(); crouch = true; Sfx.play("step_1", 0.6, 0.6)
+		else:
+			crouch = not crouch
+	if sprint and crouch and slide_t <= 0.0: crouch = false
+	if sprint and crouch and slide_t > 0.0: sprint = false
+	crouch_k = move_toward(crouch_k, 1.0 if (crouch or downed) else 0.0, delta * 6.0)
+	head.position.y = lerp(EYE, 1.05, crouch_k)
 	var base = 4.1 if not downed else 0.9
 	var spd = base * (1.55 if sprint else 1.0) * lerp(1.0, 0.6, ads) * (0.82 if mv.y < -0.1 else 1.0)
 	if "stamin" in perks: spd *= 1.12
+	if crouch and slide_t <= 0.0: spd *= 0.55
 	stamina = clamp(stamina + (-delta / (8.0 if "stamin" in perks else 4.0) if sprint else delta / 3.0), 0.0, 1.0)
 	var fwd = -transform.basis.z; var right = transform.basis.x
 	var want = (fwd * mv.y + right * mv.x) * spd
 	var acc = 14.0 if is_on_floor() else 3.0
+	if slide_t > 0.0:
+		slide_t -= delta
+		var k = slide_t / SLIDE_TIME
+		want = slide_dir * lerp(3.0, 8.8, k) + (right * mv.x) * 1.2
+		acc = 20.0
+		if is_on_wall(): slide_t = 0.0
 	velocity.x = lerp(velocity.x, want.x, min(1.0, acc * delta)); velocity.z = lerp(velocity.z, want.z, min(1.0, acc * delta))
 	if is_on_floor():
-		if Controls.was_pressed("jump") and alive and not downed: velocity.y = 4.6
+		if Controls.was_pressed("jump") and alive and not downed:
+			if crouch: crouch = false; slide_t = 0.0
+			else: velocity.y = 4.6
 	else:
 		velocity.y -= 18.0 * delta
 	var pre = global_position
@@ -193,6 +220,7 @@ func _health(delta: float) -> void:
 func take_damage(n: float) -> void:
 	if not alive or downed or game.god: return
 	hp -= n; hurt_t = 0.0
+	if GS.settings.get("vibration", true): Input.vibrate_handheld(90)
 	Sfx.play("pain%d" % randi_range(1, 2), 0.7)
 	game.hud.hurt_flash()
 	if hp <= 0:
@@ -316,7 +344,8 @@ func _equip() -> void:
 	vm.add_child(gun_node)
 	if body_gun: body_gun.queue_free()
 	body_gun = Guns.make_world(w.id); body.add_child(body_gun)
-	body_gun.position = Vector3(0.12, 0.42, -body_len * 0.42 - float(Data.WEAPONS[w.id].len) * 0.3)
+	body_gun.scale = Vector3.ONE * 1.8   # el arma un poco más grande, para que se vea bien en manos de la gamba
+	body_gun.position = Vector3(0.16, 0.36, -body_len * 0.45 - float(Data.WEAPONS[w.id].len) * 0.6)
 	if game and game.hud: game.hud.update_ammo()
 
 # ------------------------------------------------------------------ interacción
@@ -330,10 +359,10 @@ func _view(delta: float) -> void:
 	_body_anim(delta)
 	if third and not downed:
 		# por encima del hombro; si hay una pared detrás, la cámara se acerca para no atravesarla
-		var pivot = global_position + Vector3(0, 1.15, 0)
+		var pivot = global_position + Vector3(0, lerp(1.0, 0.75, crouch_k), 0)
 		var aim = -cam.global_transform.basis.z
 		var basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
-		var want = pivot + basis * Vector3(0.55, 0.35, lerp(tp_dist, 1.2, ads))
+		var want = pivot + basis * Vector3(lerp(0.6, 0.5, ads), 0.38, lerp(body_len * 0.6 + tp_dist * 0.6, 1.4, ads))   # por encima del hombro derecho, como en los shooters en tercera persona
 		var q = PhysicsRayQueryParameters3D.create(pivot, want, MapBuilder.LAYER_WORLD | MapBuilder.LAYER_BARRIER); q.exclude = [get_rid()]
 		var hit = get_world_3d().direct_space_state.intersect_ray(q)
 		var dest = want if hit.is_empty() else hit.position + (pivot - want).normalized() * 0.25

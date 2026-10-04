@@ -40,6 +40,7 @@ static func build_scene(cfg: Dictionary, parent: Node3D) -> Node3D:
 		var mi: MeshInstance3D = m
 		var full = String(root.get_path_to(mi))
 		if _matches(full, hide): mi.visible = false; continue
+		if not OS.get_cmdline_user_args().has("notune"): _tune_materials(mi)
 		if mi.mesh == null or _matches(full, nocol): continue
 		var shape = mi.mesh.create_trimesh_shape()
 		if shape == null: continue
@@ -54,6 +55,30 @@ static func build_scene(cfg: Dictionary, parent: Node3D) -> Node3D:
 	for b in cfg.get("walls", []):
 		parent.add_child(make_box(Vector3(b[0], b[1], b[2]), Vector3(b[3], b[4], b[5]), float(b[6]) if b.size() > 6 else 0.0, LAYER_SOFT))
 	return root
+
+## materiales: transparencias baratas y sin dientes de sierra; las vallas y redes finas no hacen sombra
+## (sus sombras salen pixeladas y con efecto muaré en el móvil)
+static func _tune_materials(mi: MeshInstance3D) -> void:
+	if mi.mesh == null: return
+	var alpha = false
+	for si in mi.mesh.get_surface_count():
+		var mat = mi.get_active_material(si)
+		if not (mat is BaseMaterial3D): continue
+		var m: BaseMaterial3D = mat
+		if m.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED: alpha = true
+		if m.has_meta("tuned"): continue
+		m.set_meta("tuned", true)
+		if m.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS or m.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA:
+			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR; m.alpha_scissor_threshold = 0.5
+		if m.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR:
+			m.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		m.metallic_specular = min(m.metallic_specular, 0.35)   # pocos brillos
+	var ab = mi.get_aabb(); var sz = ab.size * mi.global_transform.basis.get_scale()
+	if alpha and min(sz.x, min(sz.y, sz.z)) < 0.2:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# objetos pequeños: no se dibujan de lejos
+	if max(sz.x, max(sz.y, sz.z)) < 0.8: mi.visibility_range_end = 45.0
 
 static func make_box(center: Vector3, size: Vector3, yaw_deg: float, layer: int) -> StaticBody3D:
 	var body = StaticBody3D.new()

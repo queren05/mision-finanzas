@@ -54,7 +54,7 @@ func _lbl(text: String, f: Font, size: int, c: Color) -> Label:
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85)); l.add_theme_constant_override("shadow_offset_y", 4); l.add_theme_constant_override("shadow_offset_x", 0)
 	return l
 
-func _btn(text: String, cb: Callable, w := 470, centered := false, size := 34) -> Button:
+func _btn(text: String, cb: Callable, w := 470, centered := false, size := 30) -> Button:
 	return MenuStyle.button(text, cb, font_bo, size, w, centered)
 
 # ------------------------------------------------------------------ portada
@@ -70,6 +70,7 @@ func _home() -> void:
 	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 16); left.add_child(gap)
 	var play = _btn("JUGAR", _options); left.add_child(play)
 	left.add_child(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps))
+	left.add_child(_btn("PROGRESO", _progress))
 	left.add_child(_btn("PERSONAJE", _chars))
 	left.add_child(_btn("ARMERÍA", _armory))
 	left.add_child(_btn("AJUSTES", _settings))
@@ -88,6 +89,12 @@ func _home() -> void:
 	if ResourceLoader.exists(cp): cimg.texture = load(cp)
 	right.add_child(cimg)
 	var cn = _lbl(Data.CHARACTERS[GS.character].name.to_upper(), font_bo, 26, Color(1, 0.82, 0.48)); cn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(cn)
+	# tarjeta de jugador con el título elegido
+	var pcard = PanelContainer.new(); var cc: Array = Data.CARDS.get(GS.card, Data.CARDS[""])
+	var csb = StyleBoxTexture.new(); var g = Gradient.new(); g.set_color(0, Color(cc[1].r, cc[1].g, cc[1].b, 0.0)); g.set_color(1, Color(cc[0].r, cc[0].g, cc[0].b, 0.9))
+	var gt = GradientTexture2D.new(); gt.gradient = g; gt.width = 64; gt.height = 4; csb.texture = gt; csb.content_margin_right = 14; csb.content_margin_top = 4; csb.content_margin_bottom = 4
+	pcard.add_theme_stylebox_override("panel", csb); right.add_child(pcard)
+	var ttl = _lbl(Data.TITLES.get(GS.title, "Recluta").to_upper(), font_bo, 24, Color.WHITE); ttl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; pcard.add_child(ttl)
 	var lv = _lbl("NIVEL %d" % GS.level, font_bo, 54, GOLD); lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(lv)
 	var need = Data.xp_for_level(GS.level)
 	var bar = ProgressBar.new(); bar.max_value = need; bar.value = GS.xp; bar.show_percentage = false; bar.custom_minimum_size = Vector2(470, 12)
@@ -97,6 +104,7 @@ func _home() -> void:
 	for u in Data.UNLOCKS:
 		if u.level > GS.level:
 			var nx = _lbl("Nivel %d: %s" % [u.level, u.text], font_ui, 22, Color(0.92, 0.88, 0.8)); nx.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(nx); break
+	var dn = _lbl("Desafíos: %d / %d" % [GS.done.size(), Data.CHALLENGES.size()], font_ui, 20, BEIGE); dn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(dn)
 	play.grab_focus()
 
 # ------------------------------------------------------------------ páginas centradas
@@ -229,35 +237,105 @@ func _armory() -> void:
 func _settings() -> void:
 	var v = _page("AJUSTES", func(): GS.save_game(); _home())
 	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
-	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 8); sc.add_child(list)
-	var first = _toggle(list, "Vista", "third", "TERCERA PERSONA", "PRIMERA PERSONA")
-	_cycle_setting(list, "Calidad gráfica", "quality", ["baja", "media", "alta"])
-	_slider(list, "Sensibilidad", 0.3, 2.5, float(GS.settings.sens), func(x): GS.settings.sens = x)
-	_slider(list, "Campo de visión", 60, 95, float(GS.settings.fov), func(x): GS.settings.fov = x)
-	_toggle(list, "Ayuda al apuntar", "aim_assist", "SÍ", "NO")
-	_toggle(list, "Invertir eje vertical", "invert", "SÍ", "NO")
-	_slider(list, "Efectos de sonido", 0, 1, float(GS.settings.sfx), func(x): GS.settings.sfx = x)
-	_slider(list, "Ambiente", 0, 1, float(GS.settings.music), func(x): GS.settings.music = x)
+	var first = SettingsList.build(sc, font_bo, font_ui, func(_k): pass)
 	v.add_child(_center(_btn("VOLVER", func(): GS.save_game(); _home(), 300, true)))
 	first.grab_focus()
 
-func _toggle(list: VBoxContainer, label: String, key: String, yes: String, no: String) -> Button:
-	var b = _value_btn(yes if GS.settings.get(key, false) else no)
-	b.pressed.connect(func(): GS.settings[key] = not GS.settings.get(key, false); b.text = yes if GS.settings[key] else no)
-	list.add_child(_row(label, b)); return b
+# ------------------------------------------------------------------ progreso: camino de recompensas y desafíos
+func _progress(tab := 0) -> void:
+	var v = _page("PROGRESO", _home)
+	v.add_theme_constant_override("separation", 10)
+	var tabs = HBoxContainer.new(); tabs.alignment = BoxContainer.ALIGNMENT_CENTER; tabs.add_theme_constant_override("separation", 20); v.add_child(tabs)
+	var t0 = MenuStyle.button("RECOMPENSAS", func(): _progress(0), font_bo, 28, 300, true); tabs.add_child(t0)
+	var t1 = MenuStyle.button("DESAFÍOS  %d/%d" % [GS.done.size(), Data.CHALLENGES.size()], func(): _progress(1), font_bo, 28, 340, true); tabs.add_child(t1)
+	(t0 if tab == 0 else t1).add_theme_color_override("font_color", GOLD)
+	# nivel y experiencia
+	var need = Data.xp_for_level(GS.level)
+	var lv = HBoxContainer.new(); lv.alignment = BoxContainer.ALIGNMENT_CENTER; lv.add_theme_constant_override("separation", 16); v.add_child(lv)
+	lv.add_child(_lbl("NIVEL %d" % GS.level, font_bo, 30, GOLD))
+	var bar = ProgressBar.new(); bar.max_value = need; bar.value = GS.xp; bar.show_percentage = false; bar.custom_minimum_size = Vector2(520, 14); bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var bgs = StyleBoxFlat.new(); bgs.bg_color = Color(0, 0, 0, 0.55); bgs.set_corner_radius_all(7); var fgs = StyleBoxFlat.new(); fgs.bg_color = GOLD; fgs.set_corner_radius_all(7)
+	bar.add_theme_stylebox_override("background", bgs); bar.add_theme_stylebox_override("fill", fgs); lv.add_child(bar)
+	lv.add_child(_lbl("%d / %d XP" % [GS.xp, need], font_ui, 22, BEIGE))
+	if tab == 0: _rewards(v)
+	else: _challenge_list(v)
+	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	(t0 if tab == 0 else t1).grab_focus()
 
-func _cycle_setting(list: VBoxContainer, label: String, key: String, opts: Array) -> Button:
-	var b = _value_btn(str(GS.settings.get(key, opts[-1])).to_upper())
-	b.pressed.connect(func():
-		var i = opts.find(GS.settings.get(key, opts[-1])); GS.settings[key] = opts[(i + 1) % opts.size()]; b.text = str(GS.settings[key]).to_upper())
-	list.add_child(_row(label, b)); return b
+const KIND_NAMES := { "start_weapon": "ARMA INICIAL", "start_round": "RONDA INICIAL", "start_perk": "VENTAJA INICIAL", "character": "PERSONAJE", "title": "TÍTULO", "card": "TARJETA", "points": "PUNTOS" }
 
-func _slider(list: VBoxContainer, label: String, a: float, b: float, val: float, cb: Callable) -> HSlider:
-	var s = HSlider.new(); s.min_value = a; s.max_value = b; s.step = (b - a) / 40.0; s.value = val; s.custom_minimum_size = Vector2(340, 48); s.value_changed.connect(cb); s.focus_mode = Control.FOCUS_ALL
-	var grab = StyleBoxFlat.new(); grab.bg_color = RED2; grab.content_margin_top = 4; grab.content_margin_bottom = 4
-	var track = StyleBoxFlat.new(); track.bg_color = Color(1, 1, 1, 0.18); track.content_margin_top = 3; track.content_margin_bottom = 3; track.set_corner_radius_all(3)
-	s.add_theme_stylebox_override("slider", track); s.add_theme_stylebox_override("grabber_area", grab); s.add_theme_stylebox_override("grabber_area_highlight", grab)
-	list.add_child(_row(label, s)); return s
+## camino de niveles con su recompensa (como un pase de batalla, pero para siempre); los títulos y tarjetas se equipan pulsándolos
+func _rewards(v: VBoxContainer) -> void:
+	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1200, 330); sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var h = HBoxContainer.new(); h.add_theme_constant_override("separation", 12); sc.add_child(h)
+	var cur_card: Control = null
+	for u in Data.UNLOCKS:
+		if u.level <= 1: continue
+		var got = GS.level >= int(u.level)
+		var equipped = (u.kind == "title" and GS.title == u.id) or (u.kind == "card" and GS.card == u.id)
+		var b = Button.new(); b.custom_minimum_size = Vector2(190, 300); b.focus_mode = Control.FOCUS_ALL
+		var sb = StyleBoxFlat.new(); sb.set_corner_radius_all(12); sb.set_border_width_all(3)
+		sb.bg_color = Color(0.12, 0.1, 0.06, 0.85) if got else Color(0.05, 0.05, 0.07, 0.8)
+		sb.border_color = Color(0.3, 1, 0.45) if equipped else (GOLD if got else Color(1, 1, 1, 0.12))
+		if u.kind == "card":
+			var cc: Array = Data.CARDS[u.id]; sb.bg_color = cc[1].lerp(cc[0], 0.5) if got else cc[1] * 0.6
+		var sf = sb.duplicate(); sf.border_color = RED2
+		b.add_theme_stylebox_override("normal", sb); b.add_theme_stylebox_override("hover", sf); b.add_theme_stylebox_override("focus", sf); b.add_theme_stylebox_override("pressed", sf)
+		var c = VBoxContainer.new(); c.mouse_filter = Control.MOUSE_FILTER_IGNORE; c.alignment = BoxContainer.ALIGNMENT_CENTER; c.add_theme_constant_override("separation", 8); b.add_child(c)
+		c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); c.offset_left = 10; c.offset_right = -10; c.offset_top = 10; c.offset_bottom = -10
+		var nl = _lbl("NIVEL %d" % u.level, font_bo, 24, GOLD if got else Color(0.6, 0.58, 0.52)); nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(nl)
+		if u.kind == "character" and ResourceLoader.exists("res://assets/ui/char_%s.png" % u.id):
+			var img = TextureRect.new(); img.texture = load("res://assets/ui/char_%s.png" % u.id); img.custom_minimum_size = Vector2(170, 100); img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			if not got: img.modulate = Color(0.3, 0.3, 0.3)
+			c.add_child(img)
+		else:
+			var ic = _lbl({ "start_weapon": "▲", "start_round": "Ⅴ", "start_perk": "✚", "title": "❝", "card": "▬", "points": "+" }.get(u.kind, "★"), font_bo, 56, Color.WHITE if got else Color(0.4, 0.4, 0.42))
+			ic.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(ic)
+		var kn = _lbl(KIND_NAMES.get(u.kind, ""), font_ui, 16, BEIGE); kn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(kn)
+		var tx = _lbl(u.text.split(": ")[-1], font_bo, 19, Color(0.95, 0.92, 0.86) if got else Color(0.55, 0.55, 0.55)); tx.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tx.autowrap_mode = TextServer.AUTOWRAP_WORD; tx.custom_minimum_size = Vector2(170, 0); c.add_child(tx)
+		var st = _lbl("EQUIPADO" if equipped else ("PULSA PARA EQUIPAR" if got and (u.kind == "title" or u.kind == "card") else ("CONSEGUIDO" if got else "BLOQUEADO")), font_ui, 15, Color(0.3, 1, 0.45) if equipped else (GOLD if got else Color(0.5, 0.5, 0.5)))
+		st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(st)
+		var uu = u
+		b.pressed.connect(func():
+			if not got: return
+			if uu.kind == "title": GS.title = "" if GS.title == uu.id else uu.id
+			elif uu.kind == "card": GS.card = "" if GS.card == uu.id else uu.id
+			else: return
+			GS.save_game(); _progress(0))
+		b.focus_entered.connect(func(): sc.ensure_control_visible(b))
+		h.add_child(b)
+		if cur_card == null and not got: cur_card = b
+	if cur_card:   # empieza mostrando el siguiente premio
+		await get_tree().process_frame
+		if is_instance_valid(sc) and is_instance_valid(cur_card): sc.scroll_horizontal = int(max(0.0, cur_card.position.x - 400))
+
+func _challenge_list(v: VBoxContainer) -> void:
+	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1200, 340); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
+	var g = GridContainer.new(); g.columns = 2; g.add_theme_constant_override("h_separation", 14); g.add_theme_constant_override("v_separation", 10); sc.add_child(g)
+	var list = GS.visible_challenges()
+	# primero los que faltan (en su orden), al final los completados
+	list = list.filter(func(c): return not GS.done.has(c.id)) + list.filter(func(c): return GS.done.has(c.id))
+	for c in list:
+		var got = GS.done.has(c.id)
+		var val = min(GS.stat_value(c.stat), int(c.goal))
+		var pc = Button.new(); pc.custom_minimum_size = Vector2(585, 86); pc.focus_mode = Control.FOCUS_ALL
+		var sb = StyleBoxFlat.new(); sb.bg_color = Color(0.1, 0.16, 0.08, 0.85) if got else Color(0.06, 0.06, 0.08, 0.82); sb.set_corner_radius_all(10)
+		sb.border_width_left = 5; sb.border_color = Color(0.3, 1, 0.45) if got else RED2
+		var sf = sb.duplicate(); sf.bg_color = Color(0.78, 0.08, 0.12, 0.25)
+		pc.add_theme_stylebox_override("normal", sb); pc.add_theme_stylebox_override("hover", sf); pc.add_theme_stylebox_override("focus", sf); pc.add_theme_stylebox_override("pressed", sf)
+		var row = VBoxContainer.new(); row.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_theme_constant_override("separation", 4); pc.add_child(row)
+		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); row.offset_left = 18; row.offset_right = -14; row.offset_top = 8; row.offset_bottom = -8
+		var top = HBoxContainer.new(); top.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(top)
+		var tl = _lbl(c.text, font_ui, 22, Color(0.95, 0.92, 0.86)); tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL; top.add_child(tl)
+		var xl = _lbl("+%d XP" % c.xp, font_bo, 20, GOLD); top.add_child(xl)
+		var bot = HBoxContainer.new(); bot.mouse_filter = Control.MOUSE_FILTER_IGNORE; bot.add_theme_constant_override("separation", 12); row.add_child(bot)
+		var bar = ProgressBar.new(); bar.max_value = int(c.goal); bar.value = val; bar.show_percentage = false; bar.custom_minimum_size = Vector2(0, 10); bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL; bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var bgs = StyleBoxFlat.new(); bgs.bg_color = Color(1, 1, 1, 0.12); bgs.set_corner_radius_all(5); var fgs = StyleBoxFlat.new(); fgs.bg_color = Color(0.3, 1, 0.45) if got else RED2; fgs.set_corner_radius_all(5)
+		bar.add_theme_stylebox_override("background", bgs); bar.add_theme_stylebox_override("fill", fgs); bot.add_child(bar)
+		bot.add_child(_lbl("COMPLETADO" if got else "%d / %d" % [val, c.goal], font_bo, 17, Color(0.3, 1, 0.45) if got else BEIGE))
+		pc.focus_entered.connect(func(): sc.ensure_control_visible(pc))
+		g.add_child(pc)
 
 func _credits() -> void:
 	var v = _page("CRÉDITOS", _home)

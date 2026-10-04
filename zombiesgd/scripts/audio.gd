@@ -36,3 +36,6 @@ func play_ambient(name: String) -> void:
 	ambient.stream = s; ambient.volume_db = linear_to_db(max(0.001, 0.5 * float(GS.settings.music))); ambient.play()
 
 func stop_ambient() -> void: ambient.stop()
+
+func set_ambient_volume() -> void:
+	if ambient: ambient.volume_db = linear_to_db(max(0.001, 0.5 * float(GS.settings.music)))

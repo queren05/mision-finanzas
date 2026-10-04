@@ -44,6 +44,10 @@ var touch_layer: Control
 var cross: Control
 var bottom_left: VBoxContainer
 var last_device = ""
+var timers_key = ""
+var toast_box: VBoxContainer
+var pause_main: Control
+var pause_settings: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -94,6 +98,9 @@ func _ready() -> void:
 	root.add_child(downed_box); downed_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER); downed_box.offset_left = -400; downed_box.offset_right = 400; downed_box.offset_top = -170; downed_box.offset_bottom = -70
 	var dl = _label(font_bo, 56, RED2); dl.text = "¡HAS CAÍDO!"; dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; downed_box.add_child(dl)
 	var ds = _label(font_ui, 24, TXT); ds.name = "sub"; ds.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; downed_box.add_child(ds)
+	# avisos de desafíos completados (arriba en el centro)
+	toast_box = VBoxContainer.new(); toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; toast_box.add_theme_constant_override("separation", 8); root.add_child(toast_box)
+	toast_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); toast_box.offset_left = -330; toast_box.offset_right = 330; toast_box.offset_top = 16; toast_box.offset_bottom = 200
 	touch_layer = preload("res://scripts/touch.gd").new(); touch_layer.hud = self; root.add_child(touch_layer); touch_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_pause(); _build_over()
 	get_viewport().size_changed.connect(_layout); _layout()
@@ -162,6 +169,7 @@ func update_ammo() -> void:
 	wname_lbl.text = nm
 	wname_lbl.add_theme_color_override("font_color", Color(0.84, 0.54, 1.0) if w.pap else Color(0.9, 0.86, 0.78))
 	nades_lbl.text = " ".join(range(p.grenades).map(func(_i): return "●"))
+	touch_layer.queue_redraw()
 
 func update_perks(perks: Array) -> void:
 	for c in perks_box.get_children(): c.queue_free()
@@ -178,6 +186,11 @@ func set_round(n: int, flash: bool) -> void:
 	round_ctl.queue_redraw()
 
 func update_timers(insta: float, dp: float, fs: float) -> void:
+	# solo se rehace cuando cambia algo visible (antes se rehacía cada fotograma)
+	var key = ""
+	for v in [insta, dp, fs]: key += "%d%s," % [ceil(v), "b" if (v > 0 and v < 5 and int(v * 4) % 2 == 0) else ""]
+	if key == timers_key: return
+	timers_key = key
 	for c in pups_box.get_children(): c.queue_free()
 	for e in [[insta, "☠", "INSTA"], [dp, "x2", "PUNTOS"], [fs, "$", "REBAJAS"]]:
 		if e[0] <= 0: continue
@@ -195,6 +208,17 @@ func show_prompt(t: String) -> void:
 	txt = r.sub(txt, "[color=#ffcc33][b]$1[/b][/color]", true)
 	prompt_lbl.text = "[center]%s[/center]" % txt
 
+func toast(title: String, text: String) -> void:
+	var pc = PanelContainer.new(); pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0.04, 0.04, 0.06, 0.85); sb.border_color = GOLD; sb.border_width_left = 5; sb.set_corner_radius_all(6)
+	sb.content_margin_left = 16; sb.content_margin_right = 16; sb.content_margin_top = 6; sb.content_margin_bottom = 8; pc.add_theme_stylebox_override("panel", sb)
+	var v = VBoxContainer.new(); v.add_theme_constant_override("separation", 0); pc.add_child(v)
+	var a = _label(font_bo, 20, GOLD); a.text = title; v.add_child(a)
+	var b = _label(font_ui, 22, TXT); b.text = text; v.add_child(b)
+	toast_box.add_child(pc); Sfx.play("powerup", 0.6, 1.3)
+	pc.modulate.a = 0.0
+	var tw = pc.create_tween(); tw.tween_property(pc, "modulate:a", 1.0, 0.25); tw.tween_interval(3.5); tw.tween_property(pc, "modulate:a", 0.0, 0.5); tw.tween_callback(pc.queue_free)
+
 func banner(t: String, sub: String, dur: float) -> void: banner_lbl.text = t; banner_sub.text = sub; banner_t = dur
 func hitmarker(kill: bool, head: bool) -> void: hit_t = 0.18; hit_kill = kill; hit_head = head
 func hurt_flash() -> void: hurt_t = 0.5
@@ -206,25 +230,47 @@ func _button(text: String, cb: Callable) -> Button:
 	return MenuStyle.button(text, cb, font_bo, 34, 460, true)
 
 func _build_pause() -> void:
-	pause_panel = ColorRect.new(); pause_panel.color = Color(0.015, 0.02, 0.035, 0.84); pause_panel.visible = false; root.add_child(pause_panel); pause_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_panel = ColorRect.new(); pause_panel.color = Color(0.015, 0.02, 0.035, 0.86); pause_panel.visible = false; root.add_child(pause_panel); pause_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var v = VBoxContainer.new(); v.name = "box"; v.alignment = BoxContainer.ALIGNMENT_CENTER; v.add_theme_constant_override("separation", 10); pause_panel.add_child(v); v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_main = v
 	var t = _label(font_bo, 64, RED2); t.text = "PAUSA"; t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(t)
 	var info = _label(font_ui, 24, Color(0.73, 0.66, 0.54)); info.name = "info"; info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(info)
-	for e in [["CONTINUAR", "go", func(): game.pause(false)], ["VISTA", "view", func(): game.player.toggle_view(); _refresh_view_btn()], ["SALIR AL MENÚ", "quit", func(): game.pause(false); game._on_player_died()]]:
+	for e in [["CONTINUAR", "go", func(): game.pause(false)], ["AJUSTES", "opts", func(): _show_settings(true)], ["VISTA", "view", func(): game.player.toggle_view(); _refresh_view_btn()],
+			["SALIR AL MENÚ", "quit", func(): game.pause(false); game._on_player_died()]]:
 		var c = CenterContainer.new(); var b = _button(e[0], e[2]); b.name = e[1]; c.add_child(b); v.add_child(c)
+	# ajustes dentro de la partida
+	var sv = VBoxContainer.new(); sv.alignment = BoxContainer.ALIGNMENT_CENTER; sv.add_theme_constant_override("separation", 10); sv.visible = false; pause_panel.add_child(sv)
+	sv.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); sv.offset_top = 16; sv.offset_bottom = -16; pause_settings = sv
+	var st = _label(font_bo, 52, RED2); st.text = "AJUSTES"; st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; sv.add_child(st)
+	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var cc = CenterContainer.new(); cc.add_child(sc); sv.add_child(cc)
+	var first = SettingsList.build(sc, font_bo, font_ui, _on_setting)
+	first.name = "first"
+	var c2 = CenterContainer.new(); c2.add_child(_button("VOLVER", func(): _show_settings(false))); sv.add_child(c2)
+
+func _on_setting(k: String) -> void:
+	game.on_setting_changed(k)
+	if k == "third": _refresh_view_btn()
+
+func _show_settings(on: bool) -> void:
+	pause_main.visible = not on; pause_settings.visible = on
+	if on: pause_settings.find_child("first", true, false).grab_focus()
+	else: GS.save_game(); pause_panel.find_child("opts", true, false).grab_focus()
 
 func show_pause(on: bool) -> void:
 	pause_panel.visible = on
 	Controls.mouse_captured = not on; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if on else (Input.MOUSE_MODE_CAPTURED if Controls.device == "kb" else Input.MOUSE_MODE_VISIBLE)
 	if on:
 		pause_panel.find_child("info", true, false).text = "Ronda %d  ·  %d bajas  ·  %d puntos" % [game.round_n, game.player.kills, game.player.points]
-		_refresh_view_btn()
+		_refresh_view_btn(); pause_main.visible = true; pause_settings.visible = false
 		pause_panel.find_child("go", true, false).grab_focus()
 
 func _unhandled_input(e: InputEvent) -> void:
 	# con mando: Start o B reanudan la partida
 	if pause_panel.visible and (e.is_action_pressed("ui_cancel") or (e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_START)):
-		get_viewport().set_input_as_handled(); game.pause(false)
+		get_viewport().set_input_as_handled()
+		if pause_settings.visible: _show_settings(false)
+		else: game.pause(false)
 
 func _refresh_view_btn() -> void:
 	var b = pause_panel.find_child("view", true, false)
@@ -249,6 +295,10 @@ func show_game_over(s: Dictionary) -> void:
 		var b = _label(font_ui, 20, Color(0.73, 0.66, 0.54)); b.text = e[1]; b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(b); stats.add_child(c)
 	var lv = _label(font_bo, 28, GOLD); lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lv.text = "NIVEL %d%s" % [GS.level, ("   ·   ¡HAS SUBIDO DE NIVEL!" if s.levels > 0 else "")]; v.add_child(lv)
+	var ch: Array = s.get("challenges", [])
+	if ch.size() > 0:
+		var cl = _label(font_ui, 22, Color(0.92, 0.88, 0.8)); cl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cl.text = "Desafíos completados: " + "  ·  ".join(ch.slice(0, 3).map(func(c): return c.text)) + ("  …" if ch.size() > 3 else ""); v.add_child(cl)
 	if s.get("record", false):
 		var rec = _label(font_bo, 30, GOLD); rec.text = "¡NUEVO RÉCORD!"; rec.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(rec)
 		var tw = rec.create_tween().set_loops(); tw.tween_property(rec, "modulate:a", 0.4, 0.6); tw.tween_property(rec, "modulate:a", 1.0, 0.6)

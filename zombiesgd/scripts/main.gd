@@ -22,9 +22,15 @@ func _ready() -> void:
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_maps", "_chars", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_progress", "_maps", "_chars", "_options", "_armory", "_settings"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
+		if page == "_progress":
+			for i in 4: await get_tree().process_frame
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(String(args.menushot) + "_rewards.png")
+			menu.call("_progress", 1)
+			for i in 4: await get_tree().process_frame
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(String(args.menushot) + page + ".png")
 	get_tree().quit()
@@ -84,6 +90,25 @@ func _run_test() -> void:
 		if zz:
 			var f = Vector3(sin(zz.yaw), 0, cos(zz.yaw))
 			p.cam.global_position = zz.global_position + f * float(args.watchz) + Vector3(0, 1.5, 0); p.cam.look_at(zz.global_position + Vector3(0, 1.1, 0))
+	if args.has("deadtest"):
+		var list = game.zombies.filter(func(z): return is_instance_valid(z) and not z.dead)
+		var where = []
+		for zz in list:
+			where.append(zz.state); zz.take_hit(99999.0, zz.global_position + Vector3(0, 1, 0), false, p)
+		for k in int(float(args.deadtest) * 60): await get_tree().physics_frame
+		for i in list.size():
+			var zz = list[i]
+			if not is_instance_valid(zz): continue
+			var hb = -1
+			for j in zz.skel.get_bone_count():
+				if zz.skel.get_bone_name(j).contains("Hips"): hb = j; break
+			var fl = game.ray_world(zz.global_position + Vector3(0, 1, 0), Vector3.DOWN, 20)
+			print("MUERTO ", zz.model.scene_file_path.get_file(), " estado=", where[i], " sobre_suelo=", snapped(zz.global_position.y - fl.y, 0.01), " caderas=", snapped((zz.skel.global_transform * zz.skel.get_bone_global_pose(hb).origin).y - fl.y, 0.01), " model.y=", snapped(zz.model.position.y, 0.01), " anim=", zz.anim.current_animation, " pos=", zz.anim.current_animation_position, " lod=", zz.lod, " spd=", zz.anim.speed_scale, " playing=", zz.anim.is_playing(), " assigned=", zz.anim.assigned_animation)
+			p.cam.global_position = zz.global_position + Vector3(3.5, 1.2, 0.5); p.cam.look_at(zz.global_position + Vector3(0, 0.4, 0))
+	if args.has("topdown"):
+		p.set_physics_process(false); game.hud.visible = false
+		var f = -p.global_transform.basis.z
+		p.cam.global_position = p.global_position + Vector3(0, 4.0, 0) - f * 0.01; p.cam.look_at(p.global_position, f)   # arriba de la imagen = hacia donde mira el jugador
 	if args.has("look"):
 		var v = String(args.look).split(","); p.cam.global_position = Vector3(float(v[0]), float(v[1]), float(v[2])); p.cam.look_at(Vector3(float(v[3]), float(v[4]), float(v[5])))
 	for k in 3: await get_tree().process_frame
