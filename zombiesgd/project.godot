@@ -24,3 +24,13 @@ pointing/emulate_touch_from_mouse=true
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=2
+
+[autoload]
+
+Data="*res://scripts/data.gd"
+GS="*res://scripts/game_state.gd"
+Sfx="*res://scripts/audio.gd"
+Controls="*res://scripts/controls.gd"
+Guns="*res://scripts/guns.gd"
+Zombies="*res://scripts/zombies_lib.gd"
+Fx="*res://scripts/fx.gd"

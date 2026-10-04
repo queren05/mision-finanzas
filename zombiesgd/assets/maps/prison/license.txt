@@ -1,0 +1,11 @@
+Model Information:
+* title:	The Prison
+* source:	https://sketchfab.com/3d-models/the-prison-3ff65f13f1374b4ba3c0147b09d38849
+* author:	Veterock (https://sketchfab.com/windofglass)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "The Prison" (https://sketchfab.com/3d-models/the-prison-3ff65f13f1374b4ba3c0147b09d38849) by Veterock (https://sketchfab.com/windofglass) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

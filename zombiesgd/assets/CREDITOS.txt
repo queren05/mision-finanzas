@@ -1,0 +1,22 @@
+SHRIMP ZOMBIES — créditos (todos los modelos se usan con su licencia; CC-BY = se cita al autor)
+
+MAPAS
+• «The Prison» — Veterock (Sketchfab), CC-BY 4.0
+• «The Mansion interiors» — Veterock (Sketchfab), CC-BY 4.0
+• «Isla Gamba» — mapa original del juego
+
+ZOMBIS
+• «Zombie» — David Glynch (Sketchfab), CC-BY 4.0
+• «Zombie Walk Test» — Oscar Creativo (Sketchfab), CC-BY 4.0
+• Animaciones: Mixamo (Adobe) a través de «Male City Zombie» de Rikindle3D (OpenGameArt, CC0)
+
+ARMAS (Sketchfab, CC-BY 4.0)
+M1911 e.belous · Olympia DJMaesen · M14 Ecler · MP40 Giuliano.Sgroi · AK-74u N-GONE · M16 Mateusz Woliński · Python HYQQM
+RPK 42manako · Galil MilotoR1 · Stakeout 8sianDude · MP5K Shorty_Digitan · L96A1 Bryan Sanchinolo · SPAS-12 Ecler · Commando Bazylonator
+
+MÁQUINAS Y OBJETOS (Sketchfab, CC-BY 4.0)
+Juggernog, Quick Revive y Speed Cola «World at War» · Double Tap (orenfaz) · Mule Kick · Stamin-Up · Palanca de corriente · Sacos de arena
+
+TEXTURAS: Poly Haven (CC0) · SONIDO: OpenGameArt (CC0 / CC-BY 3.0: «FPS Placeholder Sounds» jalastram, «6 Zombie Sounds», «Fleshy Fight Sounds», «Footsteps on different surfaces», «Abandoned Building Ambience»)
+FUENTES: Black Ops One y Oswald (SIL Open Font License)
+MOTOR: Godot Engine (MIT)
