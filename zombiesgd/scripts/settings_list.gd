@@ -15,7 +15,7 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 	_slider(list, font_ui, "Campo de visión", 60, 95, "fov", changed)
 	_toggle(list, font_bo, font_ui, "Ayuda al apuntar", "aim_assist", "SÍ", "NO", changed)
 	_toggle(list, font_bo, font_ui, "Invertir eje vertical", "invert", "SÍ", "NO", changed)
-	if DisplayServer.is_touchscreen_available():   # opciones de pantalla táctil (en el móvil)
+	if OS.has_feature("mobile"):   # opciones de pantalla táctil (en el móvil)
 		_toggle(list, font_bo, font_ui, "Apuntar (pantalla táctil)", "ads_toggle", "TOCAR", "MANTENER", changed)
 		_toggle(list, font_bo, font_ui, "Botón de disparo a la izquierda", "left_fire", "SÍ", "NO", changed)
 		_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)

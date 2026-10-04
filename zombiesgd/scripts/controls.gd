@@ -11,13 +11,14 @@ var touch_move = Vector2.ZERO
 var touch_look = Vector2.ZERO
 var touch_held = {}
 var mouse_captured = false
+var in_game = false                # PC: en partida (sin pausa) un clic vuelve a atrapar el ratón
 const BUTTONS := ["fire", "ads", "reload", "use", "swap", "knife", "grenade", "jump", "sprint", "crouch", "pause"]
 
 var look_boost = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	if not DisplayServer.is_touchscreen_available(): device = "kb"
+	if not OS.has_feature("mobile"): device = "kb"   # en PC se juega con teclado y ratón (o mando) aunque la pantalla sea táctil
 	apply_window.call_deferred()
 	# menús con mando: cruceta y también el stick izquierdo (por si el mando no los trae)
 	for e in [["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0], ["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0]]:
@@ -33,6 +34,8 @@ func press_touch(b: String, on: bool) -> void:
 	device = "touch"
 
 func _input(e: InputEvent) -> void:
+	if e is InputEventMouseButton and e.pressed and in_game and not mouse_captured and not OS.has_feature("mobile"):
+		mouse_captured = true; Input.mouse_mode = Input.MOUSE_MODE_CAPTURED; device = "kb"; return
 	if e is InputEventMouseMotion and mouse_captured:
 		var s = 0.0025 * float(GS.settings.sens)
 		look += Vector2(-e.relative.x * s, -e.relative.y * s * (-1.0 if GS.settings.invert else 1.0))

@@ -55,7 +55,7 @@ func to_menu() -> void:
 	if Net.active: Net.leave()
 	if game: game.queue_free(); game = null
 	Sfx.stop_ambient()
-	Controls.mouse_captured = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	Controls.mouse_captured = false; Controls.in_game = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	menu = preload("res://scripts/menu.gd").new(); menu.main = self; ui.add_child(menu)
 	Sfx.play_music("m_menu")
 
@@ -70,6 +70,7 @@ func start_game() -> void:
 	game.start(GS.sel_map)
 	if args.has("verbose"): print("CARGADO")
 	loading.queue_free()
+	Controls.in_game = not args.has("test")
 	if Controls.device == "kb" and not args.has("test"): Controls.mouse_captured = true; Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if args.has("test"): _run_test()
 

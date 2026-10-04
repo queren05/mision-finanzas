@@ -299,7 +299,8 @@ func _show_settings(on: bool) -> void:
 
 func show_pause(on: bool) -> void:
 	pause_panel.visible = on
-	Controls.mouse_captured = not on; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if on else (Input.MOUSE_MODE_CAPTURED if Controls.device == "kb" else Input.MOUSE_MODE_VISIBLE)
+	Controls.in_game = not on
+	Controls.mouse_captured = not on and Controls.device == "kb"; Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if Controls.mouse_captured else Input.MOUSE_MODE_VISIBLE
 	if on:
 		pause_panel.find_child("info", true, false).text = "Ronda %d  ·  %d bajas  ·  %d puntos" % [game.round_n, game.player.kills, game.player.points]
 		_refresh_view_btn(); pause_main.visible = true; pause_settings.visible = false
@@ -320,7 +321,7 @@ func _build_over() -> void:
 	over_panel = ColorRect.new(); over_panel.color = Color(0.03, 0.0, 0.01, 0.86); over_panel.visible = false; root.add_child(over_panel); over_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func show_game_over(s: Dictionary) -> void:
-	Controls.mouse_captured = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	Controls.mouse_captured = false; Controls.in_game = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	touch_layer.visible = false
 	over_panel.visible = true
 	var v = VBoxContainer.new(); v.alignment = BoxContainer.ALIGNMENT_CENTER; v.add_theme_constant_override("separation", 12); over_panel.add_child(v); v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
