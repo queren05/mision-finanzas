@@ -131,7 +131,23 @@ func _move(delta: float) -> void:
 		var stepping = int(bob_t / PI)
 		if stepping != int((bob_t - delta * 9.0) / PI): Sfx.play("step_%d" % randi_range(0, 3), 0.25)
 
+var safe_pos = Vector3.ZERO
+var safe_t = 0.0
+## nunca salir del mapa: si caes o te alejas de cualquier zona transitable, vuelves al último sitio seguro
+func _keep_in_map(delta: float) -> void:
+	safe_t -= delta
+	if safe_t > 0.0: return
+	safe_t = 0.2
+	var map = get_world_3d().navigation_map
+	var q = NavigationServer3D.map_get_closest_point(map, global_position)
+	var off = Vector2(q.x - global_position.x, q.z - global_position.z).length()
+	if global_position.y < q.y - 3.0 or off > 2.6:
+		if safe_pos != Vector3.ZERO: global_position = safe_pos; velocity = Vector3.ZERO
+	elif is_on_floor() and off < 0.9:
+		safe_pos = global_position
+
 func _health(delta: float) -> void:
+	_keep_in_map(delta)
 	hurt_t += delta
 	if alive and not downed and hurt_t > 3.0: hp = min(max_hp, hp + delta * 70.0)
 	if downed:

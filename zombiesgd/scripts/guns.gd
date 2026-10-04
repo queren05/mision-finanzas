@@ -103,8 +103,8 @@ func make_view(id: String, pap: bool) -> Node3D:
 				mat.albedo_color = mat.albedo_color * camo.color
 				mat.metallic = max(mat.metallic, camo.metal); mat.roughness = min(mat.roughness, camo.rough) if camo.metal > 0.5 else mat.roughness
 			if pap:
-				mat.emission_enabled = true; mat.emission = Color(0.45, 0.1, 0.9); mat.emission_energy_multiplier = 0.35
-				mat.albedo_color = mat.albedo_color.lerp(Color(0.55, 0.35, 0.95), 0.35)
+				mat.emission_enabled = true; mat.emission = Color(0.35, 0.12, 0.75); mat.emission_energy_multiplier = 0.12
+				mat.albedo_color = mat.albedo_color.lerp(Color(0.5, 0.35, 0.85), 0.18)
 			mi.set_surface_override_material(si, mat)
 	return n
 

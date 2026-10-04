@@ -1,0 +1,362 @@
+{
+ "name": "La Mansión",
+ "scene": "res://assets/maps/mansion/scene.gltf",
+ "nocollide": [
+  "CandleLight",
+  "candle",
+  "Light",
+  "flame",
+  "Fire",
+  "Chandelier",
+  "Lustre",
+  "curtain",
+  "Curtain",
+  "cobweb",
+  "Web"
+ ],
+ "soft": [],
+ "spawn": [
+  0,
+  0.2,
+  25,
+  0
+ ],
+ "zones": [],
+ "doors": [
+  {
+   "cost": 750,
+   "hide_meshes": [
+    "MetalDoor0"
+   ]
+  },
+  {
+   "cost": 750,
+   "hide_meshes": [
+    "SideDoor"
+   ]
+  },
+  {
+   "cost": 500,
+   "hide_meshes": [
+    "SaveDoor"
+   ]
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door01/"
+   ]
+  },
+  {
+   "cost": 0,
+   "hide_meshes": [
+    "Door02/"
+   ],
+   "free": true
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door03/"
+   ]
+  },
+  {
+   "cost": 1250,
+   "hide_meshes": [
+    "Door04/"
+   ]
+  },
+  {
+   "cost": 1250,
+   "hide_meshes": [
+    "Door05/"
+   ]
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door06/"
+   ]
+  },
+  {
+   "cost": 1250,
+   "hide_meshes": [
+    "Door07/"
+   ]
+  },
+  {
+   "cost": 0,
+   "hide_meshes": [
+    "Door08/"
+   ],
+   "locked": true
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door09/"
+   ]
+  },
+  {
+   "cost": 1500,
+   "hide_meshes": [
+    "Door010/"
+   ]
+  },
+  {
+   "cost": 1500,
+   "hide_meshes": [
+    "Door011/"
+   ]
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door012/"
+   ]
+  },
+  {
+   "cost": 1000,
+   "hide_meshes": [
+    "Door013/"
+   ]
+  },
+  {
+   "cost": 0,
+   "hide_meshes": [
+    "CodeDoor"
+   ],
+   "locked": true
+  }
+ ],
+ "auto_zones": {
+  "aabb": [
+   -32,
+   -2,
+   -40,
+   44,
+   7.5,
+   32
+  ],
+  "min_area": 6
+ },
+ "ambient": "amb1",
+ "env": {
+  "sky_top": [
+   0.05,
+   0.06,
+   0.1
+  ],
+  "sky_horizon": [
+   0.16,
+   0.15,
+   0.18
+  ],
+  "sky_energy": 0.5,
+  "ambient": 0.9,
+  "exposure": 1.0,
+  "fog": [
+   0.12,
+   0.11,
+   0.12
+  ],
+  "fog_density": 0.02,
+  "sun": 0.35,
+  "sun_color": [
+   0.6,
+   0.7,
+   1.0
+  ],
+  "sun_rot": [
+   -55,
+   30
+  ],
+  "saturation": 0.85,
+  "ambient_color": [
+   0.5,
+   0.44,
+   0.4
+  ]
+ },
+ "start_rooms": [
+  "r1"
+ ],
+ "room_names": {
+  "r1": "Vestíbulo",
+  "r2": "Ala Este",
+  "r7": "Biblioteca",
+  "r3": "Salón Oeste",
+  "r19": "Sala de la Máquina de Escribir",
+  "r5": "Salón de Baile",
+  "r4": "Dormitorio Principal",
+  "r0": "Galería Superior",
+  "r9": "Estudio",
+  "r10": "Habitación de Invitados",
+  "r17": "Capilla"
+ },
+ "wallbuys": [
+  {
+   "gun": "olympia",
+   "near": [
+    -6.5,
+    24
+   ],
+   "y": 0
+  },
+  {
+   "gun": "m14",
+   "near": [
+    6.5,
+    24
+   ],
+   "y": 0
+  },
+  {
+   "gun": "mp40",
+   "near": [
+    16,
+    18.8
+   ],
+   "y": 0
+  },
+  {
+   "gun": "mp5k",
+   "near": [
+    -14,
+    17.5
+   ],
+   "y": 0
+  },
+  {
+   "gun": "ak74u",
+   "near": [
+    20,
+    -14.5
+   ],
+   "y": 0
+  },
+  {
+   "gun": "m16",
+   "near": [
+    5.8,
+    3
+   ],
+   "y": 4.75
+  },
+  {
+   "gun": "stakeout",
+   "near": [
+    16,
+    17.7
+   ],
+   "y": 4.75
+  },
+  {
+   "gun": "python",
+   "near": [
+    -15,
+    -27.5
+   ],
+   "y": 4.75
+  }
+ ],
+ "perks": [
+  {
+   "id": "revive",
+   "near": [
+    -4.8,
+    5.2
+   ],
+   "y": 0
+  },
+  {
+   "id": "jugg",
+   "near": [
+    24.2,
+    12
+   ],
+   "y": 0
+  },
+  {
+   "id": "speed",
+   "near": [
+    14,
+    -14.2
+   ],
+   "y": 0
+  },
+  {
+   "id": "stamin",
+   "near": [
+    -20.5,
+    12.5
+   ],
+   "y": 0
+  },
+  {
+   "id": "dtap",
+   "near": [
+    -15.5,
+    -1.5
+   ],
+   "y": 0
+  },
+  {
+   "id": "mule",
+   "near": [
+    21.5,
+    14
+   ],
+   "y": 4.75
+  }
+ ],
+ "box": [
+  {
+   "near": [
+    -5.5,
+    2
+   ],
+   "y": 4.75
+  },
+  {
+   "near": [
+    10,
+    12
+   ],
+   "y": 0
+  },
+  {
+   "near": [
+    -24,
+    -10
+   ],
+   "y": 4.75
+  },
+  {
+   "near": [
+    -25,
+    0
+   ],
+   "y": 4.75
+  }
+ ],
+ "box_start": 1,
+ "pap": {
+  "near": [
+   -25,
+   -12.5
+  ],
+  "y": 4.75
+ },
+ "power": {
+  "near": [
+   24.5,
+   -8
+  ],
+  "y": 0
+ },
+ "light_meshes": [
+  "CandleLight",
+  "y-light"
+ ]
+}

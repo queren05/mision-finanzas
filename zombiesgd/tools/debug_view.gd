@@ -23,10 +23,16 @@ func _ready() -> void:
 				for q in [poly[0], poly[k], poly[k + 1]]: im.surface_add_vertex(v[q] + Vector3(0, 0.05, 0))
 		im.surface_end()
 	var cam = Camera3D.new(); add_child(cam); cam.far = 3000
-	if a.size() > 2:
+	if a.size() > 2 and a[2].begins_with("cut="):
+		var q = a[2].substr(4).split(",")   # cut=y,cx,cz,size
+		cam.projection = Camera3D.PROJECTION_ORTHOGONAL; cam.size = float(q[3]); cam.position = Vector3(float(q[1]), 60, float(q[2])); cam.rotation_degrees = Vector3(-90, 0, 0); cam.near = 60 - float(q[0]); cam.far = 200
+		for x in range(int(float(q[1]) - float(q[3]) / 2) / 5 * 5, int(float(q[1]) + float(q[3]) / 2), 5):
+			for z in range(int(float(q[2]) - float(q[3]) / 2) / 5 * 5, int(float(q[2]) + float(q[3]) / 2), 5):
+				var l = Label3D.new(); l.text = "%d,%d" % [x, z]; l.position = Vector3(x, float(q[0]) - 0.1, z); l.rotation_degrees = Vector3(-90, 0, 0); l.pixel_size = 0.012; l.modulate = Color(1, 1, 0); l.no_depth_test = true; add_child(l)
+	elif a.size() > 2:
 		var p = a[2].split(","); cam.fov = 70; cam.position = Vector3(float(p[0]), float(p[1]), float(p[2])); cam.look_at(Vector3(float(p[3]), float(p[4]), float(p[5])))
 	else:
 		cam.projection = Camera3D.PROJECTION_ORTHOGONAL; var c = aabb.get_center(); cam.size = max(aabb.size.x, aabb.size.z); cam.position = Vector3(c.x, aabb.end.y + 30, c.z); cam.rotation_degrees = Vector3(-90, 0, 0)
-	get_viewport().size = Vector2i(1600, 1600) if a.size() <= 2 else Vector2i(1280, 720)
+	get_viewport().size = Vector2i(1600, 1600) if (a.size() <= 2 or a[2].begins_with("cut=")) else Vector2i(1280, 720)
 	await get_tree().process_frame; await get_tree().process_frame; await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out); get_tree().quit()

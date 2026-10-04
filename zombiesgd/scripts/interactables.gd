@@ -38,10 +38,14 @@ class WallBuy extends Base:
 	var cost = 0
 	func build(g: Node, id: String) -> void:
 		game = g; gun = id; cost = int(Data.WEAPONS[id].cost)
-		var chalk = Sprite3D.new(); chalk.texture = Interactables._chalk_tex(Data.WEAPONS[id].name, cost); chalk.pixel_size = 0.0045; chalk.position = Vector3(0, 0, 0.02)
-		chalk.shaded = true; chalk.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD; add_child(chalk)
-		var m = Guns.make_world(id); m.rotation_degrees = Vector3(0, -90, 0); m.position = Vector3(0, 0.06, 0.07); add_child(m)
-		var lamp = OmniLight3D.new(); lamp.light_color = Color(1, 0.9, 0.75); lamp.omni_range = 2.2; lamp.light_energy = 0.4; lamp.position = Vector3(0, 0.3, 0.5); add_child(lamp)
+		var L = float(Data.WEAPONS[id].len)
+		# marco de tiza ajustado al largo del arma
+		var chalk = Sprite3D.new(); chalk.texture = Interactables._chalk_tex(Data.WEAPONS[id].name, cost); chalk.pixel_size = (L + 0.35) / 384.0
+		chalk.position = Vector3(0, 0, 0.012); chalk.shaded = false; chalk.modulate = Color(0.95, 0.94, 0.88, 0.85); chalk.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED; add_child(chalk)
+		var m = Guns.make_world(id); m.rotation_degrees = Vector3(0, -90, 0); m.position = Vector3(0, 0.0, 0.06); add_child(m)
+		var lab = Label3D.new(); lab.text = "%s  %d" % [Data.WEAPONS[id].name.to_upper(), cost]; lab.font = load("res://assets/fonts/Oswald.ttf"); lab.font_size = 40; lab.pixel_size = 0.0028
+		lab.modulate = Color(0.95, 0.94, 0.88); lab.outline_size = 0; lab.position = Vector3(0, -0.3 - L * 0.08, 0.015); lab.shaded = false; add_child(lab)
+		var lamp = OmniLight3D.new(); lamp.light_color = Color(1, 0.92, 0.8); lamp.omni_range = 2.0; lamp.light_energy = 0.9; lamp.position = Vector3(0, 0.25, 0.55); add_child(lamp)
 		reach = 1.8
 	func prompt(p: Player) -> String:
 		var i = p.has_weapon(gun)
@@ -62,9 +66,10 @@ class Perk extends Base:
 	func build(g: Node, perk: String, model_yaw: float) -> void:
 		game = g; id = perk
 		var scn: PackedScene = load("res://assets/models/props/%s.glb" % perk)
-		var m: Node3D = scn.instantiate(); add_child(m)
-		if perk == "mule": m.rotation_degrees.x = -90.0
-		Interactables._fit(m, 2.05); m.rotation_degrees.y = model_yaw
+		var holder = Node3D.new(); add_child(holder)
+		var m: Node3D = scn.instantiate(); holder.add_child(m)
+		if perk == "mule": m.rotation_degrees.x = -90.0     # este modelo viene tumbado
+		Interactables._fit(holder, 2.05); holder.rotation_degrees.y = model_yaw
 		light = OmniLight3D.new(); light.light_color = Data.PERKS[perk].color; light.omni_range = 4.0; light.light_energy = 0.0; light.position = Vector3(0, 1.6, 0.8); add_child(light)
 		Interactables._solid(self, Vector3(1.0, 2.0, 0.8), Vector3(0, 1.0, 0))
 		reach = 1.9
@@ -201,11 +206,13 @@ class Door extends Base:
 	var blocker: StaticBody3D
 	var open = false
 	var anim_t = -1.0
+	var dsize = Vector3.ONE
 	func build(g: Node, i: int, d: Dictionary) -> void:
 		game = g; idx = i; cost = int(d.cost); opens = d.opens
 		var size = MapBuilder.v3(d.size)
 		global_position = MapBuilder.v3(d.pos); rotation_degrees.y = float(d.get("yaw", 0))
-		blocker = MapBuilder.make_box(Vector3(0, size.y / 2, 0), size, 0.0, MapBuilder.LAYER_BARRIER); add_child(blocker)
+		if not d.get("auto", false): blocker = MapBuilder.make_box(Vector3(0, size.y / 2, 0), size, 0.0, MapBuilder.LAYER_BARRIER); add_child(blocker)
+		dsize = size
 		visual = Node3D.new(); add_child(visual)
 		var kind: String = d.get("kind", "barricade")
 		if kind == "hide":
@@ -218,19 +225,20 @@ class Door extends Base:
 	func can_use(p: Player) -> bool:
 		if open: return false
 		var l = to_local(p.global_position)
-		var size: Vector3 = (blocker.get_child(0).shape as BoxShape3D).size
+		var size: Vector3 = dsize
 		return abs(l.x) < size.x / 2 + 0.5 and abs(l.z) < 2.0
 	func prompt(_p: Player) -> String: return "Pulsa USAR: despejar el paso [%d]" % cost
 	func use(p: Player) -> void:
 		if open: return
 		if pay(p, cost): open_now()
-	func open_now() -> void:
-		open = true; blocker.queue_free(); anim_t = 0.0
+	func open_now(silent = false) -> void:
+		open = true; anim_t = 0.0
+		if blocker: blocker.queue_free()
 		for n in game.door_hide_nodes(idx):
 			n.visible = false
 			for c in n.get_children(): if c is StaticBody3D: c.queue_free()
-		game.on_door_opened(idx, opens)
-		Sfx.play("z_hit1", 0.8, 0.6)
+		game.on_door_opened(idx, opens, silent)
+		if not silent: Sfx.play("z_hit1", 0.8, 0.6)
 	func _process(d: float) -> void:
 		if anim_t >= 0.0:
 			anim_t += d; visual.position.y -= d * 2.0; visual.rotation.x += d * 0.5
@@ -303,7 +311,7 @@ static func _chalk_tex(name: String, cost: int) -> Texture2D:
 	img.fill(Color(0, 0, 0, 0))
 	var c = Color(0.93, 0.92, 0.86, 0.9)
 	# silueta de tiza (marco con trazo irregular)
-	for i in 900:
+	for i in 2600:
 		var t = randf()
 		var p: Vector2
 		match randi() % 4:
@@ -312,5 +320,6 @@ static func _chalk_tex(name: String, cost: int) -> Texture2D:
 			2: p = Vector2(20, 30 + t * (h - 90))
 			_: p = Vector2(w - 20, 30 + t * (h - 90))
 		p += Vector2(randf_range(-2, 2), randf_range(-2, 2))
-		for k in 3: img.set_pixel(clamp(int(p.x) + k, 0, w - 1), clamp(int(p.y), 0, h - 1), c)
+		for k in 4:
+			for j in 3: img.set_pixel(clamp(int(p.x) + k, 0, w - 1), clamp(int(p.y) + j, 0, h - 1), c)
 	return ImageTexture.create_from_image(img)

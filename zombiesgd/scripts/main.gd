@@ -5,28 +5,40 @@ extends Node
 var menu: Control
 var game: Node3D
 var loading: Control
+var ui: CanvasLayer
 var args = {}
 
 func _ready() -> void:
 	name = "Main"
+	ui = CanvasLayer.new(); ui.layer = 5; add_child(ui)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	for a in OS.get_cmdline_user_args():
 		var kv = a.split("=", true, 1); args[kv[0]] = kv[1] if kv.size() > 1 else "1"
+	if args.has("menushot"): _menu_shots(); return
 	if args.has("test"):
 		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1"))
 		start_game(); return
 	to_menu()
+
+func _menu_shots() -> void:
+	to_menu()
+	for page in ["_home", "_maps", "_options", "_armory", "_settings"]:
+		menu.call(page)
+		for i in 4: await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(String(args.menushot) + page + ".png")
+	get_tree().quit()
 
 func to_menu() -> void:
 	get_tree().paused = false
 	if game: game.queue_free(); game = null
 	Sfx.stop_ambient()
 	Controls.mouse_captured = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	menu = preload("res://scripts/menu.gd").new(); menu.main = self; add_child(menu)
+	menu = preload("res://scripts/menu.gd").new(); menu.main = self; ui.add_child(menu)
 
 func start_game() -> void:
 	if menu: menu.queue_free(); menu = null
-	loading = _loading_screen(); add_child(loading)
+	loading = _loading_screen(); ui.add_child(loading)
 	await get_tree().process_frame; await get_tree().process_frame
 	game = preload("res://scripts/game.gd").new(); game.name = "Game"
 	add_child(game)
@@ -58,10 +70,11 @@ func _run_test() -> void:
 		if args.has("trace") and i % 15 == 0:
 			var ds = []
 			for z in game.zombies:
-				if is_instance_valid(z) and not z.dead and z.state == "chase": ds.append("%d(%.2f/%.2f a%.2f s%.2f %s)" % [int(z.global_position.distance_to(p.global_position)), Vector2(z.velocity.x, z.velocity.z).length(), z.max_speed, z.dbg_align, z.safe_vel.length(), z.agent.is_navigation_finished()])
+				if is_instance_valid(z) and not z.dead and z.state == "chase": ds.append("%d(%.2f %s %s)" % [int(z.global_position.distance_to(p.global_position)), Vector2(z.velocity.x, z.velocity.z).length(), "FIN" if z.agent.is_navigation_finished() else "", str(z.global_position.snapped(Vector3.ONE * 0.1)) if z.agent.is_navigation_finished() else ""])
 			print("T%d %s" % [i / 30, ds])
 		if not is_instance_valid(game) or not p.alive: break
 	get_viewport().disable_3d = false
+	if args.has("clean"): game.hud.visible = false; p.vm.visible = false
 	if args.has("watchz"):
 		var zz = null; var bd = 99.0
 		for z in game.zombies:
@@ -76,6 +89,16 @@ func _run_test() -> void:
 	for k in 3: await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	if args.has("shot"): get_viewport().get_texture().get_image().save_png(args.shot)
+	if args.has("inspect"):
+		var k = 0
+		for it in game.interactables:
+			if it is Interactables.Door: continue
+			var f = it.global_transform.basis.z.normalized()
+			p.cam.global_position = it.global_position + f * 2.6 + Vector3(0, 1.55, 0) + it.global_transform.basis.x * 0.8
+			p.cam.look_at(it.global_position + Vector3(0, 1.05, 0))
+			for j in 3: await get_tree().process_frame
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(String(args.get("out", "/tmp/shot")) + "_%02d.png" % k); k += 1
 	if args.has("looks"):
 		var k = 0
 		for spec in String(args.looks).split(";"):

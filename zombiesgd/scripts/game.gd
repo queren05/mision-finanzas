@@ -58,6 +58,7 @@ func _build_environment() -> void:
 	psky.sun_angle_max = 6.0; psky.sun_curve = 0.35; psky.sky_energy_multiplier = float(e.get("sky_energy", 0.8))
 	sky.sky_material = psky; env.sky = sky; env.background_mode = Environment.BG_SKY
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; env.ambient_light_energy = float(e.get("ambient", 0.55)) * 1.5
+	if e.has("ambient_color"): env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color = _col(e.ambient_color); env.ambient_light_energy = float(e.get("ambient", 1.0))
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC; env.tonemap_exposure = float(e.get("exposure", 1.0)); env.tonemap_white = 6.0
 	env.fog_enabled = true; env.fog_light_color = _col(e.get("fog", [0.4, 0.42, 0.45])); env.fog_density = float(e.get("fog_density", 0.012)); env.fog_aerial_perspective = 0.4; env.fog_sky_affect = 0.6
@@ -69,13 +70,20 @@ func _build_environment() -> void:
 	sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 45.0
 	sun.shadow_blur = 1.5; sun.shadow_bias = 0.03; sun.shadow_normal_bias = 1.2
 	add_child(sun)
+	var lp = "res://assets/maps/%s/nav/lights.json" % map_id
+	if FileAccess.file_exists(lp):
+		for c in JSON.parse_string(FileAccess.open(lp, FileAccess.READ).get_as_text()):
+			var o = OmniLight3D.new(); o.position = Vector3(c[0], c[1], c[2]); o.light_color = Color(1.0, 0.74, 0.5); o.omni_range = 10.0; o.light_energy = 2.4; o.omni_attenuation = 1.2; add_child(o)
 	for l in cfg.get("lights", []):
 		var o = OmniLight3D.new(); o.position = MapBuilder.v3(l.pos); o.light_color = _col(l.get("color", [1, 0.85, 0.65])); o.omni_range = float(l.get("range", 8)); o.light_energy = float(l.get("energy", 1.2)); o.shadow_enabled = false; add_child(o)
 
 func _col(a) -> Color: return Color(float(a[0]), float(a[1]), float(a[2]))
 
 # ------------------------------------------------------------------ zonas y navegación
+var rooms = {}               # salas automáticas (mapas por habitaciones)
+var door_links = []          # enlaces de navegación de cada puerta
 func _build_zones(map_root: Node3D) -> void:
+	if cfg.has("auto_zones"): _build_rooms(map_root); return
 	for z in cfg.get("zones", []):
 		var boxes = []
 		for b in z.boxes: boxes.append(AABB(Vector3(b[0], b[1], b[2]), Vector3(b[3] - b[0], b[4] - b[1], b[5] - b[2])))
@@ -97,7 +105,34 @@ func _build_zones(map_root: Node3D) -> void:
 				if String(map_root.get_path_to(m)).contains(pat): list.append(m)
 		hide_nodes[i] = list; i += 1
 
+func _build_rooms(map_root: Node3D) -> void:
+	var f = FileAccess.open("res://assets/maps/%s/nav/rooms.json" % map_id, FileAccess.READ)
+	rooms = JSON.parse_string(f.get_as_text())
+	var names = cfg.get("room_names", {}); var starts = cfg.get("start_rooms", [])
+	for k in rooms.rooms.size():
+		var r = rooms.rooms[k]; var rid: String = r.id
+		var b = r.box
+		var reg = NavigationRegion3D.new(); reg.navigation_mesh = load("res://assets/maps/%s/nav/room_%d.res" % [map_id, k]); add_child(reg)
+		nav_regions[rid] = reg
+		zones[rid] = { "open": rid in starts, "boxes": [AABB(Vector3(b[0], b[1] - 0.5, b[2]), Vector3(b[3] - b[0], b[4] - b[1] + 2.5, b[5] - b[2]))], "spawns": [], "name": names.get(rid, ""), "region": reg, "area": r.area, "playable": names.has(rid) }
+	var i = 0
+	for d in cfg.get("doors", []):
+		var info = rooms.doors[i] if i < rooms.doors.size() else {}
+		var hide = []
+		for pat in d.get("hide_meshes", []):
+			for m in map_root.find_children("*", "MeshInstance3D", true, false):
+				if String(map_root.get_path_to(m)).contains(pat): hide.append(m)
+		hide_nodes[i] = hide
+		var link = NavigationLink3D.new(); link.bidirectional = true; link.enabled = false
+		if info.has("a"): link.start_position = MapBuilder.v3(info.a); link.end_position = MapBuilder.v3(info.b)
+		add_child(link); door_links.append(link)
+		i += 1
+
 func _update_nav() -> void:
+	if cfg.has("auto_zones"):
+		for id in nav_regions: nav_regions[id].enabled = zones[id].open
+		for k in door_links.size(): door_links[k].enabled = k < doors.size() and doors[k].open
+		return
 	for id in nav_regions:
 		var r: NavigationRegion3D = nav_regions[id]
 		if id.begins_with("door_"):
@@ -108,10 +143,11 @@ func _update_nav() -> void:
 
 func door_hide_nodes(i: int) -> Array: return hide_nodes.get(i, [])
 
-func on_door_opened(i: int, opens: Array) -> void:
+func on_door_opened(i: int, opens: Array, silent = false) -> void:
 	for z in opens:
 		if zones.has(z) and not zones[z].open:
-			zones[z].open = true; hud.banner(zones[z].name.to_upper(), "", 1.6)
+			zones[z].open = true
+			if not silent and zones[z].name != "": hud.banner(zones[z].name.to_upper(), "", 1.6)
 	_update_nav()
 
 func zone_at(p: Vector3) -> String:
@@ -121,21 +157,61 @@ func zone_at(p: Vector3) -> String:
 	return ""
 
 # ------------------------------------------------------------------ elementos
+## coloca un elemento pegado a la pared más cercana a "near" (mirando hacia la sala) en el suelo real
+func place(spec: Dictionary, depth: float) -> Dictionary:
+	if not spec.has("near"): return { "pos": MapBuilder.v3(spec.pos), "yaw": float(spec.get("yaw", 0)) }
+	var n = spec.near; var y = float(spec.get("y", 0.0))
+	var space = get_world_3d().direct_space_state
+	var top = Vector3(float(n[0]), y + 1.6, float(n[1]))
+	var q = PhysicsRayQueryParameters3D.create(top, top - Vector3(0, 4, 0), MapBuilder.LAYER_WORLD)
+	var hit = space.intersect_ray(q)
+	var floor_y = hit.position.y if not hit.is_empty() else y
+	var origin = Vector3(top.x, floor_y + 1.2, top.z)
+	var best = {}; var bd = 99.0
+	for k in 24:
+		var a = k * TAU / 24.0; var dir = Vector3(sin(a), 0, cos(a))
+		var h = space.intersect_ray(PhysicsRayQueryParameters3D.create(origin, origin + dir * 3.5, MapBuilder.LAYER_WORLD))
+		if not h.is_empty():
+			var d = origin.distance_to(h.position)
+			if d < bd and abs(h.normal.y) < 0.3: bd = d; best = h
+	if best.is_empty(): return { "pos": Vector3(top.x, floor_y, top.z), "yaw": float(spec.get("yaw", 0)) }
+	var nrm: Vector3 = best.normal; nrm.y = 0; nrm = nrm.normalized()
+	var pos = Vector3(best.position.x, floor_y, best.position.z) + nrm * depth
+	if spec.has("wall_y"): pos.y = floor_y + float(spec.wall_y)
+	return { "pos": pos, "yaw": rad_to_deg(atan2(nrm.x, nrm.z)) }
+
 func _build_interactables() -> void:
 	for w in cfg.get("wallbuys", []):
-		var n = Interactables.WallBuy.new(); add_child(n); n.global_position = MapBuilder.v3(w.pos); n.rotation_degrees.y = float(w.yaw); n.build(self, w.gun); interactables.append(n)
+		var pl = place(w if w.has("pos") or not w.has("near") else w.merged({ "wall_y": 1.45 }), 0.02)
+		var n = Interactables.WallBuy.new(); add_child(n); n.global_position = pl.pos; n.rotation_degrees.y = pl.yaw; n.build(self, w.gun); interactables.append(n)
 	for p in cfg.get("perks", []):
-		var n = Interactables.Perk.new(); add_child(n); n.global_position = MapBuilder.v3(p.pos); n.rotation_degrees.y = float(p.yaw); n.build(self, p.id, float(PERK_YAW.get(p.id, 0))); interactables.append(n)
+		var pl = place(p, 0.5)
+		var n = Interactables.Perk.new(); add_child(n); n.global_position = pl.pos; n.rotation_degrees.y = pl.yaw; n.build(self, p.id, float(PERK_YAW.get(p.id, 0))); interactables.append(n)
 	if cfg.has("box"):
-		var n = Interactables.MysteryBox.new(); add_child(n); n.build(self, cfg.box, int(cfg.get("box_start", 0))); interactables.append(n)
+		var spots = []
+		for b in cfg.box: var pl = place(b, 0.45); spots.append({ "pos": [pl.pos.x, pl.pos.y, pl.pos.z], "yaw": pl.yaw })
+		var n = Interactables.MysteryBox.new(); add_child(n); n.build(self, spots, int(cfg.get("box_start", 0))); interactables.append(n)
 	if cfg.has("pap"):
-		var n = Interactables.PackAPunch.new(); add_child(n); n.global_position = MapBuilder.v3(cfg.pap.pos); n.rotation_degrees.y = float(cfg.pap.yaw); n.build(self); interactables.append(n)
+		var pl = place(cfg.pap, 0.6)
+		var n = Interactables.PackAPunch.new(); add_child(n); n.global_position = pl.pos; n.rotation_degrees.y = pl.yaw; n.build(self); interactables.append(n)
 	if cfg.has("power"):
-		var n = Interactables.Power.new(); add_child(n); n.global_position = MapBuilder.v3(cfg.power.pos); n.rotation_degrees.y = float(cfg.power.yaw); n.build(self); interactables.append(n)
+		var pl = place(cfg.power, 0.08)
+		var n = Interactables.Power.new(); add_child(n); n.global_position = pl.pos; n.rotation_degrees.y = pl.yaw; n.build(self); interactables.append(n)
 	else: power_on = true
 	var i = 0
 	for d in cfg.get("doors", []):
-		var n = Interactables.Door.new(); add_child(n); n.build(self, i, d); doors.append(n); interactables.append(n); i += 1
+		var dd = d.duplicate()
+		if cfg.has("auto_zones"):
+			var info = rooms.doors[i] if i < rooms.doors.size() else {}
+			if info.has("center"):
+				dd.pos = info.center; dd.size = [info.width + 0.3, info.height, 1.0]; dd.yaw = 90 if abs(info.normal[0]) > 0.5 else 0
+				dd.opens = [info.ra, info.rb]; dd.kind = "hide"; dd.auto = true
+		var n = Interactables.Door.new(); add_child(n); n.build(self, i, dd); doors.append(n)
+		if dd.get("free", false): n.open_now(true)
+		elif dd.get("locked", false): pass
+		else: interactables.append(n)
+		i += 1
+	_update_nav()
 
 # hacia dónde mira de fábrica el frente de cada máquina (para que el cartel quede al frente)
 const PERK_YAW := { "jugg": 0, "revive": 0, "speed": 0, "dtap": 0, "mule": 0, "stamin": 0 }
@@ -193,6 +269,7 @@ func _process(delta: float) -> void:
 		player.refill_grenades()
 
 func _spawn_zombie() -> bool:
+	if cfg.has("auto_zones"): return _spawn_in_rooms()
 	var pz = zone_at(player.global_position)
 	var cands = []
 	for id in zones:
@@ -203,6 +280,14 @@ func _spawn_zombie() -> bool:
 			var w = 3.0 if id == pz else 1.0
 			if not _visible_from_player(s + Vector3(0, 1.2, 0)): w *= 2.0
 			cands.append([s, w / (1.0 + abs(d - 15.0) * 0.12)])
+	if cands.is_empty():   # sala pequeña: entran por las ventanas aunque estén cerca, o aparecen en cualquier sitio de la zona
+		for id in zones:
+			if not zones[id].open: continue
+			for s2 in zones[id].spawns:
+				if s2.distance_to(player.global_position) >= 3.5: cands.append([s2, 1.0])
+			if cands.is_empty() and nav_regions.has(id + "_0"):
+				var p2 = NavigationServer3D.region_get_random_point(nav_regions[id + "_0"].get_rid(), 1, true)
+				if p2.distance_to(player.global_position) >= 5.0: cands.append([p2, 1.0])
 	if cands.is_empty(): return false
 	var tot = 0.0
 	for c in cands: tot += c[1]
@@ -216,6 +301,43 @@ func _spawn_zombie() -> bool:
 	z.setup(self, "a" if randf() < 0.5 else "c", pos, round_hp(round_n), round_speed(round_n))
 	zombies.append(z)
 	return true
+
+func _spawn_in_rooms() -> bool:
+	var pz = zone_at(player.global_position)
+	var opts = []
+	for id in zones:
+		if zones[id].open and zones[id].playable: opts.append([id, zones[id].area * (3.0 if id == pz else 1.0)])
+	if opts.is_empty(): return false
+	for attempt in 14:
+		var tot = 0.0
+		for o in opts: tot += o[1]
+		var r = randf() * tot; var pick = opts[0][0]
+		for o in opts:
+			r -= o[1]
+			if r <= 0.0: pick = o[0]; break
+		var reg: NavigationRegion3D = zones[pick].region
+		var p = NavigationServer3D.region_get_random_point(reg.get_rid(), 1, true)
+		var d = p.distance_to(player.global_position)
+		if d < 7.0 or d > 30.0: continue
+		if _visible_from_player(p + Vector3(0, 1.2, 0)) and attempt < 10: continue
+		if not _reachable(p): continue
+		var z = Zombie.new(); add_child(z)
+		z.setup(self, "a" if randf() < 0.5 else "c", p + Vector3(0, 0.05, 0), round_hp(round_n), round_speed(round_n))
+		zombies.append(z); return true
+	return false
+
+## hay camino de verdad desde ese punto hasta el jugador (descarta huecos bajo el suelo y rincones sueltos)
+func _reachable(p: Vector3) -> bool:
+	var map = get_world_3d().navigation_map
+	var path = NavigationServer3D.map_get_path(map, p, player.global_position, true)
+	return path.size() > 0 and path[path.size() - 1].distance_to(player.global_position) < 1.8
+
+func respawn_zombie(z: Zombie) -> void:
+	var n = zombies.size()
+	if _spawn_zombie():
+		var nz: Zombie = zombies[zombies.size() - 1]
+		nz.hp = z.hp; nz.max_speed = z.max_speed
+		zombies.erase(z); z.queue_free()
 
 func _visible_from_player(p: Vector3) -> bool:
 	var to = p - player.cam.global_position

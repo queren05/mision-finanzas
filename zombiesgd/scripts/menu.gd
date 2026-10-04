@@ -5,6 +5,15 @@ var main: Node
 var font_bo: Font
 var font_ui: Font
 var page: Control
+var bg: TextureRect
+var t = 0.0
+
+func _set_bg(id: String) -> void:
+	var p = "res://assets/ui/menu_%s.jpg" % id
+	if ResourceLoader.exists(p): bg.texture = load(p)
+
+func _process(d: float) -> void:
+	t += d; if bg: bg.position = Vector2(sin(t * 0.05) * 18.0 - 18.0, cos(t * 0.04) * 10.0 - 10.0); bg.scale = Vector2.ONE * 1.04
 const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
 	"postwar": { "name": "Ciudad en Ruinas", "desc": "Una manzana arrasada por la guerra: calles, plazas y edificios destrozados." },
@@ -13,18 +22,19 @@ const MAP_INFO := {
 }
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	font_bo = load("res://assets/fonts/BlackOpsOne.ttf"); font_ui = load("res://assets/fonts/Oswald.ttf")
-	var bg = TextureRect.new(); bg.set_anchors_preset(Control.PRESET_FULL_RECT); bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	var bgp = "res://assets/ui/menu_%s.jpg" % GS.sel_map
-	if ResourceLoader.exists(bgp): bg.texture = load(bgp)
-	add_child(bg)
-	var shade = ColorRect.new(); shade.set_anchors_preset(Control.PRESET_FULL_RECT); shade.color = Color(0.02, 0.02, 0.03, 0.62); add_child(shade)
+	bg = TextureRect.new(); bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	add_child(bg); bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_set_bg(GS.sel_map)
+	var shade = ColorRect.new(); add_child(shade); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var sh = Shader.new(); sh.code = "shader_type canvas_item; void fragment(){ float v = smoothstep(0.0, 0.75, UV.x); COLOR = vec4(0.02, 0.02, 0.03, mix(0.88, 0.35, v)); }"
+	var sm = ShaderMaterial.new(); sm.shader = sh; shade.material = sm
 	_home()
 
 func _clear() -> void:
 	if page: page.queue_free()
-	page = Control.new(); page.set_anchors_preset(Control.PRESET_FULL_RECT); add_child(page)
+	page = Control.new(); add_child(page); page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _lbl(text: String, f: Font, size: int, c: Color) -> Label:
 	var l = Label.new(); l.text = text; l.add_theme_font_override("font", f); l.add_theme_font_size_override("font_size", size); l.add_theme_color_override("font_color", c)
@@ -44,11 +54,10 @@ func _btn(text: String, cb: Callable, w := 360, enabled := true) -> Button:
 func _header(title: String) -> VBoxContainer:
 	_clear()
 	var v = VBoxContainer.new(); v.position = Vector2(70, 50); v.add_theme_constant_override("separation", 12); page.add_child(v)
-	var t = _lbl(title, font_bo, 56, Color(0.85, 0.12, 0.1)); v.add_child(t)
+	var tl = _lbl(title, font_bo, 64, Color(0.85, 0.12, 0.1)); v.add_child(tl)
 	# nivel y experiencia
 	var lv = _lbl("NIVEL %d   ·   %d / %d XP" % [GS.level, GS.xp, Data.xp_for_level(GS.level)], font_ui, 20, Color(1, 0.85, 0.4))
-	lv.position = Vector2(0, 0); lv.set_anchors_preset(Control.PRESET_TOP_RIGHT); lv.offset_left = -420; lv.offset_top = 30; lv.offset_right = -40; lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	page.add_child(lv)
+	page.add_child(lv); lv.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT); lv.offset_left = -420; lv.offset_top = 30; lv.offset_right = -40; lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	return v
 
 func _home() -> void:
@@ -69,7 +78,7 @@ func _maps() -> void:
 		var p = "res://assets/ui/menu_%s.jpg" % id
 		if ResourceLoader.exists(p): img.texture = load(p)
 		card.add_child(img)
-		var b = _btn(MAP_INFO[id].name.to_upper(), func(): GS.sel_map = id; _options(), 270); b.add_theme_font_size_override("font_size", 22); card.add_child(b)
+		var b = _btn(MAP_INFO[id].name.to_upper(), func(): GS.sel_map = id; _set_bg(id); _options(), 270); b.add_theme_font_size_override("font_size", 22); card.add_child(b)
 		var d = _lbl(MAP_INFO[id].desc, font_ui, 16, Color(0.85, 0.82, 0.75)); d.autowrap_mode = TextServer.AUTOWRAP_WORD; d.custom_minimum_size = Vector2(270, 70); card.add_child(d)
 		var best = _lbl("Récord: ronda %d" % int(GS.best.get(id, 0)) if GS.best.has(id) else "Sin récord", font_ui, 16, Color(1, 0.85, 0.4)); card.add_child(best)
 	v.add_child(_btn("VOLVER", _home))

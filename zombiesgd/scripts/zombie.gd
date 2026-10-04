@@ -34,6 +34,9 @@ var yaw = 0.0
 var safe_vel = Vector3.ZERO
 var rise_from = 0.0
 var dbg_align = 0.0
+var stuck_t = 0.0
+var last_check = Vector3.ZERO
+var check_t = 0.0
 
 func setup(g: Node, kind: String, pos: Vector3, health: float, speed: float) -> void:
 	game = g; hp = health; max_speed = speed
@@ -48,7 +51,7 @@ func setup(g: Node, kind: String, pos: Vector3, health: float, speed: float) -> 
 			var n = skel.get_bone_name(i)
 			if n.contains("Head") and not n.contains("Top"): head_bone = i; break
 	agent = NavigationAgent3D.new()
-	agent.radius = 0.42; agent.height = HEIGHT; agent.path_desired_distance = 0.6; agent.target_desired_distance = 0.9
+	agent.radius = 0.32; agent.height = HEIGHT; agent.path_desired_distance = 0.6; agent.target_desired_distance = 0.9
 	agent.avoidance_enabled = true; agent.neighbor_distance = 3.5; agent.max_neighbors = 8; agent.time_horizon_agents = 1.2; agent.max_speed = speed * 1.2
 	agent.path_max_distance = 3.0
 	add_child(agent)
@@ -164,6 +167,15 @@ func _physics_process(delta: float) -> void:
 	_gravity(delta)
 	move_and_slide()
 	rotation.y = yaw
+	# atascado (sin camino o sin avanzar): como en Black Ops, reaparece en otro sitio si no lo estás mirando
+	check_t += delta
+	if check_t > 1.0:
+		var moved = global_position.distance_to(last_check)
+		if d > 2.5 and (moved < 0.25 or agent.is_navigation_finished()): stuck_t += check_t
+		else: stuck_t = 0.0
+		last_check = global_position; check_t = 0.0
+		if stuck_t > 5.0 and not game._visible_from_player(global_position + Vector3(0, 1.2, 0)):
+			stuck_t = 0.0; game.respawn_zombie(self)
 	# animación al ritmo de la velocidad real
 	var real = Vector2(velocity.x, velocity.z).length()
 	if real < 0.08: _play("Idle", 0.3, 1.0)

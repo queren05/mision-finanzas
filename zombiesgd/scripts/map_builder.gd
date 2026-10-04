@@ -83,11 +83,11 @@ const BORDER := 1.0   # se hornea la caja ampliada en BORDER y Recast recorta ju
 
 static func nav_settings() -> NavigationMesh:
 	var nm = NavigationMesh.new()
-	nm.agent_radius = 0.38; nm.agent_height = 1.75; nm.agent_max_climb = 0.45; nm.agent_max_slope = 42.0
+	nm.agent_radius = 0.3; nm.agent_height = 1.75; nm.agent_max_climb = 0.45; nm.agent_max_slope = 42.0
 	nm.cell_size = 0.15; nm.cell_height = 0.1
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = LAYER_WORLD | LAYER_SOFT
 	nm.border_size = BORDER
 	nm.edge_max_error = 1.0
-	nm.region_min_size = 4.0
+	nm.region_min_size = 1.0
 	return nm
