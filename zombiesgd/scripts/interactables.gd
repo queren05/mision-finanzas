@@ -74,6 +74,7 @@ class Perk extends Base:
 		var scn: PackedScene = load("res://assets/models/props/%s.glb" % perk)
 		var holder = Node3D.new(); add_child(holder)
 		var m: Node3D = scn.instantiate(); holder.add_child(m)
+		MapBuilder.merge_model(m, 6000)   # ~100 piezas -> unas pocas llamadas de dibujo (y la de Double Tap traía 578 000 triángulos)
 		if perk == "mule": m.rotation_degrees.x = -90.0     # este modelo viene tumbado
 		Interactables._fit(holder, 2.05); holder.rotation_degrees.y = model_yaw
 		light = OmniLight3D.new(); light.light_color = Data.PERKS[perk].color; light.omni_range = 4.0; light.light_energy = 0.0; light.position = Vector3(0, 1.6, 0.8); add_child(light)
@@ -114,7 +115,7 @@ class MysteryBox extends Base:
 		var lm = MeshInstance3D.new(); var lb = BoxMesh.new(); lb.size = Vector3(1.72, 0.1, 0.74); lm.mesh = lb; lm.position = Vector3(0, 0.05, 0.36); lm.material_override = Interactables._wood_mat(); lid.add_child(lm)
 		for sx in [-0.55, 0.0, 0.55]:
 			var q = Label3D.new(); q.text = "?"; q.font_size = 96; q.pixel_size = 0.004; q.modulate = Color(1, 0.95, 0.7); q.outline_size = 8; q.position = Vector3(sx, 0.33, 0.37); add_child(q)
-		beam = MeshInstance3D.new(); var cm = CylinderMesh.new(); cm.top_radius = 0.35; cm.bottom_radius = 0.5; cm.height = 40; cm.cap_top = false; cm.cap_bottom = false; beam.mesh = cm; beam.position.y = 20
+		beam = MeshInstance3D.new(); var cm = CylinderMesh.new(); cm.top_radius = 0.35; cm.bottom_radius = 0.5; cm.height = 40; cm.radial_segments = 16; cm.rings = 1; cm.cap_top = false; cm.cap_bottom = false; beam.mesh = cm; beam.position.y = 20
 		var bmat = StandardMaterial3D.new(); bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; bmat.albedo_color = Color(0.45, 0.75, 1.0, 0.18); bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; bmat.cull_mode = BaseMaterial3D.CULL_DISABLED; bmat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD; beam.material_override = bmat; add_child(beam)
 		Interactables._solid(self, Vector3(1.7, 0.7, 0.72), Vector3(0, 0.35, 0))
 		_place()
@@ -293,6 +294,7 @@ class Door extends Base:
 			pass   # la puerta es una pieza del propio mapa (verja): se esconde al abrir
 		else:
 			Interactables.build_barricade(visual, size)
+			MapBuilder.merge_model(visual)   # tablones y sacos: de ~120 piezas a unas pocas
 		var lab = Label3D.new(); lab.text = "%d" % cost; lab.font = load("res://assets/fonts/BlackOpsOne.ttf"); lab.font_size = 72; lab.pixel_size = 0.004; lab.modulate = Color(1, 0.85, 0.4); lab.outline_size = 10
 		lab.position = Vector3(0, min(size.y, 2.4) + 0.35, 0); lab.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y; visual.add_child(lab)
 		reach = max(2.2, size.x * 0.55)
@@ -327,13 +329,13 @@ class GumMachine extends Base:
 	func build(g: Node) -> void:
 		game = g
 		var red = StandardMaterial3D.new(); red.albedo_color = Color(0.75, 0.08, 0.1); red.metallic = 0.3; red.roughness = 0.4
-		var base = MeshInstance3D.new(); var bm = CylinderMesh.new(); bm.top_radius = 0.28; bm.bottom_radius = 0.35; bm.height = 1.0; base.mesh = bm; base.position.y = 0.5; base.material_override = red; add_child(base)
-		globe = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.36; sm.height = 0.72; globe.mesh = sm; globe.position.y = 1.36
+		var base = MeshInstance3D.new(); var bm = CylinderMesh.new(); bm.top_radius = 0.28; bm.bottom_radius = 0.35; bm.height = 1.0; bm.radial_segments = 24; base.mesh = bm; base.position.y = 0.5; base.material_override = red; add_child(base)
+		globe = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.36; sm.height = 0.72; sm.radial_segments = 28; sm.rings = 14; globe.mesh = sm; globe.position.y = 1.36
 		var glass = StandardMaterial3D.new(); glass.albedo_color = Color(0.8, 0.9, 1.0, 0.25); glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; glass.roughness = 0.05; glass.metallic_specular = 0.9; globe.material_override = glass; add_child(globe)
 		var rng = RandomNumberGenerator.new(); rng.seed = 7
 		var gums = Data.GUMS.keys()
 		for k in 26:   # bolas de chicle de colores dentro
-			var b = MeshInstance3D.new(); var bs = SphereMesh.new(); bs.radius = 0.06; bs.height = 0.12; b.mesh = bs
+			var b = MeshInstance3D.new(); var bs = SphereMesh.new(); bs.radius = 0.06; bs.height = 0.12; bs.radial_segments = 10; bs.rings = 5; b.mesh = bs
 			var m = StandardMaterial3D.new(); m.albedo_color = Data.GUMS[gums[k % gums.size()]].color; m.roughness = 0.35; b.material_override = m
 			var dir = Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 0.3), rng.randf_range(-1, 1)).normalized() * rng.randf_range(0.0, 0.27)
 			b.position = Vector3(0, 1.36, 0) + dir; add_child(b)
@@ -381,6 +383,7 @@ class Plush extends Base:
 		game = g; k = k_
 		var piv = Node3D.new(); add_child(piv)
 		var m: Node3D = load("res://assets/models/chars/gamba.glb").instantiate(); piv.add_child(m)
+		MapBuilder.merge_model(m, 3000)   # la gamba trae ~100 piezas y 17 000 triángulos
 		Interactables._fit(piv, 0.3); piv.rotation_degrees.y = randf() * 360.0
 		reach = 1.4
 	func prompt(_p: Player) -> String: return "Pulsa USAR: ¿una gamba de peluche?"
@@ -414,7 +417,7 @@ static func teddy() -> Node3D:
 	var n = Node3D.new()
 	var brown = StandardMaterial3D.new(); brown.albedo_color = Color(0.45, 0.3, 0.15); brown.roughness = 0.9
 	for e in [[Vector3(0, 0, 0), 0.16], [Vector3(0, 0.22, 0), 0.11], [Vector3(-0.08, 0.31, 0), 0.04], [Vector3(0.08, 0.31, 0), 0.04], [Vector3(-0.14, 0.03, 0), 0.05], [Vector3(0.14, 0.03, 0), 0.05]]:
-		var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = e[1]; sm.height = e[1] * 2; m.mesh = sm; m.material_override = brown; m.position = e[0]; n.add_child(m)
+		var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = e[1]; sm.height = e[1] * 2; sm.radial_segments = 16; sm.rings = 8; m.mesh = sm; m.material_override = brown; m.position = e[0]; n.add_child(m)
 	return n
 
 # ------------------------------------------------------------------ barricada de tablones (estilo Black Ops)
@@ -430,6 +433,22 @@ static func planks_mat() -> StandardMaterial3D:
 static func _plank(parent: Node3D, center: Vector3, length: float, width: float, roll: float, yaw := 0.0) -> void:
 	var m = MeshInstance3D.new(); var b = BoxMesh.new(); b.size = Vector3(length, width, 0.05); m.mesh = b; m.material_override = planks_mat()
 	m.position = center; m.rotation = Vector3(0, yaw, roll); parent.add_child(m)
+
+## versión simplificada de la primera malla de un modelo (para objetos que se repiten mucho)
+static func _low_mesh(scn: PackedScene, target_idx: int) -> Mesh:
+	var n: Node = scn.instantiate()
+	var mi: MeshInstance3D = n.find_children("*", "MeshInstance3D", true, false)[0]
+	var st = SurfaceTool.new(); st.create_from(mi.mesh, 0); st.index()
+	var lod: PackedInt32Array = st.generate_lod(30.0, target_idx)
+	var arr = st.commit_to_arrays()
+	if lod.size() >= 3: arr[Mesh.ARRAY_INDEX] = lod
+	var am = ArrayMesh.new(); am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	am.surface_set_material(0, mi.get_active_material(0))
+	n.free()
+	return am
+
+static func _use_low(model: Node, low: Mesh) -> void:
+	for m in model.find_children("*", "MeshInstance3D", true, false): m.mesh = low; break
 
 static func build_barricade(parent: Node3D, size: Vector3) -> void:
 	var w = size.x; var h = min(size.y, 2.5)
@@ -456,12 +475,13 @@ static func build_barricade(parent: Node3D, size: Vector3) -> void:
 		_plank(parent, Vector3((x0 + x1) / 2, h / 2, 0.1), L, 0.2, atan2(h - 0.4, x1 - x0) * (1 if i % 2 == 0 else -1))
 	# sacos de arena en la base, por delante
 	var sb: PackedScene = load("res://assets/models/props/sandbag.glb")
+	var low = _low_mesh(sb, 1500)   # el saco trae 21 500 triángulos: con ~500 se ve igual a esa distancia
 	var n = int(w / 0.62)
 	for k in n:
-		var s: Node3D = sb.instantiate(); parent.add_child(s); Interactables._fit(s, 0.24)
+		var s: Node3D = sb.instantiate(); _use_low(s, low); parent.add_child(s); Interactables._fit(s, 0.24)
 		s.position += Vector3(-w / 2 + 0.31 + k * (w - 0.62) / max(1, n - 1), 0, 0.42); s.rotation_degrees.y = rng.randf_range(-12, 12)
 		if k % 2 == 0 and k + 1 < n:
-			var s2: Node3D = sb.instantiate(); parent.add_child(s2); Interactables._fit(s2, 0.24)
+			var s2: Node3D = sb.instantiate(); _use_low(s2, low); parent.add_child(s2); Interactables._fit(s2, 0.24)
 			s2.position += Vector3(-w / 2 + 0.62 + k * (w - 0.62) / max(1, n - 1), 0.22, 0.42); s2.rotation_degrees.y = rng.randf_range(-12, 12)
 
 # ------------------------------------------------------------------ texturas generadas

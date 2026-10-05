@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fire Station No. 1
+* source:	https://sketchfab.com/3d-models/fire-station-no-1-87edf04deb28434993274d9f05070865
+* author:	CommonSpence (https://sketchfab.com/commonspence)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fire Station No. 1" (https://sketchfab.com/3d-models/fire-station-no-1-87edf04deb28434993274d9f05070865) by CommonSpence (https://sketchfab.com/commonspence) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

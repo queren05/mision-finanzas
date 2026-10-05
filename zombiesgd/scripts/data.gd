@@ -92,18 +92,10 @@ const EGG := {
 		"intro": "El alcaide escondió una radio por la cárcel. Si la montas, quizá alguien venga a por vosotros.",
 		"defend": "¡La señal atrae a algo enorme! Aguanta junto a la radio.",
 		"end": "El Bruto ha caído. La radio emite una voz: «Aquí la Patrulla Gamba… vamos a por vosotros». FIN… por ahora." },
-	"mansion": { "part": "página del diario", "parts": "páginas del diario", "item": "el diario del conde", "altar": "la máquina Pack-a-Punch",
-		"intro": "El conde de la mansión dejó su diario roto en pedazos. Reúnelo y descubre qué invocó.",
-		"defend": "Al leer el diario en voz alta, la mansión tiembla. ¡Algo despierta!",
-		"end": "El guardián del conde ha caído. El diario se quema solo y la mansión queda en silencio. FIN… por ahora." },
-	"isla": { "part": "trozo del mapa del tesoro", "parts": "trozos del mapa", "item": "el mapa del tesoro", "altar": "la máquina Pack-a-Punch",
-		"intro": "Un pirata enterró algo en la isla. Junta los trozos de su mapa.",
-		"defend": "¡Cavar ha despertado al guardián del tesoro! Defiéndete.",
-		"end": "El guardián cae y el cofre se abre: dentro hay una gamba de oro. FIN… por ahora." },
-	"lonja": { "part": "lata dorada", "parts": "latas doradas", "item": "la máquina conservera", "altar": "la máquina Pack-a-Punch",
-		"intro": "En la lonja se enlataba algo más que marisco. Encuentra las latas doradas.",
-		"defend": "La conservera arranca sola… y de dentro sale algo. ¡Aguanta!",
-		"end": "El monstruo de la lonja ha caído. Las latas se abren: estaban llenas de antídoto. FIN… por ahora." },
+	"pueblo": { "part": "pieza del autobús", "parts": "piezas del autobús", "item": "el viejo autobús del pueblo", "altar": "la máquina Pack-a-Punch",
+		"intro": "El autobús que sacaba a la gente del pueblo quedó hecho pedazos. Reúne las piezas: quizá aún arranque.",
+		"defend": "¡El motor ruge y la lava del cruce se agita! Aguanta junto a la máquina.",
+		"end": "La bestia de la lava ha caído. A lo lejos se oye un claxon: el autobús viene a por vosotros. FIN… por ahora." },
 }
 
 # ---------------------------------------------------------------- potenciadores
@@ -168,7 +160,7 @@ func _init() -> void:
 	add.call("heads", "Mata %d zombis de un tiro a la cabeza", "heads", [50, 250, 1000], [600, 2000, 5000])
 	add.call("knife", "Mata %d zombis con el cuchillo", "knife", [25, 100, 300], [600, 1800, 4000])
 	add.call("explo", "Mata %d zombis con explosivos", "explo", [25, 150, 500], [600, 2000, 4500])
-	for m in [["prison", "la Penitenciaría"]]:
+	for m in [["prison", "la Penitenciaría"], ["pueblo", "el Pueblo"]]:
 		add.call("round_" + m[0], "Llega a la ronda %d en " + m[1], "round_" + m[0], [10, 20, 30], [800, 2500, 6000])
 	add.call("perks", "Bebe %d refrescos", "perks", [10, 50, 150], [500, 1500, 3500])
 	add.call("box", "Usa la caja misteriosa %d veces", "box", [10, 50, 150], [500, 1500, 3500])
@@ -180,7 +172,7 @@ func _init() -> void:
 	add.call("brutes", "Mata %d Brutos", "brutes", [1, 10, 30], [800, 2500, 6000])
 	add.call("gums", "Mastica %d chicles", "gums", [5, 30, 100], [400, 1500, 4000])
 	add.call("revives", "Reanima %d veces a un compañero", "revives", [1, 10, 50], [500, 1500, 4000])
-	for m in [["prison", "la Penitenciaría"]]:
+	for m in [["prison", "la Penitenciaría"], ["pueblo", "el Pueblo"]]:
 		add.call("egg_" + m[0], "Completa el easter egg de " + m[1], "egg_" + m[0], [1], [5000])
 		add.call("song_" + m[0], "Encuentra la canción oculta de " + m[1], "song_" + m[0], [1], [1000])
 	for id in WEAPONS:
@@ -209,4 +201,4 @@ const CHARACTERS := {
 }
 
 # ---------------------------------------------------------------- mapas
-const MAPS := ["prison"]
+const MAPS := ["prison", "pueblo"]

@@ -125,6 +125,41 @@ func _run_test() -> void:
 		for k in 16:
 			await get_tree().create_timer(0.25).timeout
 			print("ANIM ", k, " ", p.vm.ap.current_animation, " pos ", snapped(p.vm.ap.current_animation_position, 0.01), " cur ", p.vm.cur, " playing ", p.vm.ap.is_playing(), " len ", p.vm.ap.current_animation_length, " draw_t ", snapped(p.vm.draw_t, 0.01))
+	if args.has("countmesh"):
+		var c = {}
+		for m in game.find_children("*", "GeometryInstance3D", true, false):
+			if not m.is_visible_in_tree(): continue
+			var top = m
+			while top.get_parent() != game: top = top.get_parent()
+			var k = top.get_class() + ":" + String(top.name).left(14)
+			c[k] = c.get(k, 0) + 1
+		var arr = c.keys().map(func(k): return [c[k], k]); arr.sort_custom(func(a, b): return a[0] > b[0])
+		print("MALLAS ", arr.slice(0, 20))
+		var tris = {}
+		for m in game.find_children("*", "MeshInstance3D", true, false):
+			if not m.is_visible_in_tree() or m.mesh == null: continue
+			var top = m
+			while top.get_parent() != game: top = top.get_parent()
+			var k = String(top.get_script().resource_path.get_file() if top.get_script() else top.get_class()) + ":" + String(top.name).left(12)
+			var tri = 0
+			for si in m.mesh.get_surface_count():
+				var aa = m.mesh.surface_get_arrays(si)
+				tri += (aa[Mesh.ARRAY_INDEX].size() if aa[Mesh.ARRAY_INDEX] else aa[Mesh.ARRAY_VERTEX].size()) / 3
+			tris[k] = tris.get(k, 0) + tri
+		var ta = tris.keys().map(func(k): return [tris[k], k]); ta.sort_custom(func(a, b): return a[0] > b[0])
+		print("TRIANGULOS ", ta.slice(0, 16))
+		for gn in game.get_children():
+			if gn is Node3D:
+				for e in ta.slice(0, 8):
+					if String(e[1]).ends_with(String(gn.name).left(12)) and e[0] > 15000:
+						var ms = gn.find_children("*", "MeshInstance3D", true, false)
+						print("PESADO ", e[0], " pos=", gn.global_position.snapped(Vector3.ONE * 0.1), " ", gn.get("id") if "id" in gn else "", gn.get("gun") if "gun" in gn else "", " ", ms[0].mesh.resource_name if ms.size() else "")
+		for gn in game.get_children():
+			if gn is Node3D and gn.find_children("*", "GeometryInstance3D", true, false).size() > 50:
+				var ms = gn.find_children("*", "MeshInstance3D", true, false)
+				print("GRUPO ", gn.name, " script=", gn.get_script().resource_path if gn.get_script() else "", " pos=", gn.global_position.snapped(Vector3.ONE * 0.1), " ej=", String(gn.get_path_to(ms[0])) if ms.size() > 0 else "")
+		var lights = game.find_children("*", "Light3D", true, false)
+		print("LUCES ", lights.size(), " con sombra ", lights.filter(func(l): return l.shadow_enabled).size())
 	if args.has("knifeshot"):
 		await get_tree().create_timer(3.0).timeout
 		if not args.has("noslash"): p._knife()
@@ -184,7 +219,7 @@ func _run_test() -> void:
 		await get_tree().physics_frame
 		if args.has("perf") and i % 60 == 59:
 			var alive = game.zombies.filter(func(z): return is_instance_valid(z) and not z.dead).size()
-			print("PERF zombis=%d proceso=%.1fms física=%.1fms nav=%.1fms" % [alive, Performance.get_monitor(Performance.TIME_PROCESS) * 1000, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000, Performance.get_monitor(Performance.TIME_NAVIGATION_PROCESS) * 1000])
+			print("PERF zombis=%d proceso=%.1fms física=%.1fms nav=%.1fms dibujos=%d objetos=%d primitivas=%dk" % [alive, Performance.get_monitor(Performance.TIME_PROCESS) * 1000, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000, Performance.get_monitor(Performance.TIME_NAVIGATION_PROCESS) * 1000, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000])
 		if args.has("trace") and i % 15 == 0:
 			var ds = []
 			for z in game.zombies:
@@ -242,12 +277,16 @@ func _run_test() -> void:
 			for j in 3: await get_tree().process_frame
 			await RenderingServer.frame_post_draw
 			get_viewport().get_texture().get_image().save_png(String(args.get("out", "/tmp/shot")) + "_%02d.png" % k); k += 1
+	if args.has("hidegrp"):   # depuración: esconde nodos de la partida por tipo (para medir qué cuesta dibujar)
+		for gn in game.find_children("*", String(args.hidegrp), true, false): gn.visible = false
 	if args.has("looks"):
 		var k = 0
 		for spec in String(args.looks).split(";"):
 			var v = spec.split(","); p.cam.global_position = Vector3(float(v[0]), float(v[1]), float(v[2])); p.cam.look_at(Vector3(float(v[3]), float(v[4]), float(v[5])))
+			if args.has("clean"): game.hud.visible = false; p.vm.scale = Vector3.ONE * 0.0001   # (el jugador vuelve a mostrar los brazos cada fotograma)
 			for j in 3: await get_tree().process_frame
 			await RenderingServer.frame_post_draw
+			print("VISTA %d dibujos=%d objetos=%d primitivas=%dk" % [k, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000])
 			get_viewport().get_texture().get_image().save_png(String(args.get("out", "/tmp/shot")) + "_%d.png" % k); k += 1
 	var alive: int = game.zombies.filter(func(z): return is_instance_valid(z) and not z.dead).size() if is_instance_valid(game) else 0
 	print("TEST round=", game.round_n, " kills=", p.kills, " alive=", alive, " hp=", p.hp, " pos=", p.global_position)

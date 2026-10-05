@@ -40,3 +40,27 @@ Recargas: "Gun reload sounds" de springyspringo (CC0) y "Shotgun Reload Sound ef
 Pasos: "Footsteps on different surfaces" de congusbongus (CC-BY 3.0); impactos y aterrizaje: "FPS Placeholder Sounds" de Jack Menhorn (CC-BY 3.0)
 Explosiones: "2 High Quality Explosions" de qubodup (CC-BY 3.0), OpenGameArt.org
 Cuchillo: "Fighting Ka-Bar knifes" de vitvitskyi — https://sketchfab.com/3d-models/fighting-ka-bar-knifes-b3c3a8c7c28349268f6631567cf01d8a — CC-BY 4.0
+
+Mapa «Pueblo» (modelos de Sketchfab, CC-BY 4.0):
+• «Old Western Bank With Interior Low Poly» — Elvair Lima (elvair) — https://sketchfab.com/3d-models/old-western-bank-with-interior-low-poly-e55eb272bc1440bf93e5dc10ccf73698
+• «DINER» — Elbolillo (Elbolilloduro) — https://sketchfab.com/3d-models/diner-15789955fbe642b19994da3cd9e725a8
+• «Gas station Props» — Elbolillo (Elbolilloduro) — https://sketchfab.com/3d-models/gas-station-props-8fcd52f1b12e4b4296589b4c6328b777
+• «Fire Station No. 1» — CommonSpence (commonspence) — https://sketchfab.com/3d-models/fire-station-no-1-87edf04deb28434993274d9f05070865
+• «Low-poly Old American brick building with shop.» — Orzechu (Orzechu) — https://sketchfab.com/3d-models/low-poly-old-american-brick-building-with-shop-3170993b67ee4e58b27d69d5877f71bd
+• «Old Building Pack | Lowpoly» — Frid.blend (Fridqeir) — https://sketchfab.com/3d-models/old-building-pack-lowpoly-081eccb97be8429c83b2e9fb407727e7
+• «Western church» — adam127 (adam127) — https://sketchfab.com/3d-models/western-church-ade447109b3743eab39a92bb08a55cd0
+• «Saloon Modular Interior (Assembled)» — Lauren D (lollidrops) — https://sketchfab.com/3d-models/saloon-modular-interior-assembled-e6ff2f0ba0b14289b9eea8728d38eda6
+• «Western building» — CG BANG! (CGbang) — https://sketchfab.com/3d-models/western-building-bb5836df2ab7468b9633ecc63ee6fcae
+• «Free Burned Police Cars» — Renafox (kryik1023) — https://sketchfab.com/3d-models/free-burned-police-cars-ad16f7085cb047b494997cf9efed5059
+• «Burned-out Cars» — Renafox (kryik1023) — https://sketchfab.com/3d-models/burned-out-cars-701066df6b914fd08318524c7ccd96a7
+• «Abandoned street lights pack» — sergeilihandristov (sergeilihandristov) — https://sketchfab.com/3d-models/abandoned-street-lights-pack-c853eca300e8435d8fe9206bcb524eda
+• «Wooden Barricades» — ANRUVAL_3D_MODELS (ANRUVAL_3D_MODELS) — https://sketchfab.com/3d-models/wooden-barricades-2838fd388f7b484b8039a0ef977fc866
+• «Old | Street | Fences | Pack» — YadroGames (yadrogames) — https://sketchfab.com/3d-models/old-street-fences-pack-0953ef9c6e9b4a099daf53f91d29cf09
+• «Old tree» — evolveduk (evolveduk) — https://sketchfab.com/3d-models/old-tree-3cb4d59eb4844dc4802480e9ee53785e
+• «Dead Trees» — Darklordbroch (Darklordbroch) — https://sketchfab.com/3d-models/dead-trees-41f9d44a8d8b45549dd6a0c947ca4eba
+• «Water Tower Water Tanker_14_MB» — Mehdi Shahsavan (ahmagh2e) — https://sketchfab.com/3d-models/water-tower-water-tanker-14-mb-69811beb5b2d4c31901b3c99e1fcf219
+• «Street Asset Pack» — vmatthew (vmatthew) — https://sketchfab.com/3d-models/street-asset-pack-f3eb47d02e2e4ab290e66752fa354b48
+• «US Mailbox» — Yaroslav Dubovikov (yrdoes) — https://sketchfab.com/3d-models/us-mailbox-3376b03ebf1d45ea99fbb6ff350489da
+• «Classic Park Bench (Low Poly)» — Berk Gedik (berkgedik) — https://sketchfab.com/3d-models/classic-park-bench-low-poly-01a5b64427984632bb44242da3813bb1
+• «Suburban shabby house low poly» — Simlion (simlion) — https://sketchfab.com/3d-models/suburban-shabby-house-low-poly-f4678340de204c829e79a01f216e1be0
+Texturas del suelo: Poly Haven (CC0); lava: ambientCG (CC0)

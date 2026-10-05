@@ -1,0 +1,11 @@
+Model Information:
+* title:	Saloon Modular Interior (Assembled)
+* source:	https://sketchfab.com/3d-models/saloon-modular-interior-assembled-e6ff2f0ba0b14289b9eea8728d38eda6
+* author:	LaurenD (https://sketchfab.com/lollidrops)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Saloon Modular Interior (Assembled)" (https://sketchfab.com/3d-models/saloon-modular-interior-assembled-e6ff2f0ba0b14289b9eea8728d38eda6) by LaurenD (https://sketchfab.com/lollidrops) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

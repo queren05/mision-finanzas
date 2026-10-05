@@ -18,10 +18,10 @@ func _ready() -> void:
 	mesh = MeshInstance3D.new()
 	var mat = StandardMaterial3D.new(); mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat.albedo_color = Color(col.r, col.g, col.b, 0.55 if bubble else 1.0)
 	if bubble:
-		var sm = SphereMesh.new(); sm.radius = 0.35; sm.height = 0.7; mesh.mesh = sm
+		var sm = SphereMesh.new(); sm.radius = 0.35; sm.height = 0.7; sm.radial_segments = 20; sm.rings = 10; mesh.mesh = sm
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	else:
-		var cm = CapsuleMesh.new(); cm.radius = 0.06; cm.height = 0.7; mesh.mesh = cm; mesh.rotation.x = PI / 2
+		var cm = CapsuleMesh.new(); cm.radius = 0.06; cm.height = 0.7; cm.radial_segments = 12; cm.rings = 4; mesh.mesh = cm; mesh.rotation.x = PI / 2
 	mesh.material_override = mat; add_child(mesh)
 	light = OmniLight3D.new(); light.light_color = col; light.omni_range = 4.0; light.light_energy = 2.0; add_child(light)
 	look_at(global_position + dir)

@@ -15,6 +15,7 @@ const GOLD = Color(1.0, 0.8, 0.2)
 const BEIGE = Color(0.725, 0.663, 0.541)
 const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
+	"pueblo": { "name": "Pueblo", "desc": "Un cruce de un pueblo americano en llamas: el banco, el bar, el diner y la gasolinera. Cuidado con la lava del cruce." },
 
 }
 

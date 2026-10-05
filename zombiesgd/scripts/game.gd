@@ -149,6 +149,9 @@ func _build_environment() -> void:
 			var o = OmniLight3D.new(); o.position = Vector3(c[0], c[1], c[2]); o.light_color = Color(1.0, 0.74, 0.5); o.omni_range = 10.0; o.light_energy = 2.4; o.omni_attenuation = 1.2; add_child(o)
 	for l in cfg.get("lights", []):
 		var o = OmniLight3D.new(); o.position = MapBuilder.v3(l.pos); o.light_color = _col(l.get("color", [1, 0.85, 0.65])); o.omni_range = float(l.get("range", 8)); o.light_energy = float(l.get("energy", 1.2)); o.shadow_enabled = false; add_child(o)
+		if l.get("color", [1, 1, 1])[2] < 0.3: fire_lights.append([o, o.light_energy, randf() * 10.0])   # luz de fuego: parpadea
+	# fuegos (coches quemados, la grieta de lava)
+	for f in cfg.get("fires", []): Fx.fire(self, MapBuilder.v3(f), 1.0)
 
 ## resolución dinámica: cada 2 s mira los fps; por debajo de ~50 baja la resolución 3D (hasta el 55 %), y la sube si va sobrado
 func _dynamic_resolution(delta: float) -> void:
@@ -370,6 +373,27 @@ func target_for(from: Vector3) -> Node3D:
 
 func can_attack(p: Node3D) -> bool: return p != null and p.alive and not p.downed
 
+var fire_lights = []
+var burn_t = 0.0
+var lava_toast_t = -99.0
+## zonas que queman (la lava del cruce del Pueblo): solo a quien la pisa, no a los zombis
+func _hazards(delta: float) -> void:
+	var hz: Array = cfg.get("hazards", [])
+	if hz.is_empty() or not player.alive or player.downed or not player.is_on_floor(): burn_t = 0.0; return
+	var p = Vector2(player.global_position.x, player.global_position.z)
+	for h in hz:
+		var a = Vector2(h.a[0], h.a[1]); var b = Vector2(h.b[0], h.b[1])
+		var q = Geometry2D.get_closest_point_to_segment(p, a, b)
+		if p.distance_to(q) < float(h.r):
+			burn_t -= delta
+			if burn_t <= 0.0:
+				burn_t = 0.5
+				player.take_damage(12.0)
+				Fx.fire_puff(self, player.global_position + Vector3(0, 0.3, 0))
+				if time - lava_toast_t > 8.0: lava_toast_t = time; hud.toast("¡QUEMA!", "La lava del cruce hace daño: no la pises.")
+			return
+	burn_t = 0.0
+
 func damage_player(p: Node3D, dmg: float) -> void:
 	if p == player: player.take_damage(dmg)
 	elif p is RemotePlayer: Net.hurt.rpc_id(p.peer, dmg)
@@ -455,6 +479,10 @@ func _process(delta: float) -> void:
 	_dynamic_resolution(delta)
 	if paused and not Net.active: return
 	time += delta
+	for fl in fire_lights:
+		fl[2] += delta * 9.0
+		fl[0].light_energy = fl[1] * (0.82 + 0.12 * sin(fl[2]) + 0.08 * sin(fl[2] * 2.3 + 1.0))
+	_hazards(delta)
 	insta = max(0.0, insta - delta); dpoints = max(0.0, dpoints - delta); fire_sale = max(0.0, fire_sale - delta)
 	hud.update_timers(insta, dpoints, fire_sale)
 	_egg_process(delta)
@@ -776,7 +804,7 @@ func throw_grenade(from: Vector3, vel: Vector3, by: Node) -> void:
 	g.continuous_cd = true   # no atraviesa el suelo aunque vaya rápida
 	g.linear_damp = 0.3; g.angular_damp = 2.0
 	var cs = CollisionShape3D.new(); var sp = SphereShape3D.new(); sp.radius = 0.08; cs.shape = sp; g.add_child(cs)
-	var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.08; sm.height = 0.16; m.mesh = sm
+	var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.08; sm.height = 0.16; sm.radial_segments = 12; sm.rings = 6; m.mesh = sm
 	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.35, 0.42, 0.28); mat.roughness = 0.5; mat.metallic = 0.3; m.material_override = mat; g.add_child(m)
 	var led = OmniLight3D.new(); led.light_color = Color(1, 0.2, 0.1); led.omni_range = 1.2; led.light_energy = 1.5; g.add_child(led)   # lucecita para verla
 	add_child(g); g.global_position = from; g.linear_velocity = vel
@@ -806,7 +834,7 @@ func gas_burst(at: Vector3, authoritative: bool) -> void:
 ## rayo de los perros infernales
 func lightning(at: Vector3) -> void:
 	var l = OmniLight3D.new(); l.light_color = Color(0.6, 0.75, 1.0); l.omni_range = 14.0; l.light_energy = 8.0; add_child(l); l.global_position = at + Vector3(0, 3, 0)
-	var beam = MeshInstance3D.new(); var cm = CylinderMesh.new(); cm.top_radius = 0.05; cm.bottom_radius = 0.25; cm.height = 30; beam.mesh = cm
+	var beam = MeshInstance3D.new(); var cm = CylinderMesh.new(); cm.top_radius = 0.05; cm.bottom_radius = 0.25; cm.height = 30; cm.radial_segments = 12; cm.rings = 1; beam.mesh = cm
 	var bm = StandardMaterial3D.new(); bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; bm.albedo_color = Color(0.75, 0.85, 1.0, 0.85); bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; bm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	beam.material_override = bm; add_child(beam); beam.global_position = at + Vector3(0, 15, 0)
 	Sfx.play_at("shot_rifle2", at, 1.0, 0.4)

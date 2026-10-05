@@ -1,0 +1,11 @@
+Model Information:
+* title:	US Mailbox
+* source:	https://sketchfab.com/3d-models/us-mailbox-3376b03ebf1d45ea99fbb6ff350489da
+* author:	Yaroslav Dubovikov (https://sketchfab.com/yrdoes)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "US Mailbox" (https://sketchfab.com/3d-models/us-mailbox-3376b03ebf1d45ea99fbb6ff350489da) by Yaroslav Dubovikov (https://sketchfab.com/yrdoes) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

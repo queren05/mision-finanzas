@@ -1,0 +1,11 @@
+Model Information:
+* title:	Wooden Barricades
+* source:	https://sketchfab.com/3d-models/wooden-barricades-2838fd388f7b484b8039a0ef977fc866
+* author:	ANRUVAL_3D_MODELS (https://sketchfab.com/ANRUVAL_3D_MODELS)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Wooden Barricades" (https://sketchfab.com/3d-models/wooden-barricades-2838fd388f7b484b8039a0ef977fc866) by ANRUVAL_3D_MODELS (https://sketchfab.com/ANRUVAL_3D_MODELS) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

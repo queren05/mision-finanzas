@@ -19,6 +19,7 @@ func _template(id: String) -> Node3D:
 	src.scale *= s
 	b = _aabb(holder)
 	src.position -= b.get_center()
+	MapBuilder.merge_model(holder, 14000)   # las armas de Sketchfab traen decenas de piezas (y hasta 60 000 triángulos)
 	cache[id] = holder
 	return holder
 
