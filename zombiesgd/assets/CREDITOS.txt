@@ -29,7 +29,6 @@ Música (OpenGameArt.org):
   "Bio-Hazard" de centurionofwar — CC0
   "I Became a Zombie" de megupets — CC0
   "Boss Battle #6 Metal" de nene — CC0
-Voces de los personajes: generadas con Piper TTS (voces es_ES davefx, es_ES sharvard y es_MX claude, proyecto rhasspy/piper-voices).
 Campanas de ronda: sintetizadas para el juego.
 
 — Añadido en la versión 2.2 —
@@ -64,3 +63,4 @@ Mapa «Pueblo» (modelos de Sketchfab, CC-BY 4.0):
 • «Classic Park Bench (Low Poly)» — Berk Gedik (berkgedik) — https://sketchfab.com/3d-models/classic-park-bench-low-poly-01a5b64427984632bb44242da3813bb1
 • «Suburban shabby house low poly» — Simlion (simlion) — https://sketchfab.com/3d-models/suburban-shabby-house-low-poly-f4678340de204c829e79a01f216e1be0
 Texturas del suelo: Poly Haven (CC0); lava: ambientCG (CC0)
+Voces de los personajes: Kokoro-82M (hexgrad, Apache-2.0) con kokoro-onnx (MIT)
