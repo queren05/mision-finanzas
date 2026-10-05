@@ -23,6 +23,7 @@ func _ready() -> void:
 
 ## prueba de cooperativo: un proceso hace de anfitrión y otro se une por IP
 func _net_test() -> void:
+	if args.has("maxq"): GS.settings.quality = "alta"
 	GS.sel_map = args.get("test", "prison"); GS.start_round = int(args.get("round", "1")); GS.settings.name = "Bot" + ("H" if args.has("nethost") else "C")
 	Net.my_name = GS.settings.name
 	if args.has("nethost"):
@@ -261,6 +262,17 @@ func _run_test() -> void:
 		var v = String(args.look).split(","); p.cam.global_position = Vector3(float(v[0]), float(v[1]), float(v[2])); p.cam.look_at(Vector3(float(v[3]), float(v[4]), float(v[5])))
 	for k in 3: await get_tree().process_frame
 	await RenderingServer.frame_post_draw
+	if args.has("shotz"):   # captura mirando a la horda (para la tienda): la cámara apunta al grupo de zombis más cercano
+		var zs = game.zombies.filter(func(z): return is_instance_valid(z) and not z.dead and z.global_position.distance_to(p.global_position) < 22.0)
+		if zs.size() > 0:
+			var c = Vector3.ZERO
+			for z in zs: c += z.global_position
+			c /= zs.size()
+			p.yaw = atan2(-(c.x - p.global_position.x), -(c.z - p.global_position.z))
+			p.pitch = -0.06; p.sync_head()
+			for i in 4: await get_tree().process_frame
+			await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(args.shotz)
 	if args.has("shot"): get_viewport().get_texture().get_image().save_png(args.shot)
 	if args.has("pauseshot"):
 		game.pause(true)

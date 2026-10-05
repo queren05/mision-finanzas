@@ -155,6 +155,7 @@ func _build_environment() -> void:
 
 ## resolución dinámica: cada 2 s mira los fps; por debajo de ~50 baja la resolución 3D (hasta el 55 %), y la sube si va sobrado
 func _dynamic_resolution(delta: float) -> void:
+	if OS.get_cmdline_user_args().has("maxq"): return   # capturas para la tienda: siempre a resolución completa
 	fps_acc += delta; fps_frames += 1
 	if fps_acc < 2.0: return
 	var fps = fps_frames / fps_acc; fps_acc = 0.0; fps_frames = 0
@@ -179,6 +180,10 @@ func apply_quality(e: Environment) -> void:
 	var pc = not OS.has_feature("mobile")
 	vp.msaa_3d = (Viewport.MSAA_2X if pc else Viewport.MSAA_4X) if q == "alta" else (Viewport.MSAA_2X if q == "media" and not pc else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato; en PC con resoluciones altas, no
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
+	if OS.get_cmdline_user_args().has("maxq"):
+		vp.msaa_3d = Viewport.MSAA_8X; vp.scaling_3d_scale = 1.0; base_scale = 1.0
+		RenderingServer.directional_shadow_atlas_set_size(8192, true); vp.positional_shadow_atlas_size = 4096
+		vp.mesh_lod_threshold = 0.0
 	RenderingServer.directional_shadow_atlas_set_size(4096 if q == "alta" else 2048, true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM if q == "alta" else RenderingServer.SHADOW_QUALITY_SOFT_LOW)
 	if sun:
