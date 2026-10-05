@@ -17,14 +17,14 @@ func _ready() -> void:
 		AudioServer.add_bus(); var b = AudioServer.bus_count - 1; AudioServer.set_bus_name(b, "Efectos"); AudioServer.set_bus_send(b, "Master")
 		var rv = AudioEffectReverb.new(); rv.room_size = 0.45; rv.damping = 0.6; rv.wet = 0.12; rv.dry = 1.0; rv.spread = 0.8
 		AudioServer.add_bus_effect(b, rv)
-		var cp = AudioEffectCompressor.new(); cp.threshold = -10.0; cp.ratio = 4.0; cp.attack_us = 20.0; cp.release_ms = 180.0
+		var cp = AudioEffectCompressor.new(); cp.threshold = -4.0; cp.ratio = 2.0; cp.attack_us = 40.0; cp.release_ms = 80.0   # suave: que las ráfagas no se vayan apagando
 		AudioServer.add_bus_effect(b, cp)
 		var lim = AudioEffectLimiter.new(); lim.ceiling_db = -0.5; AudioServer.add_bus_effect(AudioServer.get_bus_index("Master"), lim)
 	for f in DirAccess.get_files_at("res://assets/sfx"):
 		var n = f.trim_suffix(".import")
 		if n.ends_with(".ogg") and not streams.has(n.get_basename()): streams[n.get_basename()] = load("res://assets/sfx/" + n)
-	for i in 16:
-		var p = AudioStreamPlayer.new(); p.bus = "Efectos"; add_child(p); pool2d.append(p)
+	for i in 24:
+		var p = AudioStreamPlayer.new(); p.bus = "Efectos"; p.max_polyphony = 1; add_child(p); pool2d.append(p)
 	for i in 24:
 		var p = AudioStreamPlayer3D.new(); p.max_distance = 45.0; p.unit_size = 6.0; p.bus = "Efectos"; p.attenuation_filter_cutoff_hz = 6000.0; add_child(p); pool3d.append(p)
 	ambient = AudioStreamPlayer.new(); add_child(ambient)
@@ -35,15 +35,23 @@ func _vol(base: float) -> float: return linear_to_db(max(0.001, base * float(GS.
 
 func play(name: String, vol := 1.0, pitch := 1.0) -> void:
 	var s = streams.get(name); if s == null: return
-	for p in pool2d:
-		if not p.playing:
-			p.stream = s; p.volume_db = _vol(vol); p.pitch_scale = pitch * randf_range(0.96, 1.04); p.play(); return
+	var p = _free(pool2d)
+	p.stream = s; p.volume_db = _vol(vol); p.pitch_scale = pitch * randf_range(0.96, 1.04); p.play()
+
+## un reproductor libre; si están todos ocupados (ráfagas de metralleta) se reutiliza el que lleva más rato sonando
+## (antes los disparos nuevos se perdían y la ráfaga sonaba cada vez menos)
+func _free(pool: Array):
+	var oldest = pool[0]; var t = -1.0
+	for p in pool:
+		if not p.playing: return p
+		var pos = p.get_playback_position()
+		if pos > t: t = pos; oldest = p
+	return oldest
 
 func play_at(name: String, pos: Vector3, vol := 1.0, pitch := 1.0) -> void:
 	var s = streams.get(name); if s == null: return
-	for p in pool3d:
-		if not p.playing:
-			p.stream = s; p.global_position = pos; p.volume_db = _vol(vol); p.pitch_scale = pitch * randf_range(0.92, 1.08); p.play(); return
+	var p = _free(pool3d)
+	p.stream = s; p.global_position = pos; p.volume_db = _vol(vol); p.pitch_scale = pitch * randf_range(0.92, 1.08); p.play()
 
 func play_ambient(name: String) -> void:
 	var s = streams.get(name); if s == null: return

@@ -2,8 +2,6 @@ SHRIMP ZOMBIES — créditos (todos los modelos se usan con su licencia; CC-BY =
 
 MAPAS
 • «The Prison» — Veterock (Sketchfab), CC-BY 4.0
-• «The Mansion interiors» — Veterock (Sketchfab), CC-BY 4.0
-• «Isla Gamba» — mapa original del juego
 
 ZOMBIS
 • «Zombie» — David Glynch (Sketchfab), CC-BY 4.0
@@ -22,7 +20,6 @@ FUENTES: Black Ops One y Oswald (SIL Open Font License)
 MOTOR: Godot Engine (MIT)
 
 — Añadido en la versión 2.1 —
-Mapa «La Lonja»: "Abandoned Warehouse" de Arsen Ismailov (fdgasd7) — https://sketchfab.com/3d-models/abandoned-warehouse-698a34300af34095ac6593f348585daa — CC-BY 4.0
 Perro infernal: "Hellhound" de Kolbaca — https://sketchfab.com/3d-models/hellhound-2b661389de024343b17cab26e75c108f — CC-BY 4.0
 Música (OpenGameArt.org):
   "Ambient Horror Track 01" de cleytonkauffman — CC0
@@ -42,3 +39,4 @@ Disparos: "Chaingun, pistol, rifle, shotgun shots" de qubodup (CC-BY 3.0) y "Gun
 Recargas: "Gun reload sounds" de springyspringo (CC0) y "Shotgun Reload Sound effects" de zer0sol (CC0), OpenGameArt.org
 Pasos: "Footsteps on different surfaces" de congusbongus (CC-BY 3.0); impactos y aterrizaje: "FPS Placeholder Sounds" de Jack Menhorn (CC-BY 3.0)
 Explosiones: "2 High Quality Explosions" de qubodup (CC-BY 3.0), OpenGameArt.org
+Cuchillo: "Fighting Ka-Bar knifes" de vitvitskyi — https://sketchfab.com/3d-models/fighting-ka-bar-knifes-b3c3a8c7c28349268f6631567cf01d8a — CC-BY 4.0

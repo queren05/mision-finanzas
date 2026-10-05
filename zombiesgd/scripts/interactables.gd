@@ -283,7 +283,9 @@ class Door extends Base:
 		game = g; idx = i; cost = int(d.cost); opens = d.opens
 		var size = MapBuilder.v3(d.size)
 		global_position = MapBuilder.v3(d.pos); rotation_degrees.y = float(d.get("yaw", 0))
-		if not d.get("auto", false): blocker = MapBuilder.make_box(Vector3(0, size.y / 2, 0), size, 0.0, MapBuilder.LAYER_BARRIER); add_child(blocker)
+		# el bloqueo invisible solo ocupa lo que se ve (tablones y sacos); antes medía 1,2 m de grueso y chocabas sin tocar nada
+		var thick = 0.55 if d.get("kind", "barricade") != "hide" else 0.3
+		if not d.get("auto", false): blocker = MapBuilder.make_box(Vector3(0, size.y / 2, 0.18 if d.get("kind", "barricade") != "hide" else 0.0), Vector3(size.x, size.y, thick), 0.0, MapBuilder.LAYER_BARRIER); add_child(blocker)
 		dsize = size
 		visual = Node3D.new(); add_child(visual)
 		var kind: String = d.get("kind", "barricade")

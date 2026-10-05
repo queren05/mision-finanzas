@@ -15,9 +15,7 @@ const GOLD = Color(1.0, 0.8, 0.2)
 const BEIGE = Color(0.725, 0.663, 0.541)
 const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
-	"mansion": { "name": "La Mansión", "desc": "Dos plantas, biblioteca, salón de baile y dormitorios. Cada puerta que abras deja entrar a más." },
-	"isla": { "name": "Isla Gamba", "desc": "La cabaña, el muelle, el bar y el faro de la isla. El clásico de siempre." },
-	"lonja": { "name": "La Lonja", "desc": "Una nave de marisco abandonada: subastas, cámaras frigoríficas, la oficina de arriba y el patio de carga." },
+
 }
 
 func _ready() -> void:
@@ -69,12 +67,9 @@ func _home() -> void:
 	logo2.add_theme_constant_override("line_spacing", -24); left.add_child(logo2)
 	left.add_child(_lbl(MAP_INFO[GS.sel_map].name.to_upper(), font_bo, 22, BEIGE))
 	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 6); left.add_child(gap)
-	var play = _btn("JUGAR", _options); left.add_child(play)
-	left.add_child(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps))
-	left.add_child(_btn("COOPERATIVO", _coop))
+	var play = _btn("JUGAR", _play); left.add_child(play)
+	left.add_child(_btn("ARSENAL", _arsenal))
 	left.add_child(_btn("PROGRESO", _progress))
-	left.add_child(_btn("PERSONAJE", _chars))
-	left.add_child(_btn("ARMERÍA", _armory))
 	left.add_child(_btn("AJUSTES", _settings))
 	left.add_child(_btn("CRÉDITOS", _credits))
 	var best = RichTextLabel.new(); best.bbcode_enabled = true; best.fit_content = true; best.scroll_active = false; best.custom_minimum_size = Vector2(470, 0)
@@ -139,21 +134,21 @@ func _card(img_path: String, title: String, desc: String, foot: String, selected
 	return card
 
 func _maps() -> void:
-	var v = _page("MAPA", _home)
+	var v = _page("MAPA", _play)
 	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
 	var first: Control = null
 	for id in Data.MAPS:
 		var bb = int(GS.best.get(id, 0))
 		var card = _card("res://assets/ui/menu_%s.jpg" % id, MAP_INFO[id].name.to_upper(), MAP_INFO[id].desc, "Récord: ronda %d" % bb if bb > 0 else "Sin récord", id == GS.sel_map,
-			func(): GS.sel_map = id; GS.save_game(); _set_bg(id); _home())
+			func(): GS.sel_map = id; GS.save_game(); _set_bg(id); _play())
 		card.focus_entered.connect(func(): _set_bg(id))
 		h.add_child(card)
 		if id == GS.sel_map or first == null: first = card
-	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	v.add_child(_center(_btn("VOLVER", _play, 300, true)))
 	if first: first.grab_focus()
 
 func _chars() -> void:
-	var v = _page("PERSONAJE", _home)
+	var v = _page("PERSONAJE", _arsenal)
 	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 18); v.add_child(h)
 	var first: Control = null
 	for id in Data.CHARACTERS:
@@ -161,12 +156,12 @@ func _chars() -> void:
 		var ok = GS.level >= int(c.level)
 		var card = _card("res://assets/ui/char_%s.png" % id, c.name.to_upper(), c.desc, "Elegido" if id == GS.character else ("Disponible" if ok else "Se desbloquea en el nivel %d" % c.level), id == GS.character,
 			func():
-				if ok: GS.character = id; GS.save_game(); _home(), 250, 180)
+				if ok: GS.character = id; GS.save_game(); _arsenal(), 250, 180)
 		if not ok: card.modulate = Color(0.55, 0.55, 0.55)
 		h.add_child(card)
 		if id == GS.character or first == null: first = card
 	var hint = _lbl("Se ve en tercera persona (Ajustes → Vista, o en la pausa).", font_ui, 19, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
-	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	v.add_child(_center(_btn("VOLVER", _arsenal, 300, true)))
 	if first: first.grab_focus()
 
 ## fila de ajuste: nombre a la izquierda, valor a la derecha (como en la versión anterior)
@@ -183,15 +178,35 @@ func _value_btn(text: String) -> Button:
 	b.add_theme_color_override("font_color", GOLD); b.add_theme_color_override("font_focus_color", Color(1, 0.92, 0.6)); b.add_theme_color_override("font_hover_color", Color(1, 0.92, 0.6))
 	return b
 
+## JUGAR: en solitario o cooperativo (y el mapa, si hay más de uno)
+func _play() -> void:
+	var v = _page("JUGAR", _home)
+	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
+	var solo = _card("res://assets/ui/menu_%s.jpg" % GS.sel_map, "EN SOLITARIO", "Tú contra la horda. Elige ronda, arma y ventaja inicial.", MAP_INFO[GS.sel_map].name, false, _options, 380, 200)
+	var coop = _card("res://assets/ui/char_comando.png", "COOPERATIVO", "De 2 a 4 jugadores en la misma wifi. iPhone, Android y PC juntos.", "Crear o unirse a una partida", false, _coop, 380, 200)
+	h.add_child(solo); h.add_child(coop)
+	if Data.MAPS.size() > 1: v.add_child(_center(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps, 460, true)))
+	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	solo.grab_focus()
+
+## ARSENAL: personaje y camuflajes
+func _arsenal() -> void:
+	var v = _page("ARSENAL", _home)
+	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
+	var ch = _card("res://assets/ui/char_%s.png" % GS.character, "PERSONAJE", "Elige con quién juegas.", Data.CHARACTERS[GS.character].name, false, _chars, 380, 200)
+	var ar = _card("res://assets/ui/menu_%s.jpg" % GS.sel_map, "ARMERÍA", "Camuflajes de cada arma: se ganan con bajas.", "", false, _armory, 380, 200)
+	h.add_child(ch); h.add_child(ar)
+	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	ch.grab_focus()
+
 func _options() -> void:
-	var v = _page(MAP_INFO[GS.sel_map].name.to_upper(), _home)
+	var v = _page(MAP_INFO[GS.sel_map].name.to_upper(), _play)
 	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 8); v.add_child(_center(list))
 	_cycler(list, "Empezar en la ronda", ["1", "5", "10", "15", "20", "25"], str(GS.start_round), "start_round", func(x): GS.start_round = int(x))
 	_cycler(list, "Arma inicial", ["m1911", "python", "mp5k", "m16", "galil"], GS.start_weapon, "start_weapon", func(x): GS.start_weapon = x, func(x): return Data.WEAPONS[x].name.to_upper())
 	_cycler(list, "Ventaja inicial", ["", "revive", "jugg"], GS.start_perk, "start_perk", func(x): GS.start_perk = x, func(x): return "NINGUNA" if x == "" else Data.PERKS[x].name.to_upper())
-	var hint = _lbl("Sube de nivel para desbloquear más opciones, como en Black Ops 4.", font_ui, 19, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
 	var go = _btn("EMPEZAR PARTIDA", func(): GS.save_game(); main.start_game(), 480, true, 38); v.add_child(_center(go))
-	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	v.add_child(_center(_btn("VOLVER", _play, 300, true)))
 	go.grab_focus()
 
 ## valor que se cambia pulsando; solo deja elegir lo desbloqueado
@@ -211,7 +226,7 @@ func _cycler(list: VBoxContainer, label: String, opts: Array, cur: String, kind:
 	return b
 
 func _armory() -> void:
-	var v = _page("ARMERÍA", _home)
+	var v = _page("ARMERÍA", _arsenal)
 	var hint = _lbl("Camuflajes: se desbloquean con bajas de cada arma. Pulsa un arma para cambiarlo.", font_ui, 20, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
 	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(1200, 430); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
 	var g = GridContainer.new(); g.columns = 3; g.add_theme_constant_override("h_separation", 14); g.add_theme_constant_override("v_separation", 8); sc.add_child(g)
@@ -233,7 +248,7 @@ func _armory() -> void:
 			GS.camo[id] = unlocked[(i + 1) % unlocked.size()].id; GS.save_game(); refresh.call())
 		g.add_child(b)
 		if first == null: first = b
-	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	v.add_child(_center(_btn("VOLVER", _arsenal, 300, true)))
 	first.grab_focus()
 
 func _settings() -> void:
@@ -348,7 +363,7 @@ func _coop() -> void:
 	if not Net.join_failed.is_connected(_on_join_failed): Net.join_failed.connect(_on_join_failed)
 	if not Net.left.is_connected(_on_left): Net.left.connect(_on_left)
 	if Net.active: _lobby(); return
-	var v = _page("COOPERATIVO", func(): Net.stop_discovery(); _home())
+	var v = _page("COOPERATIVO", func(): Net.stop_discovery(); _play())
 	v.set_meta("coop", true)
 	var info = _lbl("De 2 a 4 jugadores en la misma wifi (iPhone y Android pueden jugar juntos).", font_ui, 21, BEIGE); info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(info)
 	var nh = HBoxContainer.new(); nh.alignment = BoxContainer.ALIGNMENT_CENTER; nh.add_theme_constant_override("separation", 12); v.add_child(nh)
@@ -370,7 +385,7 @@ func _coop() -> void:
 	ih.add_child(MenuStyle.button("UNIRSE", func(): coop_msg = "Conectando…"; Net.join(ip.text.strip_edges()); _wait_join(), font_bo, 26, 180, true))
 	if coop_msg != "":
 		var m = _lbl(coop_msg, font_ui, 22, RED2); m.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(m)
-	v.add_child(_center(_btn("VOLVER", func(): Net.stop_discovery(); _home(), 300, true)))
+	v.add_child(_center(_btn("VOLVER", func(): Net.stop_discovery(); _play(), 300, true)))
 	create.grab_focus()
 
 func _fill_hosts(list: VBoxContainer) -> void:

@@ -16,6 +16,7 @@ func _ready() -> void:
 	if f: index = JSON.parse_string(f.get_as_text())
 
 func say(cat: String, character := "") -> void:
+	return   # las voces sintéticas sonaban robóticas: desactivadas hasta tener voces grabadas de verdad
 	if not index.has(cat) or float(GS.settings.get("sfx", 1.0)) <= 0.01: return
 	var now = Time.get_ticks_msec() / 1000.0
 	var rule: Array = RULES.get(cat, [4.0, 1.0])

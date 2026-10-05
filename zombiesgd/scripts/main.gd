@@ -37,7 +37,7 @@ func _net_test() -> void:
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_progress", "_maps", "_chars", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
 		if page == "_progress":
@@ -64,6 +64,7 @@ func start_game() -> void:
 	loading = _loading_screen(); ui.add_child(loading)
 	await get_tree().process_frame; await get_tree().process_frame
 	game = preload("res://scripts/game.gd").new(); game.name = "Game"
+	game.process_mode = Node.PROCESS_MODE_PAUSABLE   # Main procesa siempre; la partida sí se tiene que parar con la pausa
 	add_child(game)
 	game.god = args.has("god")
 	if args.has("verbose"): print("ARRANCA ", GS.sel_map)
@@ -94,6 +95,50 @@ func _run_test() -> void:
 		var at = game._random_nav_near(p.global_position, 5.0, 7.0)
 		game.make_zombie("a", args.spawn, at, 1000.0, 0.9 if args.spawn != "dog" else 5.0)
 	if args.has("gun"): p.give_weapon(args.gun); await get_tree().create_timer(1.0).timeout
+	if args.has("pausetest"):
+		await get_tree().create_timer(14.0).timeout
+		var z = game.zombies.filter(func(q): return is_instance_valid(q) and not q.dead)
+		var before = z.map(func(q): return q.global_position)
+		Controls.press_touch("pause", true); await get_tree().physics_frame; await get_tree().physics_frame; Controls.press_touch("pause", false)
+		await get_tree().create_timer(3.0).timeout
+		var moved = 0.0
+		for i in z.size(): if is_instance_valid(z[i]): moved = max(moved, z[i].global_position.distance_to(before[i]))
+		print("PAUSA pausado=", game.paused, " árbol=", get_tree().paused, " zombis=", z.size(), " lo más que se ha movido uno=", moved)
+		for key in [KEY_ESCAPE, KEY_P]:
+			for down in [true, false]:
+				var ev = InputEventKey.new(); ev.keycode = key; ev.physical_keycode = key; ev.pressed = down; Input.parse_input_event(ev)
+				await get_tree().create_timer(0.1).timeout
+			await get_tree().create_timer(0.5).timeout
+			print("PAUSA tecla ", OS.get_keycode_string(key), " -> pausado=", game.paused, " árbol=", get_tree().paused)
+		var jb = InputEventJoypadButton.new(); jb.button_index = JOY_BUTTON_START; jb.pressed = true; Input.parse_input_event(jb)
+		await get_tree().create_timer(0.1).timeout
+		jb = InputEventJoypadButton.new(); jb.button_index = JOY_BUTTON_START; jb.pressed = false; Input.parse_input_event(jb)
+		await get_tree().create_timer(0.5).timeout
+		print("PAUSA mando Start -> pausado=", game.paused)
+		jb = InputEventJoypadButton.new(); jb.button_index = JOY_BUTTON_START; jb.pressed = true; Input.parse_input_event(jb)
+		await get_tree().create_timer(0.1).timeout
+		jb = InputEventJoypadButton.new(); jb.button_index = JOY_BUTTON_START; jb.pressed = false; Input.parse_input_event(jb)
+		await get_tree().create_timer(0.5).timeout
+		print("PAUSA mando Start otra vez -> pausado=", game.paused)
+		get_tree().quit()
+	if args.has("animdbg"):
+		for k in 16:
+			await get_tree().create_timer(0.25).timeout
+			print("ANIM ", k, " ", p.vm.ap.current_animation, " pos ", snapped(p.vm.ap.current_animation_position, 0.01), " cur ", p.vm.cur, " playing ", p.vm.ap.is_playing(), " len ", p.vm.ap.current_animation_length, " draw_t ", snapped(p.vm.draw_t, 0.01))
+	if args.has("knifeshot"):
+		await get_tree().create_timer(3.0).timeout
+		if not args.has("noslash"): p._knife()
+		for k in 8:
+			await get_tree().create_timer(0.05).timeout
+			get_viewport().get_texture().get_image().save_png("/tmp/claude-1000/gview/knife_%d.png" % k)
+	if args.has("swapdbg"):
+		var shots = []
+		for k in 3:
+			await get_tree().create_timer(1.0).timeout
+			var vis = p.vm.gun != null and is_instance_valid(p.vm.gun) and p.vm.gun.is_visible_in_tree()
+			print("SWAP ", k, " arma ", p.cur_w().id, " kit ", p.vm.kind, " pistola_visible ", vis, " pos ", (p.cam.global_transform.affine_inverse() * p.vm.gun.global_position) if vis else null, " hijos soporte ", p.vm.holder.get_child_count())
+			get_viewport().get_texture().get_image().save_png("/tmp/claude-1000/gview/swap_%d.png" % k)
+			Controls.press_touch("swap", true); await get_tree().physics_frame; await get_tree().physics_frame; Controls.press_touch("swap", false)
 	if args.has("adsdbg"):
 		Controls.touch_held["ads"] = true; await get_tree().create_timer(1.0).timeout
 		print("VMDBG holder ", p.vm.holder.transform.origin, " ads_off ", p.vm.ads_off, " base ", p.vm.base_xf.origin, " ads ", p.ads, " arma ", p.vm.gun.global_position if p.vm.gun else null, " cam ", p.cam.global_position)

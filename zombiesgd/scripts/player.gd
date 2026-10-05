@@ -380,7 +380,7 @@ func _shoot() -> void:
 	if w.mag == 0 and w.res > 0: get_tree().create_timer(0.25).timeout.connect(func(): if reload_t <= 0.0 and cur_w() == w and w.mag == 0: _start_reload())
 
 func _knife() -> void:
-	knife_t = 0.6; Sfx.play("knife", 0.8)
+	knife_t = 0.6; Sfx.play("knife", 0.8); vm.slash()
 	var z = game.nearest_zombie(global_position + Vector3(0, 1, 0) - transform.basis.z * 0.8, 1.4)
 	if z:
 		var k = game.damage_zombie(z, 1e9 if gums.has("pinza") else 150.0, z.global_position + Vector3(0, 1.2, 0), false, "knife", "")

@@ -38,7 +38,8 @@ func load_game() -> void:
 	for k in d.get("settings", {}): settings[k] = d["settings"][k]
 	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", ""); character = d.get("character", "comando")
 	stats = d.get("stats", {}); done = d.get("done", {}); title = d.get("title", ""); card = d.get("card", "")
-	if int(d.get("version", 1)) < 3: character = "comando"   # la 2.2 estrena el soldado: pasa a ser el personaje de todos
+	if int(d.get("version", 1)) < 3: character = "comando"   # la 2.2 estrena el soldado
+	if not sel_map in Data.MAPS: sel_map = Data.MAPS[0]   # mapas que ya no existen
 
 func save_game() -> void:
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)

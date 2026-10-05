@@ -9,7 +9,7 @@ const KITS := {
 	"rifle": { "scene": "res://assets/models/arms/rifle/scene.gltf", "hide": ["Rifle", "Silencer", "Scope", "Pmag"],
 		"idle": "Armature|Arms_FPS_Anim_Idle", "walk": "Armature|Arms_FPS_Anim_Walk", "run": "Armature|Arms_FPS_Anim_Run",
 		"shoot": "Armature|Arms_FPS_Anim_Shoot", "reload": "Armature|Arms_FPS_Anim_Reload_Fast", "draw": "Armature|Arms_FPS_Anim_Draw",
-		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.01, -0.01, 0.0), "fwd": 0.1 },
+		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.045, -0.02, 0.0), "fwd": 0.1 },
 	"pistol": { "scene": "res://assets/models/arms/pistol/scene.gltf", "hide": ["Material"],
 		"idle": "Armature|FPS_Pistol_Idle", "walk": "Armature|FPS_Pistol_Walk", "run": "Armature|FPS_Pistol_Walk",
 		"shoot": "Armature|FPS_Pistol_Fire", "reload": "Armature|FPS_Pistol_Reload_full", "draw": "",
@@ -32,6 +32,9 @@ var sway = Vector2.ZERO
 var draw_t = 0.0
 var bob_t = 0.0
 var muzzle_local = Vector3(0, 0, -0.5)
+var knife: Node3D
+var knife_t = 0.0
+const KNIFE_TIME := 0.42
 
 func _ready() -> void:
 	holder = Node3D.new(); add_child(holder)
@@ -84,9 +87,10 @@ func _build(k: String) -> void:
 		var nm = skel.get_bone_name(i)
 		if nm.begins_with(kit.bone) and gun_bone < 0: gun_bone = i
 		if nm.begins_with("Head_Cam") and hc < 0: hc = i
-	var eye_xf: Transform3D = skel.global_transform * skel.get_bone_global_pose(hc)
-	var eye: Vector3 = eye_xf.origin
-	var bone_p: Vector3 = skel.global_transform * skel.get_bone_global_pose(gun_bone).origin
+	# todo en el espacio del soporte (no del mundo): si no, al cambiar de brazos con la cámara lejos del origen el arma acababa a metros
+	var to_local = holder.global_transform.affine_inverse() * skel.global_transform
+	var eye: Vector3 = to_local * skel.get_bone_global_pose(hc).origin
+	var bone_p: Vector3 = to_local * skel.get_bone_global_pose(gun_bone).origin
 	# la cámara de su autor (los dos packs comparten esqueleto): mira hacia +Z con +Y arriba
 	var cam_basis = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1))   # columnas: derecha, arriba, atrás
 	var fwd = Vector3(0, 0, 1); var upv = Vector3.UP
@@ -95,7 +99,7 @@ func _build(k: String) -> void:
 	base_xf.origin += kit.shift
 	if OS.get_cmdline_user_args().has("vmdbg"): print("VM ojo ", eye, " adelante ", fwd, " arriba ", upv, " arma ", base_xf * bone_p)
 	hip_pos = base_xf * bone_p
-	holder.transform = base_xf
+	holder.transform = base_xf; smooth_xf = base_xf
 	for mi in arms.find_children("*", "MeshInstance3D", true, false):
 		if mi.has_meta("gun_part"): mi.visible = OS.get_cmdline_user_args().has("orig")
 
@@ -133,7 +137,7 @@ func _attach_gun() -> void:
 	holder.add_child(gun)
 	# se coloca con los brazos en reposo (quietos), no en mitad de la animación de sacar el arma
 	ap.play(KITS[kind].idle); ap.seek(0.0, true); skel.force_update_all_bone_transforms()
-	holder.transform = base_xf
+	holder.transform = base_xf; smooth_xf = base_xf
 	var bone_xf: Transform3D = (skel.global_transform * skel.get_bone_global_pose(max(0, gun_bone))).orthonormalized()
 	var hold: Basis = holder.global_transform.basis.orthonormalized() * base_xf.basis.inverse()   # orientación de la cámara
 	var L = float(Data.WEAPONS[gun_id].len)
@@ -163,6 +167,91 @@ func _play(what: String, blend := 0.15, speed := 1.0) -> void:
 		ap.play(a, blend)
 		if what == "shoot": ap.seek(0.0)
 	cur = a; ap.speed_scale = speed
+
+## cuchillo: los brazos se apartan y el cuchillo cruza la pantalla de derecha a izquierda
+func slash() -> void:
+	if knife == null: knife = _make_knife()
+	knife_t = KNIFE_TIME
+
+var knife_base = Transform3D.IDENTITY
+var smooth_xf = Transform3D.IDENTITY
+var fist = Vector3.ZERO   # el puño del cuchillo, en el espacio de la cámara
+var shoulder = Vector3.ZERO
+
+## brazo del cuchillo: el brazo derecho del pack de pistola (el izquierdo se recoge) con un Ka-Bar en la mano
+func _make_knife() -> Node3D:
+	var k = Node3D.new(); add_child(k)
+	var arm: Node3D = load(KITS.pistol.scene).instantiate(); k.add_child(arm)
+	var kap: AnimationPlayer = arm.find_child("AnimationPlayer", true, false)
+	var sk: Skeleton3D = arm.find_children("*", "Skeleton3D", true, false)[0]
+	kap.play(KITS.pistol.idle); kap.seek(0.0, true); kap.pause(); kap.active = false
+	sk.force_update_all_bone_transforms()
+	var hc = -1; var grip = -1; var sh = -1
+	for i in sk.get_bone_count():
+		var nm = sk.get_bone_name(i)
+		if nm.begins_with("Head_Cam") and hc < 0: hc = i
+		if nm.begins_with("PBody") and grip < 0: grip = i
+		if nm.begins_with("UpArm_R") and sh < 0: sh = i
+		if nm.begins_with("Arm_L") or nm.begins_with("IK_Hand_Cntrl_L"): sk.set_bone_pose_scale(i, Vector3.ONE * 0.001)
+	sk.force_update_all_bone_transforms()
+	for mi in arm.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = mi
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for si in m.mesh.get_surface_count():
+			var src = m.get_active_material(si)
+			if src and String(src.resource_name).begins_with("Material"): m.visible = false; break
+			if src is BaseMaterial3D:
+				var mat: BaseMaterial3D = src.duplicate()
+				mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = 60.0
+				m.set_surface_override_material(si, mat)
+	# misma colocación que los brazos de pistola: su ojo (Head_Cam) en la cámara, mirando a +Z
+	k.transform = Transform3D.IDENTITY
+	var to_k = k.global_transform.affine_inverse() * sk.global_transform   # el modelo trae nodos padre girados y escalados
+	var eye: Vector3 = to_k * sk.get_bone_global_pose(hc).origin
+	var cam_basis = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1)) * Basis(Vector3.RIGHT, deg_to_rad(float(KITS.pistol.elev)))
+	knife_base = Transform3D(cam_basis, eye).affine_inverse()
+	knife_base.origin += KITS.pistol.shift
+	# Ka-Bar militar (vitvitskyi, CC-BY): 9,3 unidades con la punta hacia +Z; de 30 cm, con el puño en la mano
+	var blade: Node3D = load("res://assets/models/knife/scene.gltf").instantiate()
+	var sc = 0.30 / 9.3
+	var kb = Basis(Vector3.UP, PI).scaled(Vector3.ONE * sc)
+	blade.transform = Transform3D(kb, -(kb * Vector3(-2.88, 0.6, -4.3)))
+	for mi in blade.find_children("*", "MeshInstance3D", true, false):
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var mat = mi.get_active_material(0)
+		if mat is BaseMaterial3D:
+			mat = mat.duplicate(); mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = 60.0
+			mi.material_override = mat
+	var hand = Node3D.new(); k.add_child(hand); hand.add_child(blade)
+	# agarre de martillo: el mango atraviesa el puño (de los nudillos del meñique a los del índice) y la hoja
+	# sale por arriba un poco inclinada hacia delante, con el filo mirando hacia delante. Todo medido en los huesos de la mano.
+	var bp = func(n: String) -> Vector3:
+		for i in sk.get_bone_count():
+			if sk.get_bone_name(i).begins_with(n): return knife_base * (to_k * sk.get_bone_global_pose(i).origin)
+		return Vector3.ZERO
+	var index_k: Vector3 = bp.call("Bone_R.005"); var pinky_k: Vector3 = bp.call("Bone_R.017")
+	var tips = (bp.call("Bone_R.007") + bp.call("Bone_R.019")) / 2
+	var up = (index_k - pinky_k).normalized()
+	var dir = (up + Vector3(0, 0, -KNIFE_FWD)).normalized()
+	var center = ((index_k + pinky_k) / 2).lerp(tips, 0.5)
+	var edge = Vector3(0, 0, -1)   # el filo hacia delante
+	var xb = dir.cross(edge).normalized()   # en cámara: eje X del cuchillo
+	var zb = -dir; var yb = zb.cross(xb).normalized()
+	var cam_xf = Transform3D(Basis(xb, yb, zb), center + dir * KNIFE_SLIDE)
+	hand.transform = knife_base.affine_inverse() * cam_xf
+	var gp: Transform3D = to_k * sk.get_bone_global_pose(grip)
+	fist = knife_base * gp.origin
+	shoulder = knife_base * (to_k * sk.get_bone_global_pose(sh).origin)
+	if OS.get_cmdline_user_args().has("vmdbg"):
+		print("CUCHILLO puño ", fist, " hombro ", shoulder)
+		for i in sk.get_bone_count():
+			var nm = sk.get_bone_name(i)
+			if nm.contains("_R") or nm.begins_with("PBody") or nm.begins_with("Hand_R"): print("HUESO_R ", nm, " ", (knife_base * (to_k * sk.get_bone_global_pose(i).origin)).snapped(Vector3.ONE * 0.001))
+	k.visible = false
+	return k
+
+const KNIFE_FWD := 0.6    # cuánto se inclina la hoja hacia delante
+const KNIFE_SLIDE := 0.0  # el mango sube o baja dentro del puño
 
 func fire() -> void:
 	_play("shoot", 0.02, 1.0)
@@ -197,7 +286,32 @@ func update(delta: float, speed: float, sprinting: bool, ads: float, reloading: 
 	if sprinting and kind == "pistol": t.origin += Vector3(0.02, -0.06, 0.0)
 	t.basis = t.basis.rotated(Vector3.UP, sway.x * 0.6).rotated(Vector3.RIGHT, -sway.y * 0.6 + kick * 0.05 - (0.35 if sprinting and kind == "pistol" else 0.0))
 	if draw_t > 0.0: t.origin.y -= draw_t * 0.25
-	holder.transform = holder.transform.interpolate_with(t, min(1.0, delta * 25.0))
+	# cuchillo: el arma baja y se aparta mientras dura el tajo
+	var lower = Transform3D.IDENTITY
+	if knife_t > 0.0:
+		knife_t -= delta
+		var p = clamp(1.0 - knife_t / KNIFE_TIME, 0.0, 1.0)
+		if OS.get_cmdline_user_args().has("knifestill"):
+			knife_t = KNIFE_TIME; p = 0.5
+			for a in OS.get_cmdline_user_args(): if a.begins_with("kp="): p = float(a.substr(3))
+		var away = sin(p * PI)
+		lower = Transform3D(Basis(), Vector3(0.04, -0.34, 0.06) * away)   # el arma baja recta y se quita de en medio
+		if knife:
+			knife.visible = knife_t > 0.0 and not OS.get_cmdline_user_args().has("noknife")
+			# tajo: el brazo entra por la derecha y cruza hacia la izquierda girando desde el hombro,
+			# con la muñeca tumbada para que el filo vaya por delante
+			var sweep = smoothstep(0.05, 0.85, p)
+			var inout = sin(p * PI)
+			# el brazo gira desde el hombro: el puño cruza de derecha a izquierda y la muñeca rota sobre el antebrazo
+			var fa = (fist - shoulder).normalized()
+			var r = Basis(Vector3.UP, lerp(-0.2, 0.75, sweep)) * Basis(fa, lerp(0.15, 1.05, sweep))
+			var pose = Transform3D(r, shoulder) * Transform3D(Basis(), -shoulder)
+			pose.origin += Vector3(0.05, -0.3, 0.05) * pow(1.0 - inout, 2.0)   # entra y sale por abajo
+			knife.transform = pose * knife_base
+	elif knife: knife.visible = false
+	smooth_xf = smooth_xf.interpolate_with(t, min(1.0, delta * 25.0))
+	if OS.get_cmdline_user_args().has("vmdbg2") and Engine.get_process_frames() % 20 == 0: print("VM2 det ", t.basis.determinant(), " t ", t, " s ", smooth_xf)
+	holder.transform = lower * smooth_xf   # la bajada del cuchillo va aparte: interpolarla deformaba el arco
 	_follow_bone()
 
 ## el arma sigue al hueso del arma (sin su escala, que viene en centímetros)

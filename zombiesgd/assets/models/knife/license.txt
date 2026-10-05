@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fighting Ka-Bar knifes
+* source:	https://sketchfab.com/3d-models/fighting-ka-bar-knifes-b3c3a8c7c28349268f6631567cf01d8a
+* author:	vitvitskyi (https://sketchfab.com/vitvitskyi)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fighting Ka-Bar knifes" (https://sketchfab.com/3d-models/fighting-ka-bar-knifes-b3c3a8c7c28349268f6631567cf01d8a) by vitvitskyi (https://sketchfab.com/vitvitskyi) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

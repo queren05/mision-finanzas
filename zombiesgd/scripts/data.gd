@@ -168,7 +168,7 @@ func _init() -> void:
 	add.call("heads", "Mata %d zombis de un tiro a la cabeza", "heads", [50, 250, 1000], [600, 2000, 5000])
 	add.call("knife", "Mata %d zombis con el cuchillo", "knife", [25, 100, 300], [600, 1800, 4000])
 	add.call("explo", "Mata %d zombis con explosivos", "explo", [25, 150, 500], [600, 2000, 4500])
-	for m in [["prison", "la Penitenciaría"], ["mansion", "la Mansión"], ["isla", "Isla Gamba"]]:
+	for m in [["prison", "la Penitenciaría"]]:
 		add.call("round_" + m[0], "Llega a la ronda %d en " + m[1], "round_" + m[0], [10, 20, 30], [800, 2500, 6000])
 	add.call("perks", "Bebe %d refrescos", "perks", [10, 50, 150], [500, 1500, 3500])
 	add.call("box", "Usa la caja misteriosa %d veces", "box", [10, 50, 150], [500, 1500, 3500])
@@ -180,7 +180,7 @@ func _init() -> void:
 	add.call("brutes", "Mata %d Brutos", "brutes", [1, 10, 30], [800, 2500, 6000])
 	add.call("gums", "Mastica %d chicles", "gums", [5, 30, 100], [400, 1500, 4000])
 	add.call("revives", "Reanima %d veces a un compañero", "revives", [1, 10, 50], [500, 1500, 4000])
-	for m in [["prison", "la Penitenciaría"], ["mansion", "la Mansión"], ["isla", "Isla Gamba"], ["lonja", "la Lonja"]]:
+	for m in [["prison", "la Penitenciaría"]]:
 		add.call("egg_" + m[0], "Completa el easter egg de " + m[1], "egg_" + m[0], [1], [5000])
 		add.call("song_" + m[0], "Encuentra la canción oculta de " + m[1], "song_" + m[0], [1], [1000])
 	for id in WEAPONS:
@@ -209,4 +209,4 @@ const CHARACTERS := {
 }
 
 # ---------------------------------------------------------------- mapas
-const MAPS := ["prison", "mansion", "isla", "lonja"]
+const MAPS := ["prison"]
