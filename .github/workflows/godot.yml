@@ -102,7 +102,7 @@ jobs:
 
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
         with:
@@ -157,8 +157,8 @@ jobs:
           echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.p12"
           export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$RUNNER_TEMP/upload.p12"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "platforms;android-35" "build-tools;35.0.0" > /dev/null || true
-          "$GODOT_BIN" --headless --path . --install-android-build-template || true
-          "$GODOT_BIN" --headless --path . --export-release "Google Play" "$GITHUB_WORKSPACE/out/$APP.aab"
+          # (la plantilla de Android se instala en la misma orden que exporta; sola, deja el editor esperando)
+          timeout 40m "$GODOT_BIN" --headless --path . --install-android-build-template --export-release "Google Play" "$GITHUB_WORKSPACE/out/$APP.aab"
           rm -f "$RUNNER_TEMP/upload.p12"
           ls -la "$GITHUB_WORKSPACE/out"
       - name: Publicar el .apk y el .aab
