@@ -284,7 +284,9 @@ func place(spec: Dictionary, depth: float) -> Dictionary:
 		if not h.is_empty():
 			var d = origin.distance_to(h.position)
 			if d < bd and abs(h.normal.y) < 0.3: bd = d; best = h
-	if best.is_empty(): return { "pos": Vector3(top.x, floor_y, top.z), "yaw": float(spec.get("yaw", 0)) }
+	if best.is_empty():
+		if OS.get_cmdline_user_args().has("verbose"): print("SIN PARED cerca de ", n, " (", spec.get("gun", spec.get("id", "")), ")")
+		return { "pos": Vector3(top.x, floor_y, top.z), "yaw": float(spec.get("yaw", 0)) }
 	var nrm: Vector3 = best.normal; nrm.y = 0; nrm = nrm.normalized()
 	var pos = Vector3(best.position.x, floor_y, best.position.z) + nrm * depth
 	if spec.has("wall_y"): pos.y = floor_y + float(spec.wall_y)

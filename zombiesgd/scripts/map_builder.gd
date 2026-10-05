@@ -62,6 +62,7 @@ static func build_scene(cfg: Dictionary, parent: Node3D) -> Node3D:
 		if mi.mesh == null or _matches(full, nocol): continue
 		var shape = mi.mesh.create_trimesh_shape()
 		if shape == null: continue
+		shape.backface_collision = true
 		var body = StaticBody3D.new(); body.name = "col"
 		var cs = CollisionShape3D.new(); cs.shape = shape; body.add_child(cs)
 		if _matches(full, door_parts): body.set_meta("door_part", true)   # verjas que se abren: la navegación cuenta con el hueco
@@ -198,6 +199,7 @@ static func _collide(mi: MeshInstance3D, layer: int, door_part: bool) -> void:
 	if mi.mesh == null: return
 	var shape = mi.mesh.create_trimesh_shape()
 	if shape == null: return
+	shape.backface_collision = true   # paredes de una sola cara (interiores): también chocan por detrás
 	var body = StaticBody3D.new(); body.name = "col"
 	var cs = CollisionShape3D.new(); cs.shape = shape; body.add_child(cs)
 	if door_part: body.set_meta("door_part", true)

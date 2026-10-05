@@ -40,7 +40,7 @@ HAZ = [{"a": list(a), "b": list(b), "r": 0.75} for a, b in zip(crack, crack[1:])
 BANK = (14.0, -13.2)
 prop("bank", (BANK[0], 0, BANK[1]))
 # tienda de ladrillo al lado (solo fachada)
-prop("brick_shop", (33.5, -4.47, -12.0))
+prop("brick_shop", (33.5, -4.47, -10.1))                        # su fachada queda en el borde de la acera
 # Bar (NO): interior de saloon, abierto por +Z; se cierra con una fachada con puerta
 BAR_X0, BAR_X1, BAR_Z0, BAR_Z1 = -17.33, -8.5, -22.09, -8.3
 prop("saloon_interior", (-11.04, 0, -5.8), 0, 125.0)
@@ -72,24 +72,34 @@ for (x, z, r) in [(-7.4, -18.0, 0), (7.4, 18.0, 180), (-18.0, 7.4, 90), (18.0, -
 def fence(x0, z0, x1, z1, h=2.6):
     L = math.hypot(x1 - x0, z1 - z0); a = math.degrees(math.atan2(x1 - x0, z1 - z0))
     box((x0 + x1) / 2, 0, (z0 + z1) / 2, 0.2, h, L, "wood", a)
-fence(10.2, -8.6, 10.2, -18.5)      # entre la calle Norte y el banco
-fence(17.8, -8.6, 21.2, -8.6)       # entre banco y tienda de ladrillo
-fence(-8.3, -8.6, -8.3, -22.5)      # lateral del bar a la calle Norte
-fence(-17.5, -8.6, -19.5, -8.6)     # entre bar y tiendas viejas
-fence(-8.3, 8.6, -8.3, 22.0)        # lateral del diner a la calle Sur
-fence(8.3, 8.6, 8.3, 22.0)          # lateral de la gasolinera a la calle Sur
+WX = -30.5   # puerta de la calle Oeste (el cruce llega hasta aquí: delante del diner)
+fence(8.6, -8.6, 8.6, -40.6)        # calle Norte, lado este (banco)
+fence(-8.4, -8.6, -8.4, -40.6)      # calle Norte, lado oeste (bar)
+fence(17.8, -8.6, 21.4, -8.6)       # entre banco y tienda de ladrillo
+fence(45.7, -8.6, 58.6, -8.6)       # calle Este, lado norte después de la tienda
+fence(-17.5, -8.6, -19.7, -8.6)     # entre bar y tiendas viejas
+fence(-41.3, -8.6, -44.6, -8.6)     # calle Oeste, lado norte después de las tiendas
+fence(WX, 8.6, -44.6, 8.6)          # calle Oeste, lado sur
+fence(WX, 8.3, -29.4, 8.3)          # esquina del patio del diner
+fence(-29.4, 8.3, -29.4, 12.1)      # patio del diner, lado oeste
+fence(-12.7, 12.1, -8.4, 12.1)      # callejón del diner
+fence(-8.4, 12.1, -8.4, 40.6)       # calle Sur, lado oeste
+fence(8.6, 8.6, 22.0, 8.6)          # el cruce no da a la gasolinera (se entra por la calle Este)
+fence(8.6, 8.6, 8.6, 40.6)          # calle Sur, lado este / gasolinera, lado oeste
+fence(58.6, 8.6, 58.6, 34.6)        # gasolinera, lado este
+fence(8.6, 34.6, 58.6, 34.6)        # gasolinera, fondo
 
 # ------------------------------------------------------------------ zonas
 Z = [
- {"id": "A", "name": "El Cruce", "open": True, "boxes": [[-22.0, -1, -SW, 22.0, 6, SW], [-SW, -1, -22.0, SW, 6, -SW], [-SW, -1, SW, SW, 6, 22.0]],
-  "spawns": [[-21.0, 0, -6.5], [21.0, 0, 6.5], [-6.5, 0, -21.0], [6.5, 0, 21.0], [-21.0, 0, 6.5], [21.0, 0, -6.5]]},
+ {"id": "A", "name": "El Cruce", "open": True, "boxes": [[WX, -1, -SW, 22.0, 6, SW], [-SW, -1, -22.0, SW, 6, -SW], [-SW, -1, SW, SW, 6, 22.0], [-29.2, -1, SW, -SW, 6, 11.9]],
+  "spawns": [[WX + 1.0, 0, -6.5], [21.0, 0, 6.5], [-6.5, 0, -21.0], [6.5, 0, 21.0], [-28.5, 0, 11.0], [21.0, 0, -6.5]]},
  {"id": "B", "name": "Banco", "boxes": [[10.6, -1, -17.8, 17.4, 8.0, -8.5]], "spawns": [[11.2, 0, -17.2], [16.8, 0, -17.2]]},
  {"id": "C", "name": "Bar", "boxes": [[BAR_X0 + 0.2, -1, BAR_Z0 + 0.2, BAR_X1 - 0.2, 7.0, BAR_Z1 - 0.3]], "spawns": [[-16.6, 0, -21.4], [-9.2, 0, -21.4]]},
- {"id": "D", "name": "Diner", "boxes": [[-28.8, -1, 8.6, -12.4, 5.0, 25.0]], "spawns": [[-28.0, 0, 24.0], [-13.0, 0, 24.0]]},
- {"id": "E", "name": "Gasolinera", "boxes": [[22.0, -1, -SW, 58.0, 4.0, SW], [8.6, -1, SW, 58.0, 4.0, 34.0]], "spawns": [[57.0, 0, 0.0], [56.0, 0, 33.0], [10.0, 0, 33.0]]},
- {"id": "N", "name": "Calle Norte", "boxes": [[-SW, -1, -40.0, SW, 7.0, -22.0]], "spawns": [[-7.5, 0, -39.0], [7.5, 0, -39.0]]},
- {"id": "W", "name": "Calle Oeste", "boxes": [[-44.0, -1, -SW, -22.0, 7.0, SW]], "spawns": [[-43.0, 0, -7.5], [-43.0, 0, 7.5]]},
- {"id": "S", "name": "Calle Sur", "boxes": [[-SW, -1, 22.0, SW, 7.0, 40.0]], "spawns": [[-7.5, 0, 39.0], [7.5, 0, 39.0]]},
+ {"id": "D", "name": "Diner", "boxes": [[-28.8, -1, 12.4, -12.8, 5.0, 25.0]], "spawns": [[-28.0, 0, 24.0], [-13.0, 0, 24.0]]},
+ {"id": "E", "name": "Gasolinera", "boxes": [[22.0, -1, -SW, 58.4, 4.0, SW], [8.8, -1, SW, 58.4, 4.0, 34.4]], "spawns": [[57.5, 0, 0.0], [56.0, 0, 33.5], [10.0, 0, 33.5]]},
+ {"id": "N", "name": "Calle Norte", "boxes": [[-8.2, -1, -40.2, 8.4, 7.0, -22.0]], "spawns": [[-7.5, 0, -39.0], [7.5, 0, -39.0]]},
+ {"id": "W", "name": "Calle Oeste", "boxes": [[-44.2, -1, -SW, WX, 7.0, SW]], "spawns": [[-43.5, 0, -7.5], [-43.5, 0, 7.5]]},
+ {"id": "S", "name": "Calle Sur", "boxes": [[-8.2, -1, 22.0, 8.4, 7.0, 40.2]], "spawns": [[-7.5, 0, 39.0], [7.5, 0, 39.0]]},
 ]
 D = [
  {"cost": 750, "pos": [BANK[0], 0, -8.6], "size": [2.4, 2.6, 1.0], "yaw": 0, "opens": ["A", "B"]},
@@ -97,7 +107,7 @@ D = [
  {"cost": 1000, "pos": [DINER[0] - 0.51, 0, DINER[1] - 2.6], "size": [1.2, 2.4, 1.0], "yaw": 0, "opens": ["A", "D"], "kind": "hide", "hide_meshes": ["Door_03"]},
  {"cost": 1250, "pos": [22.0, 0, 0], "size": [2 * SW, 3.0, 1.2], "yaw": 90, "opens": ["A", "E"]},
  {"cost": 1000, "pos": [0, 0, -22.0], "size": [2 * SW, 3.0, 1.2], "yaw": 0, "opens": ["A", "N"]},
- {"cost": 1000, "pos": [-22.0, 0, 0], "size": [2 * SW, 3.0, 1.2], "yaw": 90, "opens": ["A", "W"]},
+ {"cost": 1000, "pos": [WX, 0, 0], "size": [2 * SW, 3.0, 1.2], "yaw": 90, "opens": ["A", "W"]},
  {"cost": 1250, "pos": [0, 0, 22.0], "size": [2 * SW, 3.0, 1.2], "yaw": 0, "opens": ["A", "S"]},
 ]
 # bordes del mapa: al final de cada calle, barricada grande con coches (y pared por si acaso, detrás de lo que se ve)
@@ -127,9 +137,9 @@ cfg = {
  "fires": fires, "hazards": HAZ, "lights": lights,
  "wallbuys": [
   {"gun": "olympia", "near": [-8.6, -14.0], "y": 0}, {"gun": "m14", "near": [8.6, 14.0], "y": 0},
-  {"gun": "mp5k", "near": [17.4, -12.0], "y": 0}, {"gun": "ak74u", "near": [-16.9, -18.0], "y": 0},
+  {"gun": "mp5k", "near": [17.4, -12.0], "y": 0}, {"gun": "ak74u", "near": [-17.0, -15.0], "y": 0},
   {"gun": "mp40", "near": [-28.5, 18.0], "y": 0}, {"gun": "m16", "near": [40.0, 8.0], "y": 0},
-  {"gun": "stakeout", "near": [-7.9, -32.0], "y": 0}, {"gun": "python", "near": [-36.0, -8.0], "y": 0}],
+  {"gun": "stakeout", "near": [-7.6, -32.0], "y": 0}, {"gun": "python", "near": [-36.0, -8.0], "y": 0}],
  "perks": [
   {"id": "revive", "near": [-7.6, 12.0], "y": 0}, {"id": "jugg", "near": [-9.2, -20.5], "y": 0},
   {"id": "speed", "near": [45.0, 30.0], "y": 0}, {"id": "dtap", "near": [16.8, -16.0], "y": 0},
@@ -138,7 +148,7 @@ cfg = {
  "box_start": 0,
  "pap": {"near": [0.0, -38.0], "y": 0},
  "power": {"near": [-42.0, 6.0], "y": 0},
- "gum": {"near": [7.6, -4.0], "y": 0},
+ "gum": {"near": [7.9, -12.0], "y": 0},
 }
 json.dump(cfg, open("/home/david/juegos-gambas/zombiesgd/assets/maps/pueblo/map.json", "w"), ensure_ascii=False, indent=1)
 print("piezas", len(P), "bloques", len(B))
