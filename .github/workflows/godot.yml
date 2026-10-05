@@ -26,7 +26,7 @@ env:
   # mientras se desarrolla, publica en una release aparte y no toca KSign; al terminar: TAG=zombies-latest y KSIGN=si
   TAG: zombies-latest
   KSIGN: "si"
-  DESC: "Supervivencia por rondas contra zombis estilo Black Ops: mapas por zonas, armas de pared, caja misteriosa, ventajas y Pack-a-Punch. Compatible con mando."
+  DESC: "Supervivencia por rondas contra zombis: mapas por zonas, armas de pared, caja misteriosa, ventajas y la Forja para mejorar armas. Compatible con mando."
 
 jobs:
   ios:
@@ -131,6 +131,11 @@ jobs:
           echo "GODOT_BIN=$HOME/godot-dl/Godot_v${GODOT}-stable_linux.x86_64" >> $GITHUB_ENV
           mkdir -p ~/.config/godot
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' "$ANDROID_SDK_ROOT" "$JAVA_HOME" > ~/.config/godot/editor_settings-4.7.tres
+      - name: Número de versión (sube solo en cada compilación)
+        working-directory: zombiesgd
+        run: |
+          sed -i "s/^version\/code=.*/version\/code=$((100 + ${{ github.run_number }}))/; s/^version\/name=.*/version\/name=\"2.3.${{ github.run_number }}\"/" export_presets.cfg
+          grep -n "^version/" export_presets.cfg
       - name: Exportar el .apk firmado
         working-directory: zombiesgd
         env:
@@ -142,12 +147,27 @@ jobs:
           mkdir -p build/android "$GITHUB_WORKSPACE/out"
           "$GODOT_BIN" --headless --path . --export-release "Android" "$GITHUB_WORKSPACE/out/$APP.apk"
           ls -la "$GITHUB_WORKSPACE/out"
-      - name: Publicar el .apk
+      - name: Exportar el .aab para Google Play (Gradle, firmado con la clave de subida guardada en los secretos)
+        working-directory: zombiesgd
+        env:
+          KS_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: upload
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.p12"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$RUNNER_TEMP/upload.p12"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "platforms;android-35" "build-tools;35.0.0" > /dev/null || true
+          "$GODOT_BIN" --headless --path . --install-android-build-template || true
+          "$GODOT_BIN" --headless --path . --export-release "Google Play" "$GITHUB_WORKSPACE/out/$APP.aab"
+          rm -f "$RUNNER_TEMP/upload.p12"
+          ls -la "$GITHUB_WORKSPACE/out"
+      - name: Publicar el .apk y el .aab
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$NAME" --notes "Última compilación de $NAME"
           gh release upload "$TAG" "out/$APP.apk" --clobber
+          if [ -f "out/$APP.aab" ]; then gh release upload "$TAG" "out/$APP.aab" --clobber; fi
 
   pc:
     runs-on: ubuntu-latest

@@ -9,43 +9,43 @@ extends Node
 const WEAPONS := {
 	"m1911": { "name": "M1911", "class": "pistola", "model": "gun_m1911", "len": 0.22, "dmg": 40, "head": 2.5, "rpm": 400, "mag": 8, "res": 80, "reload": 1.6,
 		"spread": 2.0, "ads_spread": 0.6, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_pistol", "reload_snd": "reload_pistol", "recoil": 1.2, "range": 40,
-		"pap": { "name": "Mustang & Sally", "dmg": 900, "mag": 12, "res": 60, "explosive": 2.2 } },
+		"pap": { "name": "Pareja de Ases", "dmg": 900, "mag": 12, "res": 60, "explosive": 2.2 } },
 	"python": { "name": "Python", "class": "pistola", "model": "gun_python", "len": 0.3, "dmg": 180, "head": 2.0, "rpm": 160, "mag": 6, "res": 36, "reload": 3.0,
 		"spread": 1.6, "ads_spread": 0.3, "auto": false, "pellets": 1, "cost": 2200, "sound": "shot_magnum", "reload_snd": "reload_pistol", "recoil": 3.0, "range": 60,
-		"pap": { "name": "Cobra", "dmg": 600, "mag": 12, "res": 84 } },
-	"olympia": { "name": "Olympia", "class": "escopeta", "model": "gun_olympia", "len": 0.95, "dmg": 50, "head": 1.5, "rpm": 120, "mag": 2, "res": 38, "reload": 2.6,
+		"pap": { "name": "Mordisco", "dmg": 600, "mag": 12, "res": 84 } },
+	"olympia": { "name": "Recortada", "class": "escopeta", "model": "gun_olympia", "len": 0.95, "dmg": 50, "head": 1.5, "rpm": 120, "mag": 2, "res": 38, "reload": 2.6,
 		"spread": 6.0, "ads_spread": 4.5, "auto": false, "pellets": 8, "cost": 500, "sound": "shot_shotgun", "reload_snd": "reload_shotgun", "recoil": 4.0, "range": 18,
-		"pap": { "name": "Hades", "dmg": 140, "mag": 4, "res": 76 } },
-	"stakeout": { "name": "Stakeout", "class": "escopeta", "model": "gun_stakeout", "len": 0.95, "dmg": 60, "head": 1.5, "rpm": 80, "mag": 6, "res": 48, "reload": 3.4,
+		"pap": { "name": "Infierno Doble", "dmg": 140, "mag": 4, "res": 76 } },
+	"stakeout": { "name": "Corredera", "class": "escopeta", "model": "gun_stakeout", "len": 0.95, "dmg": 60, "head": 1.5, "rpm": 80, "mag": 6, "res": 48, "reload": 3.4,
 		"spread": 5.5, "ads_spread": 4.0, "auto": false, "pellets": 8, "cost": 1500, "sound": "shot_shotgun", "reload_snd": "reload_shotgun", "recoil": 4.0, "range": 20,
-		"pap": { "name": "Raid", "dmg": 160, "mag": 8, "res": 64 } },
+		"pap": { "name": "Barredora", "dmg": 160, "mag": 8, "res": 64 } },
 	"m14": { "name": "M14", "class": "fusil", "model": "gun_m14", "len": 1.0, "dmg": 110, "head": 2.5, "rpm": 260, "mag": 8, "res": 92, "reload": 1.8,
 		"spread": 1.6, "ads_spread": 0.2, "auto": false, "pellets": 1, "cost": 500, "sound": "shot_rifle", "reload_snd": "reload_rifle", "recoil": 2.2, "range": 80,
-		"pap": { "name": "Mnesia", "dmg": 250, "mag": 15, "res": 150, "auto": true, "rpm": 400 } },
+		"pap": { "name": "Memoria Letal", "dmg": 250, "mag": 15, "res": 150, "auto": true, "rpm": 400 } },
 	"mp40": { "name": "MP40", "class": "subfusil", "model": "gun_mp40", "len": 0.8, "dmg": 45, "head": 2.0, "rpm": 520, "mag": 32, "res": 192, "reload": 2.3,
 		"spread": 2.6, "ads_spread": 0.9, "auto": true, "pellets": 1, "cost": 1000, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 0.9, "range": 40,
-		"pap": { "name": "The Afterburner", "dmg": 110, "mag": 64, "res": 384 } },
+		"pap": { "name": "Postquemador", "dmg": 110, "mag": 64, "res": 384 } },
 	"mp5k": { "name": "MP5K", "class": "subfusil", "model": "gun_mp5k", "len": 0.45, "dmg": 50, "head": 2.0, "rpm": 750, "mag": 30, "res": 210, "reload": 2.1,
 		"spread": 2.8, "ads_spread": 1.0, "auto": true, "pellets": 1, "cost": 1000, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 0.8, "range": 35,
-		"pap": { "name": "MP115 Kollider", "dmg": 120, "mag": 40, "res": 320 } },
+		"pap": { "name": "Colisionador", "dmg": 120, "mag": 40, "res": 320 } },
 	"ak74u": { "name": "AK-74u", "class": "subfusil", "model": "gun_ak74u", "len": 0.7, "dmg": 55, "head": 2.0, "rpm": 700, "mag": 20, "res": 160, "reload": 2.0,
 		"spread": 2.5, "ads_spread": 0.8, "auto": true, "pellets": 1, "cost": 1200, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 1.0, "range": 40,
-		"pap": { "name": "AK-74fu2", "dmg": 130, "mag": 40, "res": 280 } },
+		"pap": { "name": "AK Furiosa", "dmg": 130, "mag": 40, "res": 280 } },
 	"m16": { "name": "M16", "class": "fusil", "model": "gun_m16", "len": 1.0, "dmg": 70, "head": 2.2, "rpm": 650, "mag": 30, "res": 120, "reload": 2.2,
 		"spread": 2.0, "ads_spread": 0.4, "auto": true, "pellets": 1, "cost": 1200, "sound": "shot_rifle", "reload_snd": "reload_rifle", "recoil": 1.1, "range": 70,
-		"pap": { "name": "Skullcrusher", "dmg": 160, "mag": 30, "res": 240 } },
+		"pap": { "name": "Rompecráneos", "dmg": 160, "mag": 30, "res": 240 } },
 	"commando": { "name": "Commando", "class": "fusil", "model": "gun_commando", "len": 0.85, "dmg": 85, "head": 2.2, "rpm": 750, "mag": 30, "res": 240, "reload": 2.3,
 		"spread": 2.1, "ads_spread": 0.4, "auto": true, "pellets": 1, "cost": 0, "sound": "shot_rifle", "reload_snd": "reload_rifle", "recoil": 1.1, "range": 70,
-		"pap": { "name": "Predator", "dmg": 190, "mag": 40, "res": 360 } },
+		"pap": { "name": "Depredadora", "dmg": 190, "mag": 40, "res": 360 } },
 	"galil": { "name": "Galil", "class": "fusil", "model": "gun_galil", "len": 0.95, "dmg": 75, "head": 2.2, "rpm": 650, "mag": 35, "res": 315, "reload": 2.6,
 		"spread": 2.1, "ads_spread": 0.4, "auto": true, "pellets": 1, "cost": 0, "sound": "shot_rifle", "reload_snd": "reload_rifle", "recoil": 1.0, "range": 70,
-		"pap": { "name": "Lamentation", "dmg": 170, "mag": 50, "res": 400 } },
+		"pap": { "name": "Lamento", "dmg": 170, "mag": 50, "res": 400 } },
 	"rpk": { "name": "RPK", "class": "ametralladora", "model": "gun_rpk2", "len": 1.05, "dmg": 70, "head": 2.0, "rpm": 600, "mag": 100, "res": 400, "reload": 4.2,
 		"spread": 3.0, "ads_spread": 0.8, "auto": true, "pellets": 1, "cost": 0, "sound": "shot_lmg", "reload_snd": "reload_lmg", "recoil": 1.0, "range": 70,
-		"pap": { "name": "R115 Resonator", "dmg": 160, "mag": 125, "res": 500 } },
+		"pap": { "name": "Resonadora", "dmg": 160, "mag": 125, "res": 500 } },
 	"spas": { "name": "SPAS-12", "class": "escopeta", "model": "gun_spas", "len": 1.0, "dmg": 70, "head": 1.5, "rpm": 150, "mag": 8, "res": 56, "reload": 3.4,
 		"spread": 5.0, "ads_spread": 3.8, "auto": false, "pellets": 8, "cost": 0, "sound": "shot_shotgun", "reload_snd": "reload_shotgun", "recoil": 3.6, "range": 20,
-		"pap": { "name": "SPAZ-24", "dmg": 170, "mag": 24, "res": 96 } },
+		"pap": { "name": "Trituradora", "dmg": 170, "mag": 24, "res": 96 } },
 	"l96": { "name": "L96A1", "class": "francotirador", "model": "gun_l96", "len": 1.15, "dmg": 900, "head": 3.0, "rpm": 55, "mag": 5, "res": 40, "reload": 3.4,
 		"spread": 8.0, "ads_spread": 0.0, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_sniper", "reload_snd": "reload_rifle", "recoil": 5.0, "range": 200, "scope": true,
 		"pap": { "name": "Destructor", "dmg": 3000, "mag": 8, "res": 60 } },
@@ -64,12 +64,12 @@ const BOX_POOL := { "raygun": 1, "bubble": 1, "rpk": 3, "galil": 4, "commando": 
 
 # ---------------------------------------------------------------- ventajas (bebidas)
 const PERKS := {
-	"jugg": { "name": "Juggernog", "cost": 2500, "color": Color(0.85, 0.12, 0.1), "desc": "Aguantas el doble de golpes" },
-	"speed": { "name": "Speed Cola", "cost": 3000, "color": Color(0.15, 0.75, 0.25), "desc": "Recargas el doble de rápido" },
-	"dtap": { "name": "Double Tap", "cost": 2000, "color": Color(0.95, 0.75, 0.1), "desc": "Disparas más rápido" },
-	"revive": { "name": "Quick Revive", "cost": 1500, "color": Color(0.2, 0.55, 1.0), "desc": "Te levantas una vez al caer" },
-	"stamin": { "name": "Stamin-Up", "cost": 2000, "color": Color(1.0, 0.55, 0.15), "desc": "Corres más y más tiempo" },
-	"mule": { "name": "Mule Kick", "cost": 4000, "color": Color(0.25, 0.55, 0.3), "desc": "Llevas un tercer arma" },
+	"jugg": { "name": "Coraza Roja", "cost": 2500, "color": Color(0.85, 0.12, 0.1), "desc": "Aguantas el doble de golpes" },
+	"speed": { "name": "Turbo Gamba", "cost": 3000, "color": Color(0.15, 0.75, 0.25), "desc": "Recargas el doble de rápido" },
+	"dtap": { "name": "Doble Pinza", "cost": 2000, "color": Color(0.95, 0.75, 0.1), "desc": "Disparas más rápido" },
+	"revive": { "name": "Segunda Vida", "cost": 1500, "color": Color(0.2, 0.55, 1.0), "desc": "Te levantas una vez al caer" },
+	"stamin": { "name": "Aleta Veloz", "cost": 2000, "color": Color(1.0, 0.55, 0.15), "desc": "Corres más y más tiempo" },
+	"mule": { "name": "Tercer Brazo", "cost": 4000, "color": Color(0.25, 0.55, 0.3), "desc": "Llevas un tercer arma" },
 }
 
 # ---------------------------------------------------------------- chicles (como los GobbleGum de Black Ops 3)
@@ -88,11 +88,11 @@ const GUMS := {
 
 # ---------------------------------------------------------------- easter egg principal (historia de cada mapa)
 const EGG := {
-	"prison": { "part": "pieza de la radio", "parts": "piezas de la radio", "item": "la radio del alcaide", "altar": "la máquina Pack-a-Punch",
+	"prison": { "part": "pieza de la radio", "parts": "piezas de la radio", "item": "la radio del alcaide", "altar": "la Forja",
 		"intro": "El alcaide escondió una radio por la cárcel. Si la montas, quizá alguien venga a por vosotros.",
 		"defend": "¡La señal atrae a algo enorme! Aguanta junto a la radio.",
 		"end": "El Bruto ha caído. La radio emite una voz: «Aquí la Patrulla Gamba… vamos a por vosotros». FIN… por ahora." },
-	"pueblo": { "part": "pieza del autobús", "parts": "piezas del autobús", "item": "el viejo autobús del pueblo", "altar": "la máquina Pack-a-Punch",
+	"pueblo": { "part": "pieza del autobús", "parts": "piezas del autobús", "item": "el viejo autobús del pueblo", "altar": "la Forja",
 		"intro": "El autobús que sacaba a la gente del pueblo quedó hecho pedazos. Reúne las piezas: quizá aún arranque.",
 		"defend": "¡El motor ruge y la lava del cruce se agita! Aguanta junto a la máquina.",
 		"end": "La bestia de la lava ha caído. A lo lejos se oye un claxon: el autobús viene a por vosotros. FIN… por ahora." },
@@ -121,7 +121,7 @@ const UNLOCKS := [
 	{ "level": 8, "kind": "gum", "id": "caja", "text": "Chicle: Caja Generosa" },
 	{ "level": 9, "kind": "start_weapon", "id": "mp5k", "text": "Empezar con el MP5K" },
 	{ "level": 10, "kind": "points", "id": "250", "text": "+250 puntos al empezar" },
-	{ "level": 11, "kind": "start_perk", "id": "revive", "text": "Empezar con Quick Revive" },
+	{ "level": 11, "kind": "start_perk", "id": "revive", "text": "Empezar con Segunda Vida" },
 	{ "level": 12, "kind": "character", "id": "langosta", "text": "Personaje: Langosta" },
 	{ "level": 12, "kind": "gum", "id": "marea", "text": "Chicle: Marea Roja" },
 	{ "level": 13, "kind": "start_round", "id": "15", "text": "Empezar en la ronda 15" },
@@ -132,7 +132,7 @@ const UNLOCKS := [
 	{ "level": 17, "kind": "card", "id": "abismo", "text": "Tarjeta: Abismo" },
 	{ "level": 18, "kind": "start_round", "id": "20", "text": "Empezar en la ronda 20" },
 	{ "level": 19, "kind": "points", "id": "500", "text": "+500 puntos al empezar" },
-	{ "level": 20, "kind": "start_perk", "id": "jugg", "text": "Empezar con Juggernog" },
+	{ "level": 20, "kind": "start_perk", "id": "jugg", "text": "Empezar con Coraza Roja" },
 	{ "level": 20, "kind": "gum", "id": "caparazon", "text": "Chicle: Caparazón" },
 	{ "level": 22, "kind": "title", "id": "pescador", "text": "Título: Pescador de Muertos" },
 	{ "level": 23, "kind": "card", "id": "sangre", "text": "Tarjeta: Sangre" },
@@ -164,7 +164,7 @@ func _init() -> void:
 		add.call("round_" + m[0], "Llega a la ronda %d en " + m[1], "round_" + m[0], [10, 20, 30], [800, 2500, 6000])
 	add.call("perks", "Bebe %d refrescos", "perks", [10, 50, 150], [500, 1500, 3500])
 	add.call("box", "Usa la caja misteriosa %d veces", "box", [10, 50, 150], [500, 1500, 3500])
-	add.call("pap", "Mejora %d armas en el Pack-a-Punch", "pap", [5, 25, 75], [800, 2500, 5000])
+	add.call("pap", "Mejora %d armas en la Forja", "pap", [5, 25, 75], [800, 2500, 5000])
 	add.call("doors", "Abre %d puertas", "doors", [20, 100], [500, 1500])
 	add.call("powerups", "Recoge %d potenciadores", "powerups", [10, 50], [500, 1500])
 	add.call("games", "Juega %d partidas", "games", [5, 25, 100], [400, 1500, 5000])

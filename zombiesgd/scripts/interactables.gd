@@ -71,12 +71,9 @@ class Perk extends Base:
 	var sign: Node3D
 	func build(g: Node, perk: String, model_yaw: float) -> void:
 		game = g; id = perk
-		var scn: PackedScene = load("res://assets/models/props/%s.glb" % perk)
 		var holder = Node3D.new(); add_child(holder)
-		var m: Node3D = scn.instantiate(); holder.add_child(m)
-		MapBuilder.merge_model(m, 6000)   # ~100 piezas -> unas pocas llamadas de dibujo (y la de Double Tap traía 578 000 triángulos)
-		if perk == "mule": m.rotation_degrees.x = -90.0     # este modelo viene tumbado
-		Interactables._fit(holder, 2.05); holder.rotation_degrees.y = model_yaw
+		Interactables.build_perk_machine(holder, perk)   # máquina propia (sin marcas de nadie), pintada del color de la ventaja
+		holder.rotation_degrees.y = model_yaw
 		light = OmniLight3D.new(); light.light_color = Data.PERKS[perk].color; light.omni_range = 4.0; light.light_energy = 0.0; light.position = Vector3(0, 1.6, 0.8); add_child(light)
 		Interactables._solid(self, Vector3(1.0, 2.0, 0.8), Vector3(0, 1.0, 0))
 		reach = 1.9
@@ -213,7 +210,7 @@ class PackAPunch extends Base:
 		var top = MeshInstance3D.new(); var tm = BoxMesh.new(); tm.size = Vector3(1.0, 0.45, 0.8); top.mesh = tm; top.position.y = 1.72; top.material_override = mat; add_child(top)
 		var slot = MeshInstance3D.new(); var sm = BoxMesh.new(); sm.size = Vector3(1.0, 0.18, 0.04); slot.mesh = sm; slot.position = Vector3(0, 1.0, 0.51)
 		var smat = StandardMaterial3D.new(); smat.albedo_color = Color(0.6, 0.2, 1.0); smat.emission_enabled = true; smat.emission = Color(0.6, 0.2, 1.0); smat.emission_energy_multiplier = 1.5; slot.material_override = smat; add_child(slot)
-		var lab = Label3D.new(); lab.text = "PACK-A-PUNCH"; lab.font = load("res://assets/fonts/BlackOpsOne.ttf"); lab.font_size = 64; lab.pixel_size = 0.0028; lab.modulate = Color(0.85, 0.7, 1.0); lab.outline_size = 6; lab.position = Vector3(0, 1.3, 0.52); add_child(lab)
+		var lab = Label3D.new(); lab.text = "LA FORJA"; lab.font = load("res://assets/fonts/BlackOpsOne.ttf"); lab.font_size = 64; lab.pixel_size = 0.0028; lab.modulate = Color(0.85, 0.7, 1.0); lab.outline_size = 6; lab.position = Vector3(0, 1.3, 0.52); add_child(lab)
 		glow = OmniLight3D.new(); glow.light_color = Color(0.6, 0.25, 1.0); glow.omni_range = 4; glow.light_energy = 0; glow.position = Vector3(0, 1.2, 1.0); add_child(glow)
 		Interactables._solid(self, Vector3(1.4, 1.9, 1.0), Vector3(0, 0.95, 0))
 	func prompt(p: Player) -> String:
@@ -433,6 +430,55 @@ static func planks_mat() -> StandardMaterial3D:
 static func _plank(parent: Node3D, center: Vector3, length: float, width: float, roll: float, yaw := 0.0) -> void:
 	var m = MeshInstance3D.new(); var b = BoxMesh.new(); b.size = Vector3(length, width, 0.05); m.mesh = b; m.material_override = planks_mat()
 	m.position = center; m.rotation = Vector3(0, yaw, roll); parent.add_child(m)
+
+## máquina expendedora de ventaja: armario de chapa pintada con cantos cromados, escaparate iluminado con botellas,
+## letrero arriba con el nombre, ranura de monedas y boca de salida. Todo procedural (y unido en pocas llamadas de dibujo).
+static func build_perk_machine(parent: Node3D, perk: String) -> void:
+	var col: Color = Data.PERKS[perk].color
+	var name: String = Data.PERKS[perk].name
+	var geo = Node3D.new(); parent.add_child(geo)
+	var noise = NoiseTexture2D.new(); noise.width = 128; noise.height = 128; var fn = FastNoiseLite.new(); fn.frequency = 0.04; noise.noise = fn
+	var paint = StandardMaterial3D.new(); paint.albedo_color = col.darkened(0.35); paint.metallic = 0.35; paint.roughness = 0.55; paint.roughness_texture = noise
+	var dark = StandardMaterial3D.new(); dark.albedo_color = Color(0.07, 0.07, 0.08); dark.metallic = 0.5; dark.roughness = 0.5
+	var chrome = StandardMaterial3D.new(); chrome.albedo_color = Color(0.85, 0.86, 0.9); chrome.metallic = 1.0; chrome.roughness = 0.18
+	var glow = StandardMaterial3D.new(); glow.albedo_color = col.lightened(0.2); glow.emission_enabled = true; glow.emission = col.lightened(0.15); glow.emission_energy_multiplier = 1.6
+	var back = StandardMaterial3D.new(); back.albedo_color = Color(1, 1, 1); back.emission_enabled = true; back.albedo_color = col.darkened(0.6); back.emission = col.darkened(0.3); back.emission_energy_multiplier = 0.7
+	var glass = StandardMaterial3D.new(); glass.albedo_color = Color(0.7, 0.85, 1.0, 0.1); glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; glass.metallic = 0.2; glass.roughness = 0.05
+	var bottle = StandardMaterial3D.new(); bottle.albedo_color = col; bottle.emission_enabled = true; bottle.emission = col; bottle.emission_energy_multiplier = 1.4; bottle.roughness = 0.2
+	var add = func(mesh: Mesh, pos: Vector3, mat: Material) -> void:
+		var mi = MeshInstance3D.new(); mi.mesh = mesh; mi.position = pos; mi.material_override = mat; geo.add_child(mi)
+	var boxm = func(sz: Vector3) -> BoxMesh:
+		var b = BoxMesh.new(); b.size = sz; return b
+	add.call(boxm.call(Vector3(1.0, 0.12, 0.8)), Vector3(0, 0.06, 0), dark)                    # zócalo
+	add.call(boxm.call(Vector3(0.92, 1.62, 0.72)), Vector3(0, 0.93, 0), paint)                # armario
+	for x in [-0.47, 0.47]:
+		add.call(boxm.call(Vector3(0.05, 1.66, 0.06)), Vector3(x, 0.93, 0.35), chrome)       # cantos cromados
+	add.call(boxm.call(Vector3(1.0, 0.06, 0.8)), Vector3(0, 1.76, 0), chrome)                 # moldura
+	add.call(boxm.call(Vector3(1.0, 0.34, 0.74)), Vector3(0, 1.96, 0), paint)                 # letrero de arriba
+	add.call(boxm.call(Vector3(0.88, 0.24, 0.02)), Vector3(0, 1.96, 0.375), glow)
+	# escaparate: fondo iluminado, tres baldas de botellas y cristal
+	add.call(boxm.call(Vector3(0.62, 0.86, 0.02)), Vector3(-0.08, 1.12, 0.3), back)
+	for r in 3:
+		add.call(boxm.call(Vector3(0.6, 0.02, 0.12)), Vector3(-0.08, 0.76 + r * 0.27, 0.32), chrome)
+		for c in 5:
+			var cyl = CylinderMesh.new(); cyl.top_radius = 0.026; cyl.bottom_radius = 0.042; cyl.height = 0.2; cyl.radial_segments = 8; cyl.rings = 1
+			add.call(cyl, Vector3(-0.32 + c * 0.12, 0.86 + r * 0.27, 0.33), bottle)
+	add.call(boxm.call(Vector3(0.64, 0.9, 0.01)), Vector3(-0.08, 1.12, 0.37), glass)
+	for e in [[Vector3(0.68, 0.03, 0.03), Vector3(-0.08, 1.585, 0.37)], [Vector3(0.68, 0.03, 0.03), Vector3(-0.08, 0.655, 0.37)], [Vector3(0.03, 0.96, 0.03), Vector3(-0.42, 1.12, 0.37)], [Vector3(0.03, 0.96, 0.03), Vector3(0.26, 1.12, 0.37)]]:
+		add.call(boxm.call(e[0]), e[1], chrome)                                                 # marco del cristal
+	# ranura de monedas, botones y boca de salida
+	add.call(boxm.call(Vector3(0.1, 0.16, 0.02)), Vector3(0.35, 1.3, 0.37), chrome)
+	add.call(boxm.call(Vector3(0.02, 0.07, 0.01)), Vector3(0.35, 1.32, 0.382), dark)
+	for k in 3: add.call(boxm.call(Vector3(0.07, 0.05, 0.02)), Vector3(0.35, 1.1 - k * 0.08, 0.37), glow)
+	add.call(boxm.call(Vector3(0.44, 0.2, 0.04)), Vector3(-0.08, 0.38, 0.35), dark)
+	add.call(boxm.call(Vector3(0.48, 0.03, 0.06)), Vector3(-0.08, 0.49, 0.36), chrome)
+	MapBuilder.merge_model(geo)
+	# nombres (letrero y placa)
+	var font = load("res://assets/fonts/BlackOpsOne.ttf")
+	var top = Label3D.new(); top.text = name.to_upper(); top.font = font; top.font_size = 64; top.pixel_size = min(0.003, 0.74 / max(1, name.length() * 44.0)); top.modulate = Color(1, 1, 1); top.outline_size = 8; top.outline_modulate = col.darkened(0.6)
+	top.position = Vector3(0, 1.96, 0.39); parent.add_child(top)
+	var plate = Label3D.new(); plate.text = Data.PERKS[perk].desc; plate.font = font; plate.font_size = 32; plate.pixel_size = 0.0016; plate.width = 520; plate.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	plate.modulate = Color(1, 0.95, 0.85); plate.outline_size = 6; plate.position = Vector3(-0.08, 0.57, 0.38); parent.add_child(plate)
 
 ## versión simplificada de la primera malla de un modelo (para objetos que se repiten mucho)
 static func _low_mesh(scn: PackedScene, target_idx: int) -> Mesh:

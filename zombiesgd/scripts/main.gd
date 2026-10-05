@@ -492,7 +492,7 @@ func _mechanics(p: Player) -> void:
 	p.gums.clear(); p.give_perk("revive"); p.hp = 10.0; p.take_damage(50.0)
 	_ok("caer al suelo", p.downed)
 	await _frames(250)
-	_ok("levantarse con Quick Revive", not p.downed and p.alive)
+	_ok("levantarse con Segunda Vida", not p.downed and p.alive)
 	# --- tercera persona
 	p.toggle_view(); await _frames(10)
 	_ok("tercera persona", p.third and p.cam.position.length() > 0.5)
