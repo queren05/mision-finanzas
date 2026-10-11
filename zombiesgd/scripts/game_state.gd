@@ -7,7 +7,9 @@ var level = 1
 var weapon_kills = {}          # id -> bajas totales
 var camo = {}                  # id -> camuflaje elegido
 var best = {}                  # mapa -> mejor ronda
-var settings = { "sens": 1.0, "ads_sens": 0.7, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false, "left_fire": false, "btn_scale": 1.1, "btn_alpha": 0.8, "vibration": true, "ads_toggle": true, "fullscreen": false, "show_fps": false, "auto_q": false }
+var settings = { "sens": 1.0, "ads_sens": 0.7, "invert": false, "aim_assist": true, "sfx": 0.9, "music": 0.6, "quality": "alta", "fov": 75.0, "third": false, "left_fire": false, "btn_scale": 1.1, "btn_alpha": 0.8, "vibration": true, "ads_toggle": true, "fullscreen": false, "show_fps": false, "auto_q": false,
+	"res_scale": 1.0, "dyn_res": true, "fps_limit": "auto", "shadows": "auto", "aa": "auto", "brightness": 1.0, "glow": true,
+	"shake": 1.0, "bob": true, "gore": true, "hitmarkers": true, "cross_color": "blanco", "deadzone": 0.16, "pad_vibration": true, "master": 1.0, "voice": 1.0 }
 var character = "comando"
 var stats = {}                 # contadores para los desafíos
 var done = {}                  # desafío -> true

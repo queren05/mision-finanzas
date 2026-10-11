@@ -79,7 +79,7 @@ func poll(delta: float) -> void:
 	for j in Input.get_connected_joypads():
 		var a = Vector2(Input.get_joy_axis(j, JOY_AXIS_LEFT_X), -Input.get_joy_axis(j, JOY_AXIS_LEFT_Y))
 		if a.length() > pad.length(): pad = a
-	pad = _deadzone(pad, 0.16)
+	pad = _deadzone(pad, float(GS.settings.get("deadzone", 0.16)))
 	if pad != Vector2.ZERO: device = "pad"
 	move = touch_move + kb + pad
 	if move.length() > 1.0: move = move.normalized()
@@ -90,7 +90,7 @@ func poll_look(delta: float) -> void:
 	for j in Input.get_connected_joypads():
 		var b = Vector2(Input.get_joy_axis(j, JOY_AXIS_RIGHT_X), Input.get_joy_axis(j, JOY_AXIS_RIGHT_Y))
 		if b.length() > rs.length(): rs = b
-	rs = _deadzone(rs, 0.12)
+	rs = _deadzone(rs, float(GS.settings.get("deadzone", 0.16)) * 0.75)
 	if rs != Vector2.ZERO: device = "pad"
 	# stick derecho: curva suave para apuntar fino y aceleración al llevarlo a tope (como en los Call of Duty)
 	var mag = rs.length()

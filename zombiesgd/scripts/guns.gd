@@ -9,10 +9,13 @@ func _template(id: String) -> Node3D:
 	var d: Dictionary = Data.WEAPONS[id]
 	if String(d.model).begins_with("proc_"):
 		cache[id] = _proc(String(d.model), float(d.len)); return cache[id]
-	var scn: PackedScene = load("res://assets/models/guns/%s.glb" % d.model)
+	var path = "res://assets/models/guns/%s" % d.model
+	if not String(d.model).contains("/"): path += ".glb"
+	var scn: PackedScene = load(path)
 	var src: Node3D = scn.instantiate()
 	var holder = Node3D.new(); holder.add_child(src)
-	_orient(src, d)
+	if d.has("orient"): src.rotation_degrees.y = float(d.orient)   # modelos que ya vienen bien (o solo girados): sin adivinar
+	else: _orient(src, d)
 	# centrar y escalar al largo real
 	var b = _aabb(holder)
 	var s = float(d.len) / max(0.001, b.size.z)

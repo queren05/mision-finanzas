@@ -260,7 +260,8 @@ func toast(title: String, text: String) -> void:
 
 func banner(t: String, sub: String, dur: float) -> void: banner_lbl.text = t; banner_sub.text = sub; banner_t = dur
 func hitmarker(kill: bool, head: bool) -> void:
-	hit_t = 0.18; hit_kill = kill; hit_head = head
+	if GS.settings.get("hitmarkers", true): hit_t = 0.18
+	hit_kill = kill; hit_head = head
 	# sonido de impacto como en Call of Duty: clic al acertar, campanita a la cabeza y golpe seco al matar
 	if kill: Sfx.play("killmark", 0.7)
 	if head: Sfx.play("headshot", 0.45)
@@ -380,6 +381,7 @@ class _Hit extends Control:
 			draw_line(v * 7, v * s, Color(0, 0, 0, 0.6), 5.0); draw_line(v * 7, v * s, c, 3.0)
 
 ## mira: las cuatro rayas se abren al disparar; al apuntar se cierran en un punto rojo (punto de mira tipo holográfico)
+const HUD_CROSS_COLORS := { "blanco": Color(1, 1, 1), "verde": Color(0.3, 1.0, 0.35), "rojo": Color(1.0, 0.25, 0.2), "amarillo": Color(1.0, 0.9, 0.2), "cian": Color(0.3, 0.95, 1.0) }
 class _Cross extends Control:
 	var spread = 0.0
 	var ads = 0.0
@@ -391,7 +393,8 @@ class _Cross extends Control:
 		if a > 0.02:
 			var g = (8.0 + spread * 6.0) * a + 2.0
 			for v in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
-				draw_line(v * g, v * (g + 11 * a), Color(0, 0, 0, 0.55 * a), 4.0); draw_line(v * g, v * (g + 11 * a), Color(1, 1, 1, 0.9 * a), 2.0)
+				var cc: Color = HUD_CROSS_COLORS.get(String(GS.settings.get("cross_color", "blanco")), Color.WHITE)
+				draw_line(v * g, v * (g + 11 * a), Color(0, 0, 0, 0.55 * a), 4.0); draw_line(v * g, v * (g + 11 * a), Color(cc, 0.9 * a), 2.0)
 		if ads > 0.3:
 			var k = clamp((ads - 0.3) / 0.5, 0.0, 1.0)
 			draw_arc(Vector2.ZERO, 9.0, 0, TAU, 32, Color(1, 0.15, 0.1, 0.55 * k), 1.5, true)

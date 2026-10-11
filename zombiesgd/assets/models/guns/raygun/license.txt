@@ -1,0 +1,11 @@
+Model Information:
+* title:	Raygun
+* source:	https://sketchfab.com/3d-models/raygun-9b8bb34ad4584baab6e102046b6d55ea
+* author:	ehcawen (https://sketchfab.com/ehcawen)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Raygun" (https://sketchfab.com/3d-models/raygun-9b8bb34ad4584baab6e102046b6d55ea) by ehcawen (https://sketchfab.com/ehcawen) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

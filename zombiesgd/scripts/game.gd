@@ -155,7 +155,7 @@ func _build_environment() -> void:
 
 ## resolución dinámica: cada 2 s mira los fps; por debajo de ~50 baja la resolución 3D (hasta el 55 %), y la sube si va sobrado
 func _dynamic_resolution(delta: float) -> void:
-	if OS.get_cmdline_user_args().has("maxq"): return   # capturas para la tienda: siempre a resolución completa
+	if OS.get_cmdline_user_args().has("maxq") or not GS.settings.get("dyn_res", true): return   # (capturas para la tienda o resolución dinámica apagada en ajustes)
 	fps_acc += delta; fps_frames += 1
 	if fps_acc < 2.0: return
 	var fps = fps_frames / fps_acc; fps_acc = 0.0; fps_frames = 0
@@ -191,6 +191,28 @@ func apply_quality(e: Environment) -> void:
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if q == "alta" else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	e.glow_enabled = q != "baja"
 	Engine.max_fps = 60 if OS.has_feature("mobile") else 0   # en PC manda la sincronización vertical
+	# ajustes avanzados (si no están en «auto», mandan sobre la calidad)
+	var S: Dictionary = GS.settings
+	base_scale *= float(S.get("res_scale", 1.0)); vp.scaling_3d_scale = base_scale
+	if base_scale < 0.99: vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR
+	match String(S.get("fps_limit", "auto")):
+		"30": Engine.max_fps = 30
+		"60": Engine.max_fps = 60
+		"90": Engine.max_fps = 90
+		"120": Engine.max_fps = 120
+		"sin límite": Engine.max_fps = 0
+	if sun:
+		match String(S.get("shadows", "auto")):
+			"no": sun.shadow_enabled = false
+			"bajas": sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 35.0
+			"altas": sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS; sun.directional_shadow_max_distance = 60.0
+	match String(S.get("aa", "auto")):
+		"no": vp.msaa_3d = Viewport.MSAA_DISABLED; vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		"FXAA": vp.msaa_3d = Viewport.MSAA_DISABLED; vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
+		"MSAA 2x": vp.msaa_3d = Viewport.MSAA_2X; vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		"MSAA 4x": vp.msaa_3d = Viewport.MSAA_4X; vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+	e.adjustment_brightness = float(S.get("brightness", 1.0))
+	if not S.get("glow", true): e.glow_enabled = false
 
 func _col(a) -> Color: return Color(float(a[0]), float(a[1]), float(a[2]))
 
@@ -1105,7 +1127,8 @@ func dust(at: Vector3) -> void: Fx.dust(self, at)
 ## un ajuste cambiado desde la pausa se aplica al momento
 func on_setting_changed(k: String) -> void:
 	match k:
-		"quality": apply_quality(env)
+		"quality", "res_scale", "fps_limit", "shadows", "aa", "brightness", "glow", "dyn_res": apply_quality(env)
+		"master", "voice": Sfx.apply_volumes()
 		"third": player.third = bool(GS.settings.third)
 		"music": Sfx.set_ambient_volume()
 		"fov": player.cam.fov = float(GS.settings.fov)

@@ -59,6 +59,12 @@ func play(name: String, blend := 0.18, speed := 1.0) -> void:
 	if not anim: return
 	var a = HUMAN_ANIMS.get(name, name)
 	if not anim.has_animation(a): return
+	if speed == 0.0:
+		# postura congelada (apuntar quieto): sin mezcla, porque a velocidad 0 la mezcla nunca termina
+		if cur_anim != a + "@pose":
+			anim.play(a, 0.0); anim.seek(min(0.12, anim.current_animation_length * 0.5), true); cur_anim = a + "@pose"
+		anim.speed_scale = 0.0
+		return
 	if cur_anim != a: anim.play(a, blend); cur_anim = a
 	anim.speed_scale = speed
 

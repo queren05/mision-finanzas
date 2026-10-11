@@ -137,7 +137,7 @@ func _process(delta: float) -> void:
 	var frac = Engine.get_physics_interpolation_fraction()
 	var pos = prev_pos.lerp(cur_pos, frac) if prev_pos.distance_to(cur_pos) < 1.0 else global_position
 	shake = move_toward(shake, 0.0, delta * 3.0)
-	var sh = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake * shake * 0.012
+	var sh = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake * shake * 0.012 * float(GS.settings.get("shake", 1.0))
 	head.global_transform = Transform3D(Basis(Vector3.UP, yaw + sh.x) * Basis(Vector3.RIGHT, pitch + sh.y), pos + Vector3(0, eye_h, 0))
 	_view(delta)
 
@@ -252,6 +252,7 @@ func take_damage(n: float) -> void:
 	if gums.has("caparazon"): n *= 0.5
 	hp -= n; hurt_t = 0.0; shake = min(1.0, shake + 0.6)
 	if GS.settings.get("vibration", true): Input.vibrate_handheld(90)
+	if GS.settings.get("pad_vibration", true) and Controls.device == "pad": for jp in Input.get_connected_joypads(): Input.start_joy_vibration(jp, 0.4, 0.7, 0.18)
 	Sfx.play("pain%d" % randi_range(1, 2), 0.7)
 	game.hud.hurt_flash()
 	if hp <= 0:
@@ -459,7 +460,7 @@ func _view(delta: float) -> void:
 		var pivot = feet + (Vector3(0, lerp(1.55, 1.05, crouch_k), 0) if body.human else Vector3(0, lerp(1.0, 0.75, crouch_k), 0))
 		var aim = -cam.global_transform.basis.z
 		var basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
-		var want = pivot + basis * (Vector3(lerp(0.75, 0.5, ads), 0.15, lerp(2.6, 1.3, ads)) if body.human else Vector3(lerp(0.6, 0.5, ads), 0.38, lerp(body_len * 0.6 + tp_dist * 0.6, 1.4, ads)))   # por encima del hombro derecho, como en los shooters en tercera persona
+		var want = pivot + basis * (Vector3(lerp(0.95, 0.55, ads), 0.2, lerp(2.3, 1.2, ads)) if body.human else Vector3(lerp(0.6, 0.5, ads), 0.38, lerp(body_len * 0.6 + tp_dist * 0.6, 1.4, ads)))   # por encima del hombro derecho, como en los shooters en tercera persona
 		var q = PhysicsRayQueryParameters3D.create(pivot, want, MapBuilder.LAYER_WORLD | MapBuilder.LAYER_BARRIER); q.exclude = [get_rid()]
 		var hit = get_world_3d().direct_space_state.intersect_ray(q)
 		var dest = want if hit.is_empty() else hit.position + (pivot - want).normalized() * 0.25

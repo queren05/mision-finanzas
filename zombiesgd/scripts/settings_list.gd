@@ -8,28 +8,53 @@ const RED2 = Color(1.0, 0.165, 0.165)
 ## construye la lista dentro de un ScrollContainer y devuelve el primer control (para darle el foco con mando)
 static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Callable) -> Control:
 	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 8); sc.add_child(list)
-	var first = _toggle(list, font_bo, font_ui, "Vista", "third", "TERCERA PERSONA", "PRIMERA PERSONA", changed)
-	_cycle(list, font_bo, font_ui, "Calidad gráfica", "quality", ["baja", "media", "alta"], changed)
+	var mobile = OS.has_feature("mobile")
+	_section(list, font_bo, "GRÁFICOS")
+	var first = _cycle(list, font_bo, font_ui, "Calidad gráfica", "quality", ["baja", "media", "alta"], changed)
+	_slider(list, font_ui, "Escala de resolución", 0.5, 1.0, "res_scale", changed)
+	_toggle(list, font_bo, font_ui, "Resolución dinámica (baja si van mal los FPS)", "dyn_res", "SÍ", "NO", changed)
+	_cycle(list, font_bo, font_ui, "Límite de FPS", "fps_limit", ["auto", "30", "60", "90", "120", "sin límite"], changed)
+	_cycle(list, font_bo, font_ui, "Sombras", "shadows", ["auto", "no", "bajas", "altas"], changed)
+	_cycle(list, font_bo, font_ui, "Suavizado de bordes", "aa", ["auto", "no", "FXAA", "MSAA 2x", "MSAA 4x"], changed)
+	_slider(list, font_ui, "Brillo", 0.7, 1.4, "brightness", changed)
+	_toggle(list, font_bo, font_ui, "Resplandor (luces y fuego)", "glow", "SÍ", "NO", changed)
+	_toggle(list, font_bo, font_ui, "Mostrar FPS", "show_fps", "SÍ", "NO", changed)
+	if not mobile:
+		_toggle(list, font_bo, font_ui, "Pantalla completa (F11)", "fullscreen", "SÍ", "NO", func(k): Controls.apply_window(); changed.call(k))
+	_section(list, font_bo, "JUEGO")
+	_toggle(list, font_bo, font_ui, "Vista", "third", "TERCERA PERSONA", "PRIMERA PERSONA", changed)
+	_slider(list, font_ui, "Campo de visión", 60, 100, "fov", changed)
+	_slider(list, font_ui, "Temblor de cámara", 0, 1, "shake", changed)
+	_toggle(list, font_bo, font_ui, "Balanceo del arma al andar", "bob", "SÍ", "NO", changed)
+	_toggle(list, font_bo, font_ui, "Sangre", "gore", "SÍ", "NO", changed)
+	_toggle(list, font_bo, font_ui, "Marcadores de impacto", "hitmarkers", "SÍ", "NO", changed)
+	_cycle(list, font_bo, font_ui, "Color de la mira", "cross_color", ["blanco", "verde", "rojo", "amarillo", "cian"], changed)
+	_section(list, font_bo, "CONTROLES")
 	_slider(list, font_ui, "Sensibilidad", 0.3, 2.5, "sens", changed)
 	_slider(list, font_ui, "Sensibilidad apuntando", 0.3, 1.2, "ads_sens", changed)
-	_slider(list, font_ui, "Campo de visión", 60, 95, "fov", changed)
 	_toggle(list, font_bo, font_ui, "Ayuda al apuntar", "aim_assist", "SÍ", "NO", changed)
 	_toggle(list, font_bo, font_ui, "Invertir eje vertical", "invert", "SÍ", "NO", changed)
-	if OS.has_feature("mobile"):   # opciones de pantalla táctil (en el móvil)
+	_slider(list, font_ui, "Zona muerta del mando", 0.05, 0.3, "deadzone", changed)
+	_toggle(list, font_bo, font_ui, "Vibración del mando", "pad_vibration", "SÍ", "NO", changed)
+	if mobile:
 		_toggle(list, font_bo, font_ui, "Apuntar (pantalla táctil)", "ads_toggle", "TOCAR", "MANTENER", changed)
 		_toggle(list, font_bo, font_ui, "Botón de disparo a la izquierda", "left_fire", "SÍ", "NO", changed)
 		_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)
 		_slider(list, font_ui, "Opacidad de los botones", 0.3, 1.0, "btn_alpha", changed)
-		_toggle(list, font_bo, font_ui, "Vibración", "vibration", "SÍ", "NO", changed)
-	_toggle(list, font_bo, font_ui, "Mostrar FPS", "show_fps", "SÍ", "NO", changed)
-	if not OS.has_feature("mobile"):
-		_toggle(list, font_bo, font_ui, "Pantalla completa (F11)", "fullscreen", "SÍ", "NO", func(k): Controls.apply_window(); changed.call(k))
+		_toggle(list, font_bo, font_ui, "Vibración del móvil", "vibration", "SÍ", "NO", changed)
+	_section(list, font_bo, "SONIDO")
+	_slider(list, font_ui, "Volumen general", 0, 1, "master", changed)
 	_slider(list, font_ui, "Efectos de sonido", 0, 1, "sfx", changed)
-	_slider(list, font_ui, "Ambiente", 0, 1, "music", changed)
-	if not OS.has_feature("mobile"):
+	_slider(list, font_ui, "Música y ambiente", 0, 1, "music", changed)
+	_slider(list, font_ui, "Voces", 0, 1, "voice", changed)
+	if not mobile:
 		var help = _label("Teclado y ratón:  WASD moverse · ratón apuntar · clic izq. disparar · clic der. apuntar · R recargar · F o E usar · Q o rueda cambiar de arma · G granada · V cuchillo · Espacio saltar · Mayús correr · C agacharse (corriendo: deslizarse) · T vista · Esc pausa · F11 pantalla completa.\nMando: gatillos disparar/apuntar · A saltar · X recargar/usar · Y cambiar arma · B agacharse · RB granada · R3 cuchillo · L3 correr · Select vista · Start pausa.", font_ui, 19, Color(0.8, 0.77, 0.7))
 		help.autowrap_mode = TextServer.AUTOWRAP_WORD; help.custom_minimum_size = Vector2(780, 0); list.add_child(help)
 	return first
+
+static func _section(list: VBoxContainer, font_bo: Font, title: String) -> void:
+	var l = _label(title, font_bo, 30, Color(0.86, 0.14, 0.1)); l.custom_minimum_size = Vector2(780, 52); l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	list.add_child(l)
 
 static func _label(text: String, f: Font, size: int, c: Color) -> Label:
 	var l = Label.new(); l.text = text; l.add_theme_font_override("font", f); l.add_theme_font_size_override("font_size", size); l.add_theme_color_override("font_color", c)

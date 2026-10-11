@@ -26,4 +26,4 @@ func say(cat: String, character := "") -> void:
 	var path = "res://assets/voice/%s_%s_%d.ogg" % [ch, cat, randi() % int(index[cat])]
 	if not ResourceLoader.exists(path): return
 	if not cache.has(path): cache[path] = load(path)
-	player.stream = cache[path]; player.volume_db = linear_to_db(max(0.001, float(GS.settings.get("sfx", 1.0)))) + 5.0; player.play()
+	player.stream = cache[path]; player.volume_db = linear_to_db(max(0.001, float(GS.settings.get("voice", 1.0)))) + 5.0; player.play()

@@ -36,6 +36,7 @@ func _burst(parent: Node, at: Vector3, n: int, color: Color, vel: float, size: f
 	get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
 
 func blood(parent: Node, at: Vector3, head: bool) -> void:
+	if not GS.settings.get("gore", true): _burst(parent, at, 4, Color(0.25, 0.25, 0.22), 1.2, 0.1, 0.4, 6.0); return   # sin sangre: polvo
 	_burst(parent, at, 10 if head else 6, Color(0.42, 0.02, 0.02), 2.6 if head else 1.6, 0.13, 0.6, 9.0, Vector3.UP, 70.0)
 
 func impact(parent: Node, at: Vector3, n: Vector3) -> void:

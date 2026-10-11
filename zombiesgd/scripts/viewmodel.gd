@@ -41,7 +41,7 @@ func _ready() -> void:
 
 static func kit_for(wid: String) -> String:
 	var c = String(Data.WEAPONS[wid].get("class", ""))
-	return "pistol" if c == "pistola" or wid == "raygun" else "rifle"
+	return "pistol" if c == "pistola" or c == "maravilla" else "rifle"
 
 ## pone el arma (cambia de brazos si hace falta) y la saca con su animación
 func set_weapon(wid: String, pap: bool) -> void:
@@ -280,7 +280,7 @@ func update(delta: float, speed: float, sprinting: bool, ads: float, reloading: 
 	# balanceo: el arma se queda un poco atrás al girar la cámara
 	sway = sway.lerp(Vector2(clamp(-look.x * 3.0, -0.06, 0.06), clamp(-look.y * 3.0, -0.05, 0.05)), min(1.0, delta * 10.0))
 	bob_t += delta * min(speed, 7.0) * (1.6 if sprinting else 1.2)
-	var bobv = Vector3(sin(bob_t) * 0.006, -abs(cos(bob_t)) * 0.006, 0.0) * min(1.0, speed / 4.0) * (1.0 - ads)
+	var bobv = Vector3(sin(bob_t) * 0.006, -abs(cos(bob_t)) * 0.006, 0.0) * min(1.0, speed / 4.0) * (1.0 - ads) * (1.0 if GS.settings.get("bob", true) else 0.15)
 	var t = base_xf
 	t.origin += ads_off * ads + bobv + Vector3(sway.x * 0.15, sway.y * 0.12, kick * 0.03)
 	if sprinting and kind == "pistol": t.origin += Vector3(0.02, -0.06, 0.0)

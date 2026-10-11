@@ -12,6 +12,7 @@ var music_track = ""
 var duck = 1.0
 
 func _ready() -> void:
+	call_deferred("apply_volumes")
 	# bus de efectos con un poco de reverberación y un compresor: los disparos suenan con cuerpo y no saturan
 	if AudioServer.get_bus_index("Efectos") < 0:
 		AudioServer.add_bus(); var b = AudioServer.bus_count - 1; AudioServer.set_bus_name(b, "Efectos"); AudioServer.set_bus_send(b, "Master")
@@ -59,6 +60,10 @@ func play_ambient(name: String) -> void:
 	ambient.stream = s; ambient.volume_db = linear_to_db(max(0.001, 0.5 * float(GS.settings.music))); ambient.play()
 
 func stop_ambient() -> void: ambient.stop(); music.stop(); music_track = ""
+
+## volumen general y de las voces
+func apply_volumes() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(max(0.001, float(GS.settings.get("master", 1.0)))))
 
 func set_ambient_volume() -> void:
 	if ambient: ambient.volume_db = linear_to_db(max(0.001, 0.5 * float(GS.settings.music)))

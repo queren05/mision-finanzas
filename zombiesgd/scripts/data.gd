@@ -50,11 +50,11 @@ const WEAPONS := {
 		"spread": 8.0, "ads_spread": 0.0, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_sniper", "reload_snd": "reload_rifle", "recoil": 5.0, "range": 200, "scope": true,
 		"pap": { "name": "Destructor", "dmg": 3000, "mag": 8, "res": 60 } },
 	# armas maravilla (solo en la caja, muy raras)
-	"raygun": { "name": "Rayo Gamba", "class": "maravilla", "model": "proc_raygun", "len": 0.42, "dmg": 1100, "head": 1.0, "rpm": 180, "mag": 20, "res": 160, "reload": 2.6,
+	"raygun": { "name": "Rayo Gamba", "class": "maravilla", "model": "raygun/scene.gltf", "orient": 0, "len": 0.36, "dmg": 1100, "head": 1.0, "rpm": 180, "mag": 20, "res": 160, "reload": 2.6,
 		"spread": 0.8, "ads_spread": 0.3, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_ray", "reload_snd": "reload_pistol", "recoil": 1.0, "range": 80,
 		"projectile": { "speed": 55.0, "splash": 1.8, "splash_dmg": 700, "color": Color(0.3, 1.0, 0.35) },
 		"pap": { "name": "Rayo Gamba Mk II", "dmg": 2600, "mag": 40, "res": 240, "projectile": { "speed": 70.0, "splash": 2.4, "splash_dmg": 1800, "color": Color(1.0, 0.25, 0.25) } } },
-	"bubble": { "name": "Burbujeador", "class": "maravilla", "model": "proc_bubble", "len": 0.62, "dmg": 0, "head": 1.0, "rpm": 70, "mag": 4, "res": 24, "reload": 3.2,
+	"bubble": { "name": "Burbujeador", "class": "maravilla", "model": "bubble/scene.gltf", "orient": 90, "len": 0.32, "dmg": 0, "head": 1.0, "rpm": 70, "mag": 4, "res": 24, "reload": 3.2,
 		"spread": 0.5, "ads_spread": 0.2, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_bubble", "reload_snd": "reload_lmg", "recoil": 2.0, "range": 60,
 		"projectile": { "speed": 16.0, "bubble": 3.0, "color": Color(0.5, 0.85, 1.0) },
 		"pap": { "name": "Burbujeador XL", "mag": 8, "res": 48, "projectile": { "speed": 20.0, "bubble": 4.5, "color": Color(1.0, 0.5, 0.9) } } },
