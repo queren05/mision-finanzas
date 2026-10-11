@@ -72,7 +72,7 @@ func _ready() -> void:
 	collision_layer = MapBuilder.LAYER_PLAYER
 	collision_mask = MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT | MapBuilder.LAYER_BARRIER | MapBuilder.LAYER_ZOMBIE
 	floor_max_angle = deg_to_rad(46); floor_snap_length = 0.45; safe_margin = 0.02
-	var cs = CollisionShape3D.new(); var cap = CapsuleShape3D.new(); cap.radius = 0.34; cap.height = 1.78; cs.shape = cap; cs.position.y = 0.89; add_child(cs)
+	var cs = CollisionShape3D.new(); var cap = CapsuleShape3D.new(); cap.radius = 0.3; cap.height = 1.75; cs.shape = cap; cs.position.y = 0.875; add_child(cs)
 	head = Node3D.new(); add_child(head); head.top_level = true   # la cabeza se coloca a mano en cada fotograma
 	cam = Camera3D.new(); cam.fov = float(GS.settings.fov); cam.near = 0.03; cam.far = 400.0; cam.current = true; head.add_child(cam)
 	vm = Viewmodel.new(); cam.add_child(vm)

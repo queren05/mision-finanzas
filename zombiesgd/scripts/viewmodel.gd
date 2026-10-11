@@ -25,6 +25,7 @@ var gun: Node3D
 var gun_id = ""
 var base_xf = Transform3D.IDENTITY   # brazos colocados respecto a la cámara
 var ads_off = Vector3.ZERO           # desplazamiento para que la mira quede en el centro al apuntar
+var ads_q = Quaternion.IDENTITY      # giro al apuntar: la línea de mira del arma, recta hacia delante
 var cur = ""
 var kick = 0.0
 var kick_v = 0.0
@@ -35,6 +36,9 @@ var muzzle_local = Vector3(0, 0, -0.5)
 var knife: Node3D
 var knife_t = 0.0
 const KNIFE_TIME := 0.42
+static var HAND_BACK := 0.06    # la mano izquierda, cuánto por detrás del frente de su arma
+static var HANDGUARD := 0.27    # el guardamanos de la nuestra, a qué parte del largo desde la boca
+static var VM_FOV := 60.0   # campo de visión con que se dibujan los brazos y el arma (igual con cualquier ajuste)
 
 func _ready() -> void:
 	holder = Node3D.new(); add_child(holder)
@@ -78,7 +82,7 @@ func _build(k: String) -> void:
 			if hide: m.set_meta("gun_part", true); continue
 			if src is BaseMaterial3D:
 				var mat: BaseMaterial3D = src.duplicate()
-				mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = 60.0
+				mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = VM_FOV
 				m.set_surface_override_material(si, mat)
 	# los brazos miran a +Z y su "ojo" es el hueso Head_Cam: se giran 180° y se inclinan para que el arma quede donde
 	# la dejó su autor pero un poco más arriba en la pantalla (como en Call of Duty)
@@ -97,6 +101,9 @@ func _build(k: String) -> void:
 	cam_basis = cam_basis * Basis(Vector3.RIGHT, deg_to_rad(float(kit.elev)))
 	base_xf = Transform3D(cam_basis, eye).affine_inverse()
 	base_xf.origin += kit.shift
+	for a in OS.get_cmdline_user_args():   # (pruebas: vmshift=x,y,z  vmrot=grados de giro hacia el centro)
+		if a.begins_with("vmshift="): var v = a.substr(8).split(","); base_xf.origin += Vector3(float(v[0]), float(v[1]), float(v[2]))
+		if a.begins_with("vmrot="): base_xf = Transform3D(Basis(Vector3.UP, deg_to_rad(float(a.substr(6)))), Vector3.ZERO) * base_xf
 	if OS.get_cmdline_user_args().has("vmdbg"): print("VM ojo ", eye, " adelante ", fwd, " arriba ", upv, " arma ", base_xf * bone_p)
 	hip_pos = base_xf * bone_p
 	holder.transform = base_xf; smooth_xf = base_xf
@@ -111,6 +118,7 @@ var gun_bone = -1
 ## centro y largo del arma que traen los brazos (con la piel aplicada como lo hace la GPU)
 func _their_center() -> Dictionary:
 	var lo = Vector3.INF; var hi = -Vector3.INF
+	var pts = PackedVector3Array()
 	var inv_h = holder.global_transform.affine_inverse()
 	for mi in arms.find_children("*", "MeshInstance3D", true, false):
 		if not mi.has_meta("gun_part"): continue
@@ -129,9 +137,20 @@ func _their_center() -> Dictionary:
 				if bone < 0: bone = skel.find_bone(skin.get_bind_name(bi))
 				if bone < 0: continue
 				var p = inv_h * (skel.global_transform * skel.get_bone_global_pose(bone) * skin.get_bind_pose(bi) * verts[vi])   # en el espacio de los brazos
-				lo = lo.min(p); hi = hi.max(p)
-	if lo == Vector3.INF: return { "center": skel.global_transform * skel.get_bone_global_pose(max(0, gun_bone)).origin, "length": 0.5 }
-	return { "center": holder.global_transform * ((lo + hi) / 2), "length": (hi - lo).z }   # los brazos miran a +Z
+				lo = lo.min(p); hi = hi.max(p); pts.append(p)
+	if lo == Vector3.INF: return { "center": skel.global_transform * skel.get_bone_global_pose(max(0, gun_bone)).origin, "length": 0.5, "dir": Vector3.ZERO }
+	# eje largo de su arma (componente principal), hacia delante (+Z de los brazos)
+	var m = Vector3.ZERO
+	for q in pts: m += q
+	m /= pts.size()
+	var cov = Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO)
+	for q in pts:
+		var d = q - m
+		cov.x += d * d.x; cov.y += d * d.y; cov.z += d * d.z
+	var v = Vector3(0, 0, 1)
+	for it in 30: v = (cov * v).normalized()
+	if v.z < 0.0: v = -v
+	return { "ext": hi - lo, "n": pts.size(), "center": holder.global_transform * ((lo + hi) / 2), "length": (hi - lo).z, "dir": (holder.global_transform.basis * v).normalized() }   # los brazos miran a +Z
 
 func _attach_gun() -> void:
 	holder.add_child(gun)
@@ -144,20 +163,46 @@ func _attach_gun() -> void:
 	if OS.get_cmdline_user_args().has("vmdbg"): print("HUESO al pegar ", skel.get_bone_global_pose(gun_bone).origin, " anim ", ap.current_animation, " pos ", ap.current_animation_position, " activo ", ap.active, " modo ", ap.callback_mode_process)
 	var theirs = _their_center()
 	var c0: Vector3 = theirs.center
-	if OS.get_cmdline_user_args().has("vmdbg"): print("SUYA centro ", c0, " largo ", theirs.length, " cámara ", hold)
+	if OS.get_cmdline_user_args().has("vmdbg"): print("SUYA centro ", c0, " largo ", theirs.length, " eje ", theirs.dir, " ext ", theirs.get("ext"), " cámara ", hold)
 	# las armas cortas se agarran más atrás que el centro de la suya; las largas, alineadas por el centro
 	var shift = -(float(theirs.length) - L) * (0.14 if kind == "rifle" else 0.0)
-	var want = Transform3D(hold, c0 + hold * Vector3(0, 0.0, -shift))
+	var basis = hold
+	var their_dir: Vector3 = theirs.dir
+	if their_dir != Vector3.ZERO: basis = Basis.looking_at(their_dir, hold.y)   # el arma con el mismo ángulo con que la sujetan las manos
+	# la mano izquierda (en la parte delantera de su arma) tiene que quedar sobre el guardamanos de la nuestra:
+	# la boca de la nuestra va un poco por delante de la mano, según su largo (las cortas no se acercan a la cara)
+	var pos = c0 + basis * Vector3(0, 0.0, -shift)
+	if kind == "rifle":
+		var fwd_v: Vector3 = -basis.z
+		var their_front: Vector3 = c0 + fwd_v * (float(theirs.length) / 2.0)
+		var hand: Vector3 = their_front - fwd_v * HAND_BACK
+		var by_hand: Vector3 = hand + fwd_v * (HANDGUARD * L - L / 2.0)
+		pos = pos.lerp(by_hand, clamp((0.95 - L) / 0.45, 0.0, 1.0))   # las largas, por el centro; las cortas, con la mano en el guardamanos
+	var vmo: Dictionary = Data.WEAPONS[gun_id].get("vm", {})   # ajuste fino de cada arma: adelante, arriba, derecha (m)
+	pos += basis * Vector3(float(vmo.get("right", 0.0)), float(vmo.get("up", 0.0)), -float(vmo.get("fwd", 0.0)))
+	var want = Transform3D(basis, pos)
 	gun_local = bone_xf.affine_inverse() * want   # respecto al hueso: así sigue la recarga y el retroceso de la animación
 	gun.global_transform = want
-	# apuntar: el centro de la parte de arriba del arma pasa al centro de la pantalla
+	# apuntar: se gira el arma para que su línea de mira apunte recto y se lleva la mira al centro de la pantalla
 	var cam_xf: Transform3D = (get_parent() as Node3D).global_transform if get_parent() is Node3D else global_transform
-	var c: Vector3 = cam_xf.affine_inverse() * want.origin
-	# al apuntar, el borde de arriba del arma queda justo por debajo de la cruz: se ve a lo que apuntas
-	var top_y = 0.05
+	var inv_cam = cam_xf.affine_inverse()
+	var f_c: Vector3 = (inv_cam.basis * (-basis.z)).normalized()
+	ads_q = Quaternion(f_c, Vector3(0, 0, -1)) if f_c.dot(Vector3(0, 0, -1)) < 0.99999 else Quaternion.IDENTITY
+	if kind == "pistol" or ads_q.get_angle() > deg_to_rad(12.0): ads_q = Quaternion.IDENTITY   # las pistolas: solo se centran
 	var ab: AABB = Guns._aabb(gun)
-	if ab.size.y > 0.0: top_y = ab.end.y
-	ads_off = Vector3(-c.x, -0.022 - top_y - c.y, 0.03)
+	# la línea de mira: el centro (mediana, para que no cuenten piezas sueltas a un lado) y lo más alto que hay justo encima
+	var pts: PackedVector3Array = Guns._points(gun)
+	var xs = Array(pts).map(func(q): return q.x); xs.sort()
+	var mx: float = xs[xs.size() / 2] if xs.size() else ab.get_center().x
+	var top = -INF   # el punto de mira: lo más alto de la mitad delantera (la culata de las escopetas no cuenta)
+	for q in pts:
+		if abs(q.x - mx) < 0.012 and q.z < ab.get_center().z: top = max(top, q.y)
+	if top == -INF: top = ab.end.y
+	top += float(Data.WEAPONS[gun_id].get("vm", {}).get("sight", 0.0))   # (miras con visor: a qué altura se mira)
+	var sight = Vector3(mx, top, ab.get_center().z)
+	var p_c: Vector3 = Basis(ads_q) * (inv_cam * (want * sight))
+	ads_off = Vector3(-p_c.x, -0.018 - p_c.y, 0.02)
+	if OS.get_cmdline_user_args().has("vmdbg"): print("MIRA ", gun_id, " aabb ", ab, " f_c ", f_c, " giro ", rad_to_deg(ads_q.get_angle()), " p_c ", p_c, " off ", ads_off)
 
 func _play(what: String, blend := 0.15, speed := 1.0) -> void:
 	if ap == null: return
@@ -202,7 +247,7 @@ func _make_knife() -> Node3D:
 			if src and String(src.resource_name).begins_with("Material"): m.visible = false; break
 			if src is BaseMaterial3D:
 				var mat: BaseMaterial3D = src.duplicate()
-				mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = 60.0
+				mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = VM_FOV
 				m.set_surface_override_material(si, mat)
 	# misma colocación que los brazos de pistola: su ojo (Head_Cam) en la cámara, mirando a +Z
 	k.transform = Transform3D.IDENTITY
@@ -220,7 +265,7 @@ func _make_knife() -> Node3D:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var mat = mi.get_active_material(0)
 		if mat is BaseMaterial3D:
-			mat = mat.duplicate(); mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = 60.0
+			mat = mat.duplicate(); mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = VM_FOV
 			mi.material_override = mat
 	var hand = Node3D.new(); k.add_child(hand); hand.add_child(blade)
 	# agarre de martillo: el mango atraviesa el puño (de los nudillos del meñique a los del índice) y la hoja
@@ -281,7 +326,7 @@ func update(delta: float, speed: float, sprinting: bool, ads: float, reloading: 
 	sway = sway.lerp(Vector2(clamp(-look.x * 3.0, -0.06, 0.06), clamp(-look.y * 3.0, -0.05, 0.05)), min(1.0, delta * 10.0))
 	bob_t += delta * min(speed, 7.0) * (1.6 if sprinting else 1.2)
 	var bobv = Vector3(sin(bob_t) * 0.006, -abs(cos(bob_t)) * 0.006, 0.0) * min(1.0, speed / 4.0) * (1.0 - ads) * (1.0 if GS.settings.get("bob", true) else 0.15)
-	var t = base_xf
+	var t = Transform3D(Basis(Quaternion.IDENTITY.slerp(ads_q, ads)), Vector3.ZERO) * base_xf
 	t.origin += ads_off * ads + bobv + Vector3(sway.x * 0.15, sway.y * 0.12, kick * 0.03)
 	if sprinting and kind == "pistol": t.origin += Vector3(0.02, -0.06, 0.0)
 	t.basis = t.basis.rotated(Vector3.UP, sway.x * 0.6).rotated(Vector3.RIGHT, -sway.y * 0.6 + kick * 0.05 - (0.35 if sprinting and kind == "pistol" else 0.0))

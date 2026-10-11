@@ -25,8 +25,7 @@ var plant_t = 0.0            # colocar cargas: segundos quieto junto a la carga 
 var obj_title: Label
 var obj_text: Label
 var radio_box: PanelContainer
-var radio_who: Label
-var radio_txt: Label
+var radio_txt: RichTextLabel
 var radio_queue: Array = []
 var radio_t = 0.0
 var radio_voice: AudioStreamPlayer
@@ -54,15 +53,20 @@ func setup(g: Node, m: Dictionary) -> void:
 	bar.add_theme_stylebox_override("fill", fill); bar.add_theme_stylebox_override("background", bg)
 	var bc = CenterContainer.new(); bc.add_child(bar); top.add_child(bc)
 	# radio abajo en el centro
+	# subtítulos de la radio: discretos, abajo en el centro, nombre en color (como en los Black Ops)
 	radio_box = PanelContainer.new(); radio_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	radio_box.offset_left = -430; radio_box.offset_right = 430; radio_box.offset_top = -190; radio_box.offset_bottom = -110
-	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0.03, 0.03, 0.04, 0.78); sb.border_color = Color(1.0, 0.55, 0.12, 0.8); sb.border_width_left = 4; sb.set_corner_radius_all(6)
-	sb.content_margin_left = 16; sb.content_margin_right = 16; sb.content_margin_top = 8; sb.content_margin_bottom = 8
+	radio_box.offset_left = -440; radio_box.offset_right = 440; radio_box.offset_top = -150; radio_box.offset_bottom = -112
+	radio_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0.42); sb.set_corner_radius_all(4)
+	sb.content_margin_left = 12; sb.content_margin_right = 12; sb.content_margin_top = 3; sb.content_margin_bottom = 4
 	radio_box.add_theme_stylebox_override("panel", sb); radio_box.mouse_filter = Control.MOUSE_FILTER_IGNORE; radio_box.visible = false; add_child(radio_box)
-	var rv = VBoxContainer.new(); radio_box.add_child(rv)
-	radio_who = Label.new(); radio_who.add_theme_font_override("font", font_bo); radio_who.add_theme_font_size_override("font_size", 20); radio_who.add_theme_color_override("font_color", Color(1.0, 0.62, 0.15)); rv.add_child(radio_who)
-	radio_txt = Label.new(); radio_txt.add_theme_font_override("font", font_ui); radio_txt.add_theme_font_size_override("font_size", 26); radio_txt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	radio_txt.add_theme_color_override("font_color", Color(0.96, 0.94, 0.9)); rv.add_child(radio_txt)
+	radio_txt = RichTextLabel.new(); radio_txt.bbcode_enabled = true; radio_txt.fit_content = true; radio_txt.scroll_active = false
+	radio_txt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; radio_txt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	radio_txt.add_theme_font_override("normal_font", font_ui); radio_txt.add_theme_font_override("bold_font", font_bo)
+	radio_txt.add_theme_font_size_override("normal_font_size", 21); radio_txt.add_theme_font_size_override("bold_font_size", 17)
+	radio_txt.add_theme_color_override("default_color", Color(0.96, 0.94, 0.9)); radio_txt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	radio_txt.add_theme_constant_override("outline_size", 4); radio_txt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	radio_box.add_child(radio_txt)
 	# marcador del objetivo (rombo con distancia; si está fuera de la pantalla, en el borde)
 	marker = _Marker.new(); marker.mission = self; marker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); marker.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(marker)
 	# columna de luz en el objetivo (se ve de lejos)
@@ -337,8 +341,8 @@ func _radio_tick(delta: float) -> void:
 	if radio_t > 0.0: return
 	if radio_queue.is_empty(): radio_box.visible = false; return
 	var l: Array = radio_queue.pop_front()
-	radio_who.text = String(l[0]); radio_txt.text = String(l[1])
-	radio_who.add_theme_color_override("font_color", Color(0.45, 0.85, 1.0) if l[0] == "COMANDO" else Color(1.0, 0.62, 0.15))
+	var col = "#73d9ff" if l[0] == "COMANDO" else ("#9fe07a" if l[0] == "PILOTO" else "#ff9e26")
+	radio_txt.text = "[b][color=%s]%s:[/color][/b]  %s" % [col, String(l[0]), String(l[1])]
 	radio_box.visible = true
 	radio_t = clamp(String(l[1]).length() * 0.065, 2.8, 7.0)
 	var id = radio_index.get(String(l[1]), "") if radio_index is Dictionary else ""

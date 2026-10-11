@@ -97,6 +97,7 @@ func _run_test() -> void:
 	var bot = args.has("bot")
 	var p: Player = game.player
 	var steps = int(t * 30.0)
+	if args.has("disable_3d"): get_viewport().disable_3d = true   # pruebas que no necesitan dibujar: mucho más rápidas
 	if args.has("dogs"): game.next_dog_round = game.round_n + 1
 	if args.has("noanim"): Engine.set_meta("noanim", true)
 	if args.has("nozombies"): game.max_alive = 0
@@ -139,6 +140,51 @@ func _run_test() -> void:
 		for i in game.doors.size(): game.evt("door", i)
 		while game.mission.step_i < int(args.mstep): game.mission._next_step()
 		await get_tree().create_timer(2.0).timeout
+	if args.has("gunsheet"):   # cada arma: de cadera y apuntando (para revisar cómo se ven)
+		var only = String(args.get("guns", "")).split(",", false)
+		game.hud.visible = true
+		for wid in Data.WEAPONS:
+			if only.size() and not wid in only: continue
+			print("ARMA ", wid); p.give_weapon(wid); p.weapons = [p.weapons[p.cur]]; p.cur = 0
+			await get_tree().create_timer(1.2).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png("%s_%s_cadera.png" % [args.gunsheet, wid])
+			Controls.touch_held["ads"] = true
+			await get_tree().create_timer(1.0).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png("%s_%s_mira.png" % [args.gunsheet, wid])
+			Controls.touch_held["ads"] = false
+			await get_tree().create_timer(0.4).timeout
+		get_tree().quit(); return
+	if args.has("doorwalk"):   # un jugador cruza ANDANDO cada puerta abierta, en los dos sentidos (física de verdad, no solo la navegación)
+		for i in game.doors.size(): game.evt("door", i)
+		await get_tree().create_timer(1.0).timeout
+		var nav = game.get_world_3d().navigation_map
+		var bad = 0
+		for i in game.doors.size():
+			var d: Node3D = game.doors[i]
+			var c = d.global_position
+			var n = d.global_transform.basis.z.normalized(); n.y = 0; n = n.normalized()
+			var a = NavigationServer3D.map_get_closest_point(nav, c + n * 3.0)
+			var b = NavigationServer3D.map_get_closest_point(nav, c - n * 3.0)
+			for pair in [[a, b], [b, a]]:
+				p.global_position = pair[0] + Vector3(0, 0.1, 0); p.velocity = Vector3.ZERO
+				await get_tree().physics_frame
+				var path = NavigationServer3D.map_get_path(nav, pair[0], pair[1], true)
+				var wi = 0; var f = 0; var best = INF
+				while f < 600 and wi < path.size():
+					await get_tree().physics_frame; f += 1
+					var to: Vector3 = path[wi] - p.global_position; to.y = 0
+					if to.length() < 0.35: wi += 1; continue
+					p.yaw = atan2(-to.x, -to.z); p.sync_head(); Controls.touch_move = Vector2(0, 0.7)
+					best = min(best, Vector2(p.global_position.x - pair[1].x, p.global_position.z - pair[1].z).length())
+				Controls.touch_move = Vector2.ZERO
+				var dist = Vector2(p.global_position.x - pair[1].x, p.global_position.z - pair[1].z).length()
+				var ok = dist < 1.0
+				if not ok: bad += 1
+				print("PUERTA %d %s %s -> %s  %s (queda a %.1f m)" % [i, str(c.snapped(Vector3.ONE * 0.1)), str(pair[0].snapped(Vector3.ONE * 0.1)), str(pair[1].snapped(Vector3.ONE * 0.1)), "PASA" if ok else "ATASCADO en " + str(p.global_position.snapped(Vector3.ONE * 0.1)), dist])
+		print("PUERTAS atascadas: ", bad)
+		get_tree().quit(); return
 	if args.has("navcheck"):   # ¿se puede llegar andando? navcheck=x,y,z;x,y,z (desde x,y,z del primero)
 		var pts = []
 		for q in String(args.navcheck).split(";"):

@@ -16,6 +16,7 @@ func _template(id: String) -> Node3D:
 	var holder = Node3D.new(); holder.add_child(src)
 	if d.has("orient"): src.rotation_degrees.y = float(d.orient)   # modelos que ya vienen bien (o solo girados): sin adivinar
 	else: _orient(src, d)
+	_drop_loose(holder)
 	# centrar y escalar al largo real
 	var b = _aabb(holder)
 	var s = float(d.len) / max(0.001, b.size.z)
@@ -25,6 +26,31 @@ func _template(id: String) -> Node3D:
 	MapBuilder.merge_model(holder, 14000)   # las armas de Sketchfab traen decenas de piezas (y hasta 60 000 triángulos)
 	cache[id] = holder
 	return holder
+
+## quita piezas sueltas que algunos modelos traen al lado del arma (cartuchos, balas): descolocan el centro y la mira
+func _drop_loose(holder: Node3D) -> void:
+	var pts = _points(holder)
+	if pts.size() < 10: return
+	var xs = Array(pts).map(func(q): return q.x); xs.sort()
+	var ys = Array(pts).map(func(q): return q.y); ys.sort()
+	var mx: float = xs[xs.size() / 2]; var my: float = ys[ys.size() / 2]
+	var lo = Vector3.INF; var hi = -Vector3.INF
+	for q in pts: lo = lo.min(q); hi = hi.max(q)
+	var span = max(hi.x - lo.x, hi.y - lo.y)
+	for m in holder.find_children("*", "MeshInstance3D", true, false):
+		var mp = PackedVector3Array()
+		var xf = _rel_xform(m, holder)
+		for si in m.mesh.get_surface_count():
+			for v in m.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]: mp.append(xf * v)
+		if mp.is_empty(): continue
+		var c = Vector3.ZERO
+		for q in mp: c += q
+		c /= mp.size()
+		var nm = String(holder.get_path_to(m)).to_lower()
+		var loose = abs(c.x - mx) > span * 0.3 or abs(c.y - my) > span * 0.8
+		for k in ["12gauge", "shell", "bullet", "cartridge", "casing"]:
+			if nm.contains(k): loose = true
+		if loose: m.get_parent().remove_child(m); m.queue_free()
 
 func _points(n: Node3D) -> PackedVector3Array:
 	var pts = PackedVector3Array()
@@ -104,7 +130,7 @@ func make_view(id: String, pap: bool) -> Node3D:
 			var src_mat = mi.get_active_material(si)
 			var mat: StandardMaterial3D = src_mat.duplicate() if src_mat is StandardMaterial3D else StandardMaterial3D.new()
 			mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12          # no se mete en las paredes
-			mat.use_fov_override = true; mat.fov_override = 60.0           # mismo tamaño con cualquier campo de visión
+			mat.use_fov_override = true; mat.fov_override = Viewmodel.VM_FOV           # mismo tamaño con cualquier campo de visión
 			if camo.id != "none":
 				mat.albedo_color = mat.albedo_color * camo.color
 				mat.metallic = max(mat.metallic, camo.metal); mat.roughness = min(mat.roughness, camo.rough) if camo.metal > 0.5 else mat.roughness
