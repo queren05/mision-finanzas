@@ -201,6 +201,66 @@ func _run_test() -> void:
 				await get_tree().physics_frame
 				if f % 30 == 0: print("ANDA ", p.global_position.snapped(Vector3.ONE * 0.01), " vel ", p.velocity.snapped(Vector3.ONE * 0.01), " suelo ", p.is_on_floor(), " pared ", p.is_on_wall(), " ", str(p.get_last_slide_collision().get_collider().get_path()) if p.get_last_slide_collision() else "")
 		get_tree().quit(); return
+	if args.has("leaks"):   # huecos para salirse del mapa: por el borde de cada zona, ¿hay algo que pare al jugador?
+		for zid in game.zones: game.zones[zid].open = true   # navegación entera, pero las puertas siguen cerradas
+		game._update_nav()
+		await get_tree().create_timer(1.0).timeout
+		var boxes = []; var bzone = []
+		for z in game.cfg.zones:
+			for b in z.boxes: boxes.append(AABB(Vector3(b[0], b[1], b[2]), Vector3(b[3] - b[0], b[4] - b[1], b[5] - b[2]))); bzone.append(z.id)
+		var doorbox = []
+		for nb in MapBuilder.nav_boxes(game.cfg): if String(nb.id).begins_with("door_"): doorbox.append(nb.aabb.grow(0.6))
+		var zone_of = func(pt: Vector3) -> String:
+			for k in boxes.size():
+				var bb: AABB = boxes[k]
+				if pt.x > bb.position.x - 0.05 and pt.x < bb.end.x + 0.05 and pt.z > bb.position.z - 0.05 and pt.z < bb.end.z + 0.05: return bzone[k]
+			return ""
+		var in_door = func(pt: Vector3) -> bool:
+			for db in doorbox:
+				if pt.x > db.position.x and pt.x < db.end.x and pt.z > db.position.z and pt.z < db.end.z: return true
+			return false
+		var space = game.get_world_3d().direct_space_state; var nav = game.get_world_3d().navigation_map
+		var found = 0; var cands = []
+		for bi in boxes.size():
+			var bb: AABB = boxes[bi]
+			var edges = [[bb.position.x, bb.position.z, bb.end.x, bb.position.z, Vector3(0, 0, -1)], [bb.position.x, bb.end.z, bb.end.x, bb.end.z, Vector3(0, 0, 1)],
+				[bb.position.x, bb.position.z, bb.position.x, bb.end.z, Vector3(-1, 0, 0)], [bb.end.x, bb.position.z, bb.end.x, bb.end.z, Vector3(1, 0, 0)]]
+			for e in edges:
+				var n = int(Vector2(e[2] - e[0], e[3] - e[1]).length() / 0.5)
+				for i in n + 1:
+					var ft = float(i) / max(1, n)
+					var pt = Vector3(lerp(e[0], e[2], ft), 0, lerp(e[1], e[3], ft)) - e[4] * 0.6
+					var q = NavigationServer3D.map_get_closest_point(nav, pt + Vector3(0, 1, 0))
+					if args.has("leakdbg") and abs(pt.x - 15.0) < 0.3 and abs(pt.z - 6.4) < 0.4: print("DBG pt ", pt, " q ", q, " zona ", bzone[bi], " out ", pt + e[4] * 2.6, " -> ", zone_of.call(pt + e[4] * 2.6))
+					if q.distance_to(Vector3(pt.x, q.y, pt.z)) > 0.5: continue   # ahí no se puede estar
+					var out = pt + e[4] * 2.6
+					var oz: String = zone_of.call(out)
+					if oz == bzone[bi] or in_door.call(out) or in_door.call(pt): continue   # misma zona o por una puerta
+					var hit = false
+					for h in [0.5, 1.2]:
+						var rq = PhysicsRayQueryParameters3D.create(Vector3(pt.x, q.y + h, pt.z), Vector3(out.x, q.y + h, out.z), MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT | MapBuilder.LAYER_BARRIER)
+						if not space.intersect_ray(rq).is_empty(): hit = true
+					if not hit: cands.append([Vector3(pt.x, q.y, pt.z), e[4], bzone[bi], oz, bb])
+		# cada candidato se comprueba andando de verdad hacia fuera (uno cada 1,5 m)
+		var last = Vector3.INF
+		for c in cands:
+			if last != Vector3.INF and c[0].distance_to(last) < 1.5: continue
+			last = c[0]
+			p.global_position = c[0] + Vector3(0, 0.15, 0); p.velocity = Vector3.ZERO
+			await get_tree().physics_frame
+			var dv: Vector3 = c[1]
+			for f in 150:
+				p.yaw = atan2(-dv.x, -dv.z); p.sync_head(); Controls.touch_move = Vector2(0, 1.0)
+				await get_tree().physics_frame
+			Controls.touch_move = Vector2.ZERO
+			var bb: AABB = c[4]; var pp = p.global_position
+			var outside = max(max(bb.position.x - pp.x, pp.x - bb.end.x), max(bb.position.z - pp.z, pp.z - bb.end.z))
+			if outside > 3.0:
+				var oz: String = zone_of.call(pp)
+				if oz != c[2] and not in_door.call(pp):
+					found += 1; print("HUECO en ", c[0].snapped(Vector3.ONE * 0.1), " hacia ", dv, " (zona ", c[2], " -> ", oz if oz != "" else "FUERA DEL MAPA", ") llega a ", pp.snapped(Vector3.ONE * 0.1))
+		print("HUECOS: ", found)
+		get_tree().quit(); return
 	if args.has("navcheck"):   # ¿se puede llegar andando? navcheck=x,y,z;x,y,z (desde x,y,z del primero)
 		var pts = []
 		for q in String(args.navcheck).split(";"):

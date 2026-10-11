@@ -1,0 +1,11 @@
+Model Information:
+* title:	Red Brick Pile Rubble Debris
+* source:	https://sketchfab.com/3d-models/red-brick-pile-rubble-debris-a61ea99ff8da40c8998741afb8a57a84
+* author:	SPACESCAN (https://sketchfab.com/spacescan)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Red Brick Pile Rubble Debris" (https://sketchfab.com/3d-models/red-brick-pile-rubble-debris-a61ea99ff8da40c8998741afb8a57a84) by SPACESCAN (https://sketchfab.com/spacescan) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

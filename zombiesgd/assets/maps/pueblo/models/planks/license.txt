@@ -1,0 +1,11 @@
+Model Information:
+* title:	PBR Debris trash wood planks  Pile Factory Scan
+* source:	https://sketchfab.com/3d-models/pbr-debris-trash-wood-planks-pile-factory-scan-659a7206daec4a968c35a71bbb4768aa
+* author:	Per's Scan Collection (https://sketchfab.com/perz_scans)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "PBR Debris trash wood planks  Pile Factory Scan" (https://sketchfab.com/3d-models/pbr-debris-trash-wood-planks-pile-factory-scan-659a7206daec4a968c35a71bbb4768aa) by Per's Scan Collection (https://sketchfab.com/perz_scans) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

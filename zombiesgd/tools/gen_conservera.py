@@ -55,7 +55,7 @@ box(3.0, LAB_H, -24.6, 22.4, 0.3, 19.2, "concrete")            # techo
 box(3.0, 0.0, -24.6, 21.6, 0.03, 18.8, "white", 0, False)      # suelo de baldosa
 # vallas de tablones entre el muelle y el patio / los depósitos (con su puerta)
 def fence(x0, z0, x1, z1, h=2.6): wall(x0, z0, x1, z1, h, "wood", 0.2)
-fence(-38.3, 19.0, -34.0, 19.0); fence(-26.0, 19.0, -21.9, 19.0)
+fence(-38.3, 19.0, -34.0, 19.0); fence(-26.0, 19.0, -21.0, 19.0); fence(-21.0, 19.0, -21.0, 18.1)
 fence(7.8, 19.0, 12.0, 19.0); fence(20.0, 19.0, 41.3, 19.0)
 
 # ------------------------------------------------------------------ dentro de la nave: líneas de procesado
@@ -76,6 +76,7 @@ prop("container", (-30.0, 0, -11.5), 90, 0.47, max_tris=3000)
 prop("container", (-30.0, 2.8, -14.7), 90, 0.47, max_tris=3000)
 prop("container", (-16.0, 0, -22.5), 0, 0.47, max_tris=3000)
 prop("container", (-33.5, 0, 6.0), 0, 0.47, max_tris=3000)
+prop("container", (-17.4, 0, 2.2), 0, 0.55, max_tris=3000)        # tapa los dos portones de la nave sin puerta
 prop("forklift", (-15.0, 0, -8.0), 30, 0.01)
 prop("barrels", (-36.5, 0, -2.0), 0, 1.0, max_tris=2500)
 prop("barrels", (-12.0, 0, -24.5), 90, 1.0, max_tris=2500)

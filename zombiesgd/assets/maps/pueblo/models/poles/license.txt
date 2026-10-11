@@ -1,0 +1,11 @@
+Model Information:
+* title:	Telephone Poles
+* source:	https://sketchfab.com/3d-models/telephone-poles-a76b68b838424a89b7db8a38f4c3d546
+* author:	Caboose3d (https://sketchfab.com/caboose3d)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Telephone Poles" (https://sketchfab.com/3d-models/telephone-poles-a76b68b838424a89b7db8a38f4c3d546) by Caboose3d (https://sketchfab.com/caboose3d) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

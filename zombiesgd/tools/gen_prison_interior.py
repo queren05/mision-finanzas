@@ -148,6 +148,8 @@ light(55.0, F + 4.2, -36.0, 8.0, 0.9)
 
 # ------------------------------------------------------------------ al mapa
 cfg["textures"] = "res://assets/maps/prison/extra/"
+# huecos al final de las verjas laterales del patio norte (se colaba uno sin pagar la puerta)
+for x in (12.6, 66.5): build.append({"t": "box", "p": [x, 0, -23.4], "s": [0.6, 3.0, 1.2], "r": 0, "m": "metal", "c": True, "inv": True})
 cfg["props"] = props
 cfg["build"] = build
 cfg["hide"] = cfg.get("hide", []) + ["Jail_walls_mat", "Jail_pole_mat"]

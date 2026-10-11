@@ -183,6 +183,18 @@
    "max_tris": 3000
   },
   {
+   "scene": "res://assets/maps/conservera/models/container/scene.gltf",
+   "name": "container",
+   "pos": [
+    -17.4,
+    0,
+    2.2
+   ],
+   "rot": 0,
+   "scale": 0.55,
+   "max_tris": 3000
+  },
+  {
    "scene": "res://assets/maps/conservera/models/forklift/scene.gltf",
    "name": "forklift",
    "pos": [
@@ -1090,16 +1102,32 @@
   {
    "t": "box",
    "p": [
-    -23.95,
+    -23.5,
     0,
     19.0
    ],
    "s": [
     0.2,
     2.6,
-    4.1
+    5.0
    ],
    "r": 90.0,
+   "m": "wood",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -21.0,
+    0,
+    18.55
+   ],
+   "s": [
+    0.2,
+    2.6,
+    0.9
+   ],
+   "r": 180.0,
    "m": "wood",
    "c": true
   },

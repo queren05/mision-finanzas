@@ -1,0 +1,11 @@
+Model Information:
+* title:	General Store
+* source:	https://sketchfab.com/3d-models/general-store-9ddf3d7402c64543a820cecebcc639b2
+* author:	sixpence (https://sketchfab.com/sixpence)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "General Store" (https://sketchfab.com/3d-models/general-store-9ddf3d7402c64543a820cecebcc639b2) by sixpence (https://sketchfab.com/sixpence) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

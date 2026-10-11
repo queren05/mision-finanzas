@@ -5,29 +5,76 @@
    "scene": "res://assets/maps/pueblo/models/bank/scene.gltf",
    "name": "bank",
    "pos": [
-    14.0,
+    11.6,
     0,
-    -13.2
+    -11.66
    ],
    "rot": 0,
    "scale": 1.0
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/general_store/scene.gltf",
+   "name": "general_store",
+   "pos": [
+    23.6,
+    0,
+    -12.0
+   ],
+   "rot": 0,
+   "scale": 0.025
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/storefront/scene.gltf",
+   "name": "storefront",
+   "pos": [
+    34.2,
+    0,
+    -7.7
+   ],
+   "rot": 0,
+   "scale": 0.01,
+   "max_tris": 6000
   },
   {
    "scene": "res://assets/maps/pueblo/models/brick_shop/scene.gltf",
    "name": "brick_shop",
    "pos": [
-    33.5,
+    49.2,
     -4.47,
-    -10.1
+    -10.4
    ],
    "rot": 0,
    "scale": 1.0
   },
   {
+   "scene": "res://assets/maps/pueblo/models/wood_store/scene.gltf",
+   "name": "wood_store",
+   "pos": [
+    11.9,
+    0,
+    -23.0
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 6000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/dumpster/scene.gltf",
+   "name": "dumpster",
+   "pos": [
+    9.4,
+    0,
+    -33.0
+   ],
+   "rot": 90,
+   "scale": 0.03,
+   "max_tris": 3000
+  },
+  {
    "scene": "res://assets/maps/pueblo/models/saloon_interior/scene.gltf",
    "name": "saloon_interior",
    "pos": [
-    -11.04,
+    -9.54,
     0,
     -5.8
    ],
@@ -38,23 +85,34 @@
    "scene": "res://assets/maps/pueblo/models/old_buildings/scene.gltf",
    "name": "old_buildings",
    "pos": [
-    -30.5,
+    -28.6,
     0,
-    -12.0
+    -10.6
    ],
    "rot": -90,
    "scale": 1.0
   },
   {
+   "scene": "res://assets/maps/pueblo/models/general_store/scene.gltf",
+   "name": "almacen_norte",
+   "pos": [
+    -12.0,
+    0,
+    -32.0
+   ],
+   "rot": 90,
+   "scale": 0.025
+  },
+  {
    "scene": "res://assets/maps/pueblo/models/diner/scene.gltf",
    "name": "diner",
    "pos": [
-    -20.5,
+    -21.1,
     0,
-    14.8
+    14.5
    ],
    "rot": 180,
-   "scale": 1.0,
+   "scale": 1.12,
    "nocollide": [
     "Napkin",
     "ketchup",
@@ -68,11 +126,36 @@
     "MENU",
     "Paper",
     "Tray",
-    "Glass",
     "Lights",
     "Coffee",
     "Tumbler"
+   ],
+   "soft": [
+    "Glass"
    ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/saloon_exterior/scene.gltf",
+   "name": "saloon_exterior",
+   "pos": [
+    -39.0,
+    3.87,
+    11.8
+   ],
+   "rot": 180,
+   "scale": 5.0
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/wood_store/scene.gltf",
+   "name": "casa_sur",
+   "pos": [
+    -11.9,
+    0,
+    35.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "max_tris": 6000
   },
   {
    "scene": "res://assets/maps/pueblo/models/gas/scene.gltf",
@@ -89,9 +172,9 @@
    "scene": "res://assets/maps/pueblo/models/fire_station/scene.gltf",
    "name": "fire_station",
    "pos": [
+    2.0,
     0,
-    0,
-    -50.5
+    -50.9
    ],
    "rot": 0,
    "scale": 1.0
@@ -100,7 +183,7 @@
    "scene": "res://assets/maps/pueblo/models/church/scene.gltf",
    "name": "church",
    "pos": [
-    -49.0,
+    -51.0,
     3.12,
     0
    ],
@@ -119,33 +202,493 @@
    "scale": 0.0065
   },
   {
-   "scene": "res://assets/maps/pueblo/models/saloon_exterior/scene.gltf",
-   "name": "saloon_exterior",
-   "pos": [
-    -36.0,
-    3.87,
-    14.0
-   ],
-   "rot": 180,
-   "scale": 5.0
-  },
-  {
    "scene": "res://assets/maps/pueblo/models/water_tower/scene.gltf",
    "name": "water_tower",
    "pos": [
-    -44.0,
+    -46.0,
     0,
-    -42.0
+    -40.0
    ],
    "rot": 0,
    "scale": 0.5,
    "collide": false
   },
   {
+   "scene": "res://assets/maps/pueblo/models/storefront/scene.gltf",
+   "name": "fondo_este",
+   "pos": [
+    64.0,
+    0,
+    0.0
+   ],
+   "rot": -90,
+   "scale": 0.01,
+   "max_tris": 6000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/general_store/scene.gltf",
+   "name": "fondo_este2",
+   "pos": [
+    70.0,
+    0,
+    13.0
+   ],
+   "rot": -90,
+   "scale": 0.025
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    7.2,
+    0,
+    -13.55
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.4142201834862385
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    7.2,
+    0,
+    -32.8
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.5137614678899082
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    15.7,
+    0,
+    -7.1
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.03853211009174315
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    31.4,
+    0,
+    -7.1
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.025688073394495435
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -7.2,
+    0,
+    -24.05
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.12522935779816508
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -7.2,
+    0,
+    -39.6
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.07706422018348619
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -16.75,
+    0,
+    -7.2
+   ],
+   "rot": -90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.07385321100917427
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -42.5,
+    0,
+    -7.2
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.2568807339449541
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -45.05,
+    0,
+    7.2
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.09311926605504582
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    14.65,
+    0,
+    7.3
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.47201834862385317
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    7.3,
+    0,
+    14.075
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.435091743119266
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    7.3,
+    0,
+    27.625
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.435091743119266
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -7.4,
+    0,
+    17.325
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.3098623853211009
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -7.4,
+    0,
+    26.975
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.3098623853211009
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -7.4,
+    0,
+    39.25
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.17660550458715593
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    7.4,
+    0,
+    38.2
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.24403669724770644
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -9.85,
+    0,
+    12.5
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.1573394495412844
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -32.55,
+    0,
+    7.2
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.11238532110091731
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -30.8,
+    0,
+    9.8
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.16697247706422016
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    -23.0,
+    0,
+    9.4
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.14128440366972475
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    59.55,
+    0,
+    7.2
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.06743119266055049
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    58.5,
+    0,
+    14.0
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.436697247706422
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    58.5,
+    0,
+    27.6
+   ],
+   "rot": 0.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.436697247706422
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    13.59,
+    0,
+    34.4
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.32045871559633027
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    23.57,
+    0,
+    34.4
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.32045871559633027
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    33.55,
+    0,
+    34.4
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.32045871559633027
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    43.53,
+    0,
+    34.4
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.32045871559633027
+   ],
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/chainlink/scene.gltf",
+   "name": "chainlink",
+   "pos": [
+    53.51,
+    0,
+    34.4
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.35,
+    0.35,
+    0.32045871559633027
+   ],
+   "collide": false
+  },
+  {
    "scene": "res://assets/maps/pueblo/models/police_cars_burned/scene.gltf",
    "name": "police_cars_burned",
    "pos": [
-    -3.0,
+    -2.5,
     0,
     -15.0
    ],
@@ -158,16 +701,342 @@
    "pos": [
     16.0,
     0,
-    2.5
+    2.2
    ],
    "rot": -75,
    "scale": 0.016
   },
   {
+   "scene": "res://assets/maps/pueblo/models/crashed_car/scene.gltf",
+   "name": "crashed_car",
+   "pos": [
+    -15.0,
+    0,
+    3.0
+   ],
+   "rot": 115,
+   "scale": 0.6,
+   "max_tris": 3500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/crashed_car/scene.gltf",
+   "name": "crashed_car",
+   "pos": [
+    2.5,
+    0,
+    30.0
+   ],
+   "rot": -10,
+   "scale": 0.6,
+   "max_tris": 3500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/crashed_car/scene.gltf",
+   "name": "crashed_car",
+   "pos": [
+    40.0,
+    0,
+    -2.0
+   ],
+   "rot": 70,
+   "scale": 0.6,
+   "max_tris": 3500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/bus/scene.gltf",
+   "name": "bus",
+   "pos": [
+    -2.6,
+    0,
+    -34.0
+   ],
+   "rot": 8,
+   "scale": 1.0,
+   "max_tris": 6000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/sandbags/scene.gltf",
+   "name": "sandbags",
+   "pos": [
+    -4.6,
+    0,
+    15.5
+   ],
+   "rot": 90,
+   "scale": 0.55,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/sandbags/scene.gltf",
+   "name": "sandbags",
+   "pos": [
+    14.0,
+    0,
+    4.4
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/barriers/scene.gltf",
+   "name": "barriers",
+   "pos": [
+    -20.0,
+    0,
+    -4.4
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "max_tris": 3500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/barriers/scene.gltf",
+   "name": "barriers",
+   "pos": [
+    3.0,
+    0,
+    -20.5
+   ],
+   "rot": 180,
+   "scale": 1.0,
+   "max_tris": 3500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/police_sign/scene.gltf",
+   "name": "police_sign",
+   "pos": [
+    -3.0,
+    0.88,
+    20.6
+   ],
+   "rot": 0,
+   "scale": 0.012
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/police_sign/scene.gltf",
+   "name": "police_sign",
+   "pos": [
+    24.0,
+    0.88,
+    5.8
+   ],
+   "rot": 90,
+   "scale": 0.012
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    -6.0,
+    0,
+    -9.5
+   ],
+   "rot": 0,
+   "scale": 0.929533105933265,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    5.8,
+    0,
+    11.0
+   ],
+   "rot": 40,
+   "scale": 0.8603396695698008,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    -26.0,
+    0,
+    5.2
+   ],
+   "rot": 10,
+   "scale": 1.0603737892159415,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    30.0,
+    0,
+    -5.4
+   ],
+   "rot": 0,
+   "scale": 0.8289745146670171,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    -5.6,
+    0,
+    26.0
+   ],
+   "rot": 70,
+   "scale": 1.0143528017226757,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/rubble/scene.gltf",
+   "name": "rubble",
+   "pos": [
+    4.5,
+    0,
+    -27.5
+   ],
+   "rot": 20,
+   "scale": 0.9462755667650342,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/planks/scene.gltf",
+   "name": "planks",
+   "pos": [
+    -25.9,
+    0,
+    5.6
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "collide": false,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/planks/scene.gltf",
+   "name": "planks",
+   "pos": [
+    10.6,
+    0,
+    5.6
+   ],
+   "rot": 30,
+   "scale": 1.0,
+   "collide": false,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/planks/scene.gltf",
+   "name": "planks",
+   "pos": [
+    -48.4,
+    0,
+    -5.2
+   ],
+   "rot": 60,
+   "scale": 1.0,
+   "collide": false,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/planks/scene.gltf",
+   "name": "planks",
+   "pos": [
+    -7.4,
+    0,
+    -38.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "collide": false,
+   "max_tris": 3000
+  },
+  {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    -7.4,
+    -8.0,
+    0.12,
+    -7.6
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    8.2,
+    0.12,
+    7.6
+   ],
+   "rot": 180,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -30.0,
+    0.12,
+    6.3
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    44.0,
+    0.12,
+    -6.2
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    6.3,
+    0.12,
+    -18.0
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -6.3,
+    0.12,
+    18.0
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "only": [
+    "Bin_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -7.6,
     0.12,
     -18.0
    ],
@@ -181,11 +1050,11 @@
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    7.4,
+    7.6,
     0.12,
     18.0
    ],
-   "rot": 180,
+   "rot": 0,
    "scale": 0.5,
    "only": [
     "Hydrant"
@@ -197,9 +1066,9 @@
    "pos": [
     -18.0,
     0.12,
-    7.4
+    7.6
    ],
-   "rot": 90,
+   "rot": 0,
    "scale": 0.5,
    "only": [
     "Hydrant"
@@ -211,9 +1080,9 @@
    "pos": [
     18.0,
     0.12,
-    -7.4
+    -7.6
    ],
-   "rot": -90,
+   "rot": 0,
    "scale": 0.5,
    "only": [
     "Hydrant"
@@ -223,205 +1092,351 @@
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    -6.6,
-    0,
-    -40.6
+    -40.0,
+    0.12,
+    -6.3
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Hydrant"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    50.0,
+    0.12,
+    6.3
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "Hydrant"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    6.2,
+    0.12,
+    -12.0
    ],
    "rot": 180,
    "scale": 0.5,
    "only": [
-    "concrete_barrier"
+    "trashbag"
    ]
   },
   {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    -3.3,
-    0,
-    -40.6
+    -6.2,
+    0.12,
+    12.5
    ],
    "rot": 0,
    "scale": 0.5,
    "only": [
-    "concrete_barrier"
+    "trashbag"
    ]
   },
   {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    0.0,
-    0,
-    -40.6
+    15.0,
+    0.12,
+    6.4
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "trashbag"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -20.0,
+    0.12,
+    -6.3
+   ],
+   "rot": 0,
+   "scale": 0.5,
+   "only": [
+    "trashbag"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    37.0,
+    0.12,
+    6.4
    ],
    "rot": 180,
    "scale": 0.5,
    "only": [
-    "concrete_barrier"
+    "trashbag"
    ]
   },
   {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    3.3,
-    0,
-    -40.6
+    10.2,
+    0.12,
+    5.8
    ],
    "rot": 0,
    "scale": 0.5,
    "only": [
-    "concrete_barrier"
+    "Barrel_"
    ]
   },
   {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    6.6,
-    0,
-    -40.6
+    -29.0,
+    0.12,
+    -6.0
    ],
    "rot": 0,
    "scale": 0.5,
    "only": [
-    "concrete_barrier"
+    "Barrel_"
    ]
   },
   {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    -44.6,
+    -6.4,
+    0.12,
+    6.4
+   ],
+   "rot": 45,
+   "scale": 0.5,
+   "only": [
+    "stop_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    6.4,
+    0.12,
+    -6.4
+   ],
+   "rot": 225,
+   "scale": 0.5,
+   "only": [
+    "stop_"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/mailbox/scene.gltf",
+   "name": "mailbox",
+   "pos": [
+    -6.2,
+    0.12,
+    -14.0
+   ],
+   "rot": 90,
+   "scale": 0.25
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/bench/scene.gltf",
+   "name": "bench",
+   "pos": [
+    27.0,
+    0.57,
+    -6.2
+   ],
+   "rot": 0,
+   "scale": 0.6
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/bench/scene.gltf",
+   "name": "bench",
+   "pos": [
+    -26.0,
+    0.57,
+    6.2
+   ],
+   "rot": 180,
+   "scale": 0.6
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/dead_trees/scene.gltf",
+   "name": "dead_trees",
+   "pos": [
+    -44.0,
+    0,
+    -14.0
+   ],
+   "rot": 30,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/dead_trees/scene.gltf",
+   "name": "dead_trees",
+   "pos": [
+    14.0,
+    0,
+    40.0
+   ],
+   "rot": 289,
+   "scale": 0.8,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/dead_trees/scene.gltf",
+   "name": "dead_trees",
+   "pos": [
+    -20.0,
+    0,
+    40.0
+   ],
+   "rot": 63,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/old_tree/scene.gltf",
+   "name": "old_tree",
+   "pos": [
+    -40.0,
+    0,
+    30.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/poles/scene.gltf",
+   "name": "poles",
+   "pos": [
+    -22.0,
     0,
     -6.6
    ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "rot": 0,
+   "scale": 0.3,
+   "collide": false,
+   "max_tris": 2500
   },
   {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
+   "scene": "res://assets/maps/pueblo/models/poles/scene.gltf",
+   "name": "poles",
    "pos": [
-    -44.6,
-    0,
-    -3.3
-   ],
-   "rot": 270,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    -44.6,
-    0,
-    0.0
-   ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    -44.6,
-    0,
-    3.3
-   ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    -44.6,
+    22.0,
     0,
     6.6
    ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "rot": 0,
+   "scale": 0.3,
+   "collide": false,
+   "max_tris": 2500
   },
   {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
+   "scene": "res://assets/maps/pueblo/models/poles/scene.gltf",
+   "name": "poles",
    "pos": [
     -6.6,
     0,
-    40.6
+    -30.0
    ],
-   "rot": 0,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "rot": 90,
+   "scale": 0.3,
+   "collide": false,
+   "max_tris": 2500
   },
   {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    -3.3,
-    0,
-    40.6
-   ],
-   "rot": 180,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    0.0,
-    0,
-    40.6
-   ],
-   "rot": 180,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    3.3,
-    0,
-    40.6
-   ],
-   "rot": 0,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
+   "scene": "res://assets/maps/pueblo/models/poles/scene.gltf",
+   "name": "poles",
    "pos": [
     6.6,
     0,
-    40.6
+    25.0
+   ],
+   "rot": 90,
+   "scale": 0.3,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -46.5,
+    0,
+    -3.2
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "only": [
+    "concrete_barrier"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -46.5,
+    0,
+    3.2
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "only": [
+    "concrete_barrier"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/barriers/scene.gltf",
+   "name": "barriers",
+   "pos": [
+    -46.5,
+    0,
+    0
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "max_tris": 3500,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    -3.2,
+    0,
+    41.6
+   ],
+   "rot": 180,
+   "scale": 0.5,
+   "only": [
+    "concrete_barrier"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
+   "name": "street_pack",
+   "pos": [
+    3.2,
+    0,
+    41.6
    ],
    "rot": 0,
    "scale": 0.5,
@@ -430,12 +1445,25 @@
    ]
   },
   {
+   "scene": "res://assets/maps/pueblo/models/barriers/scene.gltf",
+   "name": "barriers",
+   "pos": [
+    0,
+    0,
+    41.6
+   ],
+   "rot": 180,
+   "scale": 1.0,
+   "max_tris": 3500,
+   "collide": false
+  },
+  {
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    58.6,
+    60.5,
     0,
-    -6.6
+    -3.2
    ],
    "rot": 90,
    "scale": 0.5,
@@ -447,57 +1475,53 @@
    "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
    "name": "street_pack",
    "pos": [
-    58.6,
+    60.5,
     0,
-    -3.3
+    3.2
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "only": [
+    "concrete_barrier"
+   ]
+  },
+  {
+   "scene": "res://assets/maps/pueblo/models/barriers/scene.gltf",
+   "name": "barriers",
+   "pos": [
+    60.5,
+    0,
+    0
    ],
    "rot": 270,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "scale": 1.0,
+   "max_tris": 3500,
+   "collide": false
   },
   {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
+   "scene": "res://assets/maps/pueblo/models/sandbags/scene.gltf",
+   "name": "sandbags",
    "pos": [
-    58.6,
+    -44.0,
     0,
-    0.0
+    3.0
    ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "rot": 0,
+   "scale": 0.8,
+   "max_tris": 3000,
+   "collide": false
   },
   {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
+   "scene": "res://assets/maps/pueblo/models/crashed_car/scene.gltf",
+   "name": "crashed_car",
    "pos": [
-    58.6,
+    57.0,
     0,
-    3.3
+    -3.0
    ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
-  },
-  {
-   "scene": "res://assets/maps/pueblo/models/street_pack/scene.gltf",
-   "name": "street_pack",
-   "pos": [
-    58.6,
-    0,
-    6.6
-   ],
-   "rot": 90,
-   "scale": 0.5,
-   "only": [
-    "concrete_barrier"
-   ]
+   "rot": 160,
+   "scale": 0.6,
+   "max_tris": 3500
   }
  ],
  "build": [
@@ -509,9 +1533,9 @@
     0
    ],
    "s": [
-    160.0,
+    164.0,
     0.3,
-    160.0
+    164.0
    ],
    "r": 0,
    "m": "burned",
@@ -520,14 +1544,14 @@
   {
    "t": "box",
    "p": [
-    0,
+    6,
     0,
     0
    ],
    "s": [
-    120.0,
+    124.0,
     0.02,
-    10.0
+    9.0
    ],
    "r": 0,
    "m": "asphalt",
@@ -541,9 +1565,9 @@
     0
    ],
    "s": [
-    10.0,
+    9.0,
     0.02,
-    120.0
+    124.0
    ],
    "r": 0,
    "m": "asphalt",
@@ -552,14 +1576,14 @@
   {
    "t": "box",
    "p": [
-    -32.5,
+    -33.25,
     0,
-    -6.65
+    -5.75
    ],
    "s": [
-    55.0,
+    57.5,
     0.12,
-    3.3
+    2.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -568,14 +1592,14 @@
   {
    "t": "box",
    "p": [
-    -6.65,
+    -5.75,
     0,
-    -32.5
+    -33.25
    ],
    "s": [
-    3.3,
+    2.5,
     0.12,
-    55.0
+    57.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -584,14 +1608,14 @@
   {
    "t": "box",
    "p": [
-    -32.5,
+    -33.25,
     0,
-    6.65
+    5.75
    ],
    "s": [
-    55.0,
+    57.5,
     0.12,
-    3.3
+    2.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -600,14 +1624,14 @@
   {
    "t": "box",
    "p": [
-    -6.65,
+    -5.75,
     0,
-    32.5
+    33.25
    ],
    "s": [
-    3.3,
+    2.5,
     0.12,
-    55.0
+    57.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -616,14 +1640,14 @@
   {
    "t": "box",
    "p": [
-    32.5,
+    39.25,
     0,
-    -6.65
+    -5.75
    ],
    "s": [
-    55.0,
+    69.5,
     0.12,
-    3.3
+    2.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -632,14 +1656,14 @@
   {
    "t": "box",
    "p": [
-    6.65,
+    5.75,
     0,
-    -32.5
+    -33.25
    ],
    "s": [
-    3.3,
+    2.5,
     0.12,
-    55.0
+    57.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -648,14 +1672,14 @@
   {
    "t": "box",
    "p": [
-    32.5,
+    39.25,
     0,
-    6.65
+    5.75
    ],
    "s": [
-    55.0,
+    69.5,
     0.12,
-    3.3
+    2.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -664,14 +1688,14 @@
   {
    "t": "box",
    "p": [
-    6.65,
+    5.75,
     0,
-    32.5
+    33.25
    ],
    "s": [
-    3.3,
+    2.5,
     0.12,
-    55.0
+    57.5
    ],
    "r": 0,
    "m": "sidewalk",
@@ -681,20 +1705,20 @@
    "t": "crack",
    "pts": [
     [
-     -10.5,
-     -6.6
+     -9.5,
+     -5.6
     ],
     [
-     -7.4,
-     -4.6
+     -7.0,
+     -4.2
     ],
     [
-     -5.0,
-     -3.6
+     -4.8,
+     -3.4
     ],
     [
-     -2.8,
-     -1.4
+     -2.6,
+     -1.3
     ],
     [
      -0.4,
@@ -702,32 +1726,28 @@
     ],
     [
      1.6,
-     1.4
+     1.3
     ],
     [
-     3.8,
-     2.2
+     3.6,
+     2.1
     ],
     [
-     5.6,
-     4.4
+     5.4,
+     4.0
     ],
     [
-     8.0,
-     5.4
-    ],
-    [
-     10.8,
-     7.6
+     7.6,
+     5.0
     ]
    ],
-   "w": 1.5,
+   "w": 1.4,
    "seed": 11
   },
   {
    "t": "box",
    "p": [
-    -15.615,
+    -14.115,
     0,
     -8.4
    ],
@@ -743,7 +1763,7 @@
   {
    "t": "box",
    "p": [
-    -10.2,
+    -8.7,
     0,
     -8.4
    ],
@@ -759,7 +1779,7 @@
   {
    "t": "box",
    "p": [
-    -12.9,
+    -11.4,
     2.7,
     -8.4
    ],
@@ -775,283 +1795,552 @@
   {
    "t": "box",
    "p": [
-    8.6,
+    -7.2,
     0,
-    -24.6
+    -15.195
    ],
    "s": [
-    0.2,
-    2.6,
-    32.0
+    0.3,
+    5.0,
+    13.79
    ],
-   "r": 180.0,
-   "m": "wood",
+   "r": 0,
+   "m": "brick",
    "c": true
   },
   {
    "t": "box",
    "p": [
-    -8.4,
+    7.2,
     0,
-    -24.6
+    -13.55
    ],
    "s": [
-    0.2,
-    2.6,
-    32.0
-   ],
-   "r": 180.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    19.6,
-    0,
-    -8.6
-   ],
-   "s": [
-    0.2,
-    2.6,
-    3.6
-   ],
-   "r": 90.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    52.15,
-    0,
-    -8.6
-   ],
-   "s": [
-    0.2,
-    2.6,
+    0.25,
+    3.0,
     12.9
    ],
-   "r": 90.0,
-   "m": "wood",
-   "c": true
+   "r": 180.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    -18.6,
+    7.2,
     0,
-    -8.6
+    -32.8
+   ],
+   "s": [
+    0.25,
+    3.0,
+    16.0
+   ],
+   "r": 180.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    15.7,
+    0,
+    -7.1
+   ],
+   "s": [
+    0.25,
+    3.0,
+    1.2
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    9.25,
+    0,
+    -7.12
+   ],
+   "s": [
+    2.5,
+    3.0,
+    0.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    13.95,
+    0,
+    -7.12
+   ],
+   "s": [
+    2.5,
+    3.0,
+    0.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    8.05,
+    0,
+    -11.6
    ],
    "s": [
     0.2,
-    2.6,
-    2.2
+    3.0,
+    9.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    15.15,
+    0,
+    -11.6
+   ],
+   "s": [
+    0.2,
+    3.0,
+    9.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    23.6,
+    0,
+    -7.15
+   ],
+   "s": [
+    15.2,
+    3.0,
+    0.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7.15,
+    0,
+    -32.0
+   ],
+   "s": [
+    0.2,
+    3.0,
+    15.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -30.1,
+    0,
+    18.5
+   ],
+   "s": [
+    0.3,
+    3.0,
+    21.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -30.45,
+    0,
+    9.0
+   ],
+   "s": [
+    0.9,
+    3.0,
+    0.3
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    31.4,
+    0,
+    -7.1
+   ],
+   "s": [
+    0.25,
+    3.0,
+    0.8
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7.2,
+    0,
+    -24.05
+   ],
+   "s": [
+    0.25,
+    3.0,
+    3.9
+   ],
+   "r": 180.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7.2,
+    0,
+    -39.6
+   ],
+   "s": [
+    0.25,
+    3.0,
+    2.4
+   ],
+   "r": 180.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -16.75,
+    0,
+    -7.2
+   ],
+   "s": [
+    0.25,
+    3.0,
+    2.3
    ],
    "r": -90.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    -42.95,
+    -42.5,
     0,
-    -8.6
+    -7.2
    ],
    "s": [
-    0.2,
-    2.6,
-    3.3
-   ],
-   "r": -90.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -37.55,
-    0,
-    8.6
-   ],
-   "s": [
-    0.2,
-    2.6,
-    14.1
-   ],
-   "r": -90.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -29.95,
-    0,
-    8.3
-   ],
-   "s": [
-    0.2,
-    2.6,
-    1.1
+    0.25,
+    3.0,
+    8.0
    ],
    "r": 90.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    -29.4,
+    -45.05,
     0,
-    10.2
+    7.2
    ],
    "s": [
-    0.2,
-    2.6,
-    3.8
-   ],
-   "r": 0.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -10.55,
-    0,
-    12.1
-   ],
-   "s": [
-    0.2,
-    2.6,
-    4.3
+    0.25,
+    3.0,
+    2.9
    ],
    "r": 90.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    -8.4,
+    14.65,
     0,
-    26.35
+    7.3
    ],
    "s": [
-    0.2,
-    2.6,
-    28.5
-   ],
-   "r": 0.0,
-   "m": "wood",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    15.3,
-    0,
-    8.6
-   ],
-   "s": [
-    0.2,
-    2.6,
-    13.4
+    0.25,
+    3.0,
+    14.7
    ],
    "r": 90.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    8.6,
+    7.3,
     0,
-    24.6
+    20.85
    ],
    "s": [
-    0.2,
-    2.6,
-    32.0
+    0.25,
+    3.0,
+    27.1
    ],
    "r": 0.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    58.6,
+    -7.4,
     0,
-    21.6
+    22.15
    ],
    "s": [
-    0.2,
-    2.6,
-    26.0
+    0.25,
+    3.0,
+    19.3
    ],
    "r": 0.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
   },
   {
    "t": "box",
    "p": [
-    33.6,
+    -7.4,
     0,
-    34.6
+    39.25
    ],
    "s": [
-    0.2,
-    2.6,
-    50.0
+    0.25,
+    3.0,
+    5.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    7.4,
+    0,
+    38.2
+   ],
+   "s": [
+    0.25,
+    3.0,
+    7.6
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -9.85,
+    0,
+    12.5
+   ],
+   "s": [
+    0.25,
+    3.0,
+    4.9
    ],
    "r": 90.0,
-   "m": "wood",
-   "c": true
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -32.55,
+    0,
+    7.2
+   ],
+   "s": [
+    0.25,
+    3.0,
+    3.5
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -30.8,
+    0,
+    9.8
+   ],
+   "s": [
+    0.25,
+    3.0,
+    5.2
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -23.0,
+    0,
+    9.4
+   ],
+   "s": [
+    0.25,
+    3.0,
+    4.4
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    59.55,
+    0,
+    7.2
+   ],
+   "s": [
+    0.25,
+    3.0,
+    2.1
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    58.5,
+    0,
+    20.8
+   ],
+   "s": [
+    0.25,
+    3.0,
+    27.2
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    33.55,
+    0,
+    34.4
+   ],
+   "s": [
+    0.25,
+    3.0,
+    49.9
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
   }
  ],
  "textures": "res://assets/maps/pueblo/textures/",
  "walls": [
   [
+   -46.5,
+   2.0,
+   0,
+   0.6,
+   6.0,
+   14.0
+  ],
+  [
+   0,
+   2.0,
+   41.6,
+   14.0,
+   6.0,
+   0.6
+  ],
+  [
+   60.5,
+   2.0,
+   0,
+   0.6,
+   6.0,
+   14.0
+  ],
+  [
    0,
    2.0,
    -40.6,
-   16.6,
+   14.0,
    6.0,
-   0.6
-  ],
-  [
-   -44.6,
-   2.0,
-   0,
-   0.6,
-   6.0,
-   16.6
-  ],
-  [
-   0,
-   2.0,
-   40.6,
-   16.6,
-   6.0,
-   0.6
-  ],
-  [
-   58.6,
-   2.0,
-   0,
-   0.6,
-   6.0,
-   16.6
+   0.4
   ]
  ],
  "spawn": [
   0.0,
   0.2,
-  5.5,
+  4.5,
   180
  ],
  "ambient": "amb1",
@@ -1074,7 +2363,7 @@
    0.12,
    0.08
   ],
-  "fog_density": 0.016,
+  "fog_density": 0.02,
   "sun": 0.55,
   "sun_color": [
    0.75,
@@ -1099,68 +2388,76 @@
    "open": true,
    "boxes": [
     [
-     -30.5,
+     -22.0,
      -1,
-     -8.3,
+     -7.0,
      22.0,
      6,
-     8.3
+     7.0
     ],
     [
-     -8.3,
+     -7.0,
      -1,
      -22.0,
-     8.3,
+     7.0,
      6,
-     -8.3
+     -7.0
     ],
     [
-     -8.3,
+     -7.0,
      -1,
-     8.3,
-     8.3,
+     7.0,
+     7.0,
      6,
      22.0
     ],
     [
-     -29.2,
+     -23.0,
      -1,
-     8.3,
-     -8.3,
+     7.0,
+     -7.0,
      6,
-     11.9
+     11.1
+    ],
+    [
+     -15.83,
+     -1,
+     -8.3,
+     -7.0,
+     6,
+     -7.0
     ]
    ],
    "spawns": [
     [
-     -29.5,
+     -21.0,
      0,
-     -6.5
+     -5.5
     ],
     [
      21.0,
      0,
-     6.5
+     5.5
     ],
     [
-     -6.5,
+     -5.5,
      0,
      -21.0
     ],
     [
-     6.5,
+     5.5,
      0,
      21.0
     ],
     [
-     -28.5,
+     -8.4,
      0,
-     11.0
+     7.6
     ],
     [
      21.0,
      0,
-     -6.5
+     -5.5
     ]
    ]
   },
@@ -1169,24 +2466,24 @@
    "name": "Banco",
    "boxes": [
     [
-     10.6,
+     8.6,
      -1,
-     -17.8,
-     17.4,
+     -16.2,
+     14.6,
      8.0,
-     -8.5
+     -7.2
     ]
    ],
    "spawns": [
     [
-     11.2,
+     9.2,
      0,
-     -17.2
+     -15.7
     ],
     [
-     16.8,
+     14.0,
      0,
-     -17.2
+     -15.7
     ]
    ]
   },
@@ -1195,22 +2492,22 @@
    "name": "Bar",
    "boxes": [
     [
-     -17.13,
+     -15.63,
      -1,
      -21.89,
-     -8.7,
+     -7.4,
      7.0,
      -8.600000000000001
     ]
    ],
    "spawns": [
     [
-     -16.6,
+     -15.1,
      0,
      -21.4
     ],
     [
-     -9.2,
+     -7.7,
      0,
      -21.4
     ]
@@ -1221,24 +2518,32 @@
    "name": "Diner",
    "boxes": [
     [
-     -28.8,
+     -29.7,
      -1,
-     12.4,
-     -12.8,
+     9.2,
+     -22.9,
      5.0,
-     25.0
+     25.9
+    ],
+    [
+     -22.9,
+     -1,
+     12.1,
+     -12.5,
+     5.0,
+     25.9
     ]
    ],
    "spawns": [
     [
-     -28.0,
+     -29.6,
      0,
-     24.0
+     25.0
     ],
     [
-     -13.0,
+     -13.4,
      0,
-     24.0
+     25.0
     ]
    ]
   },
@@ -1249,23 +2554,23 @@
     [
      22.0,
      -1,
-     -8.3,
-     58.4,
+     -7.0,
+     60.0,
      4.0,
-     8.3
+     7.0
     ],
     [
-     8.8,
+     8.6,
      -1,
-     8.3,
-     58.4,
+     7.0,
+     58.3,
      4.0,
-     34.4
+     34.2
     ]
    ],
    "spawns": [
     [
-     57.5,
+     59.0,
      0,
      0.0
     ],
@@ -1286,24 +2591,24 @@
    "name": "Calle Norte",
    "boxes": [
     [
-     -8.2,
+     -7.0,
      -1,
-     -40.2,
-     8.4,
+     -40.8,
+     7.0,
      7.0,
      -22.0
     ]
    ],
    "spawns": [
     [
-     -7.5,
+     -6.4,
      0,
-     -39.0
+     -40.0
     ],
     [
-     7.5,
+     6.4,
      0,
-     -39.0
+     -40.0
     ]
    ]
   },
@@ -1312,24 +2617,32 @@
    "name": "Calle Oeste",
    "boxes": [
     [
-     -44.2,
+     -46.0,
      -1,
-     -8.3,
-     -30.5,
+     -7.0,
+     -22.0,
      7.0,
-     8.3
+     7.0
+    ],
+    [
+     -30.6,
+     -1,
+     7.0,
+     -23.0,
+     7.0,
+     8.8
     ]
    ],
    "spawns": [
     [
-     -43.5,
+     -45.0,
      0,
-     -7.5
+     -6.4
     ],
     [
-     -43.5,
+     -45.0,
      0,
-     7.5
+     6.4
     ]
    ]
   },
@@ -1338,24 +2651,24 @@
    "name": "Calle Sur",
    "boxes": [
     [
-     -8.2,
+     -7.0,
      -1,
      22.0,
-     8.4,
      7.0,
-     40.2
+     7.0,
+     41.2
     ]
    ],
    "spawns": [
     [
-     -7.5,
+     -6.4,
      0,
-     39.0
+     40.4
     ],
     [
-     7.5,
+     6.4,
      0,
-     39.0
+     40.4
     ]
    ]
   }
@@ -1364,9 +2677,9 @@
   {
    "cost": 750,
    "pos": [
-    14.0,
+    11.6,
     0,
-    -8.6
+    -7.05
    ],
    "size": [
     2.4,
@@ -1377,12 +2690,16 @@
    "opens": [
     "A",
     "B"
+   ],
+   "hide_meshes": [
+    "door_left",
+    "door_right"
    ]
   },
   {
    "cost": 1000,
    "pos": [
-    -12.9,
+    -11.4,
     0,
     -8.4
    ],
@@ -1400,12 +2717,12 @@
   {
    "cost": 1000,
    "pos": [
-    -21.01,
+    -21.66,
     0,
-    12.200000000000001
+    11.6
    ],
    "size": [
-    1.2,
+    1.3,
     2.4,
     1.0
    ],
@@ -1427,7 +2744,7 @@
     0
    ],
    "size": [
-    16.6,
+    14.0,
     3.0,
     1.2
    ],
@@ -1445,7 +2762,7 @@
     -22.0
    ],
    "size": [
-    16.6,
+    14.0,
     3.0,
     1.2
    ],
@@ -1458,12 +2775,12 @@
   {
    "cost": 1000,
    "pos": [
-    -30.5,
+    -22.0,
     0,
     0
    ],
    "size": [
-    16.6,
+    14.0,
     3.0,
     1.2
    ],
@@ -1481,7 +2798,7 @@
     22.0
    ],
    "size": [
-    16.6,
+    14.0,
     3.0,
     1.2
    ],
@@ -1494,75 +2811,95 @@
  ],
  "fires": [
   [
-   -3.0,
+   -2.5,
    0.6,
    -15.0
   ],
   [
    16.0,
    0.5,
-   2.5
+   2.2
   ],
   [
-   2.5,
+   2.3,
    0.2,
-   0.8
+   0.7
   ],
   [
-   -5.5,
+   -5.0,
    0.2,
-   -3.2
+   -3.0
   ],
   [
-   6.0,
+   5.6,
    0.2,
-   4.4
+   4.3
+  ],
+  [
+   -15.0,
+   0.4,
+   3.0
+  ],
+  [
+   -2.6,
+   0.5,
+   -34.0
+  ],
+  [
+   40.0,
+   0.4,
+   -2.0
+  ],
+  [
+   57.0,
+   0.4,
+   -3.0
   ]
  ],
  "hazards": [
   {
    "a": [
-    -10.5,
-    -6.6
+    -9.5,
+    -5.6
    ],
    "b": [
-    -7.4,
-    -4.6
+    -7.0,
+    -4.2
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
-    -7.4,
-    -4.6
+    -7.0,
+    -4.2
    ],
    "b": [
-    -5.0,
-    -3.6
+    -4.8,
+    -3.4
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
-    -5.0,
-    -3.6
+    -4.8,
+    -3.4
    ],
    "b": [
-    -2.8,
-    -1.4
+    -2.6,
+    -1.3
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
-    -2.8,
-    -1.4
+    -2.6,
+    -1.3
    ],
    "b": [
     -0.4,
     -0.6
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
@@ -1571,59 +2908,48 @@
    ],
    "b": [
     1.6,
-    1.4
+    1.3
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
     1.6,
-    1.4
+    1.3
    ],
    "b": [
-    3.8,
-    2.2
+    3.6,
+    2.1
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
-    3.8,
-    2.2
+    3.6,
+    2.1
    ],
    "b": [
-    5.6,
-    4.4
+    5.4,
+    4.0
    ],
-   "r": 0.75
+   "r": 0.7
   },
   {
    "a": [
-    5.6,
-    4.4
+    5.4,
+    4.0
    ],
    "b": [
-    8.0,
-    5.4
+    7.6,
+    5.0
    ],
-   "r": 0.75
-  },
-  {
-   "a": [
-    8.0,
-    5.4
-   ],
-   "b": [
-    10.8,
-    7.6
-   ],
-   "r": 0.75
+   "r": 0.7
   }
  ],
  "lights": [
   {
    "pos": [
-    -3.0,
+    -2.5,
     1.6,
     -15.0
    ],
@@ -1639,7 +2965,7 @@
    "pos": [
     16.0,
     1.6,
-    2.5
+    2.2
    ],
    "color": [
     1.0,
@@ -1651,9 +2977,9 @@
   },
   {
    "pos": [
-    2.5,
+    2.3,
     1.6,
-    0.8
+    0.7
    ],
    "color": [
     1.0,
@@ -1665,9 +2991,9 @@
   },
   {
    "pos": [
-    -5.5,
+    -5.0,
     1.6,
-    -3.2
+    -3.0
    ],
    "color": [
     1.0,
@@ -1679,9 +3005,9 @@
   },
   {
    "pos": [
-    6.0,
+    5.6,
     1.6,
-    4.4
+    4.3
    ],
    "color": [
     1.0,
@@ -1693,59 +3019,115 @@
   },
   {
    "pos": [
-    -7.5,
+    -15.0,
+    1.6,
+    3.0
+   ],
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ],
+   "range": 9,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    -2.6,
+    1.6,
+    -34.0
+   ],
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ],
+   "range": 9,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    40.0,
+    1.6,
+    -2.0
+   ],
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ],
+   "range": 9,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    57.0,
+    1.6,
+    -3.0
+   ],
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ],
+   "range": 9,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    -6.5,
     4.5,
-    -7.5
+    -6.5
    ],
    "color": [
     1.0,
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
-    7.5,
+    6.5,
     4.5,
-    7.5
+    6.5
    ],
    "color": [
     1.0,
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
     30,
     4.5,
-    -7.5
+    -6.5
    ],
    "color": [
     1.0,
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
     -30,
     4.5,
-    7.5
+    6.5
    ],
    "color": [
     1.0,
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
@@ -1758,8 +3140,8 @@
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
@@ -1772,8 +3154,8 @@
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
@@ -1786,14 +3168,28 @@
     0.8,
     0.55
    ],
-   "range": 12,
-   "energy": 1.4
+   "range": 11,
+   "energy": 1.3
   },
   {
    "pos": [
-    14,
+    -38,
+    4.5,
+    -6.5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.55
+   ],
+   "range": 11,
+   "energy": 1.3
+  },
+  {
+   "pos": [
+    11.6,
     2.4,
-    -14
+    -13
    ],
    "color": [
     1.0,
@@ -1805,7 +3201,7 @@
   },
   {
    "pos": [
-    -13,
+    -11.5,
     2.4,
     -15
    ],
@@ -1819,9 +3215,9 @@
   },
   {
    "pos": [
-    -20.5,
+    -21,
     2.4,
-    16
+    18
    ],
    "color": [
     1.0,
@@ -1844,46 +3240,72 @@
    ],
    "range": 7,
    "energy": 1.2
+  },
+  {
+   "pos": [
+    34.2,
+    2.4,
+    -8.6
+   ],
+   "color": [
+    1.0,
+    0.78,
+    0.5
+   ],
+   "range": 7,
+   "energy": 1.2
   }
+ ],
+ "noshadow": [
+  "chainlink",
+  "street_pack",
+  "rubble",
+  "planks",
+  "poles",
+  "police_sign",
+  "mailbox",
+  "bench",
+  "dead_trees",
+  "barriers"
  ],
  "wallbuys": [
   {
    "gun": "olympia",
    "near": [
-    -8.6,
-    -14.0
+    -7.2,
+    -16.0
    ],
    "y": 0
   },
   {
    "gun": "m14",
    "near": [
-    8.6,
-    14.0
+    7.6,
+    15.0
    ],
    "y": 0
   },
   {
    "gun": "mp5k",
    "near": [
-    17.4,
-    -12.0
+    16.2,
+    -7.1
    ],
    "y": 0
   },
   {
    "gun": "ak74u",
    "near": [
-    -17.0,
-    -15.0
+    -15.5,
+    -14.0
    ],
    "y": 0
   },
   {
    "gun": "mp40",
    "near": [
-    -28.5,
-    18.0
+    -30.0,
+    7.2
    ],
    "y": 0
   },
@@ -1891,23 +3313,23 @@
    "gun": "m16",
    "near": [
     40.0,
-    8.0
+    8.6
    ],
    "y": 0
   },
   {
    "gun": "stakeout",
    "near": [
-    -7.6,
-    -32.0
+    -7.0,
+    -30.0
    ],
    "y": 0
   },
   {
    "gun": "python",
    "near": [
-    -36.0,
-    -8.0
+    -34.0,
+    -7.2
    ],
    "y": 0
   }
@@ -1917,14 +3339,14 @@
    "id": "revive",
    "near": [
     -7.6,
-    12.0
+    14.0
    ],
    "y": 0
   },
   {
    "id": "jugg",
    "near": [
-    -9.2,
+    -8.0,
     -20.5
    ],
    "y": 0
@@ -1940,8 +3362,8 @@
   {
    "id": "dtap",
    "near": [
-    16.8,
-    -16.0
+    13.8,
+    -15.6
    ],
    "y": 0
   },
@@ -1949,7 +3371,7 @@
    "id": "stamin",
    "near": [
     -40.0,
-    -7.6
+    -7.2
    ],
    "y": 0
   },
@@ -1957,7 +3379,7 @@
    "id": "mule",
    "near": [
     -14.0,
-    22.0
+    25.0
    ],
    "y": 0
   }
@@ -1965,14 +3387,14 @@
  "box": [
   {
    "near": [
-    7.6,
+    6.6,
     -14.0
    ],
    "y": 0
   },
   {
    "near": [
-    -16.6,
+    -15.0,
     -12.0
    ],
    "y": 0
@@ -1980,7 +3402,7 @@
   {
    "near": [
     -25.0,
-    22.0
+    24.0
    ],
    "y": 0
   },
@@ -1993,8 +3415,8 @@
   },
   {
    "near": [
-    7.6,
-    34.0
+    7.4,
+    30.0
    ],
    "y": 0
   }
@@ -2003,21 +3425,21 @@
  "pap": {
   "near": [
    0.0,
-   -38.0
+   -39.6
   ],
   "y": 0
  },
  "power": {
   "near": [
-   -42.0,
-   6.0
+   -45.6,
+   4.0
   ],
   "y": 0
  },
  "gum": {
   "near": [
-   7.9,
-   -12.0
+   6.9,
+   -10.0
   ],
   "y": 0
  }
