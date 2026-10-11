@@ -26,6 +26,8 @@ var radio_who: Label
 var radio_txt: Label
 var radio_queue: Array = []
 var radio_t = 0.0
+var radio_voice: AudioStreamPlayer
+var radio_index = {}         # texto -> archivo de voz (assets/voice/radio)
 var marker: Control
 var bar: ProgressBar
 var beacon: MeshInstance3D
@@ -65,6 +67,18 @@ func setup(g: Node, m: Dictionary) -> void:
 	var bm = StandardMaterial3D.new(); bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; bm.albedo_color = Color(1.0, 0.6, 0.15, 0.22); bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	bm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD; bm.cull_mode = BaseMaterial3D.CULL_DISABLED; beacon.material_override = bm; beacon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	beacon.visible = false; game.add_child(beacon)
+	# cartel de título al empezar (se desvanece)
+	var card = VBoxContainer.new(); card.set_anchors_and_offsets_preset(Control.PRESET_CENTER); card.offset_left = -600; card.offset_right = 600; card.offset_top = -110; card.offset_bottom = 60
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(card)
+	var c1 = Label.new(); c1.text = "OPERACIÓN GAMBA ROJA  ·  MISIÓN %d" % (Campaign.index_of(data.id) + 1); c1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c1.add_theme_font_override("font", font_bo); c1.add_theme_font_size_override("font_size", 26); c1.add_theme_color_override("font_color", Color(1.0, 0.62, 0.15)); card.add_child(c1)
+	var c2 = Label.new(); c2.text = String(data.name).to_upper(); c2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c2.add_theme_font_override("font", font_bo); c2.add_theme_font_size_override("font_size", 84); c2.add_theme_color_override("font_color", Color(0.86, 0.12, 0.1))
+	c2.add_theme_color_override("font_outline_color", Color(0, 0, 0)); c2.add_theme_constant_override("outline_size", 10); card.add_child(c2)
+	var tw = card.create_tween(); tw.tween_interval(3.2); tw.tween_property(card, "modulate:a", 0.0, 1.2); tw.tween_callback(card.queue_free)
+	radio_voice = AudioStreamPlayer.new(); radio_voice.bus = "Master"; add_child(radio_voice)
+	var f = FileAccess.open("res://assets/voice/radio/index.json", FileAccess.READ)
+	if f: radio_index = JSON.parse_string(f.get_as_text())
 	radio(data.get("intro", []))
 	_next_step()
 
@@ -199,7 +213,13 @@ func _radio_tick(delta: float) -> void:
 	radio_who.add_theme_color_override("font_color", Color(0.45, 0.85, 1.0) if l[0] == "COMANDO" else Color(1.0, 0.62, 0.15))
 	radio_box.visible = true
 	radio_t = clamp(String(l[1]).length() * 0.065, 2.8, 7.0)
-	Sfx.play("hitmark", 0.25, 0.6)   # chasquido de radio
+	var id = radio_index.get(String(l[1]), "") if radio_index is Dictionary else ""
+	var path = "res://assets/voice/radio/%s.ogg" % id
+	if id != "" and ResourceLoader.exists(path):
+		radio_voice.stream = load(path); radio_voice.volume_db = linear_to_db(max(0.001, float(GS.settings.get("voice", 1.0)))) + 3.0; radio_voice.play()
+		radio_t = max(radio_t * 0.6, radio_voice.stream.get_length() + 0.5)
+	else:
+		Sfx.play("hitmark", 0.25, 0.6)   # chasquido de radio
 
 # ------------------------------------------------------------------ final
 func _finish(ok: bool) -> void:
