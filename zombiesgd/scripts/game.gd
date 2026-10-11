@@ -49,7 +49,8 @@ var low_quality = false
 var base_scale = 1.0
 var dyn_scale = 1.0          # resolución dinámica: baja sola si los fps caen
 var fps_acc = 0.0
-var fps_frames = 0               # chicles comprados esta ronda
+var fps_frames = 0
+var mission: Mission = null   # modo historia               # chicles comprados esta ronda
 
 func start(id: String) -> void:
 	map_id = id
@@ -83,6 +84,16 @@ func start(id: String) -> void:
 	Sfx.music_map(map_id)
 	round_n = GS.start_round - 1
 	next_dog_round = max(round_n + 1, 0) + randi_range(5, 7)
+	if GS.mode == "historia" and not Net.active:
+		var md = Campaign.get_mission(GS.mission)
+		if not md.is_empty():
+			round_n = int(md.round); next_dog_round = 9999
+			player.points = int(md.points)
+			hud.update_points(player.points, 0)
+			if md.get("weapon", "") != "" and md.weapon != GS.start_weapon: player.give_weapon(String(md.weapon))
+			hud.round_ctl.visible = false
+			mission = Mission.new(); add_child(mission); mission.setup(self, md)
+			mission.finished.connect(_on_mission_finished)
 	if not Net.active: all_loaded()
 	elif Net.is_host(): Net.loaded()
 	else: Net.loaded.rpc_id(1)
@@ -104,6 +115,7 @@ func all_loaded() -> void:
 	if not Net.is_host(): return
 	started = true
 	break_t = 2.5
+	if mission: break_t = 0.0; return   # en la historia no hay rondas ni easter egg
 	_egg_setup()
 
 func _host() -> bool: return Net.is_host()
@@ -516,6 +528,8 @@ func _process(delta: float) -> void:
 	hud.update_timers(insta, dpoints, fire_sale)
 	_egg_process(delta)
 	if not _host() or not started or over: return
+	if mission:
+		_mission_spawns(delta); return
 	if break_t > 0.0:
 		break_t -= delta
 		if break_t <= 0.0: _next_round()
@@ -533,6 +547,33 @@ func _process(delta: float) -> void:
 			spawn_t = rate
 	elif alive == 0 and egg.step != 4 and egg.step != 5:
 		_end_round()
+
+## modo historia: zombis sin parar según lo que pida la misión (sin rondas ni descansos)
+func _mission_spawns(delta: float) -> void:
+	if not mission.spawning(): return
+	zombies = zombies.filter(func(z): return is_instance_valid(z))
+	var alive = zombies.filter(func(z): return not z.dead).size()
+	to_spawn = 3   # (para que el Bruto pueda salir cuando la misión lo pida)
+	spawn_t -= delta
+	if spawn_t <= 0.0 and alive < mission.cap():
+		_spawn_zombie(); spawn_t = mission.rate()
+
+func _on_mission_finished(ok: bool) -> void:
+	if over: return
+	over = true
+	var md = mission.data
+	var st = mission.stars() if ok else 0
+	var xp = player.kills * 10 + player.headshots * 5 + (1500 + 500 * st if ok else 0)
+	GS.add_xp(xp)
+	if ok: GS.campaign[md.id] = max(int(GS.campaign.get(md.id, 0)), st)
+	GS.save_game()
+	if ok:
+		mission.radio(md.get("outro", []))
+		Sfx.music_sting("egg_end")
+	else: Sfx.music_sting("game_over")
+	for z in zombies:
+		if is_instance_valid(z) and not z.dead and ok: z.queue_free()
+	hud.show_mission_end(ok, md, st, { "kills": player.kills, "heads": player.headshots, "time": time, "xp": xp, "downs": mission.downs })
 
 ## punto de interés para hacer aparecer zombis: un jugador vivo al azar
 func _focus() -> Vector3:
@@ -1153,6 +1194,7 @@ func pause(on: bool) -> void:
 func _on_player_died() -> void:
 	# en cooperativo, la partida acaba cuando no queda nadie en pie (lo decide el servidor)
 	if Net.is_coop() and not ending: return
+	if mission: mission._finish(false); return
 	if over: return
 	over = true
 	Sfx.music_sting("game_over")

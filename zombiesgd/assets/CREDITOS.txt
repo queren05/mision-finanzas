@@ -63,3 +63,5 @@ Mapa «Pueblo» (modelos de Sketchfab, CC-BY 4.0):
 • «Suburban shabby house low poly» — Simlion (simlion) — https://sketchfab.com/3d-models/suburban-shabby-house-low-poly-f4678340de204c829e79a01f216e1be0
 Texturas del suelo: Poly Haven (CC0); lava: ambientCG (CC0)
 Voces de los personajes: Kokoro-82M (hexgrad, Apache-2.0) con kokoro-onnx (MIT)
+Rayo Gamba: "Raygun" de ehcawen — https://sketchfab.com/3d-models/raygun-9b8bb34ad4584baab6e102046b6d55ea — CC-BY 4.0
+Burbujeador: "50's style Ray Gun" de mrpetercharman — https://sketchfab.com/3d-models/50s-style-ray-gun-42b7288de197481292cc0f511f84a0dc — CC-BY 4.0

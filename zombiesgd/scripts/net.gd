@@ -157,6 +157,7 @@ func begin(map: String, start_round: int, seed_: int, p: Dictionary) -> void:
 	players = p
 	GS.sel_map = map; GS.start_round = start_round
 	seed(seed_)
+	GS.mode = "oleadas"   # el cooperativo es en oleadas
 	get_tree().root.get_node("Main").start_game()
 
 ## cada móvil avisa cuando ha cargado el mapa; el servidor arranca las rondas cuando están todos

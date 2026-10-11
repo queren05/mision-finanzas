@@ -351,6 +351,37 @@ func show_game_over(s: Dictionary) -> void:
 	var c2 = CenterContainer.new(); var bt = _button("VOLVER AL MENÚ", func(): get_tree().paused = false; get_tree().root.get_node("Main").to_menu()); c2.add_child(bt); v.add_child(c2)
 	bt.grab_focus()
 
+## fin de una misión del modo historia: completada (con estrellas) o fallida
+func show_mission_end(ok: bool, md: Dictionary, stars: int, s: Dictionary) -> void:
+	Controls.mouse_captured = false; Controls.in_game = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	touch_layer.visible = false
+	over_panel.visible = true
+	var v = VBoxContainer.new(); v.alignment = BoxContainer.ALIGNMENT_CENTER; v.add_theme_constant_override("separation", 14); over_panel.add_child(v); v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var sub = _label(font_ui, 26, Color(0.85, 0.8, 0.7)); sub.text = String(md.name).to_upper(); sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(sub)
+	var t = _label(font_bo, 72, GOLD if ok else RED2); t.text = "MISIÓN COMPLETADA" if ok else "MISIÓN FALLIDA"; t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(t)
+	if ok:
+		var st = _label(font_bo, 70, GOLD); st.text = "★".repeat(stars) + "☆".repeat(3 - stars); st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(st)
+		var why = _label(font_ui, 20, Color(0.75, 0.7, 0.62)); why.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		why.text = "★ Completada   ·   ★ Sin caer%s   ·   ★ En menos de %d min%s" % ["" if s.downs == 0 else " (has caído %d)" % s.downs, int(md.get("par_time", 600)) / 60, "" if stars == 3 or s.time <= float(md.get("par_time", 600)) else " (has tardado %d:%02d)" % [int(s.time) / 60, int(s.time) % 60]]
+		v.add_child(why)
+	var stats = HBoxContainer.new(); stats.alignment = BoxContainer.ALIGNMENT_CENTER; stats.add_theme_constant_override("separation", 44); v.add_child(stats)
+	for e in [[s.kills, "Bajas"], [s.heads, "A la cabeza"], ["%d:%02d" % [int(s.time) / 60, int(s.time) % 60], "Tiempo"], [s.xp, "XP"]]:
+		var c = VBoxContainer.new(); var a = _label(font_bo, 40, Color.WHITE); a.text = str(e[0]); a.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(a)
+		var b = _label(font_ui, 20, Color(0.73, 0.66, 0.54)); b.text = e[1]; b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(b); stats.add_child(c)
+	var row = HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 30); v.add_child(row)
+	var main = get_tree().root.get_node("Main")
+	var first: Control = null
+	var i = Campaign.index_of(md.id)
+	if ok and i + 1 < Campaign.MISSIONS.size():
+		var nx = Campaign.MISSIONS[i + 1]
+		first = _button("SIGUIENTE MISIÓN", func(): get_tree().paused = false; GS.mission = nx.id; GS.sel_map = nx.map; main.restart_game())
+		row.add_child(first)
+	if not ok:
+		first = _button("REINTENTAR", func(): get_tree().paused = false; main.restart_game()); row.add_child(first)
+	var back = _button("VOLVER AL MENÚ", func(): get_tree().paused = false; main.to_menu()); row.add_child(back)
+	if first == null: first = back
+	first.grab_focus()
+
 # ------------------------------------------------------------------ dibujos
 class _Round extends Control:
 	var hud

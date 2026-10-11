@@ -68,7 +68,8 @@ func _home() -> void:
 	logo2.add_theme_constant_override("line_spacing", -24); left.add_child(logo2)
 	left.add_child(_lbl(MAP_INFO[GS.sel_map].name.to_upper(), font_bo, 22, BEIGE))
 	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 6); left.add_child(gap)
-	var play = _btn("JUGAR", _play); left.add_child(play)
+	var play = _btn("HISTORIA", _story); left.add_child(play)
+	left.add_child(_btn("OLEADAS", _play))
 	left.add_child(_btn("ARSENAL", _arsenal))
 	left.add_child(_btn("PROGRESO", _progress))
 	left.add_child(_btn("AJUSTES", _settings))
@@ -181,7 +182,7 @@ func _value_btn(text: String) -> Button:
 
 ## JUGAR: en solitario o cooperativo (y el mapa, si hay más de uno)
 func _play() -> void:
-	var v = _page("JUGAR", _home)
+	var v = _page("OLEADAS", _home)
 	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
 	var solo = _card("res://assets/ui/menu_%s.jpg" % GS.sel_map, "EN SOLITARIO", "Tú contra la horda. Elige ronda, arma y ventaja inicial.", MAP_INFO[GS.sel_map].name, false, _options, 380, 200)
 	var coop = _card("res://assets/ui/char_comando.png", "COOPERATIVO", "De 2 a 4 jugadores en la misma wifi. iPhone, Android y PC juntos.", "Crear o unirse a una partida", false, _coop, 380, 200)
@@ -189,6 +190,32 @@ func _play() -> void:
 	if Data.MAPS.size() > 1: v.add_child(_center(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps, 460, true)))
 	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	solo.grab_focus()
+
+## HISTORIA: misiones de la campaña «Operación Gamba Roja» (se desbloquean en orden)
+func _story() -> void:
+	var v = _page("HISTORIA", _home)
+	var sub = _lbl("OPERACIÓN GAMBA ROJA", font_bo, 26, Color(1.0, 0.62, 0.15)); sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(sub)
+	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
+	var first: Control = null
+	var i = 0
+	for m in Campaign.MISSIONS:
+		var unlocked = i == 0 or GS.campaign.has(Campaign.MISSIONS[i - 1].id)
+		var st = int(GS.campaign.get(m.id, 0))
+		var tag = ("★".repeat(st) + "☆".repeat(3 - st)) if st > 0 else ("NUEVA" if unlocked else "BLOQUEADA: completa la anterior")
+		var mid = m.id; var mmap = m.map
+		var go = func():
+			if not unlocked: return
+			GS.mode = "historia"; GS.mission = mid; GS.sel_map = mmap; GS.save_game(); main.start_game()
+		var card = _card("res://assets/ui/menu_%s.jpg" % m.map, "%d. %s" % [i + 1, String(m.name).to_upper()], String(m.desc), tag, false, go, 400, 210)
+		if not unlocked: card.modulate = Color(1, 1, 1, 0.45)
+		h.add_child(card)
+		if first == null and unlocked and st == 0: first = card
+		i += 1
+	var soon = _card("res://assets/ui/menu_pueblo.jpg", "%d. LA CONSERVERA" % (i + 1), "La fábrica de Gamba Roja, donde empezó todo.", "PRÓXIMAMENTE", false, func(): pass, 400, 210)
+	soon.modulate = Color(1, 1, 1, 0.35); h.add_child(soon)
+	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	if first == null: first = h.get_child(0)
+	first.grab_focus()
 
 ## ARSENAL: personaje y camuflajes
 func _arsenal() -> void:
@@ -206,7 +233,7 @@ func _options() -> void:
 	_cycler(list, "Empezar en la ronda", ["1", "5", "10", "15", "20", "25"], str(GS.start_round), "start_round", func(x): GS.start_round = int(x))
 	_cycler(list, "Arma inicial", ["m1911", "python", "mp5k", "m16", "galil"], GS.start_weapon, "start_weapon", func(x): GS.start_weapon = x, func(x): return Data.WEAPONS[x].name.to_upper())
 	_cycler(list, "Ventaja inicial", ["", "revive", "jugg"], GS.start_perk, "start_perk", func(x): GS.start_perk = x, func(x): return "NINGUNA" if x == "" else Data.PERKS[x].name.to_upper())
-	var go = _btn("EMPEZAR PARTIDA", func(): GS.save_game(); main.start_game(), 480, true, 38); v.add_child(_center(go))
+	var go = _btn("EMPEZAR PARTIDA", func(): GS.mode = "oleadas"; GS.save_game(); main.start_game(), 480, true, 38); v.add_child(_center(go))
 	v.add_child(_center(_btn("VOLVER", _play, 300, true)))
 	go.grab_focus()
 

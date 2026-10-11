@@ -18,6 +18,9 @@ var card = ""
 # opciones de la próxima partida
 var sel_map = "prison"
 var start_round = 1
+var mode = "oleadas"          # "oleadas" | "historia"
+var mission = ""             # misión elegida del modo historia
+var campaign = {}            # id de misión -> estrellas conseguidas (0-3)
 var start_weapon = "m1911"
 var start_perk = ""
 
@@ -39,13 +42,14 @@ func load_game() -> void:
 	weapon_kills = d.get("weapon_kills", {}); camo = d.get("camo", {}); best = d.get("best", {})
 	for k in d.get("settings", {}): settings[k] = d["settings"][k]
 	sel_map = d.get("sel_map", sel_map); start_round = int(d.get("start_round", 1)); start_weapon = d.get("start_weapon", "m1911"); start_perk = d.get("start_perk", ""); character = d.get("character", "comando")
+	campaign = d.get("campaign", {});
 	stats = d.get("stats", {}); done = d.get("done", {}); title = d.get("title", ""); card = d.get("card", "")
 	if int(d.get("version", 1)) < 3: character = "comando"   # la 2.2 estrena el soldado
 	if not sel_map in Data.MAPS: sel_map = Data.MAPS[0]   # mapas que ya no existen
 
 func save_game() -> void:
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify({ "xp": xp, "level": level, "weapon_kills": weapon_kills, "camo": camo, "best": best, "settings": settings,
+	f.store_string(JSON.stringify({ "xp": xp, "level": level, "weapon_kills": weapon_kills, "camo": camo, "best": best, "settings": settings, "campaign": campaign,
 		"sel_map": sel_map, "start_round": start_round, "start_weapon": start_weapon, "start_perk": start_perk, "character": character, "stats": stats, "done": done, "title": title, "card": card, "version": 3 }))
 
 ## suma experiencia y devuelve los niveles subidos

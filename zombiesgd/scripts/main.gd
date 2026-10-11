@@ -18,6 +18,8 @@ func _ready() -> void:
 	if args.has("nethost") or args.has("netjoin"): _net_test(); return
 	if args.has("test"):
 		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1")); GS.settings.third = args.has("tp"); Controls.device = args.get("dev", Controls.device); GS.character = args.get("char", GS.character)
+		GS.mode = "oleadas"
+		if args.has("mission"): GS.mode = "historia"; GS.mission = String(args.mission); GS.sel_map = Campaign.get_mission(GS.mission).map
 		start_game(); return
 	to_menu()
 
@@ -38,7 +40,7 @@ func _net_test() -> void:
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_story", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
 		if page == "_progress":
@@ -59,6 +61,13 @@ func to_menu() -> void:
 	Controls.mouse_captured = false; Controls.in_game = false; Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	menu = preload("res://scripts/menu.gd").new(); menu.main = self; ui.add_child(menu)
 	Sfx.play_music("m_menu")
+
+## vuelve a empezar (reintentar o siguiente misión): libera la partida actual y carga otra
+func restart_game() -> void:
+	get_tree().paused = false
+	if game: game.queue_free(); game = null
+	await get_tree().process_frame
+	start_game()
 
 func start_game() -> void:
 	if menu: menu.queue_free(); menu = null
@@ -126,6 +135,22 @@ func _run_test() -> void:
 		for k in 16:
 			await get_tree().create_timer(0.25).timeout
 			print("ANIM ", k, " ", p.vm.ap.current_animation, " pos ", snapped(p.vm.ap.current_animation_position, 0.01), " cur ", p.vm.cur, " playing ", p.vm.ap.is_playing(), " len ", p.vm.ap.current_animation_length, " draw_t ", snapped(p.vm.draw_t, 0.01))
+	if args.has("missiontest"):   # recorre la misión entera teletransportándose a cada objetivo
+		var ms: Mission = game.mission
+		if ms == null: print("MISION no hay misión"); get_tree().quit(); return
+		var last = -1; var t0 = Time.get_ticks_msec()
+		while not ms.done and Time.get_ticks_msec() - t0 < 900000:
+			if ms.step_i != last:
+				last = ms.step_i; print("MISION paso ", ms.step_i, " ", ms.step.get("type", ""), " · ", ms.step.get("text", ""), " · objetivo ", ms.target.snapped(Vector3.ONE * 0.1) if ms.target != Vector3.INF else "-")
+			match ms.step.get("type", ""):
+				"power": game.turn_power_on()
+				"survive": pass
+				_:
+					if ms.target != Vector3.INF and p.global_position.distance_to(ms.target) > 1.0:
+						p.global_position = ms.target + Vector3(0, 0.3, 0); p.velocity = Vector3.ZERO
+			await get_tree().create_timer(0.5).timeout
+		print("MISION fin hecho=", ms.done, " estrellas=", ms.stars(), " bajas=", p.kills, " caídas=", ms.downs, " tiempo=", int(game.time), " campaña=", GS.campaign)
+		get_tree().quit(); return
 	if args.has("countmesh"):
 		var c = {}
 		for m in game.find_children("*", "GeometryInstance3D", true, false):
