@@ -1,0 +1,56 @@
+# Sube el último .aab de Shrimp Zombies (release zombies-latest) a Google Play, a los canales de prueba que se elijan.
+# Solo se lanza a mano (o por la API), para que a los testers no les llegue cualquier compilación a medias.
+# Usa la cuenta de servicio subidas-play (secreto PLAY_SERVICE_ACCOUNT_JSON), que solo puede publicar en pruebas.
+name: Shrimp Zombies → Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      tracks:
+        description: "Canales separados por comas (alpha = prueba cerrada, internal = prueba interna)"
+        default: "alpha,internal"
+      notes:
+        description: "Novedades (español)"
+        default: "Nueva versión de prueba."
+
+permissions:
+  contents: read
+
+jobs:
+  subir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el .aab
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download zombies-latest --repo "$GITHUB_REPOSITORY" --pattern zombies.aab --dir .
+      - name: Subir a Google Play
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACKS: ${{ inputs.tracks }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          pip install -q google-auth requests
+          python3 - <<'EOF'
+          import json, os
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import AuthorizedSession
+          c = service_account.Credentials.from_service_account_info(json.loads(os.environ["PLAY_JSON"]), scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          s = AuthorizedSession(c)
+          PKG = "es.david.shrimpzombies"
+          B = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
+          U = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PKG}"
+          def ok(r):
+              if not r.ok: raise SystemExit(f"Error {r.status_code}: {r.text}")
+              return r.json()
+          edit = ok(s.post(f"{B}/edits"))["id"]
+          with open("zombies.aab", "rb") as f:
+              b = ok(s.post(f"{U}/edits/{edit}/bundles?uploadType=media", data=f, headers={"Content-Type": "application/octet-stream"}, timeout=1800))
+          vc = str(b["versionCode"]); print("Subido versionCode", vc)
+          for t in [x.strip() for x in os.environ["TRACKS"].split(",") if x.strip()]:
+              ok(s.put(f"{B}/edits/{edit}/tracks/{t}", json={"track": t, "releases": [{"versionCodes": [vc], "status": "completed",
+                  "releaseNotes": [{"language": "es-ES", "text": os.environ["NOTES"][:500]}]}]}))
+              print("Canal", t, "-> versión", vc)
+          ok(s.post(f"{B}/edits/{edit}:commit"))
+          print("Publicado")
+          EOF
