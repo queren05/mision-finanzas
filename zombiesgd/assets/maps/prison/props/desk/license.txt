@@ -1,0 +1,11 @@
+Model Information:
+* title:	Office Desk - 18MB
+* source:	https://sketchfab.com/3d-models/office-desk-18mb-2039a113435b47d585b2c51e4f3a096d
+* author:	Mehdi Shahsavan (https://sketchfab.com/ahmagh2e)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Office Desk - 18MB" (https://sketchfab.com/3d-models/office-desk-18mb-2039a113435b47d585b2c51e4f3a096d) by Mehdi Shahsavan (https://sketchfab.com/ahmagh2e) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

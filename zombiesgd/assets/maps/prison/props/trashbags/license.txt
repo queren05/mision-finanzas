@@ -1,0 +1,11 @@
+Model Information:
+* title:	Trash bags
+* source:	https://sketchfab.com/3d-models/trash-bags-cd134204748b4e28a9e3494638cc595f
+* author:	Bohdan Lvov (https://sketchfab.com/ostapblendercg)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Trash bags" (https://sketchfab.com/3d-models/trash-bags-cd134204748b4e28a9e3494638cc595f) by Bohdan Lvov (https://sketchfab.com/ostapblendercg) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

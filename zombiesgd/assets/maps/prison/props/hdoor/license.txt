@@ -1,0 +1,11 @@
+Model Information:
+* title:	Prison Hallway Door - 2048px²
+* source:	https://sketchfab.com/3d-models/prison-hallway-door-2048px2-3d935e066f374738a224106bfb3ade8e
+* author:	Mark Peters (https://sketchfab.com/mark-peters)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Prison Hallway Door - 2048px²" (https://sketchfab.com/3d-models/prison-hallway-door-2048px2-3d935e066f374738a224106bfb3ade8e) by Mark Peters (https://sketchfab.com/mark-peters) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

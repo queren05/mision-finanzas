@@ -55,10 +55,15 @@ var mission: Mission = null   # modo historia               # chicles comprados 
 func start(id: String) -> void:
 	map_id = id
 	cfg = MapBuilder.load_config(id)
+	var vb = OS.get_cmdline_user_args().has("verbose")
 	_build_environment()
+	if vb: print("ETAPA entorno")
 	var root = MapBuilder.build_scene(cfg, self)
+	if vb: print("ETAPA escenario")
 	_build_zones(root)
+	if vb: print("ETAPA zonas")
 	_build_interactables()
+	if vb: print("ETAPA interactivos")
 	player = Player.new(); player.game = self; add_child(player)
 	var sp = cfg.spawn
 	var my_slot = 0

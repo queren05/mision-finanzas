@@ -1,0 +1,11 @@
+Model Information:
+* title:	TV CCTV Monitor
+* source:	https://sketchfab.com/3d-models/tv-cctv-monitor-2273be0837bc453b982dfb19d82c9cc0
+* author:	Simon_M2099 (https://sketchfab.com/Simon_M2099)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "TV CCTV Monitor" (https://sketchfab.com/3d-models/tv-cctv-monitor-2273be0837bc453b982dfb19d82c9cc0) by Simon_M2099 (https://sketchfab.com/Simon_M2099) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

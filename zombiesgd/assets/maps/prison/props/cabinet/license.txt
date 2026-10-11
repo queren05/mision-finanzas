@@ -1,0 +1,11 @@
+Model Information:
+* title:	Rusty Filing Cabinet
+* source:	https://sketchfab.com/3d-models/rusty-filing-cabinet-619484b78fbe449ea5c0cdb68e8f2bd6
+* author:	Amiel Goco (https://sketchfab.com/pamikoe)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rusty Filing Cabinet" (https://sketchfab.com/3d-models/rusty-filing-cabinet-619484b78fbe449ea5c0cdb68e8f2bd6) by Amiel Goco (https://sketchfab.com/pamikoe) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

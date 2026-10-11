@@ -185,6 +185,22 @@ func _run_test() -> void:
 				print("PUERTA %d %s %s -> %s  %s (queda a %.1f m)" % [i, str(c.snapped(Vector3.ONE * 0.1)), str(pair[0].snapped(Vector3.ONE * 0.1)), str(pair[1].snapped(Vector3.ONE * 0.1)), "PASA" if ok else "ATASCADO en " + str(p.global_position.snapped(Vector3.ONE * 0.1)), dist])
 		print("PUERTAS atascadas: ", bad)
 		get_tree().quit(); return
+	if args.has("raydbg"):   # raydbg=x,y,z,dx,dz: qué hay delante (tras abrir todas las puertas)
+		for i in game.doors.size(): game.evt("door", i)
+		await get_tree().create_timer(1.0).timeout
+		var v = String(args.raydbg).split(",")
+		var o = Vector3(float(v[0]), float(v[1]), float(v[2])); var dv = Vector3(float(v[3]), 0, float(v[4])).normalized()
+		for h in [0.1, 0.3, 0.6, 1.0, 1.6]:
+			var q = PhysicsRayQueryParameters3D.create(o + Vector3(0, h, 0), o + Vector3(0, h, 0) + dv * 4.0, 0xFFFF); q.exclude = [p.get_rid()]
+			var r = game.get_world_3d().direct_space_state.intersect_ray(q)
+			print("RAYO h=", h, " -> ", "nada" if r.is_empty() else str(r.position.snapped(Vector3.ONE * 0.01)) + " " + str(r.collider.get_path()) + " capa " + str(r.collider.collision_layer))
+		if args.has("walk"):
+			p.global_position = o + Vector3(0, 0.1, 0); p.velocity = Vector3.ZERO
+			for f in 240:
+				p.yaw = atan2(-dv.x, -dv.z); p.sync_head(); Controls.touch_move = Vector2(0, 0.7)
+				await get_tree().physics_frame
+				if f % 30 == 0: print("ANDA ", p.global_position.snapped(Vector3.ONE * 0.01), " vel ", p.velocity.snapped(Vector3.ONE * 0.01), " suelo ", p.is_on_floor(), " pared ", p.is_on_wall(), " ", str(p.get_last_slide_collision().get_collider().get_path()) if p.get_last_slide_collision() else "")
+		get_tree().quit(); return
 	if args.has("navcheck"):   # ¿se puede llegar andando? navcheck=x,y,z;x,y,z (desde x,y,z del primero)
 		var pts = []
 		for q in String(args.navcheck).split(";"):

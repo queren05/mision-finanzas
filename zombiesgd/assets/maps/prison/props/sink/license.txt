@@ -1,0 +1,11 @@
+Model Information:
+* title:	Filthy Metal Sink - 4096px²
+* source:	https://sketchfab.com/3d-models/filthy-metal-sink-4096px2-dcd2b91f54014e95bd488e12f0d54d61
+* author:	Mark Peters (https://sketchfab.com/mark-peters)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Filthy Metal Sink - 4096px²" (https://sketchfab.com/3d-models/filthy-metal-sink-4096px2-dcd2b91f54014e95bd488e12f0d54d61) by Mark Peters (https://sketchfab.com/mark-peters) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

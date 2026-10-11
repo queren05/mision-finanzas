@@ -40,8 +40,11 @@ static func build_scene(cfg: Dictionary, parent: Node3D) -> Node3D:
 	for d in cfg.get("doors", []): door_parts.append_array(d.get("hide_meshes", []))
 	# piezas: modelos sueltos colocados a mano (edificios, coches, farolas...) con sus mallas unidas por material
 	var pi = 0
+	var vb = OS.get_cmdline_user_args().has("verbose")
 	for pr in cfg.get("props", []):
+		if vb: print("PIEZA ", pi, " ", pr.get("name", ""))
 		_add_prop(root, pr, pi, door_parts); pi += 1
+	if vb: print("PIEZAS hechas")
 	# escenario principal: se ajustan los materiales y se une por material en trozos de 20 m (menos llamadas de dibujo)
 	if cfg.has("scene") and cfg.get("merge", false):   # (no por defecto: unir pierde los LOD que genera la importación)
 		var ms = []
@@ -102,6 +105,10 @@ static func _add_prop(root: Node3D, pr: Dictionary, idx: int, door_parts: Array)
 		if lo != Vector3.INF: inst.position -= Vector3((lo.x + hi.x) / 2, lo.y, (lo.z + hi.z) / 2)
 	var nocol: Array = pr.get("nocollide", []); var soft: Array = pr.get("soft", [])
 	var no_collide_all = pr.get("collide", true) == false
+	if _matches(String(holder.name), door_parts):   # la pieza entera es una puerta que se abre (la navegación cuenta con el hueco)
+		for m in meshes:
+			m.set_meta("prop_done", true); _collide(m, LAYER_WORLD, true)
+		return
 	if not pr.get("merge", true):
 		for m in meshes:
 			var full = String(inst.get_path_to(m))
@@ -110,6 +117,8 @@ static func _add_prop(root: Node3D, pr: Dictionary, idx: int, door_parts: Array)
 			_collide(m, LAYER_SOFT if _matches(full, soft) else LAYER_WORLD, _matches(full, door_parts))
 		return
 	_merge(inst, meshes, nocol, soft, door_parts, no_collide_all, 0.0)
+	if pr.has("vis"):   # interiores: no se dibujan desde lejos (desde fuera no se ven)
+		for m in holder.find_children("*", "MeshInstance3D", true, false): m.visibility_range_end = float(pr.vis)
 
 ## une mallas por material, por si chocan o no y (si cell > 0) por trozos de cell metros: de cientos de mallas a unas
 ## pocas llamadas de dibujo, sin perder el recorte de lo que no se ve. Las puertas que se abren se quedan sueltas.
@@ -300,8 +309,13 @@ static func extra_mat(name: String, cache: Dictionary, T := "") -> Material:
 			var arm = load(T + name + "_arm.jpg")
 			m.roughness_texture = arm; m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN; m.roughness = 1.0
 			m.ao_enabled = true; m.ao_texture = arm; m.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+			if name in ["metal", "grate"]: m.metallic_texture = arm; m.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE; m.metallic = 1.0
 		m.uv1_scale = Vector3(0.25, 0.25, 0.25)
 		match name:
+			"brick_old", "plaster": m.uv1_scale = Vector3(0.45, 0.45, 0.45)
+			"tiles", "tiles_dark": m.uv1_scale = Vector3(0.5, 0.5, 0.5)
+			"grate", "metal": m.uv1_scale = Vector3(1.0, 1.0, 1.0)
+			"floor", "ceiling": m.uv1_scale = Vector3(0.22, 0.22, 0.22)
 			"asphalt": m.uv1_scale = Vector3(0.18, 0.18, 0.18)
 			"sidewalk": m.uv1_scale = Vector3(0.3, 0.3, 0.3)
 			"burned": m.uv1_scale = Vector3(0.12, 0.12, 0.12)
@@ -330,6 +344,11 @@ static func build_extra(list: Array, tex_dir := "") -> Node3D:
 	var cache = {}
 	for e in list:
 		if e.t == "crack": root.add_child(_crack(e, cache, tex_dir)); continue
+		if e.get("inv", false):   # solo colisión, invisible (barandillas: no te caes, pero las balas pasan)
+			var ib = StaticBody3D.new(); ib.collision_layer = LAYER_SOFT; ib.collision_mask = 0
+			var ic = CollisionShape3D.new(); var ish = BoxShape3D.new(); ish.size = v3(e.s); ic.shape = ish; ib.add_child(ic)
+			ib.position = v3(e.p) + Vector3(0, float(e.s[1]) / 2, 0); ib.rotation_degrees.y = float(e.get("r", 0)); root.add_child(ib)
+			continue
 		var mi = MeshInstance3D.new()
 		var s: Array = e.s
 		var shape: Shape3D
@@ -348,6 +367,12 @@ static func build_extra(list: Array, tex_dir := "") -> Node3D:
 		if e.get("c", true):
 			var body = StaticBody3D.new(); body.collision_layer = LAYER_WORLD; body.collision_mask = 0
 			var col = CollisionShape3D.new(); col.shape = shape; body.add_child(col); node.add_child(body)
+	# se unen por material en trozos de 16 m: cientos de cajas en unas pocas llamadas de dibujo (la colisión sigue aparte)
+	if list.size() > 40 and not OS.get_cmdline_user_args().has("nomergeextra"):
+		var ms = []
+		for m in root.find_children("*", "MeshInstance3D", true, false):
+			if m.material_override is StandardMaterial3D: ms.append(m)
+		_merge(root, ms, [], [], [], true, 16.0)
 	return root
 
 ## grieta: una tira de bordes irregulares a lo largo de unos puntos (lava por dentro, quemado alrededor). Sin colisión.

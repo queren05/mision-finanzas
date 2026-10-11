@@ -118,18 +118,18 @@ func _next_step() -> void:
 	target = Vector3.INF
 	match step.type:
 		"collect":
-			for p in step.pos: items.append(_spawn_item(_snap(Vector3(p[0], 0, p[1]))))
+			for p in step.pos: items.append(_spawn_item(_snap(_xz(p))))
 		"destroy":
-			for p in step.pos: items.append(_spawn_target(_snap(Vector3(p[0], 0, p[1])), float(step.get("hp", 1500.0))))
+			for p in step.pos: items.append(_spawn_target(_snap(_xz(p)), float(step.get("hp", 1500.0))))
 		"plant":
-			for p in step.pos: items.append(_spawn_charge(_snap(Vector3(p[0], 0, p[1]))))
+			for p in step.pos: items.append(_spawn_charge(_snap(_xz(p))))
 		"boss":
 			_spawn_boss()
 		"door":
 			var d = game.doors[int(step.door)]
 			target = d.global_position
 		"goto", "defend":
-			target = _snap(Vector3(step.pos[0], 0, step.pos[1]))
+			target = _snap(_xz(step.pos))
 		"power":
 			for n in game.interactables:
 				if n is Interactables.Power: target = n.global_position; break
@@ -236,6 +236,9 @@ func _update_text() -> void:
 			if items.size() > 1: txt += "  (%d/%d)" % [picked, items.size()]
 	obj_text.text = txt
 
+## [x, z] o [x, z, altura] (objetos en pisos de arriba)
+func _xz(p: Array) -> Vector3: return Vector3(float(p[0]), float(p[2]) if p.size() > 2 else 0.0, float(p[1]))
+
 ## punto de la navegación más cercano (para no dejar objetos dentro de paredes)
 func _snap(p: Vector3) -> Vector3:
 	var map = game.get_world_3d().navigation_map
@@ -320,7 +323,7 @@ func _detonate(spots: Array, nodes: Array) -> void:
 
 ## jefe: un Bruto enorme y rojizo con barra de vida
 func _spawn_boss() -> void:
-	var at = _snap(Vector3(step.pos[0], 0, step.pos[1])) if step.has("pos") else game._random_nav_near(game.player.global_position, 10.0, 16.0)
+	var at = _snap(_xz(step.pos)) if step.has("pos") else game._random_nav_near(game.player.global_position, 10.0, 16.0)
 	var hp = game.round_hp(max(game.round_n, 10)) * float(step.get("hp", 3.0))
 	boss = game.make_zombie("a", "brute", at, hp, 1.0)
 	boss_max = boss.max_hp
