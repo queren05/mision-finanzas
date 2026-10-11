@@ -1,0 +1,11 @@
+Model Information:
+* title:	Rusty Barrels HD 2K
+* source:	https://sketchfab.com/3d-models/rusty-barrels-hd-2k-35d9e4296928483babe28e757aa9ca6b
+* author:	Lippanen (https://sketchfab.com/jaakko.itapalo.edu)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rusty Barrels HD 2K" (https://sketchfab.com/3d-models/rusty-barrels-hd-2k-35d9e4296928483babe28e757aa9ca6b) by Lippanen (https://sketchfab.com/jaakko.itapalo.edu) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

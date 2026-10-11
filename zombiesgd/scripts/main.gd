@@ -135,8 +135,25 @@ func _run_test() -> void:
 		for k in 16:
 			await get_tree().create_timer(0.25).timeout
 			print("ANIM ", k, " ", p.vm.ap.current_animation, " pos ", snapped(p.vm.ap.current_animation_position, 0.01), " cur ", p.vm.cur, " playing ", p.vm.ap.is_playing(), " len ", p.vm.ap.current_animation_length, " draw_t ", snapped(p.vm.draw_t, 0.01))
+	if args.has("mstep") and game.mission:   # depuración: salta directamente al paso N de la misión (con las puertas abiertas)
+		for i in game.doors.size(): game.evt("door", i)
+		while game.mission.step_i < int(args.mstep): game.mission._next_step()
+		await get_tree().create_timer(2.0).timeout
+	if args.has("navcheck"):   # ¿se puede llegar andando? navcheck=x,y,z;x,y,z (desde x,y,z del primero)
+		var pts = []
+		for q in String(args.navcheck).split(";"):
+			var v = q.split(","); pts.append(Vector3(float(v[0]), float(v[1]), float(v[2])))
+		for i in game.doors.size(): game.evt("door", i)
+		await get_tree().create_timer(1.0).timeout
+		var nav = game.get_world_3d().navigation_map
+		for i in range(1, pts.size()):
+			var path = NavigationServer3D.map_get_path(nav, pts[0], pts[i], true)
+			var end = path[path.size() - 1] if path.size() else Vector3.INF
+			print("NAVCHECK ", pts[i], " -> ", "SÍ" if end.distance_to(pts[i]) < 1.0 else "NO (llega a %s)" % str(end.snapped(Vector3.ONE * 0.1)))
+		get_tree().quit(); return
 	if args.has("missiontest"):   # recorre la misión entera teletransportándose a cada objetivo
 		var ms: Mission = game.mission
+		if args.has("disable_3d"): get_viewport().disable_3d = true   # no hace falta dibujar (va mucho más rápido)
 		if ms == null: print("MISION no hay misión"); get_tree().quit(); return
 		var last = -1; var t0 = Time.get_ticks_msec()
 		while not ms.done and Time.get_ticks_msec() - t0 < 900000:
@@ -145,6 +162,21 @@ func _run_test() -> void:
 			match ms.step.get("type", ""):
 				"power": game.turn_power_on()
 				"survive": pass
+				"destroy", "boss":   # dispara de verdad (rayo de bala) desde unos metros
+					if ms.target != Vector3.INF:
+						var aim = ms.target + Vector3(0, 1.3, 0)
+						var spot = ms._snap(ms.target + Vector3(4.0, 0, 0))
+						if ms.step.type == "boss":   # un punto a unos metros desde el que se le vea
+							for k in 20:
+								var c = game._random_nav_near(ms.target, 4.0, 8.0)
+								if c != Vector3.INF and game.ray_world(ms.target + Vector3(0, 1.4, 0), (c - ms.target).normalized(), ms.target.distance_to(c)) == Vector3.INF: spot = c; break
+						p.global_position = spot + Vector3(0, 0.3, 0); p.velocity = Vector3.ZERO
+						await get_tree().physics_frame
+						var eye = p.global_position + Vector3(0, 1.5, 0)
+						var hits = 0
+						for k in (8 if ms.step.type == "destroy" else 40):
+							if game.shoot_ray(eye, (aim - eye).normalized(), 60.0, p).hit: hits += 1
+						if hits == 0: print("MISION no le doy a ", aim.snapped(Vector3.ONE * 0.1), " desde ", eye.snapped(Vector3.ONE * 0.1))
 				_:
 					if ms.target != Vector3.INF and p.global_position.distance_to(ms.target) > 1.0:
 						p.global_position = ms.target + Vector3(0, 0.3, 0); p.velocity = Vector3.ZERO
@@ -306,6 +338,7 @@ func _run_test() -> void:
 		get_viewport().get_texture().get_image().save_png(args.pauseshot)
 	if args.has("inspect"):
 		var k = 0
+		p.set_process(false); p.set_physics_process(false); game.hud.visible = false; p.vm.scale = Vector3.ONE * 0.0001
 		for it in game.interactables:
 			if it is Interactables.Door: continue
 			var f = it.global_transform.basis.z.normalized()
@@ -318,6 +351,7 @@ func _run_test() -> void:
 		for gn in game.find_children("*", String(args.hidegrp), true, false): gn.visible = false
 	if args.has("looks"):
 		var k = 0
+		p.set_process(false); p.set_physics_process(false)
 		for spec in String(args.looks).split(";"):
 			var v = spec.split(","); p.cam.global_position = Vector3(float(v[0]), float(v[1]), float(v[2])); p.cam.look_at(Vector3(float(v[3]), float(v[4]), float(v[5])))
 			if args.has("clean"): game.hud.visible = false; p.vm.scale = Vector3.ONE * 0.0001   # (el jugador vuelve a mostrar los brazos cada fotograma)
@@ -340,7 +374,7 @@ func _frames(n: int) -> void:
 	for k in n: await get_tree().physics_frame
 
 ## zombi de prueba delante del jugador (quieto) para disparar
-func _dummy(p: Player, dist := 4.0, type := "normal", hp := 100.0) -> Zombie:
+func _dummy(p: Player, dist := 4.0, type := "normal", hp := 100.0, room_behind := 0.0) -> Zombie:
 	var map = p.get_world_3d().navigation_map
 	var at = Vector3.INF
 	for k in 48:   # una dirección con línea de tiro limpia (sin puertas ni paredes en medio); si no hay, más cerca
@@ -349,6 +383,9 @@ func _dummy(p: Player, dist := 4.0, type := "normal", hp := 100.0) -> Zombie:
 		var c = NavigationServer3D.map_get_closest_point(map, p.global_position + f * dist)
 		var eye = p.cam.global_position
 		var tgt = c + Vector3(0, 1.0, 0)
+		if room_behind > 0.0:   # (granadas: que haya suelo detrás por si rebota y no caiga al agua)
+			var c2 = NavigationServer3D.map_get_closest_point(map, p.global_position + f * (dist + room_behind))
+			if c2.distance_to(p.global_position + f * (dist + room_behind)) > 0.8: continue
 		if c.distance_to(p.global_position + f * dist) < 0.8 and game.ray_world(eye, (tgt - eye).normalized(), eye.distance_to(tgt)) == Vector3.INF: at = c; break
 	if at == Vector3.INF: at = p.global_position + Vector3(2.5, 0, 0)
 	var z = game.make_zombie("a", type, at, hp, 0.0)
@@ -424,8 +461,9 @@ func _mechanics(p: Player) -> void:
 	_ok("cuchillo", z.dead)
 	# --- granada
 	await _frames(30)
-	z = await _dummy(p, 9.0, "normal", 300.0); _aim_at(p, z, -1.2)
+	z = await _dummy(p, 9.0, "normal", 300.0, 5.0); _aim_at(p, z, -1.2)
 	var g0 = p.grenades
+	if args.has("verbose"): print("GRANADA jugador ", p.global_position.snapped(Vector3.ONE * 0.1), " zombi ", z.global_position.snapped(Vector3.ONE * 0.1))
 	Controls.press_touch("grenade", true); await _frames(2); Controls.press_touch("grenade", false)
 	await _frames(170)
 	_ok("granada explota y mata", z.dead and p.grenades == g0 - 1, "granadas %d->%d vida %.0f" % [g0, p.grenades, z.hp])

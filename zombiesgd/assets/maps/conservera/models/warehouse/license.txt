@@ -1,0 +1,11 @@
+Model Information:
+* title:	Abandoned Warehouse
+* source:	https://sketchfab.com/3d-models/abandoned-warehouse-698a34300af34095ac6593f348585daa
+* author:	Arsen Ismailov (https://sketchfab.com/fdgasd7)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Abandoned Warehouse" (https://sketchfab.com/3d-models/abandoned-warehouse-698a34300af34095ac6593f348585daa) by Arsen Ismailov (https://sketchfab.com/fdgasd7) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

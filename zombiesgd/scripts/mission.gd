@@ -17,6 +17,9 @@ var target = Vector3.INF     # a dónde apunta el marcador
 var downs = 0
 var done = false
 var brute_sent = false
+var boss: Zombie = null      # jefe del paso «boss»
+var boss_max = 1.0
+var plant_t = 0.0            # colocar cargas: segundos quieto junto a la carga actual
 
 # interfaz
 var obj_title: Label
@@ -35,6 +38,7 @@ var beacon: MeshInstance3D
 func setup(g: Node, m: Dictionary) -> void:
 	game = g; data = m
 	layer = 5
+	game.hud.toast_box.offset_top = 128; game.hud.toast_box.offset_bottom = 320   # los avisos, debajo del objetivo
 	var font_bo = load("res://assets/fonts/BlackOpsOne.ttf"); var font_ui = load("res://assets/fonts/Oswald.ttf")
 	# objetivo arriba en el centro
 	var top = VBoxContainer.new(); top.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP); top.offset_top = 18; top.offset_left = -360; top.offset_right = 360
@@ -105,11 +109,18 @@ func _next_step() -> void:
 	if step_i >= steps.size(): _finish(true); return
 	step = steps[step_i]
 	radio(step.get("radio", []))
-	bar.visible = step.type in ["survive", "defend"]
+	bar.visible = step.type in ["survive", "defend", "boss"]
+	obj_title.text = "OBJETIVO"; obj_title.add_theme_color_override("font_color", Color(1.0, 0.62, 0.15))
 	target = Vector3.INF
 	match step.type:
 		"collect":
 			for p in step.pos: items.append(_spawn_item(_snap(Vector3(p[0], 0, p[1]))))
+		"destroy":
+			for p in step.pos: items.append(_spawn_target(_snap(Vector3(p[0], 0, p[1])), float(step.get("hp", 1500.0))))
+		"plant":
+			for p in step.pos: items.append(_spawn_charge(_snap(Vector3(p[0], 0, p[1]))))
+		"boss":
+			_spawn_boss()
 		"door":
 			var d = game.doors[int(step.door)]
 			target = d.global_position
@@ -170,6 +181,40 @@ func _process(delta: float) -> void:
 				_next_step(); return
 		"power":
 			if game.power_on: _next_step(); return
+		"destroy":
+			if picked >= items.size(): _next_step(); return
+			target = _nearest_item(pos)
+		"plant":
+			var cur: Node3D = null
+			for it in items:
+				if is_instance_valid(it) and not it.get_meta("armed", false) and Vector2(pos.x - it.global_position.x, pos.z - it.global_position.z).length() < 1.8 and abs(pos.y - it.global_position.y) < 1.5: cur = it; break
+			bar.visible = cur != null
+			if cur:
+				plant_t += delta; bar.max_value = float(step.get("time", 3.0)); bar.value = plant_t
+				obj_title.text = "COLOCANDO CARGA…"
+				if plant_t >= float(step.get("time", 3.0)):
+					cur.set_meta("armed", true); picked += 1; plant_t = 0.0
+					cur.get_node("Light").light_color = Color(1.0, 0.1, 0.05); cur.get_node("Mesh").material_override.emission = Color(1.0, 0.1, 0.05)
+					Sfx.play("hitmark", 0.8, 0.5)
+					game.hud.toast("CARGA COLOCADA", "%d/%d" % [picked, items.size()])
+					_update_text()
+			else:
+				plant_t = 0.0; obj_title.text = "OBJETIVO"
+			if picked >= items.size():
+				var spots = items.map(func(it): return it.global_position)
+				for it in items: it.set_meta("keep", true)
+				var kept = items.duplicate(); items.clear()
+				get_tree().create_timer(float(step.get("fuse", 4.0))).timeout.connect(func(): _detonate(spots, kept))
+				radio([["COMANDO", "Cargas listas. ¡Aléjate!"]] if not step.has("radio_done") else step.radio_done)
+				_next_step(); return
+			target = Vector3.INF; var bd = INF
+			for it in items:
+				if is_instance_valid(it) and not it.get_meta("armed", false) and pos.distance_to(it.global_position) < bd: bd = pos.distance_to(it.global_position); target = it.global_position
+		"boss":
+			if boss == null or not is_instance_valid(boss) or boss.dead:
+				boss = null; _next_step(); return
+			bar.max_value = boss_max; bar.value = max(0.0, boss.hp)
+			target = boss.global_position
 	if beacon and step.get("type", "") != "defend":
 		beacon.visible = target != Vector3.INF
 		if beacon.visible: beacon.global_position = target + Vector3(0, 15, 0)
@@ -183,6 +228,8 @@ func _update_text() -> void:
 			if items.size() > 1: txt += "  (%d/%d)" % [picked, items.size()]
 		"survive": txt += "  %d s" % max(0, int(ceil(float(step.time) - t)))
 		"defend": txt += "  %d %%" % int(progress / float(step.time) * 100.0)
+		"destroy", "plant":
+			if items.size() > 1: txt += "  (%d/%d)" % [picked, items.size()]
 	obj_text.text = txt
 
 ## punto de la navegación más cercano (para no dejar objetos dentro de paredes)
@@ -199,6 +246,87 @@ func _spawn_item(at: Vector3) -> Node3D:
 	var l = OmniLight3D.new(); l.light_color = Color(1.0, 0.6, 0.2); l.light_energy = 1.4; l.omni_range = 3.5; l.position.y = 0.9; n.add_child(l)
 	var tw = m.create_tween().set_loops(); tw.tween_property(m, "rotation:y", TAU, 2.5).from(0.0)
 	return n
+
+func _nearest_item(pos: Vector3) -> Vector3:
+	var best = INF; var out = Vector3.INF
+	for it in items:
+		if is_instance_valid(it) and it.visible and pos.distance_to(it.global_position) < best: best = pos.distance_to(it.global_position); out = it.global_position
+	return out
+
+## depósito de cultivo (paso «destroy»): un tanque de cristal con líquido rojo que hay que reventar a tiros o con explosiones
+func _spawn_target(at: Vector3, hp: float) -> Node3D:
+	var n = StaticBody3D.new(); n.collision_layer = MapBuilder.LAYER_WORLD; n.collision_mask = 0
+	n.set_meta("mission_target", true); n.set_meta("hp", hp); n.set_meta("max_hp", hp)
+	game.add_child(n); n.global_position = at
+	var cs = CollisionShape3D.new(); var cy = CylinderShape3D.new(); cy.radius = 0.75; cy.height = 2.6; cs.shape = cy; cs.position.y = 1.3; n.add_child(cs)
+	var metal = StandardMaterial3D.new(); metal.albedo_color = Color(0.32, 0.3, 0.28); metal.metallic = 0.8; metal.roughness = 0.45
+	for y in [0.15, 2.5]:
+		var ring = MeshInstance3D.new(); var rm = CylinderMesh.new(); rm.top_radius = 0.8; rm.bottom_radius = 0.8; rm.height = 0.3; rm.radial_segments = 16; ring.mesh = rm
+		ring.position.y = y; ring.material_override = metal; n.add_child(ring)
+	var liq = MeshInstance3D.new(); liq.name = "Mesh"; var lm = CylinderMesh.new(); lm.top_radius = 0.66; lm.bottom_radius = 0.66; lm.height = 2.1; lm.radial_segments = 16; liq.mesh = lm; liq.position.y = 1.32
+	var lmat = StandardMaterial3D.new(); lmat.albedo_color = Color(0.85, 0.12, 0.18, 0.75); lmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	lmat.emission_enabled = true; lmat.emission = Color(1.0, 0.2, 0.25); lmat.emission_energy_multiplier = 1.2; lmat.roughness = 0.1
+	liq.material_override = lmat; n.add_child(liq)
+	# una gamba gigante flotando dentro
+	var g = MeshInstance3D.new(); var cap = CapsuleMesh.new(); cap.radius = 0.22; cap.height = 1.1; cap.radial_segments = 10; cap.rings = 4; g.mesh = cap
+	g.position = Vector3(0, 1.3, 0); g.rotation_degrees = Vector3(0, 0, 70)
+	var gm = StandardMaterial3D.new(); gm.albedo_color = Color(1.0, 0.45, 0.3); gm.emission_enabled = true; gm.emission = Color(0.6, 0.15, 0.1); g.material_override = gm; n.add_child(g)
+	var tw = g.create_tween().set_loops(); tw.tween_property(g, "position:y", 1.5, 1.6).set_trans(Tween.TRANS_SINE); tw.tween_property(g, "position:y", 1.1, 1.6).set_trans(Tween.TRANS_SINE)
+	var l = OmniLight3D.new(); l.light_color = Color(1.0, 0.25, 0.3); l.light_energy = 1.6; l.omni_range = 5.0; l.position.y = 1.6; n.add_child(l)
+	return n
+
+## un tiro o una explosión le quita vida a un depósito
+func hit_target(col: Node, dmg: float) -> void:
+	if done or not is_instance_valid(col) or not col.visible: return
+	var hp = float(col.get_meta("hp")) - dmg
+	col.set_meta("hp", hp)
+	var lm: StandardMaterial3D = col.get_node("Mesh").material_override
+	lm.emission_energy_multiplier = 4.0
+	col.create_tween().tween_property(lm, "emission_energy_multiplier", 1.2, 0.25)
+	game.hud.hitmarker(hp <= 0.0, false)
+	if hp <= 0.0:
+		col.visible = false; col.collision_layer = 0; picked += 1
+		Fx.explosion(game, col.global_position + Vector3(0, 1.2, 0))
+		Sfx.play_at("explosion", col.global_position, 1.0, 0.8)
+		game.explode(col.global_position + Vector3(0, 1.0, 0), 4.0, 5000.0, null, "explo", "")
+		game.hud.toast("DEPÓSITO DESTRUIDO", "%d/%d" % [picked, items.size()])
+		_update_text()
+
+func explosion(at: Vector3, radius: float, dmg: float) -> void:
+	if step.get("type", "") != "destroy": return
+	for it in items.duplicate():
+		if is_instance_valid(it) and it.visible and it.global_position.distance_to(at) < radius + 0.8: hit_target(it, dmg)
+
+## carga explosiva (paso «plant»): luz naranja; se pone roja al colocarla
+func _spawn_charge(at: Vector3) -> Node3D:
+	var n = Node3D.new(); game.add_child(n); n.global_position = at
+	var m = MeshInstance3D.new(); m.name = "Mesh"; var bm = BoxMesh.new(); bm.size = Vector3(0.45, 0.3, 0.3); m.mesh = bm; m.position.y = 0.2
+	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.2, 0.22, 0.18); mat.emission_enabled = true; mat.emission = Color(1.0, 0.55, 0.1); mat.emission_energy_multiplier = 0.8
+	m.material_override = mat; n.add_child(m)
+	var l = OmniLight3D.new(); l.name = "Light"; l.light_color = Color(1.0, 0.6, 0.2); l.light_energy = 1.4; l.omni_range = 3.0; l.position.y = 0.7; n.add_child(l)
+	var tw = l.create_tween().set_loops(); tw.tween_property(l, "light_energy", 0.3, 0.4); tw.tween_property(l, "light_energy", 1.6, 0.4)
+	return n
+
+func _detonate(spots: Array, nodes: Array) -> void:
+	for i in spots.size():
+		get_tree().create_timer(i * 0.35).timeout.connect(func():
+			game.explode(spots[i] + Vector3(0, 0.6, 0), 6.0, 1e6, null, "explo", "")
+			Fx.fire_puff(game, spots[i])
+			if i < nodes.size() and is_instance_valid(nodes[i]): nodes[i].queue_free())
+
+## jefe: un Bruto enorme y rojizo con barra de vida
+func _spawn_boss() -> void:
+	var at = _snap(Vector3(step.pos[0], 0, step.pos[1])) if step.has("pos") else game._random_nav_near(game.player.global_position, 10.0, 16.0)
+	var hp = game.round_hp(max(game.round_n, 10)) * float(step.get("hp", 3.0))
+	boss = game.make_zombie("a", "brute", at, hp, 1.0)
+	boss_max = boss.max_hp
+	boss.model.scale *= float(step.get("scale", 1.35))
+	var over = StandardMaterial3D.new(); over.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; over.albedo_color = Color(1.0, 0.15, 0.05, 0.22)
+	over.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; over.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	for mi in boss.model.find_children("*", "MeshInstance3D", true, false): mi.material_overlay = over
+	obj_title.text = String(step.get("name", "JEFE")).to_upper()
+	if step.get("ammo", false):   # munición para el combate
+		game._drop_powerup(game.player.global_position + game.player.global_transform.basis.z * -2.0, "max_ammo")
 
 # ------------------------------------------------------------------ radio
 func radio(lines: Array) -> void:

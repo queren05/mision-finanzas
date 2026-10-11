@@ -16,6 +16,7 @@ const BEIGE = Color(0.725, 0.663, 0.541)
 const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
 	"pueblo": { "name": "Pueblo", "desc": "Un cruce de un pueblo americano en llamas: el banco, el bar, el diner y la gasolinera. Cuidado con la lava del cruce." },
+	"conservera": { "name": "La Conservera", "desc": "La fábrica de Gamba Roja junto al puerto, de noche: el muelle, el patio de carga, la nave de procesado, los depósitos y un laboratorio secreto." },
 
 }
 
@@ -211,8 +212,7 @@ func _story() -> void:
 		h.add_child(card)
 		if first == null and unlocked and st == 0: first = card
 		i += 1
-	var soon = _card("res://assets/ui/menu_pueblo.jpg", "%d. LA CONSERVERA" % (i + 1), "La fábrica de Gamba Roja, donde empezó todo.", "PRÓXIMAMENTE", false, func(): pass, 400, 210)
-	soon.modulate = Color(1, 1, 1, 0.35); h.add_child(soon)
+	var soon = _lbl("PRÓXIMAMENTE: los informes del laboratorio hablan de otras plantas de Gamba Roja…", font_ui, 22, Color(0.75, 0.7, 0.62)); soon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(soon)
 	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	if first == null: first = h.get_child(0)
 	first.grab_focus()

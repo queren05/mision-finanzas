@@ -11,6 +11,9 @@ extends RefCounted
 ##   survive: aguantar unos segundos
 ##   defend:  quedarse dentro de una zona (pos, r) hasta llenar la barra; brute = sale un Bruto al 60 %
 ##   power:   encender la corriente con la palanca del mapa
+##   destroy: reventar depósitos (pos: [[x, z], ...], hp = vida de cada uno) a tiros o con explosiones
+##   plant:   colocar cargas (pos: [[x, z], ...]); quedarse junto a cada una `time` segundos; estallan a los `fuse` s
+##   boss:    un jefe (Bruto enorme) con barra de vida; hp = veces la vida de la ronda, name = su nombre
 ## Cada paso puede llevar radio: [[quién, texto], ...] que suena al empezarlo, y calm: true (menos zombis).
 
 const MISSIONS := [
@@ -58,6 +61,37 @@ const MISSIONS := [
 	  ],
 	  "outro": [["CONTROL", "Estás fuera. Hemos analizado una gamba de la conservera: no es un virus normal."],
 				["CONTROL", "Todo apunta a la fábrica de Gamba Roja. Descansa, Comando. Mañana vamos a por ellos."]] },
+	{ "id": "m3", "name": "La Conservera", "map": "conservera", "round": 9, "cap": 14, "rate": 1.6, "points": 3000, "weapon": "m16",
+	  "par_time": 900,
+	  "desc": "Entra de noche en la fábrica de Gamba Roja, descubre qué cultivaban en su laboratorio y vuélalo todo.",
+	  "intro": [["CONTROL", "Comando, estás en el muelle de la conservera Gamba Roja. Aquí empezó todo."],
+				["CONTROL", "Necesitamos pruebas de lo que hacían dentro. Y después, que no quede nada en pie."],
+				["COMANDO", "Huele a pescado podrido… y a algo peor."]],
+	  "steps": [
+		{ "type": "door", "text": "Abre la verja del patio de carga", "door": 0, "calm": true,
+		  "radio": [["CONTROL", "La entrada de la nave da al patio de carga. Abre la verja del muelle."]] },
+		{ "type": "collect", "text": "Busca la tarjeta del encargado", "pos": [[-13.0, -6.0]], "label": "tarjeta del encargado",
+		  "radio": [["COMANDO", "El portón de la nave tiene un lector de tarjetas."], ["CONTROL", "El encargado usaba la carretilla del patio. Mira por allí."]] },
+		{ "type": "door", "text": "Abre el portón de la nave de procesado", "door": 2,
+		  "radio": [["COMANDO", "Tengo la tarjeta. Entro en la nave."]] },
+		{ "type": "collect", "text": "Recoge muestras de las líneas de procesado", "pos": [[-17.0, 14.0], [0.5, -12.5], [5.5, 8.0]], "label": "muestra",
+		  "radio": [["CONTROL", "Coge muestras de las líneas de procesado. Queremos saber qué metían en las latas."]] },
+		{ "type": "power", "text": "Enciende el cuadro eléctrico de la nave",
+		  "radio": [["COMANDO", "Hay una puerta blindada al fondo. Sin corriente no se abre."], ["CONTROL", "El cuadro eléctrico está en la pared este de la nave."]] },
+		{ "type": "door", "text": "Entra en el laboratorio", "door": 3,
+		  "radio": [["COMANDO", "La puerta del fondo se ha desbloqueado. Esto no es una fábrica de latas…"]] },
+		{ "type": "destroy", "text": "Destruye los tanques de cultivo", "pos": [[-3.0, -20.0], [9.0, -20.0], [-3.0, -29.5], [9.0, -29.5]], "hp": 1200.0,
+		  "radio": [["COMANDO", "Control… hay gambas gigantes flotando en tanques. Están vivas."], ["CONTROL", "Es la fuente del brote. ¡Destruye esos tanques!"]] },
+		{ "type": "boss", "text": "Acaba con la Gamba Madre", "name": "La Gamba Madre", "pos": [0.0, -2.0], "hp": 0.5, "scale": 1.4, "ammo": true,
+		  "radio": [["CONTROL", "¡Algo enorme acaba de romper el suelo de la nave!"], ["COMANDO", "Es la madre de todas. Vamos allá."]] },
+		{ "type": "plant", "text": "Coloca cargas en las líneas de procesado", "pos": [[-3.0, -8.4], [3.5, -1.3], [-9.6, 11.0]], "time": 3.0, "fuse": 25.0,
+		  "radio": [["CONTROL", "Bien hecho. Ahora coloca las cargas: que no quede ni una lata."]],
+		  "radio_done": [["COMANDO", "Cargas puestas. Veinticinco segundos."], ["PILOTO", "¡Os espero en el muelle con el pesquero en marcha!"]] },
+		{ "type": "goto", "text": "¡Corre al pesquero!", "pos": [-14.0, 29.6], "r": 3.0,
+		  "radio": [["CONTROL", "¡Sal de ahí, Comando! ¡Al muelle!"]] },
+	  ],
+	  "outro": [["CONTROL", "Confirmado: la conservera ha volado por los aires. Buen trabajo, Comando."],
+				["CONTROL", "Pero los informes del laboratorio mencionan otras plantas de Gamba Roja. Esto no ha terminado."]] },
 ]
 
 static func get_mission(id: String) -> Dictionary:

@@ -92,6 +92,7 @@ static func _add_prop(root: Node3D, pr: Dictionary, idx: int, door_parts: Array)
 		var full = String(inst.get_path_to(m))
 		if (only.size() > 0 and not _matches(full, only)) or _matches(full, hide): m.get_parent().remove_child(m); m.free(); continue
 		meshes.append(m)
+	if pr.has("max_tris"): simplify(inst, int(pr.max_tris))   # modelos con demasiado detalle para el móvil
 	# la base de lo que queda, centrada en pos
 	if pr.get("pivot", only.size() > 0):
 		var lo = Vector3.INF; var hi = -Vector3.INF
@@ -184,15 +185,29 @@ static func simplify(model: Node3D, max_tris: int) -> void:
 	for m in ms:
 		var mi: MeshInstance3D = m
 		if mi.mesh == null or mi.skin != null: continue
+		# ImporterMesh calcula los LOD con meshoptimizer (como la importación) y se elige el que cabe en el presupuesto
 		var out = ArrayMesh.new()
 		for si in mi.mesh.get_surface_count():
-			var st = SurfaceTool.new(); st.create_from(mi.mesh, si); st.index()
-			var arr = st.commit_to_arrays()
-			var target = max(36, int(_tris(mi.mesh, si) * ratio) * 3)
-			var lod: PackedInt32Array = st.generate_lod(50.0, target)
-			if lod.size() >= 3 and lod.size() < arr[Mesh.ARRAY_INDEX].size(): arr[Mesh.ARRAY_INDEX] = lod
+			var arr = mi.mesh.surface_get_arrays(si)
+			var mat = mi.get_active_material(si)
+			if arr[Mesh.ARRAY_INDEX] == null or arr[Mesh.ARRAY_INDEX].is_empty():
+				var st = SurfaceTool.new(); st.create_from(mi.mesh, si); st.index(); arr = st.commit_to_arrays()
+			var clean = []; clean.resize(Mesh.ARRAY_MAX)
+			for k in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_TANGENT, Mesh.ARRAY_TEX_UV, Mesh.ARRAY_TEX_UV2, Mesh.ARRAY_COLOR, Mesh.ARRAY_INDEX]: clean[k] = arr[k]
+			var ok = arr[Mesh.ARRAY_INDEX] != null and arr[Mesh.ARRAY_INDEX].size() % 3 == 0 and arr[Mesh.ARRAY_INDEX].size() > 300
+			if ok:
+				var im = ImporterMesh.new(); im.add_surface(Mesh.PRIMITIVE_TRIANGLES, clean)
+				im.generate_lods(25.0, 60.0, [])
+				var target = int(arr[Mesh.ARRAY_INDEX].size() * ratio)
+				for li in im.get_surface_lod_count(0):
+					var idx: PackedInt32Array = im.get_surface_lod_indices(0, li)
+					if idx.size() >= 3 and idx.size() % 3 == 0 and idx.size() < clean[Mesh.ARRAY_INDEX].size():
+						clean[Mesh.ARRAY_INDEX] = idx
+						if idx.size() <= target: break
+			arr = clean
+			if arr[Mesh.ARRAY_INDEX] != null and arr[Mesh.ARRAY_INDEX].size() % 3 != 0: continue   # (superficie rota en el modelo original)
 			out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-			out.surface_set_material(si, mi.get_active_material(si))
+			out.surface_set_material(out.get_surface_count() - 1, mat)
 		mi.mesh = out
 
 static func _collide(mi: MeshInstance3D, layer: int, door_part: bool) -> void:

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Large Industrial Storage Tanks
+* source:	https://sketchfab.com/3d-models/large-industrial-storage-tanks-bd3ac97071104b64bc388a155b64f79e
+* author:	Duane's Mind (https://sketchfab.com/duanesmind)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Large Industrial Storage Tanks" (https://sketchfab.com/3d-models/large-industrial-storage-tanks-bd3ac97071104b64bc388a155b64f79e) by Duane's Mind (https://sketchfab.com/duanesmind) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

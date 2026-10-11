@@ -65,3 +65,14 @@ Texturas del suelo: Poly Haven (CC0); lava: ambientCG (CC0)
 Voces de los personajes: Kokoro-82M (hexgrad, Apache-2.0) con kokoro-onnx (MIT)
 Rayo Gamba: "Raygun" de ehcawen — https://sketchfab.com/3d-models/raygun-9b8bb34ad4584baab6e102046b6d55ea — CC-BY 4.0
 Burbujeador: "50's style Ray Gun" de mrpetercharman — https://sketchfab.com/3d-models/50s-style-ray-gun-42b7288de197481292cc0f511f84a0dc — CC-BY 4.0
+
+Mapa «La Conservera» (modelos CC-BY 4.0 de Sketchfab):
+• «Rusty Barrels HD 2K» — Lippanen — https://sketchfab.com/3d-models/rusty-barrels-hd-2k-35d9e4296928483babe28e757aa9ca6b
+• «Fishing Boat» — masterjack20 — https://sketchfab.com/3d-models/fishing-boat-649c006b72e748bf84e7cda011faaff2
+• «Freight shipping container - Rusted» — Sousinho — https://sketchfab.com/3d-models/freight-shipping-container-rusted-2b787d1a02174d0bbca9eac34eb3a486
+• «Forklift low poly» — Ricardo Sanchez — https://sketchfab.com/3d-models/forklift-low-poly-8ab650b3982243f8b661142de50f79c9
+• «Industrial Machine» — jimbogies — https://sketchfab.com/3d-models/industrial-machine-40cd1d22f6bd40dd904e37faf0c214d8
+• «Rusted Tank storage» — ixMkc1 — https://sketchfab.com/3d-models/rusted-tank-storage-57be2eaf4d6b4d2980bcee4ccb35f780
+• «Large Industrial Storage Tanks» — Duane's Mind — https://sketchfab.com/3d-models/large-industrial-storage-tanks-bd3ac97071104b64bc388a155b64f79e
+• «Fishing boat» — Aurélien Duval — https://sketchfab.com/3d-models/fishing-boat-2f894eb760ca49eca14c38c2d49058a1
+• «Abandoned Warehouse» — Arsen Ismailov — https://sketchfab.com/3d-models/abandoned-warehouse-698a34300af34095ac6593f348585daa

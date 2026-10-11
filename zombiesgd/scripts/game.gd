@@ -761,6 +761,10 @@ func shoot_ray(from: Vector3, dir: Vector3, rng: float, by: Player) -> Dictionar
 		Sfx.play_at("hit_body", res.position, 0.55, randf_range(0.9, 1.15))
 	else:
 		impact(res.position, res.normal)
+		if mission and col.has_meta("mission_target"):
+			var w2 = by.cur_w()
+			mission.hit_target(col, float(Player.stat_of(w2.id, w2.pap, "dmg")))
+			out.hit = true
 	return out
 
 ## daño hecho por el jugador local: en el servidor se aplica, en un cliente se manda al servidor
@@ -859,6 +863,7 @@ func explode(at: Vector3, radius: float, dmg: float, _by = null, kind := "explo"
 	for z in zombies.duplicate():
 		if is_instance_valid(z) and not z.dead and z.global_position.distance_to(at) < radius:
 			damage_zombie(z, dmg, z.global_position + Vector3(0, 1, 0), false, kind, wid)
+	if mission: mission.explosion(at, radius, dmg)
 	Fx.explosion(self, at)
 	Sfx.play_at("explosion", at, 1.0, randf_range(0.9, 1.05))
 	var dd = player.global_position.distance_to(at)

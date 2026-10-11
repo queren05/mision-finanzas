@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fishing Boat
+* source:	https://sketchfab.com/3d-models/fishing-boat-649c006b72e748bf84e7cda011faaff2
+* author:	masterjack20 (https://sketchfab.com/masterjack20)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fishing Boat" (https://sketchfab.com/3d-models/fishing-boat-649c006b72e748bf84e7cda011faaff2) by masterjack20 (https://sketchfab.com/masterjack20) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
