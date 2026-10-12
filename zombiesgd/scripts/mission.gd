@@ -18,6 +18,7 @@ var downs = 0
 var done = false
 var brute_sent = false
 var boss: Zombie = null      # jefe del paso «boss»
+var npc: Node3D = null       # superviviente del paso «escort»
 var boss_max = 1.0
 var plant_t = 0.0            # colocar cargas: segundos quieto junto a la carga actual
 var last_cp = 0              # último punto de control (paso desde el que se puede reintentar)
@@ -151,9 +152,9 @@ func _next_step() -> void:
 	var steps: Array = data.steps
 	if step_i >= steps.size(): _finish(true); return
 	step = steps[step_i]
-	if step_i > 0 and step.type in ["door", "power", "defend", "boss", "plant", "destroy", "survive"]: last_cp = step_i
+	if step_i > 0 and step.type in ["door", "power", "defend", "boss", "plant", "destroy", "survive", "escort"]: last_cp = step_i
 	radio(step.get("radio", []))
-	bar.visible = step.type in ["survive", "defend", "boss"]
+	bar.visible = step.type in ["survive", "defend", "boss", "escort"]
 	obj_title.text = "OBJETIVO"; obj_title.add_theme_color_override("font_color", Color(1.0, 0.62, 0.15))
 	target = Vector3.INF
 	match step.type:
@@ -165,6 +166,9 @@ func _next_step() -> void:
 			for p in step.pos: items.append(_spawn_charge(_snap(_xz(p))))
 		"boss":
 			_spawn_boss()
+		"escort":
+			npc = _Survivor.new(); npc.mission = self; game.add_child(npc)
+			npc.global_position = _snap(_xz(step.pos)) + Vector3(0, 0.1, 0)
 		"door":
 			var d = game.doors[int(step.door)]
 			target = d.global_position
@@ -267,13 +271,33 @@ func _process(delta: float) -> void:
 			target = Vector3.INF; var bd = INF
 			for it in items:
 				if is_instance_valid(it) and not it.get_meta("armed", false) and pos.distance_to(it.global_position) < bd: bd = pos.distance_to(it.global_position); target = it.global_position
+		"escort":
+			if npc == null or not is_instance_valid(npc): return
+			bar.max_value = npc.MAX_HP; bar.value = npc.hp
+			if OS.get_cmdline_user_args().has("verbose") and Engine.get_process_frames() % 120 == 0: print("NPC ", npc.global_position.snapped(Vector3.ONE * 0.1), " sigue ", npc.following, " vida ", int(npc.hp), " siguiente ", npc.agent.get_next_path_position().snapped(Vector3.ONE * 0.1), " jugador ", pos.snapped(Vector3.ONE * 0.1))
+			if npc.hp <= 0.0:
+				radio([["CONTROL", "Hemos perdido al superviviente…"]]); _finish(false); return
+			var goal = _snap(_xz(step.to))
+			if not npc.following:
+				target = npc.global_position
+				obj_title.text = "OBJETIVO"
+				if pos.distance_to(npc.global_position) < 2.2:
+					npc.following = true; Sfx.play("powerup", 0.5, 1.1)
+					game.hud.toast("SUPERVIVIENTE", "Te sigue. ¡Que no lo maten!")
+					radio(step.get("radio_follow", []))
+			else:
+				target = goal
+			if npc.global_position.distance_to(goal) < float(step.get("r", 2.5)):
+				npc.following = false; npc.done = true; npc = null
+				game.hud.toast("A SALVO", String(step.get("label", "El superviviente")) + " está a salvo")
+				_next_step(); return
 		"boss":
 			if boss == null or not is_instance_valid(boss) or boss.dead:
 				boss = null; _next_step(); return
 			bar.max_value = boss_max; bar.value = max(0.0, boss.hp)
 			target = boss.global_position
 	if beacon and step.get("type", "") != "defend":
-		beacon.visible = target != Vector3.INF
+		beacon.visible = target != Vector3.INF and not (step.get("type", "") == "escort" and npc and not npc.following)
 		if beacon.visible: beacon.global_position = target + Vector3(0, 15, 0)
 	elif beacon: beacon.visible = true
 var _was_down = false
@@ -433,6 +457,70 @@ func stars() -> int:
 	if game.time <= float(data.get("par_time", 600)): s += 1
 	return s
 
+# ------------------------------------------------------------------ superviviente que te sigue (paso «escort»)
+class _Survivor extends CharacterBody3D:
+	const MAX_HP := 600.0
+	var mission
+	var hp = MAX_HP
+	var following = false
+	var done = false
+	var model: CharacterModel
+	var agent: NavigationAgent3D
+	var shoot_t = 0.0
+	var hurt_t = 0.0
+	var stuck_t = 0.0
+	var label: Label3D
+	func _ready() -> void:
+		collision_layer = 0; collision_mask = MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT
+		var cs = CollisionShape3D.new(); var cap = CapsuleShape3D.new(); cap.radius = 0.22; cap.height = 1.75; cs.shape = cap; cs.position.y = 0.875; add_child(cs)
+		model = CharacterModel.new(); add_child(model); model.setup("comando"); model.set_weapon("m1911")
+		agent = NavigationAgent3D.new(); agent.radius = 0.32; agent.path_desired_distance = 0.6; agent.target_desired_distance = 1.0; add_child(agent)
+		label = Label3D.new(); label.text = "GUARDIA"; label.font = load("res://assets/fonts/BlackOpsOne.ttf"); label.font_size = 44; label.pixel_size = 0.004
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED; label.no_depth_test = true; label.modulate = Color(0.55, 1.0, 0.6); label.outline_size = 8; label.position.y = 2.15; add_child(label)
+	func _physics_process(d: float) -> void:
+		if mission == null or mission.done: return
+		var game = mission.game
+		if done or game.paused: model.update(d, 0.0, false, false, false, 0.0); return
+		var p = game.player
+		var v = Vector3.ZERO
+		if following and global_position.distance_to(p.global_position) > 2.6:
+			agent.target_position = p.global_position
+			var nxt = agent.get_next_path_position()
+			v = (nxt - global_position); v.y = 0
+			v = v.normalized() * (4.6 if global_position.distance_to(p.global_position) > 7.0 else 3.2)
+		velocity.x = v.x; velocity.z = v.z
+		velocity.y = 0.0 if is_on_floor() else velocity.y - 18.0 * d
+		var before = global_position
+		move_and_slide()
+		# atascado en una esquina: avanza un poco por el camino aunque roce
+		if v.length() > 0.5 and before.distance_to(global_position) < v.length() * d * 0.2:
+			stuck_t += d
+			if stuck_t > 0.8:
+				var nxt2 = agent.get_next_path_position(); var step2 = (nxt2 - global_position); step2.y = 0
+				global_position += step2.normalized() * min(0.35, step2.length()); stuck_t = 0.0
+		else: stuck_t = 0.0
+		# dispara a los zombis cercanos que vea (ayuda, pero no lo hace todo él)
+		shoot_t -= d
+		var near_z = null; var nd = 11.0
+		for z in game.zombies:
+			if not is_instance_valid(z) or z.dead: continue
+			var dz = global_position.distance_to(z.global_position)
+			if dz < 1.4: hp -= 30.0 * d; hurt_t = 0.2   # le están mordiendo
+			if dz < nd and z.state == "chase": nd = dz; near_z = z
+		if near_z and shoot_t <= 0.0:
+			var eye = global_position + Vector3(0, 1.5, 0)
+			if game.ray_world(eye, (near_z.global_position + Vector3(0, 1.3, 0) - eye).normalized(), nd) == Vector3.INF:
+				shoot_t = 0.9
+				near_z.take_hit(55.0, near_z.global_position + Vector3(0, 1.3, 0), false, 0, "bullet", "m1911")
+				Sfx.play_at("shot_pistol", eye, 0.7, 1.05); model.fired()
+		var look = (near_z.global_position if near_z and shoot_t > 0.5 else (p.global_position if following else global_position + -global_transform.basis.z))
+		var dir = look - global_position; dir.y = 0
+		if dir.length() > 0.1: rotation.y = lerp_angle(rotation.y, atan2(-dir.x, -dir.z), min(1.0, d * 8.0))
+		model.update(d, Vector2(velocity.x, velocity.z).length(), not following and not done, false, false, 0.0)
+		hurt_t -= d
+		label.modulate = Color(1, 0.3, 0.3) if hurt_t > 0.0 else Color(0.55, 1.0, 0.6)
+		label.text = "GUARDIA" if following else "GUARDIA (acércate)"
+
 # ------------------------------------------------------------------ marcador en pantalla
 class _Marker extends Control:
 	var mission
@@ -442,6 +530,7 @@ class _Marker extends Control:
 		var cam: Camera3D = get_viewport().get_camera_3d()
 		if cam == null: return
 		var wp: Vector3 = mission.target + Vector3(0, 1.4, 0)
+		if cam.global_position.distance_to(wp) < 0.6: return
 		var behind = cam.is_position_behind(wp)
 		var sp: Vector2 = cam.unproject_position(wp)
 		var r = get_viewport_rect().size
