@@ -167,7 +167,7 @@ func _next_step() -> void:
 		"boss":
 			_spawn_boss()
 		"escort":
-			npc = _Survivor.new(); npc.mission = self; game.add_child(npc)
+			npc = _Survivor.new(); npc.mission = self; npc.who = String(step.get("name", "GUARDIA")); game.add_child(npc)
 			npc.global_position = _snap(_xz(step.pos)) + Vector3(0, 0.1, 0)
 		"door":
 			var d = game.doors[int(step.door)]
@@ -469,6 +469,7 @@ class _Survivor extends CharacterBody3D:
 	var shoot_t = 0.0
 	var hurt_t = 0.0
 	var stuck_t = 0.0
+	var who = "GUARDIA"
 	var label: Label3D
 	func _ready() -> void:
 		collision_layer = 0; collision_mask = MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT
@@ -519,7 +520,7 @@ class _Survivor extends CharacterBody3D:
 		model.update(d, Vector2(velocity.x, velocity.z).length(), not following and not done, false, false, 0.0)
 		hurt_t -= d
 		label.modulate = Color(1, 0.3, 0.3) if hurt_t > 0.0 else Color(0.55, 1.0, 0.6)
-		label.text = "GUARDIA" if following else "GUARDIA (acércate)"
+		label.text = who if following else who + " (acércate)"
 
 # ------------------------------------------------------------------ marcador en pantalla
 class _Marker extends Control:

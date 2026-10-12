@@ -276,6 +276,7 @@ func _run_test() -> void:
 			var path = NavigationServer3D.map_get_path(nav, pts[0], pts[i], true)
 			var end = path[path.size() - 1] if path.size() else Vector3.INF
 			print("NAVCHECK ", pts[i], " -> ", "SÍ" if end.distance_to(pts[i]) < 1.0 else "NO (llega a %s)" % str(end.snapped(Vector3.ONE * 0.1)))
+			if args.has("path"): print("  CAMINO ", Array(path).map(func(q): return q.snapped(Vector3.ONE * 0.1)))
 		get_tree().quit(); return
 	if args.has("missiontest"):   # recorre la misión entera teletransportándose a cada objetivo
 		var ms: Mission = game.mission
