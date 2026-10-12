@@ -149,3 +149,7 @@ Mapa «Puerto Viejo» (modelos de Sketchfab):
 • «Container Ship» — LavaWave — https://sketchfab.com/3d-models/container-ship-4f7cf10593824061bfe2e36ffd823cde — CC-BY-4.0
 • «Double Trailer Semi Truck» — matthew13482 — https://sketchfab.com/3d-models/double-trailer-semi-truck-0611ef06d0084cc082e6db6e793b8c5f — CC-BY-4.0
 Texturas de muros, suelos y metal del interior de la Penitenciaría: ambientCG (CC0)
+
+Mapa «Villa Coral» (estilo low-poly): modelos de Quaternius (quaternius.com), dominio público (CC0 1.0),
+descargados de Poly Pizza (poly.pizza): Zombie Apocalypse Kit, Toon Shooter Game Kit, Cars Bundle, Farm Buildings,
+Furniture Pack, Ultimate House Interior Pack, Survival Pack, Stylized Nature MegaKit, Modular Train Pack y edificios sueltos.

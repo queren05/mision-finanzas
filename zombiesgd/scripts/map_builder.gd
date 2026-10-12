@@ -246,7 +246,9 @@ static func _tune_materials(mi: MeshInstance3D) -> void:
 			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR; m.alpha_scissor_threshold = 0.5
 		if m.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR:
 			m.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE
-		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		# (sin textura no se toca: con el filtro anisótropo los colores lisos salían negros; las paletas de colores
+		# diminutas de los modelos low-poly, sin mezclar píxeles vecinos, que si no salen motas)
+		if m.albedo_texture: m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST if String(m.resource_name).begins_with("Atlas") else BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		m.metallic_specular = min(m.metallic_specular, 0.35)   # pocos brillos
 	var ab = mi.get_aabb(); var sz = ab.size * mi.global_transform.basis.get_scale()
 	if alpha and min(sz.x, min(sz.y, sz.z)) < 0.2:
@@ -319,6 +321,9 @@ static func extra_mat(name: String, cache: Dictionary, T := "") -> Material:
 			"asphalt": m.uv1_scale = Vector3(0.18, 0.18, 0.18)
 			"sidewalk": m.uv1_scale = Vector3(0.3, 0.3, 0.3)
 			"burned": m.uv1_scale = Vector3(0.12, 0.12, 0.12)
+		cache[name] = m; return m
+	if name.begins_with("#"):   # color liso (mapas de estilo low-poly)
+		m.albedo_color = Color(name); m.roughness = 0.9; m.uv1_triplanar = false
 		cache[name] = m; return m
 	match name:
 		"concrete": m.albedo_color = Color(0.55, 0.54, 0.52)

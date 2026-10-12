@@ -1,0 +1,11568 @@
+{
+ "name": "Villa Coral",
+ "props": [
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_light.scn",
+   "name": "semaforo",
+   "pos": [
+    -6.8,
+    0,
+    -6.8
+   ],
+   "rot": 0,
+   "scale": 1.1,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_light.scn",
+   "name": "semaforo",
+   "pos": [
+    6.8,
+    0,
+    -6.8
+   ],
+   "rot": 90,
+   "scale": 1.1,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_light.scn",
+   "name": "semaforo",
+   "pos": [
+    -6.8,
+    0,
+    6.8
+   ],
+   "rot": 270,
+   "scale": 1.1,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_light.scn",
+   "name": "semaforo",
+   "pos": [
+    6.8,
+    0,
+    6.8
+   ],
+   "rot": 180,
+   "scale": 1.1,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_taxi.scn",
+   "name": "car_taxi",
+   "pos": [
+    -3.0,
+    0,
+    -9.0
+   ],
+   "rot": 20,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_police_car.scn",
+   "name": "car_police_car",
+   "pos": [
+    3.5,
+    0,
+    6.0
+   ],
+   "rot": 200,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_broken_car.scn",
+   "name": "s_broken_car",
+   "pos": [
+    -14.0,
+    0,
+    2.5
+   ],
+   "rot": 80,
+   "scale": 0.85,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_suv.scn",
+   "name": "car_suv",
+   "pos": [
+    13.0,
+    0,
+    -2.5
+   ],
+   "rot": 95,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_plastic_barrier.scn",
+   "name": "z_plastic_barrier",
+   "pos": [
+    2.5,
+    0,
+    -15.0
+   ],
+   "rot": 10,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_barrier.scn",
+   "name": "z_traffic_barrier",
+   "pos": [
+    -2.0,
+    0,
+    15.5
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_cone.scn",
+   "name": "z_traffic_cone",
+   "pos": [
+    -1,
+    0,
+    -3
+   ],
+   "rot": 29.1,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_cone.scn",
+   "name": "z_traffic_cone",
+   "pos": [
+    1.5,
+    0,
+    -2.5
+   ],
+   "rot": 13.6,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_cone.scn",
+   "name": "z_traffic_cone",
+   "pos": [
+    4,
+    0,
+    1
+   ],
+   "rot": 58.6,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_cone.scn",
+   "name": "z_traffic_cone",
+   "pos": [
+    -4,
+    0,
+    3
+   ],
+   "rot": 6.5,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_gas_tank.scn",
+   "name": "surtidor",
+   "pos": [
+    15.0,
+    0,
+    -16.5
+   ],
+   "rot": 0,
+   "scale": 0.7,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_gas_tank.scn",
+   "name": "surtidor",
+   "pos": [
+    18.0,
+    0,
+    -16.5
+   ],
+   "rot": 0,
+   "scale": 0.7,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_cardboard_boxes_3.scn",
+   "name": "s_cardboard_boxes_3",
+   "pos": [
+    22.0,
+    0,
+    -13.5
+   ],
+   "rot": 20,
+   "scale": 0.7,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_barrel.scn",
+   "name": "z_barrel",
+   "pos": [
+    11.5,
+    0,
+    -22.0
+   ],
+   "rot": 0,
+   "scale": 1.1,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_modern.scn",
+   "name": "casa",
+   "pos": [
+    -17.0,
+    0,
+    -17.0
+   ],
+   "rot": 135,
+   "scale": 2.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_water_tower.scn",
+   "name": "z_water_tower",
+   "pos": [
+    -16.5,
+    0,
+    16.5
+   ],
+   "rot": 30,
+   "scale": 1.25,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -21,
+    0,
+    11
+   ],
+   "rot": 192.9,
+   "scale": 0.8,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -12,
+    0,
+    21
+   ],
+   "rot": 131.6,
+   "scale": 0.8,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -21,
+    0,
+    21
+   ],
+   "rot": 20.9,
+   "scale": 0.8,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_sofa.scn",
+   "name": "banco",
+   "pos": [
+    -12.0,
+    0,
+    12.5
+   ],
+   "rot": 45,
+   "scale": 0.55,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_town_sign.scn",
+   "name": "cartel",
+   "pos": [
+    -10.0,
+    0,
+    -22.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_dumpster.scn",
+   "name": "s_dumpster",
+   "pos": [
+    21.0,
+    0,
+    13.5
+   ],
+   "rot": 270,
+   "scale": 0.85,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_trash_bags.scn",
+   "name": "z_trash_bags",
+   "pos": [
+    22.0,
+    0,
+    16.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_fire_hydrant.scn",
+   "name": "z_fire_hydrant",
+   "pos": [
+    -7.5,
+    0,
+    11.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_fire_hydrant.scn",
+   "name": "z_fire_hydrant",
+   "pos": [
+    7.5,
+    0,
+    -11.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    -7.6,
+    0,
+    -18
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    7.6,
+    0,
+    18
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    -18,
+    0,
+    7.6
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    18,
+    0,
+    -7.6
+   ],
+   "rot": 180,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_large.scn",
+   "name": "edificio",
+   "pos": [
+    31.0,
+    0,
+    -12.65
+   ],
+   "rot": 0,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_big.scn",
+   "name": "edificio",
+   "pos": [
+    47.5,
+    0,
+    -15.3
+   ],
+   "rot": 0,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_house2.scn",
+   "name": "edificio",
+   "pos": [
+    61.5,
+    0,
+    -13.25
+   ],
+   "rot": 0,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_white.scn",
+   "name": "edificio",
+   "pos": [
+    77.0,
+    0,
+    -15.05
+   ],
+   "rot": 0,
+   "scale": 2.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_house3.scn",
+   "name": "edificio",
+   "pos": [
+    86.5,
+    0,
+    -13.25
+   ],
+   "rot": 0,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_house1.scn",
+   "name": "edificio",
+   "pos": [
+    29.5,
+    0,
+    15.3
+   ],
+   "rot": 180,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_house3.scn",
+   "name": "edificio",
+   "pos": [
+    38.5,
+    0,
+    13.25
+   ],
+   "rot": 180,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_big.scn",
+   "name": "edificio",
+   "pos": [
+    46.5,
+    0,
+    14.85
+   ],
+   "rot": 180,
+   "scale": 2.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_house2.scn",
+   "name": "edificio",
+   "pos": [
+    81.0,
+    0,
+    13.25
+   ],
+   "rot": 180,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_dumpster.scn",
+   "name": "s_dumpster",
+   "pos": [
+    39.0,
+    0,
+    -13.0
+   ],
+   "rot": 90,
+   "scale": 0.85,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_trash_bags.scn",
+   "name": "z_trash_bags",
+   "pos": [
+    41.0,
+    0,
+    -15.5
+   ],
+   "rot": 30,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_sack_trench.scn",
+   "name": "s_sack_trench",
+   "pos": [
+    87.0,
+    0,
+    -3.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_sack_trench.scn",
+   "name": "s_sack_trench",
+   "pos": [
+    87.0,
+    0,
+    3.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_broken_car.scn",
+   "name": "s_broken_car",
+   "pos": [
+    84.0,
+    0,
+    0.0
+   ],
+   "rot": 10,
+   "scale": 0.9,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_wheels_stack.scn",
+   "name": "z_wheels_stack",
+   "pos": [
+    88.0,
+    0,
+    6.5
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_trash.scn",
+   "name": "s_barrier_trash",
+   "pos": [
+    88.5,
+    0,
+    -6.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_car.scn",
+   "name": "car_car",
+   "pos": [
+    33.0,
+    0,
+    4.5
+   ],
+   "rot": 92,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_car_2.scn",
+   "name": "car_car_2",
+   "pos": [
+    52.0,
+    0,
+    -4.0
+   ],
+   "rot": 265,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_sports_car.scn",
+   "name": "car_sports_car",
+   "pos": [
+    70.0,
+    0,
+    3.8
+   ],
+   "rot": 85,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_damaged_couch.scn",
+   "name": "z_damaged_couch",
+   "pos": [
+    60.0,
+    0,
+    -7.5
+   ],
+   "rot": 0,
+   "scale": 0.8,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_traffic_barrier.scn",
+   "name": "z_traffic_barrier",
+   "pos": [
+    66.0,
+    0,
+    1.0
+   ],
+   "rot": 70,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    30,
+    0,
+    -6.6
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    20,
+    0,
+    6.6
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    50,
+    0,
+    -6.6
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    40,
+    0,
+    6.6
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    70,
+    0,
+    -6.6
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    60,
+    0,
+    6.6
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    86,
+    0,
+    -6.6
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_street_light.scn",
+   "name": "farola",
+   "pos": [
+    76,
+    0,
+    6.6
+   ],
+   "rot": 270,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_fire_hydrant.scn",
+   "name": "z_fire_hydrant",
+   "pos": [
+    44,
+    0,
+    -7.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_fire_hydrant.scn",
+   "name": "z_fire_hydrant",
+   "pos": [
+    58,
+    0,
+    7.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_fire_hydrant.scn",
+   "name": "z_fire_hydrant",
+   "pos": [
+    75,
+    0,
+    -7.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_trash_bags.scn",
+   "name": "z_trash_bags",
+   "pos": [
+    36,
+    0,
+    -8.5
+   ],
+   "rot": 45.7,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_trash_bags.scn",
+   "name": "z_trash_bags",
+   "pos": [
+    63,
+    0,
+    8.6
+   ],
+   "rot": 3.4,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_trash_bags.scn",
+   "name": "z_trash_bags",
+   "pos": [
+    78,
+    0,
+    -8.4
+   ],
+   "rot": 39.0,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_blood_splat.scn",
+   "name": "z_blood_splat",
+   "pos": [
+    47,
+    0.02,
+    1.0
+   ],
+   "rot": 25.1,
+   "scale": 1.6,
+   "vis": 45.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_blood_splat.scn",
+   "name": "z_blood_splat",
+   "pos": [
+    75,
+    0.02,
+    -1.5
+   ],
+   "rot": 32.7,
+   "scale": 1.6,
+   "vis": 45.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_stool.scn",
+   "name": "f_stool",
+   "pos": [
+    54.0,
+    0,
+    18.9
+   ],
+   "rot": 26.1,
+   "scale": 1.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_stool.scn",
+   "name": "f_stool",
+   "pos": [
+    55.6,
+    0,
+    18.9
+   ],
+   "rot": 13.0,
+   "scale": 1.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_stool.scn",
+   "name": "f_stool",
+   "pos": [
+    57.2,
+    0,
+    18.9
+   ],
+   "rot": 10.6,
+   "scale": 1.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_stool.scn",
+   "name": "f_stool",
+   "pos": [
+    58.8,
+    0,
+    18.9
+   ],
+   "rot": 27.8,
+   "scale": 1.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_stool.scn",
+   "name": "f_stool",
+   "pos": [
+    60.4,
+    0,
+    18.9
+   ],
+   "rot": 73.5,
+   "scale": 1.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/i_table_round_small.scn",
+   "name": "i_table_round_small",
+   "pos": [
+    66.0,
+    0,
+    13.5
+   ],
+   "rot": 0,
+   "scale": 0.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    67.1,
+    0,
+    13.5
+   ],
+   "rot": -90.0,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    65.445,
+    0,
+    14.45
+   ],
+   "rot": -210.3,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    65.461,
+    0,
+    12.541
+   ],
+   "rot": -330.6,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/i_table_round_small.scn",
+   "name": "i_table_round_small",
+   "pos": [
+    69.0,
+    0,
+    17.5
+   ],
+   "rot": 0,
+   "scale": 0.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    70.1,
+    0,
+    17.5
+   ],
+   "rot": -90.0,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    68.445,
+    0,
+    18.45
+   ],
+   "rot": -210.3,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    68.461,
+    0,
+    16.541
+   ],
+   "rot": -330.6,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/i_table_round_small.scn",
+   "name": "i_table_round_small",
+   "pos": [
+    65.5,
+    0,
+    20.5
+   ],
+   "rot": 0,
+   "scale": 0.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    66.6,
+    0,
+    20.5
+   ],
+   "rot": -90.0,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    64.945,
+    0,
+    21.45
+   ],
+   "rot": -210.3,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_chair.scn",
+   "name": "f_chair",
+   "pos": [
+    64.961,
+    0,
+    19.541
+   ],
+   "rot": -330.6,
+   "scale": 0.95,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/i_couch_large.scn",
+   "name": "sofa",
+   "pos": [
+    54.8,
+    0,
+    12.0
+   ],
+   "rot": 180,
+   "scale": 0.42,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/i_kitchen_fridge.scn",
+   "name": "i_kitchen_fridge",
+   "pos": [
+    52.8,
+    0,
+    22.8
+   ],
+   "rot": 90,
+   "scale": 0.55,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_bookcase_with_books.scn",
+   "name": "f_bookcase_with_books",
+   "pos": [
+    71.6,
+    0,
+    22.5
+   ],
+   "rot": -90,
+   "scale": 0.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_open_barn.scn",
+   "name": "granero",
+   "pos": [
+    24.0,
+    0,
+    -42.0
+   ],
+   "rot": 0,
+   "scale": 2.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_big_barn.scn",
+   "name": "granero",
+   "pos": [
+    48.0,
+    0,
+    -42.0
+   ],
+   "rot": 90,
+   "scale": 1.6,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_silo.scn",
+   "name": "farm_silo",
+   "pos": [
+    60.5,
+    0,
+    -50.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_silo_house.scn",
+   "name": "farm_silo_house",
+   "pos": [
+    62.0,
+    0,
+    -36.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_tower_windmill.scn",
+   "name": "farm_tower_windmill",
+   "pos": [
+    -12.0,
+    0,
+    -45.0
+   ],
+   "rot": 30,
+   "scale": 1.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_small_barn.scn",
+   "name": "farm_small_barn",
+   "pos": [
+    8.0,
+    0,
+    -70.0
+   ],
+   "rot": 0,
+   "scale": 1.5,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_chickencoop.scn",
+   "name": "farm_chickencoop",
+   "pos": [
+    32.0,
+    0,
+    -62.0
+   ],
+   "rot": 180,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_chickencoop.scn",
+   "name": "farm_chickencoop",
+   "pos": [
+    35.0,
+    0,
+    -62.5
+   ],
+   "rot": 180,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_chickencoop.scn",
+   "name": "farm_chickencoop",
+   "pos": [
+    38.0,
+    0,
+    -62.0
+   ],
+   "rot": 180,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_water_tank.scn",
+   "name": "s_water_tank",
+   "pos": [
+    70.0,
+    0,
+    -58.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_wood_planks.scn",
+   "name": "s_wood_planks",
+   "pos": [
+    40.0,
+    0,
+    -30.0
+   ],
+   "rot": 20,
+   "scale": 1.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_pallet_broken.scn",
+   "name": "z_pallet_broken",
+   "pos": [
+    12.0,
+    0,
+    -50.0
+   ],
+   "rot": 30,
+   "scale": 1.2,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_barrel.scn",
+   "name": "z_barrel",
+   "pos": [
+    30.0,
+    0,
+    -36.0
+   ],
+   "rot": 0,
+   "scale": 1.1,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_barrel.scn",
+   "name": "z_barrel",
+   "pos": [
+    31.2,
+    0,
+    -36.6
+   ],
+   "rot": 0,
+   "scale": 1.1,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_tires.scn",
+   "name": "s_tires",
+   "pos": [
+    68.0,
+    0,
+    -28.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_suv.scn",
+   "name": "car_suv",
+   "pos": [
+    78.0,
+    0,
+    -60.0
+   ],
+   "rot": 150,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -20,
+    0,
+    -76
+   ],
+   "rot": 205.6,
+   "scale": 0.94,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -4,
+    0,
+    -78
+   ],
+   "rot": 197.2,
+   "scale": 1.03,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    20,
+    0,
+    -78
+   ],
+   "rot": 222.8,
+   "scale": 1.1,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    44,
+    0,
+    -77
+   ],
+   "rot": 153.9,
+   "scale": 1.14,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    66,
+    0,
+    -76
+   ],
+   "rot": 332.4,
+   "scale": 1.06,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    86,
+    0,
+    -74
+   ],
+   "rot": 286.0,
+   "scale": 1.0,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    88,
+    0,
+    -55
+   ],
+   "rot": 29.5,
+   "scale": 1.17,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    86,
+    0,
+    -30
+   ],
+   "rot": 315.0,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -21,
+    0,
+    -30
+   ],
+   "rot": 219.2,
+   "scale": 1.06,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -20,
+    0,
+    -52
+   ],
+   "rot": 150.5,
+   "scale": 0.94,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -18.25,
+    0,
+    -57.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -12.75,
+    0,
+    -57.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -7.25,
+    0,
+    -57.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -1.75,
+    0,
+    -57.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    42.25,
+    0,
+    -58.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    1.102,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    48.75,
+    0,
+    -58.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    1.102,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    55.25,
+    0,
+    -58.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    1.102,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    61.75,
+    0,
+    -58.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    1.102,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    -69
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    -69
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    -51
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    -51
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    -33
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    -33
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    -15
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    -15
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    3
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    3
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -66.0,
+    0,
+    21
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_railway_track_straight.scn",
+   "name": "via",
+   "pos": [
+    -72.0,
+    0,
+    21
+   ],
+   "rot": 90,
+   "scale": [
+    1.0,
+    1.0,
+    1.2
+   ],
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_locomotive_front.scn",
+   "name": "tren",
+   "pos": [
+    -66.0,
+    0.1,
+    -50.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_locomotive_passenger_carriage.scn",
+   "name": "tren",
+   "pos": [
+    -66.0,
+    0.1,
+    -39.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_locomotive_passenger_carriage.scn",
+   "name": "tren",
+   "pos": [
+    -66.0,
+    0.1,
+    -28.4
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_locomotive_wagon.scn",
+   "name": "tren",
+   "pos": [
+    -66.0,
+    0.1,
+    -17.8
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_cargo_train_wagon.scn",
+   "name": "tren",
+   "pos": [
+    -72.0,
+    0.1,
+    -64.0
+   ],
+   "rot": 90,
+   "scale": 1.25,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_cargo_train_container.scn",
+   "name": "tren",
+   "pos": [
+    -72.0,
+    0.1,
+    -50.0
+   ],
+   "rot": 90,
+   "scale": 1.25,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/t_cargo_train_wagon.scn",
+   "name": "tren",
+   "pos": [
+    -72.0,
+    0.1,
+    2.0
+   ],
+   "rot": 90,
+   "scale": 1.25,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/b_white.scn",
+   "name": "estacion",
+   "pos": [
+    -45.0,
+    0,
+    -36.0
+   ],
+   "rot": 270,
+   "scale": 2.4,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_sofa.scn",
+   "name": "banco",
+   "pos": [
+    -57.0,
+    0.25,
+    -48.0
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_sofa.scn",
+   "name": "banco",
+   "pos": [
+    -57.0,
+    0.25,
+    -22.0
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_sofa.scn",
+   "name": "banco",
+   "pos": [
+    -57.0,
+    0.25,
+    -12.0
+   ],
+   "rot": 90,
+   "scale": 0.5,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_red.scn",
+   "name": "contenedor",
+   "pos": [
+    -48.0,
+    0.0,
+    6.0
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -48.0,
+    3.1,
+    6.0
+   ],
+   "rot": 180,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -48.0,
+    0.0,
+    12.0
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -38.0,
+    0.0,
+    14.0
+   ],
+   "rot": 90,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_red.scn",
+   "name": "contenedor",
+   "pos": [
+    -38.0,
+    3.1,
+    14.0
+   ],
+   "rot": 270,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_red.scn",
+   "name": "contenedor",
+   "pos": [
+    -82.0,
+    0.0,
+    -10.0
+   ],
+   "rot": 90,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -82.0,
+    3.1,
+    -10.0
+   ],
+   "rot": 270,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -82.0,
+    0.0,
+    -70.0
+   ],
+   "rot": 90,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_red.scn",
+   "name": "contenedor",
+   "pos": [
+    -40.0,
+    0.0,
+    -66.0
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_container_green.scn",
+   "name": "contenedor",
+   "pos": [
+    -40.0,
+    3.1,
+    -66.0
+   ],
+   "rot": 180,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_shipping_container_structure.scn",
+   "name": "contenedor",
+   "pos": [
+    -34.0,
+    0,
+    -6.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_structure_2.scn",
+   "name": "torre",
+   "pos": [
+    -82.0,
+    0,
+    -42.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_pallet_broken.scn",
+   "name": "z_pallet_broken",
+   "pos": [
+    -44.0,
+    0,
+    0.0
+   ],
+   "rot": 20,
+   "scale": 1.2,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_pallet.scn",
+   "name": "s_pallet",
+   "pos": [
+    -30.0,
+    0,
+    8.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_crate.scn",
+   "name": "s_crate",
+   "pos": [
+    -30.0,
+    0.2,
+    8.0
+   ],
+   "rot": 15,
+   "scale": 1.2,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_pipes.scn",
+   "name": "z_pipes",
+   "pos": [
+    -36.0,
+    0,
+    -18.0
+   ],
+   "rot": 30,
+   "scale": 1.2,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/z_cinder_block.scn",
+   "name": "z_cinder_block",
+   "pos": [
+    -30.0,
+    0,
+    -50.0
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_exploding_barrel.scn",
+   "name": "s_exploding_barrel",
+   "pos": [
+    -31.0,
+    0,
+    -72.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -86,
+    0,
+    18
+   ],
+   "rot": 336.0,
+   "scale": 1.02,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -86,
+    0,
+    -26
+   ],
+   "rot": 240.6,
+   "scale": 0.91,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -60,
+    0,
+    -78
+   ],
+   "rot": 284.1,
+   "scale": 1.1,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -34,
+    0,
+    -78
+   ],
+   "rot": 250.3,
+   "scale": 1.01,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    -28,
+    0,
+    -40
+   ],
+   "rot": 286.9,
+   "scale": 1.07,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -61.443,
+    0,
+    62.178
+   ],
+   "rot": 303.6,
+   "scale": 1.0,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    71.345,
+    0,
+    51.207
+   ],
+   "rot": 189.9,
+   "scale": 0.96,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    38.933,
+    0,
+    27.72
+   ],
+   "rot": 52.2,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    32.963,
+    0,
+    73.996
+   ],
+   "rot": 359.1,
+   "scale": 0.91,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    30.929,
+    0,
+    71.627
+   ],
+   "rot": 344.4,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    16.459,
+    0,
+    74.833
+   ],
+   "rot": 294.3,
+   "scale": 0.95,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -67.895,
+    0,
+    74.325
+   ],
+   "rot": 262.2,
+   "scale": 0.96,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -23.384,
+    0,
+    34.706
+   ],
+   "rot": 311.7,
+   "scale": 0.91,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -50.187,
+    0,
+    66.793
+   ],
+   "rot": 289.0,
+   "scale": 1.14,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    17.937,
+    0,
+    75.415
+   ],
+   "rot": 25.5,
+   "scale": 1.25,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -25.53,
+    0,
+    44.403
+   ],
+   "rot": 147.5,
+   "scale": 1.21,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -25.89,
+    0,
+    77.737
+   ],
+   "rot": 300.3,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -62.41,
+    0,
+    63.516
+   ],
+   "rot": 25.2,
+   "scale": 0.9,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    8.5,
+    0,
+    53.631
+   ],
+   "rot": 200.3,
+   "scale": 1.11,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    12.242,
+    0,
+    36.215
+   ],
+   "rot": 300.1,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    -34.487,
+    0,
+    65.854
+   ],
+   "rot": 60.7,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -18.977,
+    0,
+    35.154
+   ],
+   "rot": 323.5,
+   "scale": 1.14,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    66.283,
+    0,
+    47.758
+   ],
+   "rot": 212.6,
+   "scale": 1.24,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    54.19,
+    0,
+    52.037
+   ],
+   "rot": 337.1,
+   "scale": 1.13,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -17.283,
+    0,
+    47.781
+   ],
+   "rot": 301.3,
+   "scale": 1.07,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    -79.6,
+    0,
+    40.157
+   ],
+   "rot": 89.5,
+   "scale": 0.91,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -24.481,
+    0,
+    71.39
+   ],
+   "rot": 354.0,
+   "scale": 1.21,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    -47.393,
+    0,
+    75.903
+   ],
+   "rot": 172.5,
+   "scale": 1.22,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    65.405,
+    0,
+    72.871
+   ],
+   "rot": 317.3,
+   "scale": 1.18,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    8.818,
+    0,
+    48.73
+   ],
+   "rot": 171.7,
+   "scale": 1.22,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -65.654,
+    0,
+    57.009
+   ],
+   "rot": 3.7,
+   "scale": 1.17,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    22.333,
+    0,
+    75.653
+   ],
+   "rot": 117.4,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -47.788,
+    0,
+    75.739
+   ],
+   "rot": 146.0,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    66.353,
+    0,
+    73.186
+   ],
+   "rot": 142.9,
+   "scale": 0.95,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -57.944,
+    0,
+    59.729
+   ],
+   "rot": 312.2,
+   "scale": 0.95,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    17.507,
+    0,
+    33.453
+   ],
+   "rot": 142.7,
+   "scale": 1.23,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    54.961,
+    0,
+    58.681
+   ],
+   "rot": 136.0,
+   "scale": 0.96,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    26.306,
+    0,
+    55.052
+   ],
+   "rot": 181.8,
+   "scale": 1.11,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    32.036,
+    0,
+    29.89
+   ],
+   "rot": 311.2,
+   "scale": 1.04,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    49.565,
+    0,
+    38.899
+   ],
+   "rot": 268.5,
+   "scale": 1.11,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    28.909,
+    0,
+    77.515
+   ],
+   "rot": 197.8,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    8.79,
+    0,
+    52.919
+   ],
+   "rot": 186.1,
+   "scale": 1.01,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    34.008,
+    0,
+    36.667
+   ],
+   "rot": 351.7,
+   "scale": 1.19,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -30.809,
+    0,
+    43.223
+   ],
+   "rot": 27.4,
+   "scale": 0.94,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -76.194,
+    0,
+    68.531
+   ],
+   "rot": 181.8,
+   "scale": 1.24,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    64.475,
+    0,
+    61.675
+   ],
+   "rot": 186.3,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -25.306,
+    0,
+    47.477
+   ],
+   "rot": 238.1,
+   "scale": 0.91,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    -81.232,
+    0,
+    41.055
+   ],
+   "rot": 260.6,
+   "scale": 1.19,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -14.585,
+    0,
+    39.058
+   ],
+   "rot": 82.0,
+   "scale": 1.01,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    59.262,
+    0,
+    60.371
+   ],
+   "rot": 177.1,
+   "scale": 1.07,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    27.465,
+    0,
+    72.415
+   ],
+   "rot": 227.7,
+   "scale": 1.06,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    11.742,
+    0,
+    64.283
+   ],
+   "rot": 245.9,
+   "scale": 1.14,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -48.506,
+    0,
+    73.751
+   ],
+   "rot": 137.5,
+   "scale": 1.01,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -55.472,
+    0,
+    71.659
+   ],
+   "rot": 199.2,
+   "scale": 0.95,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -75.198,
+    0,
+    42.433
+   ],
+   "rot": 166.4,
+   "scale": 1.16,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -70.577,
+    0,
+    75.756
+   ],
+   "rot": 244.3,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -57.601,
+    0,
+    31.182
+   ],
+   "rot": 91.5,
+   "scale": 1.01,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    48.105,
+    0,
+    34.824
+   ],
+   "rot": 85.8,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    22.795,
+    0,
+    63.526
+   ],
+   "rot": 168.1,
+   "scale": 1.23,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -42.819,
+    0,
+    35.892
+   ],
+   "rot": 35.6,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    69.003,
+    0,
+    37.975
+   ],
+   "rot": 336.5,
+   "scale": 1.18,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    25.44,
+    0,
+    27.968
+   ],
+   "rot": 143.3,
+   "scale": 1.1,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -16.961,
+    0,
+    49.931
+   ],
+   "rot": 53.2,
+   "scale": 1.23,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    68.627,
+    0,
+    36.705
+   ],
+   "rot": 133.2,
+   "scale": 1.21,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -66.273,
+    0,
+    67.377
+   ],
+   "rot": 302.7,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    -38.308,
+    0,
+    48.274
+   ],
+   "rot": 207.0,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    44.629,
+    0,
+    56.815
+   ],
+   "rot": 6.3,
+   "scale": 1.21,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    5.713,
+    0,
+    31.103
+   ],
+   "rot": 273.3,
+   "scale": 1.16,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -57.685,
+    0,
+    30.042
+   ],
+   "rot": 192.8,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    20.856,
+    0,
+    34.788
+   ],
+   "rot": 107.3,
+   "scale": 1.02,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    12.964,
+    0,
+    72.397
+   ],
+   "rot": 67.1,
+   "scale": 1.13,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    -72.197,
+    0,
+    69.244
+   ],
+   "rot": 21.2,
+   "scale": 0.99,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -82.019,
+    0,
+    52.248
+   ],
+   "rot": 143.8,
+   "scale": 1.18,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    -82.777,
+    0,
+    38.867
+   ],
+   "rot": 147.0,
+   "scale": 1.09,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    23.229,
+    0,
+    64.119
+   ],
+   "rot": 116.9,
+   "scale": 1.05,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    29.165,
+    0,
+    57.941
+   ],
+   "rot": 62.7,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    26.25,
+    0,
+    52.184
+   ],
+   "rot": 158.9,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -84.969,
+    0,
+    41.258
+   ],
+   "rot": 280.0,
+   "scale": 0.98,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    57.344,
+    0,
+    54.196
+   ],
+   "rot": 140.5,
+   "scale": 1.24,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    63.635,
+    0,
+    74.776
+   ],
+   "rot": 328.8,
+   "scale": 1.03,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -60.09,
+    0,
+    40.523
+   ],
+   "rot": 232.9,
+   "scale": 1.16,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    -62.003,
+    0,
+    74.471
+   ],
+   "rot": 148.5,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -41.961,
+    0,
+    49.949
+   ],
+   "rot": 130.4,
+   "scale": 1.21,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    43.211,
+    0,
+    45.473
+   ],
+   "rot": 328.2,
+   "scale": 1.25,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    65.694,
+    0,
+    65.514
+   ],
+   "rot": 267.0,
+   "scale": 1.16,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    -28.37,
+    0,
+    77.556
+   ],
+   "rot": 86.4,
+   "scale": 0.94,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -19.694,
+    0,
+    59.684
+   ],
+   "rot": 68.7,
+   "scale": 1.07,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -53.836,
+    0,
+    36.404
+   ],
+   "rot": 176.2,
+   "scale": 1.03,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -14.136,
+    0,
+    28.813
+   ],
+   "rot": 158.5,
+   "scale": 1.02,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    -39.392,
+    0,
+    34.107
+   ],
+   "rot": 135.7,
+   "scale": 1.25,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -24.629,
+    0,
+    27.191
+   ],
+   "rot": 106.8,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    46.02,
+    0,
+    50.351
+   ],
+   "rot": 264.3,
+   "scale": 0.98,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -79.152,
+    0,
+    45.892
+   ],
+   "rot": 120.2,
+   "scale": 0.95,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -76.613,
+    0,
+    40.08
+   ],
+   "rot": 90.1,
+   "scale": 1.03,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    37.884,
+    0,
+    67.439
+   ],
+   "rot": 119.9,
+   "scale": 1.11,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_2.glb",
+   "name": "arbol",
+   "pos": [
+    48.642,
+    0,
+    65.045
+   ],
+   "rot": 52.6,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    45.817,
+    0,
+    40.507
+   ],
+   "rot": 232.6,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_4.glb",
+   "name": "arbol",
+   "pos": [
+    -5.252,
+    0,
+    33.829
+   ],
+   "rot": 78.4,
+   "scale": 1.15,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    22.512,
+    0,
+    44.09
+   ],
+   "rot": 3.3,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    47.687,
+    0,
+    41.47
+   ],
+   "rot": 148.9,
+   "scale": 1.14,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -68.158,
+    0,
+    71.908
+   ],
+   "rot": 358.7,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -50.571,
+    0,
+    62.925
+   ],
+   "rot": 346.4,
+   "scale": 1.08,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    14.352,
+    0,
+    45.652
+   ],
+   "rot": 159.7,
+   "scale": 1.04,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_tree.glb",
+   "name": "arbol",
+   "pos": [
+    16.317,
+    0,
+    63.668
+   ],
+   "rot": 284.2,
+   "scale": 0.98,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_5.glb",
+   "name": "arbol",
+   "pos": [
+    -84.8,
+    0,
+    59.803
+   ],
+   "rot": 278.9,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    57.255,
+    0,
+    65.206
+   ],
+   "rot": 59.4,
+   "scale": 1.07,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine_3.glb",
+   "name": "arbol",
+   "pos": [
+    40.655,
+    0,
+    43.674
+   ],
+   "rot": 347.2,
+   "scale": 1.0,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_pine.glb",
+   "name": "arbol",
+   "pos": [
+    -14.459,
+    0,
+    37.295
+   ],
+   "rot": 305.0,
+   "scale": 1.12,
+   "pivot": true,
+   "collide": false,
+   "vis": 80.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    -22.758,
+    0,
+    65.804
+   ],
+   "rot": 252.2,
+   "scale": 0.704116732398805,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    -85.105,
+    0,
+    66.776
+   ],
+   "rot": 215.8,
+   "scale": 0.6481274844882986,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium_2.glb",
+   "name": "arbusto",
+   "pos": [
+    -55.209,
+    0,
+    56.413
+   ],
+   "rot": 251.4,
+   "scale": 1.0062593728641798,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    -23.651,
+    0,
+    75.937
+   ],
+   "rot": 318.4,
+   "scale": 0.808866767713124,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    4.905,
+    0,
+    29.367
+   ],
+   "rot": 277.7,
+   "scale": 0.8898332010289929,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    -58.675,
+    0,
+    74.238
+   ],
+   "rot": 280.4,
+   "scale": 0.7284546806522637,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    -12.047,
+    0,
+    40.352
+   ],
+   "rot": 104.1,
+   "scale": 0.7855422841904716,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    -8.952,
+    0,
+    40.469
+   ],
+   "rot": 19.2,
+   "scale": 0.7436293444964021,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    -73.439,
+    0,
+    43.566
+   ],
+   "rot": 271.2,
+   "scale": 0.6746857386521575,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -38.349,
+    0,
+    32.718
+   ],
+   "rot": 326.4,
+   "scale": 0.6245359665683407,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium_2.glb",
+   "name": "arbusto",
+   "pos": [
+    32.065,
+    0,
+    69.198
+   ],
+   "rot": 248.7,
+   "scale": 0.9138538560726889,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    -11.748,
+    0,
+    55.377
+   ],
+   "rot": 261.2,
+   "scale": 0.6233616437555197,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    12.81,
+    0,
+    58.02
+   ],
+   "rot": 67.2,
+   "scale": 1.0566788972121595,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    -19.492,
+    0,
+    37.213
+   ],
+   "rot": 78.4,
+   "scale": 0.682687064515327,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    67.156,
+    0,
+    27.67
+   ],
+   "rot": 306.1,
+   "scale": 1.0820212291562552,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -47.961,
+    0,
+    45.087
+   ],
+   "rot": 68.3,
+   "scale": 0.9505741454447153,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    56.738,
+    0,
+    36.262
+   ],
+   "rot": 172.8,
+   "scale": 0.7642548977132784,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    55.52,
+    0,
+    70.157
+   ],
+   "rot": 103.6,
+   "scale": 0.9750159098658016,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    24.137,
+    0,
+    64.487
+   ],
+   "rot": 316.4,
+   "scale": 0.7230319504404623,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    72.475,
+    0,
+    43.71
+   ],
+   "rot": 295.6,
+   "scale": 0.9913744433494902,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium_2.glb",
+   "name": "arbusto",
+   "pos": [
+    28.167,
+    0,
+    28.417
+   ],
+   "rot": 98.2,
+   "scale": 0.7335098453307999,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    39.867,
+    0,
+    58.238
+   ],
+   "rot": 284.4,
+   "scale": 1.0360633977666627,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    55.868,
+    0,
+    68.992
+   ],
+   "rot": 179.8,
+   "scale": 0.950792794174848,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -5.268,
+    0,
+    76.434
+   ],
+   "rot": 137.1,
+   "scale": 1.064295991863622,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    35.967,
+    0,
+    53.483
+   ],
+   "rot": 49.3,
+   "scale": 0.6020067272870399,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -73.102,
+    0,
+    50.172
+   ],
+   "rot": 17.5,
+   "scale": 0.9183472094229004,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    -70.077,
+    0,
+    53.028
+   ],
+   "rot": 235.0,
+   "scale": 1.0361148652133663,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium_2.glb",
+   "name": "arbusto",
+   "pos": [
+    -41.094,
+    0,
+    66.112
+   ],
+   "rot": 41.7,
+   "scale": 0.7744673289564554,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    24.994,
+    0,
+    69.581
+   ],
+   "rot": 166.8,
+   "scale": 1.0537648272239486,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    53.906,
+    0,
+    40.524
+   ],
+   "rot": 48.6,
+   "scale": 0.7725018421240727,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    62.735,
+    0,
+    44.972
+   ],
+   "rot": 294.7,
+   "scale": 0.7393464237242867,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_plant_big.glb",
+   "name": "arbusto",
+   "pos": [
+    38.134,
+    0,
+    27.185
+   ],
+   "rot": 15.6,
+   "scale": 0.9945581851372708,
+   "pivot": true,
+   "collide": false,
+   "vis": 40.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    23.622,
+    0,
+    52.736
+   ],
+   "rot": 289.1,
+   "scale": 0.6867484112265274,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    4.285,
+    0,
+    55.263
+   ],
+   "rot": 304.9,
+   "scale": 0.9108225603297915,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    -60.804,
+    0,
+    65.803
+   ],
+   "rot": 62.6,
+   "scale": 0.9659719873531663,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -21.615,
+    0,
+    43.642
+   ],
+   "rot": 138.3,
+   "scale": 0.997431801464005,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_bush.scn",
+   "name": "arbusto",
+   "pos": [
+    -40.288,
+    0,
+    74.318
+   ],
+   "rot": 87.9,
+   "scale": 0.7605977946060815,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_fern.glb",
+   "name": "arbusto",
+   "pos": [
+    -39.02,
+    0,
+    49.1
+   ],
+   "rot": 358.5,
+   "scale": 0.6418775588941087,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    67.297,
+    0,
+    73.837
+   ],
+   "rot": 256.2,
+   "scale": 1.06680933901853,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_rock_medium.glb",
+   "name": "arbusto",
+   "pos": [
+    -58.477,
+    0,
+    63.686
+   ],
+   "rot": 353.4,
+   "scale": 1.040185317325434,
+   "vis": 40.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_dead_tree_3.glb",
+   "name": "arbol",
+   "pos": [
+    -60,
+    0,
+    70
+   ],
+   "rot": 30.5,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_twisted_tree.glb",
+   "name": "arbol",
+   "pos": [
+    20,
+    0,
+    70
+   ],
+   "rot": 200.0,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/n_dead_tree.glb",
+   "name": "arbol",
+   "pos": [
+    50,
+    0,
+    74
+   ],
+   "rot": 294.2,
+   "scale": 1.2,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_bonfire.scn",
+   "name": "hoguera",
+   "pos": [
+    -30.0,
+    0,
+    56.0
+   ],
+   "rot": 0,
+   "scale": 0.45,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_tent.scn",
+   "name": "tienda",
+   "pos": [
+    -36.0,
+    0,
+    52.0
+   ],
+   "rot": 60,
+   "scale": 0.17,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_tent.scn",
+   "name": "tienda",
+   "pos": [
+    -24.0,
+    0,
+    51.0
+   ],
+   "rot": -40,
+   "scale": 0.17,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_tent.scn",
+   "name": "tienda",
+   "pos": [
+    -31.0,
+    0,
+    63.0
+   ],
+   "rot": 180,
+   "scale": 0.17,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_wood_log.scn",
+   "name": "tronco",
+   "pos": [
+    -33.0,
+    0,
+    57.5
+   ],
+   "rot": 30,
+   "scale": 0.32,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_wood_log.scn",
+   "name": "tronco",
+   "pos": [
+    -27.0,
+    0,
+    57.5
+   ],
+   "rot": -30,
+   "scale": 0.32,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_backpack.scn",
+   "name": "v_backpack",
+   "pos": [
+    -28.5,
+    0,
+    53.5
+   ],
+   "rot": 40,
+   "scale": 0.18,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_radio.scn",
+   "name": "v_radio",
+   "pos": [
+    -31.5,
+    0.0,
+    53.8
+   ],
+   "rot": 0,
+   "scale": 0.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_propane_tank.scn",
+   "name": "v_propane_tank",
+   "pos": [
+    -22.5,
+    0,
+    55.0
+   ],
+   "rot": 0,
+   "scale": 0.4,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_axe.scn",
+   "name": "v_axe",
+   "pos": [
+    -26.5,
+    0,
+    59.5
+   ],
+   "rot": 70,
+   "scale": 0.3,
+   "vis": 45.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_table.scn",
+   "name": "f_table",
+   "pos": [
+    -12.0,
+    0,
+    64.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/f_closet.scn",
+   "name": "f_closet",
+   "pos": [
+    -3.0,
+    0,
+    70.8
+   ],
+   "rot": 180,
+   "scale": 0.65,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/v_axe.scn",
+   "name": "v_axe",
+   "pos": [
+    -12.0,
+    0.8,
+    64.0
+   ],
+   "rot": 90,
+   "scale": 0.3,
+   "vis": 45.0,
+   "pivot": true,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/villa/models/car_car_2.scn",
+   "name": "car_car_2",
+   "pos": [
+    55.0,
+    0,
+    34.0
+   ],
+   "rot": 40,
+   "scale": 1.15,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_broken_car.scn",
+   "name": "s_broken_car",
+   "pos": [
+    30.0,
+    0,
+    46.0
+   ],
+   "rot": 150,
+   "scale": 0.85,
+   "pivot": true
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -22.208
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -18.625
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -15.042
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -11.458
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -7.875
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    -4.292
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    4.292
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    7.875
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    11.458
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    15.042
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    18.625
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_barrier_large.scn",
+   "name": "valla",
+   "pos": [
+    24.0,
+    0,
+    22.208
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.943,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -22.464
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -19.393
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -16.321
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -13.25
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -10.179
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -7.107
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -4.036
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    4.036
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    7.107
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    10.179
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    13.25
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    16.321
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    19.393
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    22.464
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -22.464,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -19.393,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -16.321,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -13.25,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -10.179,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -7.107,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -4.036,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    4.036,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    7.107,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    10.179,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    13.25,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    16.321,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    19.393,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    22.464,
+    0,
+    -24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.878,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -77.25
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -71.75
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -66.25
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -60.75
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -55.25
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.932,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -44.562
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.996,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -38.688
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.996,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -32.812
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.996,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/farm_fence.scn",
+   "name": "valla",
+   "pos": [
+    -24.0,
+    0,
+    -26.938
+   ],
+   "rot": 90.0,
+   "scale": [
+    0.996,
+    1.0,
+    1.0
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -88.558,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -85.673,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -82.788,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -79.904,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -77.019,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -74.135,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -71.25,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -68.365,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -65.481,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -62.596,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -59.712,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -56.827,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -53.942,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.824,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -46.031,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -43.094,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -40.156,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -37.219,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -34.281,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -31.344,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -28.406,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  },
+  {
+   "scene": "res://assets/maps/villa/models/s_metal_fence.scn",
+   "name": "valla",
+   "pos": [
+    -25.469,
+    0,
+    24.0
+   ],
+   "rot": 180.0,
+   "scale": [
+    0.839,
+    0.85,
+    0.85
+   ],
+   "pivot": true,
+   "collide": false,
+   "vis": 70.0
+  }
+ ],
+ "build": [
+  {
+   "t": "box",
+   "p": [
+    0,
+    -0.3,
+    -2.5
+   ],
+   "s": [
+    190,
+    0.3,
+    165
+   ],
+   "r": 0,
+   "m": "#5f7d3c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    -0.28,
+    0.0
+   ],
+   "s": [
+    48,
+    0.29,
+    12.0
+   ],
+   "r": 0,
+   "m": "#3b3c40",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -21.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -15.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -9.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -3.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    3.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    9.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    15.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    21.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    -0.28,
+    0.0
+   ],
+   "s": [
+    12.0,
+    0.29,
+    48
+   ],
+   "r": 0,
+   "m": "#3b3c40",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    -21.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    -15.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    -9.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    -3.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    3.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    9.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    15.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.01,
+    21.0
+   ],
+   "s": [
+    0.22,
+    0.01,
+    2.6
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0,
+    -0.28,
+    0
+   ],
+   "s": [
+    12,
+    0.3,
+    12
+   ],
+   "r": 0,
+   "m": "#3b3c40",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -9.5,
+    -0.27,
+    -9.5
+   ],
+   "s": [
+    7,
+    0.3,
+    7
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    9.5,
+    -0.27,
+    -9.5
+   ],
+   "s": [
+    7,
+    0.3,
+    7
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -9.5,
+    -0.27,
+    9.5
+   ],
+   "s": [
+    7,
+    0.3,
+    7
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    9.5,
+    -0.27,
+    9.5
+   ],
+   "s": [
+    7,
+    0.3,
+    7
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    16.5,
+    -0.27,
+    -16.5
+   ],
+   "s": [
+    15,
+    0.3,
+    15
+   ],
+   "r": 0,
+   "m": "#b8b2a6",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    12.5,
+    0,
+    -12.5
+   ],
+   "s": [
+    0.5,
+    4.6,
+    0.5
+   ],
+   "r": 0,
+   "m": "#dcdcdc",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    20.5,
+    0,
+    -12.5
+   ],
+   "s": [
+    0.5,
+    4.6,
+    0.5
+   ],
+   "r": 0,
+   "m": "#dcdcdc",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    12.5,
+    0,
+    -20.5
+   ],
+   "s": [
+    0.5,
+    4.6,
+    0.5
+   ],
+   "r": 0,
+   "m": "#dcdcdc",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    20.5,
+    0,
+    -20.5
+   ],
+   "s": [
+    0.5,
+    4.6,
+    0.5
+   ],
+   "r": 0,
+   "m": "#dcdcdc",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.5,
+    4.6,
+    -16.5
+   ],
+   "s": [
+    11,
+    0.5,
+    11
+   ],
+   "r": 0,
+   "m": "#c0392b",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.5,
+    4.45,
+    -16.5
+   ],
+   "s": [
+    10.6,
+    0.15,
+    10.6
+   ],
+   "r": 0,
+   "m": "#eeeeee",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    16.5,
+    0,
+    -22.8
+   ],
+   "s": [
+    14.4,
+    3.6,
+    2.2
+   ],
+   "r": 0,
+   "m": "#e9e3d3",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.5,
+    3.6,
+    -22.8
+   ],
+   "s": [
+    15.0,
+    0.4,
+    2.8
+   ],
+   "r": 0,
+   "m": "#c0392b",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -17.0,
+    0,
+    -17.0
+   ],
+   "s": [
+    9.0,
+    6.0,
+    9.0
+   ],
+   "r": 45,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -16.5,
+    -0.27,
+    16.5
+   ],
+   "s": [
+    14,
+    0.3,
+    14
+   ],
+   "r": 0,
+   "m": "#6f8f43",
+   "c": false
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -21,
+    0,
+    11
+   ],
+   "s": [
+    0.27999999999999997,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -12,
+    0,
+    21
+   ],
+   "s": [
+    0.27999999999999997,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -21,
+    0,
+    21
+   ],
+   "s": [
+    0.27999999999999997,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.0,
+    0,
+    21.5
+   ],
+   "s": [
+    9.0,
+    0.2,
+    2.6
+   ],
+   "r": 0,
+   "m": "#7d7d82",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.0,
+    2.6,
+    21.5
+   ],
+   "s": [
+    9.4,
+    0.15,
+    3.0
+   ],
+   "r": 0,
+   "m": "#2e86c1",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    11.8,
+    0,
+    22.6
+   ],
+   "s": [
+    0.15,
+    2.6,
+    0.15
+   ],
+   "r": 0,
+   "m": "#7d7d82",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    20.2,
+    0,
+    22.6
+   ],
+   "s": [
+    0.15,
+    2.6,
+    0.15
+   ],
+   "r": 0,
+   "m": "#7d7d82",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16.0,
+    0,
+    22.7
+   ],
+   "s": [
+    9.0,
+    2.6,
+    0.12
+   ],
+   "r": 0,
+   "m": "glass",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    -0.28,
+    0.0
+   ],
+   "s": [
+    66,
+    0.29,
+    12.0
+   ],
+   "r": 0,
+   "m": "#3b3c40",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    27.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    33.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    39.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    45.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    51.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    63.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    69.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    75.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    81.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    87.0,
+    0.01,
+    0.0
+   ],
+   "s": [
+    2.6,
+    0.01,
+    0.22
+   ],
+   "r": 0,
+   "m": "#e8d27a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    57,
+    -0.27,
+    -8.0
+   ],
+   "s": [
+    66,
+    0.3,
+    4.0
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    57,
+    -0.27,
+    8.0
+   ],
+   "s": [
+    66,
+    0.3,
+    4.0
+   ],
+   "r": 0,
+   "m": "#a7a196",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    31.0,
+    0,
+    -12.65
+   ],
+   "s": [
+    13.3,
+    12.0,
+    4.9
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    47.5,
+    0,
+    -15.3
+   ],
+   "s": [
+    10.9,
+    12.0,
+    10.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    61.5,
+    0,
+    -13.25
+   ],
+   "s": [
+    18.8,
+    12.0,
+    6.1
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    77.0,
+    0,
+    -15.05
+   ],
+   "s": [
+    11.6,
+    12.0,
+    9.7
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    86.5,
+    0,
+    -13.25
+   ],
+   "s": [
+    8.5,
+    12.0,
+    6.1
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    29.5,
+    0,
+    15.3
+   ],
+   "s": [
+    7.0,
+    12.0,
+    10.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    38.5,
+    0,
+    13.25
+   ],
+   "s": [
+    8.5,
+    12.0,
+    6.1
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    46.5,
+    0,
+    14.85
+   ],
+   "s": [
+    9.9,
+    12.0,
+    9.3
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    81.0,
+    0,
+    13.25
+   ],
+   "s": [
+    18.8,
+    12.0,
+    6.1
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    38.1,
+    0.0,
+    24.0
+   ],
+   "s": [
+    0.6,
+    4.0,
+    27.8
+   ],
+   "r": 90.0,
+   "m": "#8a7f72",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    81.0,
+    0.0,
+    24.0
+   ],
+   "s": [
+    0.6,
+    4.0,
+    18.0
+   ],
+   "r": 90.0,
+   "m": "#8a7f72",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    40.0,
+    -0.27,
+    -17.0
+   ],
+   "s": [
+    4.6,
+    0.3,
+    14.0
+   ],
+   "r": 0,
+   "m": "#8f877a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    88.5,
+    0,
+    0
+   ],
+   "s": [
+    1.0,
+    3.0,
+    24.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    56.4,
+    0.0,
+    10.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    8.8
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    67.6,
+    0.0,
+    10.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    8.8
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    2.5,
+    10.0
+   ],
+   "s": [
+    0.4,
+    1.9,
+    2.4
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    56.4,
+    0.0,
+    24.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    8.8
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    67.6,
+    0.0,
+    24.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    8.8
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    2.5,
+    24.0
+   ],
+   "s": [
+    0.4,
+    1.9,
+    2.4
+   ],
+   "r": 90.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    52.0,
+    0.0,
+    17.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    14.0
+   ],
+   "r": 0.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    72.0,
+    0.0,
+    17.0
+   ],
+   "s": [
+    0.4,
+    4.4,
+    14.0
+   ],
+   "r": 0.0,
+   "m": "#9c4a3a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    4.4,
+    17.0
+   ],
+   "s": [
+    20.4,
+    0.4,
+    14.4
+   ],
+   "r": 0,
+   "m": "#5b3a2e",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    4.8,
+    9.9
+   ],
+   "s": [
+    21.0,
+    1.4,
+    0.4
+   ],
+   "r": 0,
+   "m": "#2c3e50",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    0.0,
+    17.0
+   ],
+   "s": [
+    19.6,
+    0.03,
+    13.6
+   ],
+   "r": 0,
+   "m": "#7a5434",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52.25,
+    0.0,
+    17.0
+   ],
+   "s": [
+    0.1,
+    4.4,
+    13.4
+   ],
+   "r": 0.0,
+   "m": "#d9c49a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    71.75,
+    0.0,
+    17.0
+   ],
+   "s": [
+    0.1,
+    4.4,
+    13.4
+   ],
+   "r": 0.0,
+   "m": "#d9c49a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    0,
+    20.0
+   ],
+   "s": [
+    8.0,
+    1.1,
+    1.0
+   ],
+   "r": 0,
+   "m": "#6b3d24",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    1.1,
+    20.0
+   ],
+   "s": [
+    8.4,
+    0.1,
+    1.2
+   ],
+   "r": 0,
+   "m": "#3b2416",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    0,
+    23.3
+   ],
+   "s": [
+    8.0,
+    2.4,
+    0.6
+   ],
+   "r": 0,
+   "m": "#4a2c1a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    2.4,
+    23.3
+   ],
+   "s": [
+    8.0,
+    0.08,
+    0.7
+   ],
+   "r": 0,
+   "m": "#3b2416",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    53.6,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#f1c40f",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    54.35,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#2e7d32",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    55.1,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#2e7d32",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    55.85,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#8d6e63",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    56.6,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#2e7d32",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    57.35,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#f1c40f",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    58.1,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#2e7d32",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    58.85,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#8d6e63",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    59.6,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#2e7d32",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    60.35,
+    1.6,
+    23.2
+   ],
+   "s": [
+    0.12,
+    0.36,
+    0.12
+   ],
+   "r": 0,
+   "m": "#8d6e63",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    57.0,
+    4.15,
+    15.0
+   ],
+   "s": [
+    1.6,
+    0.12,
+    0.4
+   ],
+   "r": 0,
+   "m": "#fff3c4",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    66.0,
+    4.15,
+    18.0
+   ],
+   "s": [
+    1.6,
+    0.12,
+    0.4
+   ],
+   "r": 0,
+   "m": "#fff3c4",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    33,
+    -0.27,
+    -52
+   ],
+   "s": [
+    114,
+    0.3,
+    56
+   ],
+   "r": 0,
+   "m": "#6d8a3f",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0,
+    -0.26,
+    -40
+   ],
+   "s": [
+    6,
+    0.3,
+    32
+   ],
+   "r": 0,
+   "m": "#9b8158",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    24,
+    -0.26,
+    -56
+   ],
+   "s": [
+    54,
+    0.3,
+    6
+   ],
+   "r": 0,
+   "m": "#9b8158",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    -0.25,
+    -66
+   ],
+   "s": [
+    22,
+    0.3,
+    18
+   ],
+   "r": 0,
+   "m": "#7a5a3c",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -74.2
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -72.6
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -71.0
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -69.4
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -67.8
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -66.2
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -64.6
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -63.0
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -61.4
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -59.8
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -10,
+    0.0,
+    -58.2
+   ],
+   "s": [
+    21.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    -0.25,
+    -66
+   ],
+   "s": [
+    26,
+    0.3,
+    16
+   ],
+   "r": 0,
+   "m": "#7a5a3c",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -73.2
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -71.6
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -70.0
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -68.4
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -66.8
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -65.2
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -63.6
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -62.0
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    52,
+    0.0,
+    -60.4
+   ],
+   "s": [
+    25.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    -0.25,
+    -40
+   ],
+   "s": [
+    18,
+    0.3,
+    22
+   ],
+   "r": 0,
+   "m": "#7a5a3c",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -50.2
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -48.6
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -47.0
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -45.4
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -43.8
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -42.2
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -40.6
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -39.0
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -37.4
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -35.8
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -34.2
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -32.6
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    78,
+    0.0,
+    -31.0
+   ],
+   "s": [
+    17.0,
+    0.55,
+    0.5
+   ],
+   "r": 0,
+   "m": "#8fb24a",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    48.0,
+    0,
+    -42.0
+   ],
+   "s": [
+    12.5,
+    10.0,
+    12.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    60.5,
+    0,
+    -50.0
+   ],
+   "s": [
+    2.3,
+    9.0
+   ],
+   "m": "#8f3b2b",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    62.0,
+    0,
+    -36.0
+   ],
+   "s": [
+    4.4,
+    9.0,
+    6.6
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -12.0,
+    0,
+    -45.0
+   ],
+   "s": [
+    3.0,
+    8.0
+   ],
+   "m": "#7f8c8d",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    8.0,
+    0,
+    -70.0
+   ],
+   "s": [
+    9.0,
+    8.0,
+    9.2
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    10,
+    0,
+    -30
+   ],
+   "s": [
+    2.2,
+    1.2,
+    1.6
+   ],
+   "r": 0,
+   "m": "#e4c35a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    10,
+    1.2,
+    -30
+   ],
+   "s": [
+    2.0,
+    0.9,
+    1.4
+   ],
+   "r": 0,
+   "m": "#d9b64c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16,
+    0,
+    -31
+   ],
+   "s": [
+    2.2,
+    1.2,
+    1.6
+   ],
+   "r": 0,
+   "m": "#e4c35a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    16,
+    1.2,
+    -31
+   ],
+   "s": [
+    2.0,
+    0.9,
+    1.4
+   ],
+   "r": 0,
+   "m": "#d9b64c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    30,
+    0,
+    -30
+   ],
+   "s": [
+    2.2,
+    1.2,
+    1.6
+   ],
+   "r": 0,
+   "m": "#e4c35a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    30,
+    1.2,
+    -30
+   ],
+   "s": [
+    2.0,
+    0.9,
+    1.4
+   ],
+   "r": 0,
+   "m": "#d9b64c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    71,
+    0,
+    -30
+   ],
+   "s": [
+    2.2,
+    1.2,
+    1.6
+   ],
+   "r": 0,
+   "m": "#e4c35a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    71,
+    1.2,
+    -30
+   ],
+   "s": [
+    2.0,
+    0.9,
+    1.4
+   ],
+   "r": 0,
+   "m": "#d9b64c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -18,
+    0,
+    -60
+   ],
+   "s": [
+    2.2,
+    1.2,
+    1.6
+   ],
+   "r": 0,
+   "m": "#e4c35a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -18,
+    1.2,
+    -60
+   ],
+   "s": [
+    2.0,
+    0.9,
+    1.4
+   ],
+   "r": 0,
+   "m": "#d9b64c",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -20,
+    0,
+    -76
+   ],
+   "s": [
+    0.3276243247743399,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -4,
+    0,
+    -78
+   ],
+   "s": [
+    0.36061869898390203,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    20,
+    0,
+    -78
+   ],
+   "s": [
+    0.38413511590883986,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    44,
+    0,
+    -77
+   ],
+   "s": [
+    0.39834899671476875,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    66,
+    0,
+    -76
+   ],
+   "s": [
+    0.37203622856536006,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    86,
+    0,
+    -74
+   ],
+   "s": [
+    0.3517214571158011,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    88,
+    0,
+    -55
+   ],
+   "s": [
+    0.41052912974656985,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    86,
+    0,
+    -30
+   ],
+   "s": [
+    0.3793365717169028,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -21,
+    0,
+    -30
+   ],
+   "s": [
+    0.36998218832740465,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -20,
+    0,
+    -52
+   ],
+   "s": [
+    0.32946305783623286,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -10.0,
+    0,
+    -57.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    22.0
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    52.0,
+    0,
+    -58.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    26.0
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -57,
+    -0.27,
+    -28
+   ],
+   "s": [
+    66,
+    0.3,
+    104
+   ],
+   "r": 0,
+   "m": "#8a8a7e",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -66.0,
+    0,
+    -34.0
+   ],
+   "s": [
+    3.6,
+    5.0,
+    45.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -72.0,
+    0,
+    -57.0
+   ],
+   "s": [
+    3.4,
+    5.0,
+    27.0
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -72.0,
+    0,
+    2.0
+   ],
+   "s": [
+    3.4,
+    5.0,
+    13.5
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -58.5,
+    0,
+    -30.0
+   ],
+   "s": [
+    5.0,
+    0.25,
+    60.0
+   ],
+   "r": 0,
+   "m": "#b3aa9a",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -56.2,
+    0.25,
+    -30.0
+   ],
+   "s": [
+    0.4,
+    0.02,
+    60.0
+   ],
+   "r": 0,
+   "m": "#f1c40f",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -45.0,
+    0,
+    -36.0
+   ],
+   "s": [
+    9.0,
+    12.0,
+    10.8
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -50.6,
+    3.4,
+    -36.0
+   ],
+   "s": [
+    3.0,
+    0.3,
+    14.0
+   ],
+   "r": 0,
+   "m": "#7b4a2e",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -51.8,
+    0.25,
+    -42.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    0.3
+   ],
+   "r": 0,
+   "m": "#5d4037",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -51.8,
+    0.25,
+    -30.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    0.3
+   ],
+   "r": 0,
+   "m": "#5d4037",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -82.0,
+    0,
+    -42.0
+   ],
+   "s": [
+    8.0,
+    8.0,
+    10.6
+   ],
+   "r": 0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -86,
+    0,
+    18
+   ],
+   "s": [
+    0.35690183625458255,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -86,
+    0,
+    -26
+   ],
+   "s": [
+    0.3198028889883111,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -60,
+    0,
+    -78
+   ],
+   "s": [
+    0.3833642797000384,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -34,
+    0,
+    -78
+   ],
+   "s": [
+    0.3534340703238918,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -28,
+    0,
+    -40
+   ],
+   "s": [
+    0.375842662424126,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7,
+    -0.27,
+    52
+   ],
+   "s": [
+    166,
+    0.3,
+    56
+   ],
+   "r": 0,
+   "m": "#4f6e33",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    0,
+    -0.26,
+    40
+   ],
+   "s": [
+    6,
+    0.3,
+    32
+   ],
+   "r": 0,
+   "m": "#8a7350",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    -30,
+    -0.26,
+    56
+   ],
+   "s": [
+    60,
+    0.3,
+    5
+   ],
+   "r": 0,
+   "m": "#8a7350",
+   "c": false
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -61.443,
+    0,
+    62.178
+   ],
+   "s": [
+    0.34945398337162886,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    71.345,
+    0,
+    51.207
+   ],
+   "s": [
+    0.33748870880807047,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    38.933,
+    0,
+    27.72
+   ],
+   "s": [
+    0.36745341201115345,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    32.963,
+    0,
+    73.996
+   ],
+   "s": [
+    0.3201860885397706,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    30.929,
+    0,
+    71.627
+   ],
+   "s": [
+    0.36912543203065973,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    16.459,
+    0,
+    74.833
+   ],
+   "s": [
+    0.33396459945123763,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -67.895,
+    0,
+    74.325
+   ],
+   "s": [
+    0.33473457893446346,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -23.384,
+    0,
+    34.706
+   ],
+   "s": [
+    0.31954959528571286,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -50.187,
+    0,
+    66.793
+   ],
+   "s": [
+    0.39753980894516555,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    17.937,
+    0,
+    75.415
+   ],
+   "s": [
+    0.4361303458876556,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -25.53,
+    0,
+    44.403
+   ],
+   "s": [
+    0.4237260652008527,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -25.89,
+    0,
+    77.737
+   ],
+   "s": [
+    0.3475488183333529,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -62.41,
+    0,
+    63.516
+   ],
+   "s": [
+    0.3153469189831138,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    8.5,
+    0,
+    53.631
+   ],
+   "s": [
+    0.389590420436364,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    12.242,
+    0,
+    36.215
+   ],
+   "s": [
+    0.3917458910879149,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -34.487,
+    0,
+    65.854
+   ],
+   "s": [
+    0.34510626286380713,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -18.977,
+    0,
+    35.154
+   ],
+   "s": [
+    0.39779796828447794,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    66.283,
+    0,
+    47.758
+   ],
+   "s": [
+    0.4327751462599482,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    54.19,
+    0,
+    52.037
+   ],
+   "s": [
+    0.3966996806322258,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -17.283,
+    0,
+    47.781
+   ],
+   "s": [
+    0.3741886831599123,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -79.6,
+    0,
+    40.157
+   ],
+   "s": [
+    0.3192582790657508,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -24.481,
+    0,
+    71.39
+   ],
+   "s": [
+    0.42514528723730927,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -47.393,
+    0,
+    75.903
+   ],
+   "s": [
+    0.42665203498121007,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    65.405,
+    0,
+    72.871
+   ],
+   "s": [
+    0.4124142423558652,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    8.818,
+    0,
+    48.73
+   ],
+   "s": [
+    0.4255671232495039,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -65.654,
+    0,
+    57.009
+   ],
+   "s": [
+    0.4091113334208281,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    22.333,
+    0,
+    75.653
+   ],
+   "s": [
+    0.34739157591183933,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -47.788,
+    0,
+    75.739
+   ],
+   "s": [
+    0.34650660392780136,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    66.353,
+    0,
+    73.186
+   ],
+   "s": [
+    0.33239095832495236,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -57.944,
+    0,
+    59.729
+   ],
+   "s": [
+    0.3322511798054463,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    17.507,
+    0,
+    33.453
+   ],
+   "s": [
+    0.43040609523448287,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    54.961,
+    0,
+    58.681
+   ],
+   "s": [
+    0.33753302874075636,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    26.306,
+    0,
+    55.052
+   ],
+   "s": [
+    0.38897750427635247,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    32.036,
+    0,
+    29.89
+   ],
+   "s": [
+    0.36248688423503383,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    49.565,
+    0,
+    38.899
+   ],
+   "s": [
+    0.3891353811764577,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    28.909,
+    0,
+    77.515
+   ],
+   "s": [
+    0.3766323510436453,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    8.79,
+    0,
+    52.919
+   ],
+   "s": [
+    0.3546805810628171,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    34.008,
+    0,
+    36.667
+   ],
+   "s": [
+    0.4147993191883221,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -30.809,
+    0,
+    43.223
+   ],
+   "s": [
+    0.32818175693099433,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -76.194,
+    0,
+    68.531
+   ],
+   "s": [
+    0.43474260212769517,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    64.475,
+    0,
+    61.675
+   ],
+   "s": [
+    0.3692230005575926,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -25.306,
+    0,
+    47.477
+   ],
+   "s": [
+    0.31805620499685733,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -81.232,
+    0,
+    41.055
+   ],
+   "s": [
+    0.4151187848080799,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -14.585,
+    0,
+    39.058
+   ],
+   "s": [
+    0.35511861178749143,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    59.262,
+    0,
+    60.371
+   ],
+   "s": [
+    0.37376413810010134,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    27.465,
+    0,
+    72.415
+   ],
+   "s": [
+    0.37009318069952674,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    11.742,
+    0,
+    64.283
+   ],
+   "s": [
+    0.4006306816114643,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -48.506,
+    0,
+    73.751
+   ],
+   "s": [
+    0.3524791093193139,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -55.472,
+    0,
+    71.659
+   ],
+   "s": [
+    0.33281413718022784,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -75.198,
+    0,
+    42.433
+   ],
+   "s": [
+    0.4059385479875986,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -70.577,
+    0,
+    75.756
+   ],
+   "s": [
+    0.3680760105342625,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -57.601,
+    0,
+    31.182
+   ],
+   "s": [
+    0.35445870148425945,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    48.105,
+    0,
+    34.824
+   ],
+   "s": [
+    0.37711351111147867,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    22.795,
+    0,
+    63.526
+   ],
+   "s": [
+    0.43023967063502894,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -42.819,
+    0,
+    35.892
+   ],
+   "s": [
+    0.3911595905450673,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    69.003,
+    0,
+    37.975
+   ],
+   "s": [
+    0.41427806228107966,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    25.44,
+    0,
+    27.968
+   ],
+   "s": [
+    0.38605231806494583,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -16.961,
+    0,
+    49.931
+   ],
+   "s": [
+    0.43034047988570895,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    68.627,
+    0,
+    36.705
+   ],
+   "s": [
+    0.42457061073084806,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -66.273,
+    0,
+    67.377
+   ],
+   "s": [
+    0.3679401158530518,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -38.308,
+    0,
+    48.274
+   ],
+   "s": [
+    0.3449295942118554,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    44.629,
+    0,
+    56.815
+   ],
+   "s": [
+    0.4232356236091467,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    5.713,
+    0,
+    31.103
+   ],
+   "s": [
+    0.40649858950575174,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -57.685,
+    0,
+    30.042
+   ],
+   "s": [
+    0.37950386627986055,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    20.856,
+    0,
+    34.788
+   ],
+   "s": [
+    0.35825796956402545,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    12.964,
+    0,
+    72.397
+   ],
+   "s": [
+    0.39685213266525277,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -72.197,
+    0,
+    69.244
+   ],
+   "s": [
+    0.34805770148087634,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -82.019,
+    0,
+    52.248
+   ],
+   "s": [
+    0.41168746927763317,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -82.777,
+    0,
+    38.867
+   ],
+   "s": [
+    0.38097338064147895,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    23.229,
+    0,
+    64.119
+   ],
+   "s": [
+    0.366875804976323,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    29.165,
+    0,
+    57.941
+   ],
+   "s": [
+    0.39195777649966196,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    26.25,
+    0,
+    52.184
+   ],
+   "s": [
+    0.4208638896922918,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -84.969,
+    0,
+    41.258
+   ],
+   "s": [
+    0.34162089594388856,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    57.344,
+    0,
+    54.196
+   ],
+   "s": [
+    0.43384661551958165,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    63.635,
+    0,
+    74.776
+   ],
+   "s": [
+    0.3599539969219085,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -60.09,
+    0,
+    40.523
+   ],
+   "s": [
+    0.40757034153549954,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -62.003,
+    0,
+    74.471
+   ],
+   "s": [
+    0.3763118560463718,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -41.961,
+    0,
+    49.949
+   ],
+   "s": [
+    0.42314143351832173,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    43.211,
+    0,
+    45.473
+   ],
+   "s": [
+    0.4367841569394421,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    65.694,
+    0,
+    65.514
+   ],
+   "s": [
+    0.40565761963524993,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -28.37,
+    0,
+    77.556
+   ],
+   "s": [
+    0.3300488039831295,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -19.694,
+    0,
+    59.684
+   ],
+   "s": [
+    0.3756008839014475,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -53.836,
+    0,
+    36.404
+   ],
+   "s": [
+    0.3613098993877107,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -14.136,
+    0,
+    28.813
+   ],
+   "s": [
+    0.3561723441953887,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -39.392,
+    0,
+    34.107
+   ],
+   "s": [
+    0.43669856259165646,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -24.629,
+    0,
+    27.191
+   ],
+   "s": [
+    0.4211617916355415,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    46.02,
+    0,
+    50.351
+   ],
+   "s": [
+    0.34284048631086267,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -79.152,
+    0,
+    45.892
+   ],
+   "s": [
+    0.3311978120448418,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -76.613,
+    0,
+    40.08
+   ],
+   "s": [
+    0.3609271059024983,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    37.884,
+    0,
+    67.439
+   ],
+   "s": [
+    0.3879349480483113,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    48.642,
+    0,
+    65.045
+   ],
+   "s": [
+    0.39262483185835795,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    45.817,
+    0,
+    40.507
+   ],
+   "s": [
+    0.39059025893908805,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -5.252,
+    0,
+    33.829
+   ],
+   "s": [
+    0.40234858990210887,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    22.512,
+    0,
+    44.09
+   ],
+   "s": [
+    0.3790172447830653,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    47.687,
+    0,
+    41.47
+   ],
+   "s": [
+    0.4003024633120743,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -68.158,
+    0,
+    71.908
+   ],
+   "s": [
+    0.3775939724414915,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -50.571,
+    0,
+    62.925
+   ],
+   "s": [
+    0.37632698640858425,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    14.352,
+    0,
+    45.652
+   ],
+   "s": [
+    0.36422359006467814,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    16.317,
+    0,
+    63.668
+   ],
+   "s": [
+    0.3423790322340404,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -84.8,
+    0,
+    59.803
+   ],
+   "s": [
+    0.41833631045832886,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    57.255,
+    0,
+    65.206
+   ],
+   "s": [
+    0.37503853020379935,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    40.655,
+    0,
+    43.674
+   ],
+   "s": [
+    0.35166036211986623,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -14.459,
+    0,
+    37.295
+   ],
+   "s": [
+    0.3914616545242303,
+    2.2
+   ],
+   "m": "#5b4130",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -60,
+    0,
+    70
+   ],
+   "s": [
+    0.4,
+    2.2
+   ],
+   "m": "#4a3626",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    20,
+    0,
+    70
+   ],
+   "s": [
+    0.4,
+    2.2
+   ],
+   "m": "#4a3626",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    50,
+    0,
+    74
+   ],
+   "s": [
+    0.4,
+    2.2
+   ],
+   "m": "#4a3626",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -8.0,
+    0.0,
+    72.0
+   ],
+   "s": [
+    0.4,
+    3.8,
+    12.0
+   ],
+   "r": 90.0,
+   "m": "#7a5230",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -14.0,
+    0.0,
+    66.0
+   ],
+   "s": [
+    0.4,
+    3.8,
+    12.0
+   ],
+   "r": 0.0,
+   "m": "#7a5230",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -2.0,
+    0.0,
+    66.0
+   ],
+   "s": [
+    0.4,
+    3.8,
+    12.0
+   ],
+   "r": 0.0,
+   "m": "#7a5230",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -12.0,
+    0.0,
+    60.0
+   ],
+   "s": [
+    0.4,
+    3.8,
+    4.0
+   ],
+   "r": 90.0,
+   "m": "#7a5230",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -4.0,
+    0.0,
+    60.0
+   ],
+   "s": [
+    0.4,
+    3.8,
+    4.0
+   ],
+   "r": 90.0,
+   "m": "#7a5230",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -8.0,
+    3.8,
+    66.0
+   ],
+   "s": [
+    13.2,
+    0.35,
+    13.2
+   ],
+   "r": 0,
+   "m": "#4a2f1c",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -8.0,
+    0.0,
+    66.0
+   ],
+   "s": [
+    11.6,
+    0.03,
+    11.6
+   ],
+   "r": 0,
+   "m": "#8b6a45",
+   "c": false
+  },
+  {
+   "t": "box",
+   "p": [
+    24.0,
+    0,
+    -13.25
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    24.0,
+    0,
+    13.25
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -24.0,
+    0,
+    -13.25
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -24.0,
+    0,
+    13.25
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -13.25,
+    0,
+    -24.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    13.25,
+    0,
+    -24.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -13.25,
+    0.0,
+    24.0
+   ],
+   "s": [
+    1.2,
+    3.2,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    13.25,
+    0.0,
+    24.0
+   ],
+   "s": [
+    1.2,
+    3.2,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -24.0,
+    0,
+    -66.25
+   ],
+   "s": [
+    0.3,
+    3.2,
+    27.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -24.0,
+    0,
+    -35.75
+   ],
+   "s": [
+    0.3,
+    3.2,
+    23.5
+   ],
+   "r": 0.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -71.25,
+    0,
+    24.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    37.5
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -35.75,
+    0,
+    24.0
+   ],
+   "s": [
+    0.3,
+    3.2,
+    23.5
+   ],
+   "r": 90.0,
+   "m": "concrete",
+   "c": true,
+   "inv": true
+  },
+  {
+   "t": "box",
+   "p": [
+    0.0,
+    0.0,
+    -80.0
+   ],
+   "s": [
+    1.2,
+    4.0,
+    180.0
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -90.0,
+    0.0,
+    0.0
+   ],
+   "s": [
+    1.2,
+    4.0,
+    160.0
+   ],
+   "r": 0.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    90.0,
+    0.0,
+    -28.0
+   ],
+   "s": [
+    1.2,
+    4.0,
+    104.0
+   ],
+   "r": 0.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    75.0,
+    0.0,
+    52.0
+   ],
+   "s": [
+    1.2,
+    4.0,
+    56.0
+   ],
+   "r": 0.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7.5,
+    0.0,
+    80.0
+   ],
+   "s": [
+    1.2,
+    4.0,
+    165.0
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    31.125,
+    0.0,
+    -24.0
+   ],
+   "s": [
+    1.2,
+    3.2,
+    13.85
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    65.825,
+    0.0,
+    -24.0
+   ],
+   "s": [
+    1.2,
+    3.2,
+    48.35
+   ],
+   "r": 90.0,
+   "m": "#4e6b33",
+   "c": true
+  }
+ ],
+ "walls": [],
+ "spawn": [
+  14.0,
+  0.2,
+  18.5,
+  0
+ ],
+ "ambient": "amb1",
+ "env": {
+  "sky_top": [
+   0.22,
+   0.32,
+   0.55
+  ],
+  "sky_horizon": [
+   0.95,
+   0.62,
+   0.42
+  ],
+  "sky_energy": 1.0,
+  "ambient": 0.75,
+  "exposure": 1.0,
+  "fog": [
+   0.85,
+   0.6,
+   0.48
+  ],
+  "fog_density": 0.011,
+  "sun": 1.1,
+  "sun_color": [
+   1.0,
+   0.78,
+   0.55
+  ],
+  "sun_rot": [
+   -28,
+   120
+  ],
+  "saturation": 1.05,
+  "ambient_color": [
+   0.62,
+   0.58,
+   0.62
+  ]
+ },
+ "zones": [
+  {
+   "id": "A",
+   "name": "El Cruce",
+   "open": true,
+   "boxes": [
+    [
+     -23.5,
+     -1,
+     -23.5,
+     23.5,
+     6.0,
+     23.5
+    ]
+   ],
+   "spawns": [
+    [
+     -22.5,
+     0,
+     -22.5
+    ],
+    [
+     22.5,
+     0,
+     22.5
+    ],
+    [
+     -22.5,
+     0,
+     10.0
+    ],
+    [
+     10.0,
+     0,
+     -22.5
+    ]
+   ]
+  },
+  {
+   "id": "B",
+   "name": "Calle Mayor",
+   "boxes": [
+    [
+     24.5,
+     -1,
+     -23.5,
+     89.5,
+     6.0,
+     9.5
+    ],
+    [
+     24.5,
+     -1,
+     9.5,
+     51.5,
+     6.0,
+     23.5
+    ],
+    [
+     72.5,
+     -1,
+     9.5,
+     89.5,
+     6.0,
+     23.5
+    ]
+   ],
+   "spawns": [
+    [
+     87.0,
+     0,
+     9.0
+    ],
+    [
+     87.0,
+     0,
+     -9.0
+    ],
+    [
+     40.0,
+     0,
+     -22.0
+    ],
+    [
+     33.0,
+     0,
+     9.0
+    ],
+    [
+     76.0,
+     0,
+     -9.0
+    ]
+   ]
+  },
+  {
+   "id": "C",
+   "name": "El Bar",
+   "boxes": [
+    [
+     52.5,
+     -1,
+     10.5,
+     71.5,
+     4.1000000000000005,
+     23.5
+    ]
+   ],
+   "spawns": [
+    [
+     53.0,
+     0,
+     11.0
+    ],
+    [
+     71.0,
+     0,
+     23.0
+    ]
+   ]
+  },
+  {
+   "id": "D",
+   "name": "La Granja",
+   "boxes": [
+    [
+     -23.5,
+     -1,
+     -79.5,
+     89.5,
+     8.0,
+     -24.5
+    ]
+   ],
+   "spawns": [
+    [
+     -22.0,
+     0,
+     -78.0
+    ],
+    [
+     88.0,
+     0,
+     -78.0
+    ],
+    [
+     88.0,
+     0,
+     -26.0
+    ],
+    [
+     30.0,
+     0,
+     -78.0
+    ],
+    [
+     60.0,
+     0,
+     -66.0
+    ]
+   ]
+  },
+  {
+   "id": "E",
+   "name": "La Estación",
+   "boxes": [
+    [
+     -89.5,
+     -1,
+     -79.5,
+     -24.5,
+     8.0,
+     23.5
+    ]
+   ],
+   "spawns": [
+    [
+     -88.0,
+     0,
+     -78.0
+    ],
+    [
+     -88.0,
+     0,
+     22.0
+    ],
+    [
+     -88.0,
+     0,
+     -30.0
+    ],
+    [
+     -40.0,
+     0,
+     -78.0
+    ],
+    [
+     -30.0,
+     0,
+     22.0
+    ]
+   ]
+  },
+  {
+   "id": "F",
+   "name": "El Bosque",
+   "boxes": [
+    [
+     -89.5,
+     -1,
+     24.5,
+     74.5,
+     8.0,
+     79.5
+    ]
+   ],
+   "spawns": [
+    [
+     -88.0,
+     0,
+     78.0
+    ],
+    [
+     73.0,
+     0,
+     78.0
+    ],
+    [
+     0.0,
+     0,
+     78.0
+    ],
+    [
+     -88.0,
+     0,
+     40.0
+    ],
+    [
+     73.0,
+     0,
+     30.0
+    ],
+    [
+     40.0,
+     0,
+     78.0
+    ]
+   ]
+  }
+ ],
+ "doors": [
+  {
+   "cost": 750,
+   "pos": [
+    24.0,
+    0,
+    0.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 90,
+   "opens": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "cost": 750,
+   "pos": [
+    0.0,
+    0,
+    -24.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "A",
+    "D"
+   ]
+  },
+  {
+   "cost": 1000,
+   "pos": [
+    -24.0,
+    0,
+    0.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 90,
+   "opens": [
+    "A",
+    "E"
+   ]
+  },
+  {
+   "cost": 1000,
+   "pos": [
+    0.0,
+    0,
+    24.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "A",
+    "F"
+   ]
+  },
+  {
+   "cost": 1000,
+   "pos": [
+    62.0,
+    0,
+    10.0
+   ],
+   "size": [
+    2.4,
+    2.5,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "B",
+    "C"
+   ]
+  },
+  {
+   "cost": 1250,
+   "pos": [
+    62.0,
+    0,
+    24.0
+   ],
+   "size": [
+    2.4,
+    2.5,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "C",
+    "F"
+   ]
+  },
+  {
+   "cost": 1250,
+   "pos": [
+    39.85,
+    0,
+    -24.0
+   ],
+   "size": [
+    3.6,
+    3.0,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "B",
+    "D"
+   ]
+  },
+  {
+   "cost": 1250,
+   "pos": [
+    -24.0,
+    0,
+    -50.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 90,
+   "opens": [
+    "D",
+    "E"
+   ]
+  },
+  {
+   "cost": 1500,
+   "pos": [
+    -50.0,
+    0,
+    24.0
+   ],
+   "size": [
+    5.0,
+    3.0,
+    1.0
+   ],
+   "yaw": 0,
+   "opens": [
+    "E",
+    "F"
+   ]
+  }
+ ],
+ "fires": [
+  [
+   -30.0,
+   0.0,
+   56.0
+  ],
+  [
+   -14.0,
+   0.0,
+   2.5
+  ],
+  [
+   84.0,
+   0.0,
+   0.0
+  ],
+  [
+   12.0,
+   0.0,
+   -50.0
+  ],
+  [
+   -44.0,
+   0.0,
+   0.0
+  ],
+  [
+   30.0,
+   0.0,
+   46.0
+  ]
+ ],
+ "hazards": [],
+ "lights": [
+  {
+   "pos": [
+    -30.0,
+    1.6,
+    56.0
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    -14.0,
+    1.6,
+    2.5
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    84.0,
+    1.6,
+    0.0
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    12.0,
+    1.6,
+    -50.0
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    -44.0,
+    1.6,
+    0.0
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    30.0,
+    1.6,
+    46.0
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ],
+   "range": 10,
+   "energy": 2.2
+  },
+  {
+   "pos": [
+    -7.6,
+    5.6,
+    -18
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    7.6,
+    5.6,
+    18
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    -18,
+    5.6,
+    7.6
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    18,
+    5.6,
+    -7.6
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    30,
+    5.6,
+    -5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    50,
+    5.6,
+    -5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    70,
+    5.6,
+    -5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    40,
+    5.6,
+    5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    60,
+    5.6,
+    5
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.5
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    16.5,
+    4.2,
+    -16.5
+   ],
+   "color": [
+    0.9,
+    0.95,
+    1.0
+   ],
+   "range": 12,
+   "energy": 1.6
+  },
+  {
+   "pos": [
+    57.0,
+    3.9000000000000004,
+    15.0
+   ],
+   "color": [
+    1.0,
+    0.85,
+    0.6
+   ],
+   "range": 10,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    66.0,
+    3.9000000000000004,
+    18.0
+   ],
+   "color": [
+    1.0,
+    0.85,
+    0.6
+   ],
+   "range": 10,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    24.0,
+    6.0,
+    -42.0
+   ],
+   "color": [
+    1.0,
+    0.85,
+    0.6
+   ],
+   "range": 14,
+   "energy": 1.4
+  },
+  {
+   "pos": [
+    -8.0,
+    3.2,
+    66.0
+   ],
+   "color": [
+    1.0,
+    0.6,
+    0.3
+   ],
+   "range": 9,
+   "energy": 1.6
+  },
+  {
+   "pos": [
+    -50.6,
+    3.0,
+    -42.0
+   ],
+   "color": [
+    1.0,
+    0.9,
+    0.7
+   ],
+   "range": 11,
+   "energy": 1.3
+  },
+  {
+   "pos": [
+    -50.6,
+    3.0,
+    -30.0
+   ],
+   "color": [
+    1.0,
+    0.9,
+    0.7
+   ],
+   "range": 11,
+   "energy": 1.3
+  }
+ ],
+ "noshadow": [
+  "valla",
+  "arbusto",
+  "stool",
+  "chair",
+  "cone",
+  "hydrant",
+  "blood",
+  "via",
+  "bag",
+  "log",
+  "barrel",
+  "semaforo",
+  "farola"
+ ],
+ "wallbuys": [
+  {
+   "gun": "olympia",
+   "near": [
+    16.5,
+    -21.6
+   ],
+   "y": 0
+  },
+  {
+   "gun": "mp5k",
+   "near": [
+    -21.0,
+    -12.5
+   ],
+   "y": 0
+  },
+  {
+   "gun": "m14",
+   "near": [
+    -16.5,
+    21.5
+   ],
+   "y": 0
+  },
+  {
+   "gun": "ak74u",
+   "near": [
+    45.0,
+    -9.6
+   ],
+   "y": 0
+  },
+  {
+   "gun": "stakeout",
+   "near": [
+    52.6,
+    16.0
+   ],
+   "y": 0
+  },
+  {
+   "gun": "m16",
+   "near": [
+    55.0,
+    -39.0
+   ],
+   "y": 0
+  },
+  {
+   "gun": "mp40",
+   "near": [
+    -40.0,
+    -36.0
+   ],
+   "y": 0
+  },
+  {
+   "gun": "galil",
+   "near": [
+    -2.6,
+    66.0
+   ],
+   "y": 0
+  },
+  {
+   "gun": "python",
+   "near": [
+    77.0,
+    -9.6
+   ],
+   "y": 0
+  }
+ ],
+ "perks": [
+  {
+   "id": "revive",
+   "near": [
+    12.5,
+    -22.0
+   ],
+   "y": 0
+  },
+  {
+   "id": "speed",
+   "near": [
+    31.0,
+    -9.6
+   ],
+   "y": 0
+  },
+  {
+   "id": "jugg",
+   "near": [
+    71.5,
+    13.0
+   ],
+   "y": 0
+  },
+  {
+   "id": "dtap",
+   "near": [
+    -40.0,
+    -31.0
+   ],
+   "y": 0
+  },
+  {
+   "id": "stamin",
+   "near": [
+    41.0,
+    -45.0
+   ],
+   "y": 0
+  },
+  {
+   "id": "mule",
+   "near": [
+    -13.5,
+    70.0
+   ],
+   "y": 0
+  }
+ ],
+ "box": [
+  {
+   "near": [
+    20.5,
+    -21.6
+   ],
+   "y": 0
+  },
+  {
+   "near": [
+    86.5,
+    -9.6
+   ],
+   "y": 0
+  },
+  {
+   "near": [
+    55.0,
+    -46.0
+   ],
+   "y": 0
+  },
+  {
+   "near": [
+    -40.0,
+    -40.0
+   ],
+   "y": 0
+  },
+  {
+   "near": [
+    -13.5,
+    62.0
+   ],
+   "y": 0
+  }
+ ],
+ "box_start": 0,
+ "pap": {
+  "near": [
+   -8.0,
+   71.6
+  ],
+  "y": 0
+ },
+ "power": {
+  "near": [
+   24.0,
+   -47.5
+  ],
+  "y": 0
+ },
+ "gum": {
+  "near": [
+   9.5,
+   -21.6
+  ],
+  "y": 0
+ }
+}

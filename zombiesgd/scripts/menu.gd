@@ -17,6 +17,7 @@ const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
 	"pueblo": { "name": "Pueblo", "desc": "Un cruce de un pueblo americano en llamas: el banco, el bar, el diner y la gasolinera. Cuidado con la lava del cruce." },
 	"puerto": { "name": "Puerto Viejo", "desc": "La terminal de contenedores donde Gamba Roja montó su Planta 2: el muelle, las calles entre contenedores, las oficinas, los camiones y la cámara frigorífica." },
+	"villa": { "name": "Villa Coral", "desc": "Mapa de prueba en estilo low-poly: el cruce, la Calle Mayor, el bar, la granja, la estación de tren y el bosque." },
 	"conservera": { "name": "La Conservera", "desc": "La fábrica de Gamba Roja junto al puerto, de noche: el muelle, el patio de carga, la nave de procesado, los depósitos y un laboratorio secreto." },
 
 }
