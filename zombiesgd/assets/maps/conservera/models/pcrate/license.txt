@@ -1,0 +1,8 @@
+Model Information:
+* title:	Plastic Crate 02
+* source:	https://sketchfab.com/3d-models/plastic-crate-02-8bf0fe652e6a4cc4a5be904b7bea66dd
+* author:	Console Art Cybernetic (https://sketchfab.com/cacybernetic)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

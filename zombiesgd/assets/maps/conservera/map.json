@@ -111,6 +111,522 @@
    "max_tris": 6000
   },
   {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    -0.6,
+    0,
+    3.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    -0.75,
+    0.86,
+    3.25
+   ],
+   "rot": 318,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    1.0,
+    0,
+    3.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    0.85,
+    0.86,
+    3.25
+   ],
+   "rot": 130,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    -5.2,
+    0,
+    3.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    -5.35,
+    0.86,
+    3.25
+   ],
+   "rot": 183,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    -3.6,
+    0,
+    3.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    -3.75,
+    0.86,
+    3.25
+   ],
+   "rot": 353,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    -19.8,
+    0,
+    15.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    -19.95,
+    0.86,
+    15.25
+   ],
+   "rot": 333,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/steeltable/scene.gltf",
+   "name": "steeltable",
+   "pos": [
+    -18.2,
+    0,
+    15.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": true
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/cans/scene.gltf",
+   "name": "cans",
+   "pos": [
+    -18.35,
+    0.86,
+    15.25
+   ],
+   "rot": 271,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    2.4,
+    0.0,
+    5.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    2.4,
+    0.25,
+    5.2
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    2.4,
+    0.5,
+    5.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -6.6,
+    0.0,
+    5.2
+   ],
+   "rot": 180,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -6.6,
+    0.25,
+    5.2
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -16.6,
+    0.0,
+    16.8
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -16.6,
+    0.25,
+    16.8
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -16.6,
+    0.5,
+    16.8
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    6.6,
+    0.0,
+    -6.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    6.6,
+    0.25,
+    -6.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    6.6,
+    0.5,
+    -6.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    6.6,
+    0.75,
+    -6.0
+   ],
+   "rot": 180,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    6.2,
+    0,
+    -13.5
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    6.2,
+    0.14,
+    -13.5
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    6.3,
+    1.02,
+    -13.5
+   ],
+   "rot": 15,
+   "scale": 0.9,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -6.0,
+    0,
+    15.5
+   ],
+   "rot": 30,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -6.0,
+    0.14,
+    15.5
+   ],
+   "rot": 30,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    6.0,
+    0,
+    6.5
+   ],
+   "rot": 90,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    6.0,
+    0.14,
+    6.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    6.1,
+    1.02,
+    6.5
+   ],
+   "rot": 105,
+   "scale": 0.9,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -20.3,
+    0,
+    6.2
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -20.3,
+    0.14,
+    6.2
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -20.2,
+    1.02,
+    6.2
+   ],
+   "rot": 15,
+   "scale": 0.9,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/oldboxes/scene.gltf",
+   "name": "oldboxes",
+   "pos": [
+    -1.5,
+    0,
+    15.8
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/boxes/scene.gltf",
+   "name": "boxes",
+   "pos": [
+    5.8,
+    0,
+    12.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 1000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/boxes/scene.gltf",
+   "name": "boxes",
+   "pos": [
+    -20.0,
+    0,
+    8.8
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 1000
+  },
+  {
    "scene": "res://assets/maps/conservera/models/barrels/scene.gltf",
    "name": "barrels",
    "pos": [
@@ -254,6 +770,113 @@
    "max_tris": 2000
   },
   {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -24.0,
+    0,
+    -3.0
+   ],
+   "rot": 6,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -25.2,
+    0,
+    -3.0
+   ],
+   "rot": 36,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    -24.6,
+    0.88,
+    -3.0
+   ],
+   "rot": 15,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -22.0,
+    0,
+    -18.0
+   ],
+   "rot": 10,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -22.0,
+    0.14,
+    -18.0
+   ],
+   "rot": 30,
+   "scale": 1.2,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -27.0,
+    0,
+    2.0
+   ],
+   "rot": 10,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    -27.0,
+    0.14,
+    2.0
+   ],
+   "rot": 30,
+   "scale": 1.2,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/oldboxes/scene.gltf",
+   "name": "oldboxes",
+   "pos": [
+    -11.0,
+    0,
+    -19.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 1500
+  },
+  {
    "scene": "res://assets/maps/conservera/models/tanks/scene.gltf",
    "name": "tanks",
    "pos": [
@@ -314,6 +937,284 @@
    "max_tris": 2500
   },
   {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -30.0,
+    0.0,
+    22.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -30.0,
+    0.25,
+    22.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -30.0,
+    0.5,
+    22.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -29.2,
+    0.0,
+    22.6
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -29.2,
+    0.25,
+    22.6
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -5.0,
+    0.0,
+    27.5
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -5.0,
+    0.25,
+    27.5
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    -4.2,
+    0.0,
+    28.1
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    8.0,
+    0.0,
+    21.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    8.0,
+    0.25,
+    21.0
+   ],
+   "rot": 90,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    8.0,
+    0.5,
+    21.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    30.0,
+    0.0,
+    27.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    30.0,
+    0.25,
+    27.0
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pcrate/scene.gltf",
+   "name": "pcrate",
+   "pos": [
+    30.8,
+    0.0,
+    27.5
+   ],
+   "rot": 0,
+   "scale": 1.3,
+   "vis": 35.0,
+   "collide": true,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/net/scene.gltf",
+   "name": "net",
+   "pos": [
+    -27.5,
+    0,
+    23.4
+   ],
+   "rot": 20,
+   "scale": 1.4,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/net/scene.gltf",
+   "name": "net",
+   "pos": [
+    -6.5,
+    0,
+    28.6
+   ],
+   "rot": 160,
+   "scale": 1.4,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/net/scene.gltf",
+   "name": "net",
+   "pos": [
+    10.0,
+    0,
+    22.0
+   ],
+   "rot": 80,
+   "scale": 1.4,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/fishing/scene.gltf",
+   "name": "fishing",
+   "pos": [
+    -22.8,
+    0,
+    21.0
+   ],
+   "rot": 30,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 2000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/pallet/scene.gltf",
+   "name": "pallet",
+   "pos": [
+    14.0,
+    0,
+    27.6
+   ],
+   "rot": 0,
+   "scale": 1.2,
+   "vis": 35.0,
+   "max_tris": 500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/crate/scene.gltf",
+   "name": "crate",
+   "pos": [
+    14.0,
+    0.14,
+    27.6
+   ],
+   "rot": 10,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 600
+  },
+  {
    "scene": "res://assets/maps/conservera/models/barrels/scene.gltf",
    "name": "barrels",
    "pos": [
@@ -336,6 +1237,578 @@
    "rot": 90,
    "scale": 0.47,
    "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labtable/scene.gltf",
+   "name": "labtable",
+   "pos": [
+    -6.6,
+    -0.064,
+    -18.6
+   ],
+   "rot": 90,
+   "scale": 0.06,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/microscope/scene.gltf",
+   "name": "microscope",
+   "pos": [
+    -6.6,
+    0.9,
+    -19.2
+   ],
+   "rot": 90,
+   "scale": 0.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -18.3
+   ],
+   "rot": 107,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -17.98
+   ],
+   "rot": 110,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -17.66
+   ],
+   "rot": 84,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labtable/scene.gltf",
+   "name": "labtable",
+   "pos": [
+    -6.6,
+    -0.064,
+    -22.4
+   ],
+   "rot": 90,
+   "scale": 0.06,
+   "max_tris": 3000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/microscope/scene.gltf",
+   "name": "microscope",
+   "pos": [
+    -6.6,
+    0.9,
+    -23.0
+   ],
+   "rot": 90,
+   "scale": 0.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -22.1
+   ],
+   "rot": 85,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -21.78
+   ],
+   "rot": 148,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    -6.75,
+    0.9,
+    -21.46
+   ],
+   "rot": 160,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/fumehood/scene.gltf",
+   "name": "fumehood",
+   "pos": [
+    13.0,
+    0,
+    -17.2
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/fumehood/scene.gltf",
+   "name": "fumehood",
+   "pos": [
+    13.0,
+    0,
+    -18.6
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/fumehood/scene.gltf",
+   "name": "fumehood",
+   "pos": [
+    13.0,
+    0,
+    -20.0
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labcab/scene.gltf",
+   "name": "labcab",
+   "pos": [
+    13.1,
+    0,
+    -22.6
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labcab/scene.gltf",
+   "name": "labcab",
+   "pos": [
+    7.6,
+    0,
+    -33.2
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labcab/scene.gltf",
+   "name": "labcab",
+   "pos": [
+    9.2,
+    0,
+    -33.2
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labcab/scene.gltf",
+   "name": "labcab",
+   "pos": [
+    -1.4,
+    0,
+    -33.2
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "max_tris": 600
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/optable/scene.gltf",
+   "name": "optable",
+   "pos": [
+    3.0,
+    0,
+    -24.8
+   ],
+   "rot": 90,
+   "scale": 0.75,
+   "max_tris": 4000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/labcounter/scene.gltf",
+   "name": "labcounter",
+   "pos": [
+    3.0,
+    0,
+    -20.4
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "max_tris": 5000
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    1.2,
+    0.93,
+    -18.0
+   ],
+   "rot": 101,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    1.65,
+    0.93,
+    -18.0
+   ],
+   "rot": 276,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    2.1,
+    0.93,
+    -18.0
+   ],
+   "rot": 347,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/jar/scene.gltf",
+   "name": "jar",
+   "pos": [
+    2.55,
+    0.93,
+    -18.0
+   ],
+   "rot": 320,
+   "scale": 0.012,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/microscope/scene.gltf",
+   "name": "microscope",
+   "pos": [
+    5.6,
+    0.93,
+    -18.2
+   ],
+   "rot": 0,
+   "scale": 0.3,
+   "vis": 35.0,
+   "collide": false,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/biobarrel/scene.gltf",
+   "name": "biobarrel",
+   "pos": [
+    -4.6,
+    0,
+    -33.0
+   ],
+   "rot": 0,
+   "scale": 0.003,
+   "vis": 35.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/biobarrel/scene.gltf",
+   "name": "biobarrel",
+   "pos": [
+    -3.8,
+    0,
+    -33.2
+   ],
+   "rot": 40,
+   "scale": 0.003,
+   "vis": 35.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/biobarrel/scene.gltf",
+   "name": "biobarrel",
+   "pos": [
+    12.6,
+    0,
+    -30.2
+   ],
+   "rot": 10,
+   "scale": 0.003,
+   "vis": 35.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/biobarrel/scene.gltf",
+   "name": "biobarrel",
+   "pos": [
+    -6.6,
+    0,
+    -24.3
+   ],
+   "rot": 0,
+   "scale": 0.003,
+   "vis": 35.0,
+   "max_tris": 1500
+  },
+  {
+   "scene": "res://assets/maps/conservera/models/biobarrel2/scene.gltf",
+   "name": "biobarrel2",
+   "pos": [
+    -5.4,
+    0,
+    -24.0
+   ],
+   "rot": 0,
+   "scale": 1.0,
+   "vis": 35.0,
+   "max_tris": 800
+  },
+  {
+   "scene": "res://assets/maps/prison/props/desk/scene.gltf",
+   "name": "desk",
+   "pos": [
+    10.6,
+    0,
+    -25.6
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 1500,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/monitor/scene.gltf",
+   "name": "monitor",
+   "pos": [
+    10.85,
+    0.81,
+    -26.0
+   ],
+   "rot": -110,
+   "scale": 1.0,
+   "max_tris": 600,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/monitor/scene.gltf",
+   "name": "monitor",
+   "pos": [
+    10.85,
+    0.81,
+    -25.150000000000002
+   ],
+   "rot": -70,
+   "scale": 1.0,
+   "max_tris": 600,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/chair/scene.gltf",
+   "name": "chair",
+   "pos": [
+    9.7,
+    0.15,
+    -25.6
+   ],
+   "rot": 80,
+   "scale": 0.002,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/desk/scene.gltf",
+   "name": "desk",
+   "pos": [
+    10.6,
+    0,
+    -28.8
+   ],
+   "rot": -90,
+   "scale": 1.0,
+   "max_tris": 1500,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/monitor/scene.gltf",
+   "name": "monitor",
+   "pos": [
+    10.85,
+    0.81,
+    -29.2
+   ],
+   "rot": -110,
+   "scale": 1.0,
+   "max_tris": 600,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/monitor/scene.gltf",
+   "name": "monitor",
+   "pos": [
+    10.85,
+    0.81,
+    -28.35
+   ],
+   "rot": -70,
+   "scale": 1.0,
+   "max_tris": 600,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/chair/scene.gltf",
+   "name": "chair",
+   "pos": [
+    9.7,
+    0.15,
+    -28.8
+   ],
+   "rot": 80,
+   "scale": 0.002,
+   "collide": false,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/cabinet/scene.gltf",
+   "name": "cabinet",
+   "pos": [
+    13.3,
+    0.66,
+    -31.2
+   ],
+   "rot": -90,
+   "scale": 0.0062,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/cabinet/scene.gltf",
+   "name": "cabinet",
+   "pos": [
+    13.3,
+    0.66,
+    -32.0
+   ],
+   "rot": -90,
+   "scale": 0.0062,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/lockers/scene.gltf",
+   "name": "lockers",
+   "pos": [
+    -1.0,
+    1.0,
+    -15.9
+   ],
+   "rot": 180,
+   "scale": 1.0,
+   "max_tris": 2000,
+   "vis": 35.0
+  },
+  {
+   "scene": "res://assets/maps/prison/props/flamp/scene.gltf",
+   "name": "flamp",
+   "pos": [
+    -2.0,
+    4.95,
+    -20.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/prison/props/flamp/scene.gltf",
+   "name": "flamp",
+   "pos": [
+    8.0,
+    4.95,
+    -20.0
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/prison/props/flamp/scene.gltf",
+   "name": "flamp",
+   "pos": [
+    -2.0,
+    4.95,
+    -29.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "collide": false
+  },
+  {
+   "scene": "res://assets/maps/prison/props/flamp/scene.gltf",
+   "name": "flamp",
+   "pos": [
+    8.0,
+    4.95,
+    -29.5
+   ],
+   "rot": 90,
+   "scale": 1.0,
+   "collide": false
   }
  ],
  "build": [
@@ -1054,6 +2527,102 @@
   {
    "t": "box",
    "p": [
+    -7.75,
+    0,
+    -24.525
+   ],
+   "s": [
+    0.1,
+    1.6,
+    18.45
+   ],
+   "r": 0.0,
+   "m": "tiles",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    -7.75,
+    1.6,
+    -24.525
+   ],
+   "s": [
+    0.1,
+    3.4,
+    18.45
+   ],
+   "r": 0.0,
+   "m": "plaster",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    3.0,
+    0,
+    -33.75
+   ],
+   "s": [
+    0.1,
+    1.6,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "tiles",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    3.0,
+    1.6,
+    -33.75
+   ],
+   "s": [
+    0.1,
+    3.4,
+    21.5
+   ],
+   "r": 90.0,
+   "m": "plaster",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    13.75,
+    0,
+    -24.525
+   ],
+   "s": [
+    0.1,
+    1.6,
+    18.45
+   ],
+   "r": 0.0,
+   "m": "tiles",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
+    13.75,
+    1.6,
+    -24.525
+   ],
+   "s": [
+    0.1,
+    3.4,
+    18.45
+   ],
+   "r": 0.0,
+   "m": "plaster",
+   "c": true
+  },
+  {
+   "t": "box",
+   "p": [
     3.0,
     5.0,
     -24.6
@@ -1080,7 +2649,7 @@
     18.8
    ],
    "r": 0,
-   "m": "white",
+   "m": "tiles",
    "c": false
   },
   {
@@ -1164,675 +2733,171 @@
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    0.2,
+    -6.6,
     0,
-    3.5
+    -26.4
    ],
    "s": [
-    3.2,
-    0.9,
-    1.2
+    0.75,
+    0.25
    ],
-   "r": 0,
    "m": "steel",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -0.8,
-    0.9,
-    3.5
+    -6.6,
+    0.25,
+    -26.4
    ],
    "s": [
-    0.6,
-    0.25,
-    0.45
+    0.62,
+    2.1
    ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
+   "m": "liquid",
+   "c": false
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    0.2,
-    0.9,
-    3.5
+    -6.6,
+    2.35,
+    -26.4
    ],
    "s": [
-    0.6,
-    0.25,
-    0.45
+    0.75,
+    0.3
    ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    1.2,
-    0.9,
-    3.5
-   ],
-   "s": [
-    0.6,
-    0.25,
-    0.45
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -4.5,
-    0,
-    3.5
-   ],
-   "s": [
-    3.2,
-    0.9,
-    1.2
-   ],
-   "r": 0,
    "m": "steel",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -5.5,
-    0.9,
-    3.5
+    -6.6,
+    0.25,
+    -26.4
    ],
    "s": [
-    0.6,
-    0.25,
-    0.45
+    0.66,
+    2.1
    ],
-   "r": 0,
-   "m": "crate_red",
+   "m": "glass",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -4.5,
-    0.9,
-    3.5
-   ],
-   "s": [
-    0.6,
-    0.25,
-    0.45
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -3.5,
-    0.9,
-    3.5
-   ],
-   "s": [
-    0.6,
-    0.25,
-    0.45
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -19.0,
+    -6.6,
     0,
-    15.5
+    -29.0
    ],
    "s": [
-    3.2,
-    0.9,
-    1.2
+    0.75,
+    0.25
    ],
-   "r": 0,
    "m": "steel",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -20.0,
-    0.9,
-    15.5
-   ],
-   "s": [
-    0.6,
+    -6.6,
     0.25,
-    0.45
+    -29.0
    ],
-   "r": 0,
-   "m": "crate_red",
+   "s": [
+    0.62,
+    2.1
+   ],
+   "m": "liquid",
+   "c": false
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -6.6,
+    2.35,
+    -29.0
+   ],
+   "s": [
+    0.75,
+    0.3
+   ],
+   "m": "steel",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -19.0,
-    0.9,
-    15.5
-   ],
-   "s": [
-    0.6,
+    -6.6,
     0.25,
-    0.45
+    -29.0
    ],
-   "r": 0,
-   "m": "crate_red",
+   "s": [
+    0.66,
+    2.1
+   ],
+   "m": "glass",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -18.0,
-    0.9,
-    15.5
+    -6.6,
+    0,
+    -31.6
    ],
    "s": [
-    0.6,
+    0.75,
+    0.25
+   ],
+   "m": "steel",
+   "c": true
+  },
+  {
+   "t": "cyl",
+   "p": [
+    -6.6,
     0.25,
-    0.45
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    6.2,
-    0.0,
-    -13.5
+    -31.6
    ],
    "s": [
-    1.2,
-    0.8,
-    1.2
+    0.62,
+    2.1
    ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    6.2,
-    0.8,
-    -13.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    6.2,
-    1.6,
-    -13.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -6.0,
-    0.0,
-    15.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -6.0,
-    0.8,
-    15.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -20.3,
-    0.0,
-    6.2
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -20.3,
-    0.8,
-    6.2
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    6.0,
-    0.0,
-    6.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    6.0,
-    0.8,
-    6.5
-   ],
-   "s": [
-    1.2,
-    0.8,
-    1.2
-   ],
-   "r": 0,
-   "m": "crate_red",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -24.0,
-    0,
-    -3.0
-   ],
-   "s": [
-    1.1,
-    1.1,
-    1.1
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -25.2,
-    0,
-    -3.0
-   ],
-   "s": [
-    1.1,
-    1.1,
-    1.1
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -24.6,
-    0,
-    -1.8
-   ],
-   "s": [
-    1.1,
-    1.1,
-    1.1
-   ],
-   "r": 0,
-   "m": "crate_blue",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -30.0,
-    0,
-    22.0
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -30.0,
-    0.45,
-    22.0
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
+   "m": "liquid",
    "c": false
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -29.0,
-    0,
-    22.6
+    -6.6,
+    2.35,
+    -31.6
    ],
    "s": [
-    0.9,
-    0.45,
-    0.6
+    0.75,
+    0.3
    ],
-   "r": 0,
-   "m": "white",
+   "m": "steel",
    "c": true
   },
   {
-   "t": "box",
+   "t": "cyl",
    "p": [
-    -29.0,
-    0.45,
-    22.6
+    -6.6,
+    0.25,
+    -31.6
    ],
    "s": [
-    0.8,
-    0.06,
-    0.5
+    0.66,
+    2.1
    ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    -5.0,
-    0,
-    27.5
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -5.0,
-    0.45,
-    27.5
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    -4.0,
-    0,
-    28.2
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -4.0,
-    0.45,
-    28.2
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    8.0,
-    0,
-    21.0
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    8.0,
-    0.45,
-    21.0
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    30.0,
-    0,
-    27.0
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    30.0,
-    0.45,
-    27.0
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    31.0,
-    0,
-    27.4
-   ],
-   "s": [
-    0.9,
-    0.45,
-    0.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    31.0,
-    0.45,
-    27.4
-   ],
-   "s": [
-    0.8,
-    0.06,
-    0.5
-   ],
-   "r": 0,
-   "m": "fish",
-   "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    -5.0,
-    0,
-    -24.0
-   ],
-   "s": [
-    1.0,
-    0.95,
-    2.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    -5.0,
-    0,
-    -28.0
-   ],
-   "s": [
-    1.0,
-    0.95,
-    2.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    11.0,
-    0,
-    -24.0
-   ],
-   "s": [
-    1.0,
-    0.95,
-    2.6
-   ],
-   "r": 0,
-   "m": "white",
-   "c": true
-  },
-  {
-   "t": "box",
-   "p": [
-    11.0,
-    0,
-    -28.0
-   ],
-   "s": [
-    1.0,
-    0.95,
-    2.6
-   ],
-   "r": 0,
-   "m": "white",
+   "m": "glass",
    "c": true
   },
   {
@@ -1882,22 +2947,6 @@
    "r": 0,
    "m": "steel",
    "c": false
-  },
-  {
-   "t": "box",
-   "p": [
-    3.0,
-    0,
-    -33.4
-   ],
-   "s": [
-    12.0,
-    2.2,
-    0.6
-   ],
-   "r": 0,
-   "m": "steel",
-   "c": true
   }
  ],
  "textures": "res://assets/maps/conservera/textures/",
@@ -2562,12 +3611,12 @@
     -20
    ],
    "color": [
-    0.7,
+    0.75,
     1.0,
-    0.8
+    0.85
    ],
    "range": 10,
-   "energy": 1.4
+   "energy": 1.1
   },
   {
    "pos": [
@@ -2576,12 +3625,12 @@
     -20
    ],
    "color": [
-    0.7,
+    0.75,
     1.0,
-    0.8
+    0.85
    ],
    "range": 10,
-   "energy": 1.4
+   "energy": 1.1
   },
   {
    "pos": [
@@ -2590,12 +3639,12 @@
     -29
    ],
    "color": [
-    0.7,
+    0.75,
     1.0,
-    0.8
+    0.85
    ],
    "range": 10,
-   "energy": 1.4
+   "energy": 1.1
   },
   {
    "pos": [
@@ -2604,19 +3653,77 @@
     -29
    ],
    "color": [
-    0.7,
+    0.75,
     1.0,
-    0.8
+    0.85
    ],
    "range": 10,
-   "energy": 1.4
+   "energy": 1.1
+  },
+  {
+   "pos": [
+    -5.6,
+    1.4,
+    -26.4
+   ],
+   "color": [
+    1.0,
+    0.2,
+    0.25
+   ],
+   "range": 4.5,
+   "energy": 1.2
+  },
+  {
+   "pos": [
+    -5.6,
+    1.4,
+    -29.0
+   ],
+   "color": [
+    1.0,
+    0.2,
+    0.25
+   ],
+   "range": 4.5,
+   "energy": 1.2
+  },
+  {
+   "pos": [
+    -5.6,
+    1.4,
+    -31.6
+   ],
+   "color": [
+    1.0,
+    0.2,
+    0.25
+   ],
+   "range": 4.5,
+   "energy": 1.2
   }
  ],
  "noshadow": [
   "barrels",
   "Railings",
   "cable",
-  "Windows"
+  "Windows",
+  "pcrate",
+  "cans",
+  "net",
+  "fishing",
+  "jar",
+  "microscope",
+  "pallet",
+  "crate",
+  "boxes",
+  "oldboxes",
+  "steeltable",
+  "labtable",
+  "fumehood",
+  "labcab",
+  "biobarrel",
+  "optable"
  ],
  "wallbuys": [
   {
@@ -2766,7 +3873,7 @@
   {
    "near": [
     -7.6,
-    -30.0
+    -25.4
    ],
    "y": 0
   }

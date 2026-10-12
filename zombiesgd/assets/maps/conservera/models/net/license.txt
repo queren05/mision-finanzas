@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fishing Net
+* source:	https://sketchfab.com/3d-models/fishing-net-0d6b1bac6f7d4ad2b80e60537e2a90b5
+* author:	_alice_wang_ (https://sketchfab.com/alice_wang_1997)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fishing Net" (https://sketchfab.com/3d-models/fishing-net-0d6b1bac6f7d4ad2b80e60537e2a90b5) by _alice_wang_ (https://sketchfab.com/alice_wang_1997) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

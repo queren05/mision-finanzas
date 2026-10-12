@@ -1,0 +1,8 @@
+Model Information:
+* title:	Old Wooden Pallet
+* source:	https://sketchfab.com/3d-models/old-wooden-pallet-95d1659e3e2b4900a40a650e6906d970
+* author:	Luka Feric (https://sketchfab.com/lferic)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

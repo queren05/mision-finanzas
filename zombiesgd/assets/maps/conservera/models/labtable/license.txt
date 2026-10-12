@@ -1,0 +1,11 @@
+Model Information:
+* title:	table_laboratory
+* source:	https://sketchfab.com/3d-models/table-laboratory-6a903c27361c4c9a80f994fa27defdcf
+* author:	irenokh22 (https://sketchfab.com/irenokh22)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "table_laboratory" (https://sketchfab.com/3d-models/table-laboratory-6a903c27361c4c9a80f994fa27defdcf) by irenokh22 (https://sketchfab.com/irenokh22) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

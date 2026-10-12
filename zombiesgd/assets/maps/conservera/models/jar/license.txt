@@ -1,0 +1,11 @@
+Model Information:
+* title:	Octopus in jar
+* source:	https://sketchfab.com/3d-models/octopus-in-jar-96e12eb5891a46fca80207b73263bc6c
+* author:	Philip Osborne (https://sketchfab.com/Daedron)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Octopus in jar" (https://sketchfab.com/3d-models/octopus-in-jar-96e12eb5891a46fca80207b73263bc6c) by Philip Osborne (https://sketchfab.com/Daedron) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

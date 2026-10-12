@@ -335,6 +335,11 @@ static func extra_mat(name: String, cache: Dictionary, T := "") -> Material:
 		"water": m.albedo_color = Color(0.05, 0.12, 0.16); m.metallic = 0.6; m.roughness = 0.15
 		"fish": m.albedo_color = Color(0.75, 0.78, 0.8); m.metallic = 0.5; m.roughness = 0.3
 		"ice": m.albedo_color = Color(0.85, 0.92, 1.0); m.roughness = 0.2
+		"liquid":   # líquido de cultivo (rojo, brillante, translúcido)
+			m.albedo_color = Color(0.8, 0.1, 0.16, 0.72); m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; m.roughness = 0.08
+			m.emission_enabled = true; m.emission = Color(1.0, 0.18, 0.22); m.emission_energy_multiplier = 1.1; m.uv1_triplanar = false
+		"glass":
+			m.albedo_color = Color(0.7, 0.85, 0.9, 0.18); m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; m.roughness = 0.05; m.metallic = 0.3; m.uv1_triplanar = false
 	cache[name] = m
 	return m
 
