@@ -41,7 +41,7 @@ func _net_test() -> void:
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_story", "_docs", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_story", "_docs", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings", "_credits"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
 		if page == "_progress":

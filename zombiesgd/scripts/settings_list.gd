@@ -15,6 +15,7 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 	_toggle(list, font_bo, font_ui, "Resolución dinámica (baja si van mal los FPS)", "dyn_res", "SÍ", "NO", changed)
 	_cycle(list, font_bo, font_ui, "Límite de FPS", "fps_limit", ["auto", "30", "60", "90", "120", "sin límite"], changed)
 	_cycle(list, font_bo, font_ui, "Sombras", "shadows", ["auto", "no", "bajas", "altas"], changed)
+	_section(list, font_bo, "IMAGEN")
 	_cycle(list, font_bo, font_ui, "Suavizado de bordes", "aa", ["auto", "no", "FXAA", "MSAA 2x", "MSAA 4x"], changed)
 	_slider(list, font_ui, "Brillo", 0.7, 1.4, "brightness", changed)
 	_toggle(list, font_bo, font_ui, "Resplandor (luces y fuego)", "glow", "SÍ", "NO", changed)
@@ -36,7 +37,11 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 	_toggle(list, font_bo, font_ui, "Invertir eje vertical", "invert", "SÍ", "NO", changed)
 	_slider(list, font_ui, "Zona muerta del mando", 0.05, 0.3, "deadzone", changed)
 	_toggle(list, font_bo, font_ui, "Vibración del mando", "pad_vibration", "SÍ", "NO", changed)
+	if not mobile:
+		var help = _label("Teclado y ratón:  WASD moverse · ratón apuntar · clic izq. disparar · clic der. apuntar · R recargar · F o E usar · Q o rueda cambiar de arma · G granada · V cuchillo · Espacio saltar · Mayús correr · C agacharse (corriendo: deslizarse) · T vista · Esc pausa · F11 pantalla completa.\nMando: gatillos disparar/apuntar · A saltar · X recargar/usar · Y cambiar arma · B agacharse · RB granada · R3 cuchillo · L3 correr · Select vista · Start pausa.", font_ui, 18, Color(0.8, 0.77, 0.7))
+		help.autowrap_mode = TextServer.AUTOWRAP_WORD; help.custom_minimum_size = Vector2(780, 0); list.add_child(help)
 	if mobile:
+		_section(list, font_bo, "TÁCTIL")
 		_toggle(list, font_bo, font_ui, "Apuntar (pantalla táctil)", "ads_toggle", "TOCAR", "MANTENER", changed)
 		_toggle(list, font_bo, font_ui, "Botón de disparo a la izquierda", "left_fire", "SÍ", "NO", changed)
 		_slider(list, font_ui, "Tamaño de los botones", 0.8, 1.3, "btn_scale", changed)
@@ -47,14 +52,40 @@ static func build(sc: ScrollContainer, font_bo: Font, font_ui: Font, changed: Ca
 	_slider(list, font_ui, "Efectos de sonido", 0, 1, "sfx", changed)
 	_slider(list, font_ui, "Música y ambiente", 0, 1, "music", changed)
 	_slider(list, font_ui, "Voces", 0, 1, "voice", changed)
-	if not mobile:
-		var help = _label("Teclado y ratón:  WASD moverse · ratón apuntar · clic izq. disparar · clic der. apuntar · R recargar · F o E usar · Q o rueda cambiar de arma · G granada · V cuchillo · Espacio saltar · Mayús correr · C agacharse (corriendo: deslizarse) · T vista · Esc pausa · F11 pantalla completa.\nMando: gatillos disparar/apuntar · A saltar · X recargar/usar · Y cambiar arma · B agacharse · RB granada · R3 cuchillo · L3 correr · Select vista · Start pausa.", font_ui, 19, Color(0.8, 0.77, 0.7))
-		help.autowrap_mode = TextServer.AUTOWRAP_WORD; help.custom_minimum_size = Vector2(780, 0); list.add_child(help)
 	return first
 
 static func _section(list: VBoxContainer, font_bo: Font, title: String) -> void:
 	var l = _label(title, font_bo, 30, Color(0.86, 0.14, 0.1)); l.custom_minimum_size = Vector2(780, 52); l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	list.add_child(l)
+	l.set_meta("section", title); list.add_child(l)
+
+## pestañas encima de la lista (una por sección): así no hay que deslizar hasta abajo para llegar a los controles
+static func tabs(sc: ScrollContainer, font_bo: Font) -> HBoxContainer:
+	var list: VBoxContainer = sc.get_child(0)
+	var bar = HBoxContainer.new(); bar.alignment = BoxContainer.ALIGNMENT_CENTER; bar.add_theme_constant_override("separation", 4)
+	var btns = []
+	for c in list.get_children():
+		if not c.has_meta("section"): continue
+		var k = btns.size()
+		var b = MenuStyle.button(String(c.get_meta("section")), func(): pass, font_bo, 22, 150, true)
+		b.pressed.connect(func():
+			show_tab(sc, k)
+			for i in btns.size(): btns[i].add_theme_color_override("font_color", Color(1, 0.8, 0.2) if i == k else Color(0.85, 0.82, 0.75)))
+		btns.append(b); bar.add_child(b)
+	show_tab(sc, 0); btns[0].add_theme_color_override("font_color", Color(1, 0.8, 0.2))
+	return bar
+
+## enseña solo una sección; devuelve su primer control
+static func show_tab(sc: ScrollContainer, tab: int) -> Control:
+	var list: VBoxContainer = sc.get_child(0)
+	var idx = -1; var first: Control = null
+	for c in list.get_children():
+		if c.has_meta("section"): idx += 1; c.visible = false; continue
+		c.visible = idx == tab
+		if c.visible and first == null:
+			for f in [c] + c.find_children("*", "Control", true, false):
+				if f is Control and f.focus_mode == Control.FOCUS_ALL: first = f; break
+	sc.scroll_vertical = 0
+	return first
 
 static func _label(text: String, f: Font, size: int, c: Color) -> Label:
 	var l = Label.new(); l.text = text; l.add_theme_font_override("font", f); l.add_theme_font_size_override("font_size", size); l.add_theme_color_override("font_color", c)
@@ -62,7 +93,7 @@ static func _label(text: String, f: Font, size: int, c: Color) -> Label:
 
 static func _row(list: VBoxContainer, font_ui: Font, label: String, value: Control) -> void:
 	var pc = PanelContainer.new(); var sb = StyleBoxFlat.new(); sb.bg_color = Color(1, 1, 1, 0.06); sb.set_corner_radius_all(8); sb.content_margin_left = 18; sb.content_margin_right = 12
-	pc.add_theme_stylebox_override("panel", sb); pc.custom_minimum_size = Vector2(780, 60)
+	pc.add_theme_stylebox_override("panel", sb); pc.custom_minimum_size = Vector2(780, 56)
 	var h = HBoxContainer.new(); pc.add_child(h)
 	var l = _label(label, font_ui, 25, Color(0.95, 0.92, 0.86)); l.size_flags_horizontal = Control.SIZE_EXPAND_FILL; l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; h.add_child(l)
 	h.add_child(value); list.add_child(pc)

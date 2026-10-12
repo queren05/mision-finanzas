@@ -9,11 +9,11 @@ const KITS := {
 	"rifle": { "scene": "res://assets/models/arms/rifle/scene.gltf", "hide": ["Rifle", "Silencer", "Scope", "Pmag"],
 		"idle": "Armature|Arms_FPS_Anim_Idle", "walk": "Armature|Arms_FPS_Anim_Walk", "run": "Armature|Arms_FPS_Anim_Run",
 		"shoot": "Armature|Arms_FPS_Anim_Shoot", "reload": "Armature|Arms_FPS_Anim_Reload_Fast", "draw": "Armature|Arms_FPS_Anim_Draw",
-		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.045, 0.03, 0.0), "fwd": 0.1 },
+		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.045, 0.0, 0.0), "fwd": 0.1 },
 	"pistol": { "scene": "res://assets/models/arms/pistol/scene.gltf", "hide": ["Material"],
 		"idle": "Armature|FPS_Pistol_Idle", "walk": "Armature|FPS_Pistol_Walk", "run": "Armature|FPS_Pistol_Walk",
 		"shoot": "Armature|FPS_Pistol_Fire", "reload": "Armature|FPS_Pistol_Reload_full", "draw": "",
-		"bone": "PBody", "elev": -9.0, "shift": Vector3(0.07, 0.05, 0.03), "fwd": 0.0 },
+		"bone": "PBody", "elev": -9.0, "shift": Vector3(0.07, 0.015, 0.0), "fwd": 0.0 },
 }
 
 var kind = ""

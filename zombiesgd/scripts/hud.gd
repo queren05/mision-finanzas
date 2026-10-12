@@ -288,9 +288,11 @@ func _build_pause() -> void:
 	sv.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); sv.offset_top = 16; sv.offset_bottom = -16; pause_settings = sv
 	var st = _label(font_bo, 52, RED2); st.text = "AJUSTES"; st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; sv.add_child(st)
 	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.custom_minimum_size = Vector2(820, 430)
+	SettingsList.build(sc, font_bo, font_ui, _on_setting)
+	var bar = SettingsList.tabs(sc, font_bo); sv.add_child(bar)
 	var cc = CenterContainer.new(); cc.add_child(sc); sv.add_child(cc)
-	var first = SettingsList.build(sc, font_bo, font_ui, _on_setting)
-	first.name = "first"
+	bar.get_child(0).name = "first"
 	var c2 = CenterContainer.new(); c2.add_child(_button("VOLVER", func(): _show_settings(false))); sv.add_child(c2)
 
 func _on_setting(k: String) -> void:

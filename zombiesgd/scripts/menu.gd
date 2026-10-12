@@ -413,10 +413,11 @@ func _armory() -> void:
 
 func _settings() -> void:
 	var v = _page("AJUSTES", func(): GS.save_game(); _home())
-	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(820, 470); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(_center(sc))
-	var first = SettingsList.build(sc, font_bo, font_ui, func(_k): pass)
+	var sc = ScrollContainer.new(); sc.follow_focus = true; sc.custom_minimum_size = Vector2(820, 440); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	SettingsList.build(sc, font_bo, font_ui, func(_k): pass)
+	var bar = SettingsList.tabs(sc, font_bo); v.add_child(bar); v.add_child(_center(sc))
 	v.add_child(_center(_btn("VOLVER", func(): GS.save_game(); _home(), 300, true)))
-	first.grab_focus()
+	bar.get_child(0).grab_focus()
 
 # ------------------------------------------------------------------ progreso: camino de recompensas y desafíos
 func _progress(tab := 0) -> void:
