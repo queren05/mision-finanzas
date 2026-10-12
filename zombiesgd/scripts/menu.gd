@@ -60,53 +60,125 @@ func _btn(text: String, cb: Callable, w := 470, centered := false, size := 27) -
 	return MenuStyle.button(text, cb, font_bo, size, w, centered)
 
 # ------------------------------------------------------------------ portada
+## como el vestíbulo de los shooters actuales: arriba el logo y tu tarjeta de jugador; a la izquierda los modos en
+## tarjetas grandes con imagen (la historia, la primera: continúa donde lo dejaste); a la derecha tu personaje;
+## abajo, una barra con el resto de secciones
 func _home() -> void:
 	_clear(true); back_cb = Callable()
 	var m = MenuStyle.safe_margins(get_viewport())
-	var left = VBoxContainer.new(); left.alignment = BoxContainer.ALIGNMENT_CENTER; left.add_theme_constant_override("separation", 2)
-	page.add_child(left); left.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE); left.offset_left = m.x + 10; left.offset_right = m.x + 660
-	left.add_child(_lbl("SHRIMP", font_bo, 44, Color(1, 0.6, 0.48)))
-	var logo2 = _lbl("ZOMBIES", font_bo, 96, RED2); logo2.add_theme_color_override("font_outline_color", Color(0.25, 0, 0)); logo2.add_theme_constant_override("outline_size", 4)
-	logo2.add_theme_constant_override("line_spacing", -24); left.add_child(logo2)
-	left.add_child(_lbl(MAP_INFO[GS.sel_map].name.to_upper(), font_bo, 22, BEIGE))
-	var gap = Control.new(); gap.custom_minimum_size = Vector2(0, 6); left.add_child(gap)
-	var play = _btn("HISTORIA", _story); left.add_child(play)
-	left.add_child(_btn("OLEADAS", _play))
-	left.add_child(_btn("ARSENAL", _arsenal))
-	left.add_child(_btn("PROGRESO", _progress))
-	left.add_child(_btn("AJUSTES", _settings))
-	left.add_child(_btn("CRÉDITOS", _credits))
-	var best = RichTextLabel.new(); best.bbcode_enabled = true; best.fit_content = true; best.scroll_active = false; best.custom_minimum_size = Vector2(470, 0)
-	best.add_theme_font_override("normal_font", font_ui); best.add_theme_font_size_override("normal_font_size", 22); best.add_theme_color_override("default_color", BEIGE)
+	var vs = get_viewport().get_visible_rect().size
+	# --- arriba a la izquierda: el logo
+	var logo = VBoxContainer.new(); logo.add_theme_constant_override("separation", -18); page.add_child(logo)
+	logo.position = Vector2(m.x, 14)
+	logo.add_child(_lbl("SHRIMP", font_bo, 30, Color(1, 0.6, 0.48)))
+	var logo2 = _lbl("ZOMBIES", font_bo, 66, RED2); logo2.add_theme_color_override("font_outline_color", Color(0.25, 0, 0)); logo2.add_theme_constant_override("outline_size", 4); logo.add_child(logo2)
+	# --- arriba a la derecha: tarjeta de jugador (título, nivel y experiencia)
+	var card = _player_card(); page.add_child(card)
+	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT); card.offset_left = -m.y - 420; card.offset_right = -m.y; card.offset_top = 18; card.offset_bottom = 118
+	# --- a la izquierda: los modos
+	var col = VBoxContainer.new(); col.add_theme_constant_override("separation", 12); page.add_child(col)
+	var cw = clamp(vs.x * 0.44, 520.0, 700.0)
+	col.position = Vector2(m.x, 128); col.custom_minimum_size = Vector2(cw, 0)
+	var nxt = _next_mission()
+	var mi: Dictionary = Campaign.MISSIONS[nxt]
+	var st = int(GS.campaign.get(mi.id, 0))
+	var sub = ("CONTINUAR · " if nxt > 0 else "EMPEZAR · ") + "%d. %s" % [nxt + 1, String(mi.name).to_upper()]
+	if st > 0: sub = "%d/%d MISIONES COMPLETADAS" % [GS.campaign.size(), Campaign.MISSIONS.size()]
+	var story = _tile("res://assets/ui/menu_%s.jpg" % mi.map, "HISTORIA", sub, "Operación Gamba Roja", _story, Vector2(cw, 214), 46)
+	col.add_child(story)
+	var row = HBoxContainer.new(); row.add_theme_constant_override("separation", 12); col.add_child(row)
 	var b = int(GS.best.get(GS.sel_map, 0))
-	best.text = "    Récord: [color=#ffcc33]%s[/color]" % ("Ronda %d" % b if b > 0 else "—"); left.add_child(best)
-	if Input.get_connected_joypads().size() > 0:
-		left.add_child(_lbl("    Mando: cruceta para moverte · A elegir · B volver", font_ui, 18, Color(0.6, 0.58, 0.52)))
-	# a la derecha: tu personaje, el nivel y lo siguiente que se desbloquea
-	var right = VBoxContainer.new(); right.alignment = BoxContainer.ALIGNMENT_END; right.add_theme_constant_override("separation", 6)
-	page.add_child(right); right.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE); right.offset_left = -m.y - 470; right.offset_right = -m.y; right.offset_bottom = -36; right.offset_top = 30
-	var cimg = TextureRect.new(); cimg.custom_minimum_size = Vector2(470, 230); cimg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; cimg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var waves = _tile("res://assets/ui/menu_%s.jpg" % GS.sel_map, "OLEADAS", MAP_INFO[GS.sel_map].name.to_upper(), ("Récord: ronda %d" % b) if b > 0 else "Sin récord", _play, Vector2((cw - 12) / 2.0, 150), 32)
+	var coop = _tile("res://assets/ui/menu_pueblo.jpg", "COOPERATIVO", "2 A 4 JUGADORES", "Misma wifi · móvil y PC", _coop, Vector2((cw - 12) / 2.0, 150), 32)
+	row.add_child(waves); row.add_child(coop)
+	# --- a la derecha: tu personaje, grande, con lo siguiente que se desbloquea
+	var right = VBoxContainer.new(); right.alignment = BoxContainer.ALIGNMENT_END; page.add_child(right)
+	right.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE); right.offset_left = -m.y - 420; right.offset_right = -m.y; right.offset_top = 124; right.offset_bottom = -96
+	var cimg = TextureRect.new(); cimg.size_flags_vertical = Control.SIZE_EXPAND_FILL; cimg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; cimg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	var cp = "res://assets/ui/char_%s.png" % GS.character
 	if ResourceLoader.exists(cp): cimg.texture = load(cp)
 	right.add_child(cimg)
-	var cn = _lbl(Data.CHARACTERS[GS.character].name.to_upper(), font_bo, 26, Color(1, 0.82, 0.48)); cn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(cn)
-	# tarjeta de jugador con el título elegido
-	var pcard = PanelContainer.new(); var cc: Array = Data.CARDS.get(GS.card, Data.CARDS[""])
-	var csb = StyleBoxTexture.new(); var g = Gradient.new(); g.set_color(0, Color(cc[1].r, cc[1].g, cc[1].b, 0.0)); g.set_color(1, Color(cc[0].r, cc[0].g, cc[0].b, 0.9))
-	var gt = GradientTexture2D.new(); gt.gradient = g; gt.width = 64; gt.height = 4; csb.texture = gt; csb.content_margin_right = 14; csb.content_margin_top = 4; csb.content_margin_bottom = 4
-	pcard.add_theme_stylebox_override("panel", csb); right.add_child(pcard)
-	var ttl = _lbl(Data.TITLES.get(GS.title, "Recluta").to_upper(), font_bo, 24, Color.WHITE); ttl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; pcard.add_child(ttl)
-	var lv = _lbl("NIVEL %d" % GS.level, font_bo, 54, GOLD); lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(lv)
-	var need = Data.xp_for_level(GS.level)
-	var bar = ProgressBar.new(); bar.max_value = need; bar.value = GS.xp; bar.show_percentage = false; bar.custom_minimum_size = Vector2(470, 12)
-	var bgs = StyleBoxFlat.new(); bgs.bg_color = Color(0, 0, 0, 0.55); bgs.set_corner_radius_all(6); var fgs = StyleBoxFlat.new(); fgs.bg_color = GOLD; fgs.set_corner_radius_all(6)
-	bar.add_theme_stylebox_override("background", bgs); bar.add_theme_stylebox_override("fill", fgs); right.add_child(bar)
-	var xp = _lbl("%d / %d XP" % [GS.xp, need], font_ui, 20, BEIGE); xp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(xp)
+	var cbtn = MenuStyle.button(Data.CHARACTERS[GS.character].name.to_upper() + "  ›", _chars, font_bo, 24, 420, true); right.add_child(cbtn)
 	for u in Data.UNLOCKS:
 		if u.level > GS.level:
-			var nx = _lbl("Nivel %d: %s" % [u.level, u.text], font_ui, 22, Color(0.92, 0.88, 0.8)); nx.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(nx); break
-	var dn = _lbl("Desafíos: %d / %d" % [GS.done.size(), Data.CHALLENGES.size()], font_ui, 20, BEIGE); dn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; right.add_child(dn)
-	play.grab_focus()
+			var nx = _lbl("Nivel %d: %s" % [u.level, u.text], font_ui, 19, BEIGE); nx.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; right.add_child(nx); break
+	# --- abajo: barra de secciones
+	var bar = PanelContainer.new(); var bsb = StyleBoxFlat.new(); bsb.bg_color = Color(0.02, 0.02, 0.03, 0.82); bsb.border_width_top = 2; bsb.border_color = Color(1, 0.165, 0.165, 0.55)
+	bar.add_theme_stylebox_override("panel", bsb); page.add_child(bar)
+	bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); bar.offset_top = -78
+	var bh = HBoxContainer.new(); bh.alignment = BoxContainer.ALIGNMENT_CENTER; bh.add_theme_constant_override("separation", 6); bar.add_child(bh)
+	var items = [["ARSENAL", _arsenal, "Armas y personaje"], ["PROGRESO", _progress, "Desafíos %d/%d" % [GS.done.size(), Data.CHALLENGES.size()]],
+		["DOCUMENTOS", _docs, "%d encontrados" % GS.intel.size()], ["AJUSTES", _settings, "Gráficos y controles"], ["CRÉDITOS", _credits, ""]]
+	for it in items: bh.add_child(_bar_btn(it[0], it[2], it[1], clamp((vs.x - m.x - m.y) / items.size() - 8, 170.0, 260.0)))
+	if Input.get_connected_joypads().size() > 0:
+		var hint = _lbl("A elegir · B volver", font_ui, 16, Color(0.6, 0.58, 0.52)); page.add_child(hint)
+		hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT); hint.offset_left = -m.y - 170; hint.offset_top = -102; hint.offset_bottom = -82
+	story.grab_focus()
+
+## la primera misión sin completar (o la última, si están todas)
+func _next_mission() -> int:
+	for i in Campaign.MISSIONS.size():
+		if not GS.campaign.has(Campaign.MISSIONS[i].id): return i
+	return Campaign.MISSIONS.size() - 1
+
+## tarjeta de jugador: título, nivel y barra de experiencia
+func _player_card() -> Control:
+	var pc = PanelContainer.new(); var cc: Array = Data.CARDS.get(GS.card, Data.CARDS[""])
+	var sb = StyleBoxFlat.new(); sb.bg_color = Color(cc[0].r * 0.35, cc[0].g * 0.35, cc[0].b * 0.35, 0.85); sb.border_width_left = 6; sb.border_color = GOLD
+	sb.set_corner_radius_all(4); sb.content_margin_left = 16; sb.content_margin_right = 16; sb.content_margin_top = 6; sb.content_margin_bottom = 8
+	pc.add_theme_stylebox_override("panel", sb)
+	var h = HBoxContainer.new(); h.add_theme_constant_override("separation", 14); pc.add_child(h)
+	var lv = _lbl(str(GS.level), font_bo, 58, GOLD); lv.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; lv.custom_minimum_size.x = 74; lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; h.add_child(lv)
+	var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 2); v.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_child(v)
+	v.add_child(_lbl(Data.TITLES.get(GS.title, "Recluta").to_upper(), font_bo, 24, Color.WHITE))
+	var need = Data.xp_for_level(GS.level)
+	var bar = ProgressBar.new(); bar.max_value = need; bar.value = GS.xp; bar.show_percentage = false; bar.custom_minimum_size = Vector2(0, 10)
+	var bgs = StyleBoxFlat.new(); bgs.bg_color = Color(0, 0, 0, 0.6); bgs.set_corner_radius_all(5); var fgs = StyleBoxFlat.new(); fgs.bg_color = GOLD; fgs.set_corner_radius_all(5)
+	bar.add_theme_stylebox_override("background", bgs); bar.add_theme_stylebox_override("fill", fgs); v.add_child(bar)
+	v.add_child(_lbl("NIVEL %d  ·  %d / %d XP" % [GS.level, GS.xp, need], font_ui, 17, BEIGE))
+	return pc
+
+## tarjeta grande de modo: imagen de fondo, degradado oscuro abajo, título grande y dos líneas
+func _tile(img_path: String, title: String, sub: String, foot: String, cb: Callable, sz: Vector2, title_size: int) -> Button:
+	var b = Button.new(); b.custom_minimum_size = sz; b.focus_mode = Control.FOCUS_ALL; b.clip_contents = true
+	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0); sb.border_color = Color(1, 1, 1, 0.18); sb.set_border_width_all(2); sb.set_corner_radius_all(6)
+	var sf = sb.duplicate(); sf.border_color = RED2; sf.set_border_width_all(4)
+	b.add_theme_stylebox_override("normal", sb); b.add_theme_stylebox_override("hover", sf); b.add_theme_stylebox_override("focus", sf); b.add_theme_stylebox_override("pressed", sf)
+	var img = TextureRect.new(); img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists(img_path): img.texture = load(img_path)
+	b.add_child(img); img.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); img.show_behind_parent = true
+	var g = Gradient.new(); g.offsets = PackedFloat32Array([0.0, 0.45, 1.0]); g.colors = PackedColorArray([Color(0, 0, 0, 0.92), Color(0, 0, 0, 0.55), Color(0, 0, 0, 0.0)])
+	var gt = GradientTexture2D.new(); gt.gradient = g; gt.fill_from = Vector2(0, 1); gt.fill_to = Vector2(0, 0); gt.width = 4; gt.height = 64
+	var shade = TextureRect.new(); shade.texture = gt; shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; shade.stretch_mode = TextureRect.STRETCH_SCALE; shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(shade); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.show_behind_parent = true
+	var v = VBoxContainer.new(); v.alignment = BoxContainer.ALIGNMENT_END; v.mouse_filter = Control.MOUSE_FILTER_IGNORE; v.add_theme_constant_override("separation", -4); b.add_child(v)
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); v.offset_left = 16; v.offset_right = -16; v.offset_bottom = -10
+	var t = _lbl(title, font_bo, title_size, Color.WHITE); t.mouse_filter = Control.MOUSE_FILTER_IGNORE; v.add_child(t)
+	var s = _lbl(sub, font_bo, 19 if title_size > 40 else 16, Color(1.0, 0.62, 0.15)); s.mouse_filter = Control.MOUSE_FILTER_IGNORE; s.clip_text = true; v.add_child(s)
+	if foot != "":
+		var f = _lbl(foot, font_ui, 17, Color(0.85, 0.82, 0.76)); f.mouse_filter = Control.MOUSE_FILTER_IGNORE; f.clip_text = true; v.add_child(f)
+	# al seleccionarla se ilumina un poco
+	b.focus_entered.connect(func(): img.modulate = Color(1.15, 1.1, 1.05); Sfx.play("click", 0.25))
+	b.focus_exited.connect(func(): img.modulate = Color.WHITE)
+	b.mouse_entered.connect(func(): img.modulate = Color(1.15, 1.1, 1.05))
+	b.mouse_exited.connect(func(): if not b.has_focus(): img.modulate = Color.WHITE)
+	b.pressed.connect(cb)
+	return b
+
+## botón de la barra de abajo: nombre y una línea de información
+func _bar_btn(title: String, info: String, cb: Callable, w: float) -> Button:
+	var b = Button.new(); b.custom_minimum_size = Vector2(w, 70); b.focus_mode = Control.FOCUS_ALL
+	var sb = StyleBoxFlat.new(); sb.bg_color = Color(0, 0, 0, 0); sb.content_margin_top = 6
+	var sf = StyleBoxFlat.new(); sf.bg_color = Color(0.78, 0.08, 0.12, 0.35); sf.border_width_top = 4; sf.border_color = RED2
+	b.add_theme_stylebox_override("normal", sb); b.add_theme_stylebox_override("hover", sf); b.add_theme_stylebox_override("focus", sf); b.add_theme_stylebox_override("pressed", sf)
+	var v = VBoxContainer.new(); v.alignment = BoxContainer.ALIGNMENT_CENTER; v.mouse_filter = Control.MOUSE_FILTER_IGNORE; v.add_theme_constant_override("separation", -2); b.add_child(v)
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var t = _lbl(title, font_bo, 24, Color(0.92, 0.9, 0.84)); t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; t.mouse_filter = Control.MOUSE_FILTER_IGNORE; v.add_child(t)
+	if info != "":
+		var i = _lbl(info, font_ui, 15, BEIGE); i.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; i.mouse_filter = Control.MOUSE_FILTER_IGNORE; v.add_child(i)
+	b.focus_entered.connect(func(): Sfx.play("click", 0.25))
+	b.pressed.connect(cb)
+	return b
 
 # ------------------------------------------------------------------ páginas centradas
 func _page(title: String, back: Callable) -> VBoxContainer:
@@ -152,20 +224,38 @@ func _maps() -> void:
 	if first: first.grab_focus()
 
 func _chars() -> void:
-	var v = _page("PERSONAJE", _arsenal)
-	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 18); v.add_child(h)
+	var v = _page("PERSONAJE", _home)
+	var row = HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 30); v.add_child(row)
+	var g = GridContainer.new(); g.columns = 3; g.add_theme_constant_override("h_separation", 12); g.add_theme_constant_override("v_separation", 12); row.add_child(g)
+	# a la derecha, el personaje señalado en grande con su descripción
+	var info = VBoxContainer.new(); info.custom_minimum_size = Vector2(420, 0); info.add_theme_constant_override("separation", 4); row.add_child(info)
+	var big = TextureRect.new(); big.custom_minimum_size = Vector2(420, 300); big.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; big.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; info.add_child(big)
+	var nm = _lbl("", font_bo, 34, Color(1, 0.82, 0.48)); nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; info.add_child(nm)
+	var ds = _lbl("", font_ui, 20, Color(0.9, 0.86, 0.78)); ds.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; ds.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; ds.custom_minimum_size = Vector2(420, 0); info.add_child(ds)
+	var stt = _lbl("", font_bo, 20, GOLD); stt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; info.add_child(stt)
 	var first: Control = null
 	for id in Data.CHARACTERS:
 		var c = Data.CHARACTERS[id]
 		var ok = GS.level >= int(c.level)
-		var card = _card("res://assets/ui/char_%s.png" % id, c.name.to_upper(), c.desc, "Elegido" if id == GS.character else ("Disponible" if ok else "Se desbloquea en el nivel %d" % c.level), id == GS.character,
-			func():
-				if ok: GS.character = id; GS.save_game(); _arsenal(), 250, 180)
-		if not ok: card.modulate = Color(0.55, 0.55, 0.55)
-		h.add_child(card)
-		if id == GS.character or first == null: first = card
-	var hint = _lbl("Se ve en tercera persona (Ajustes → Vista, o en la pausa).", font_ui, 19, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
-	v.add_child(_center(_btn("VOLVER", _arsenal, 300, true)))
+		var state = "ELEGIDO" if id == GS.character else ("PULSA PARA ELEGIR" if ok else "SE DESBLOQUEA EN EL NIVEL %d" % c.level)
+		var b = Button.new(); b.custom_minimum_size = Vector2(170, 150); b.focus_mode = Control.FOCUS_ALL
+		var sb = StyleBoxFlat.new(); sb.bg_color = Color(1, 1, 1, 0.06); sb.border_color = GOLD if id == GS.character else Color(1, 1, 1, 0.15); sb.set_border_width_all(3); sb.set_corner_radius_all(8)
+		var sf = sb.duplicate(); sf.border_color = RED2; sf.bg_color = Color(0.78, 0.08, 0.12, 0.25)
+		b.add_theme_stylebox_override("normal", sb); b.add_theme_stylebox_override("hover", sf); b.add_theme_stylebox_override("focus", sf); b.add_theme_stylebox_override("pressed", sf)
+		var tex = load("res://assets/ui/char_%s.png" % id)
+		var im = TextureRect.new(); im.texture = tex; im.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; im.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; im.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(im); im.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); im.offset_left = 8; im.offset_right = -8; im.offset_top = 8; im.offset_bottom = -30
+		var l = _lbl(c.name.to_upper(), font_bo, 13, Color(0.95, 0.92, 0.85)); l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; l.mouse_filter = Control.MOUSE_FILTER_IGNORE; l.clip_text = true
+		b.add_child(l); l.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); l.offset_top = -28; l.offset_bottom = -4
+		if not ok: b.modulate = Color(0.45, 0.45, 0.45)
+		var show = func(): big.texture = tex; nm.text = c.name.to_upper(); ds.text = c.desc; stt.text = state
+		b.focus_entered.connect(show); b.mouse_entered.connect(show)
+		b.pressed.connect(func():
+			if ok: GS.character = id; GS.save_game(); _chars())
+		g.add_child(b)
+		if id == GS.character or first == null: first = b
+	var hint = _lbl("Se ve en tercera persona (Ajustes → Vista, o en la pausa).", font_ui, 18, BEIGE); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(hint)
+	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	if first: first.grab_focus()
 
 ## fila de ajuste: nombre a la izquierda, valor a la derecha (como en la versión anterior)
@@ -186,47 +276,60 @@ func _value_btn(text: String) -> Button:
 func _play() -> void:
 	var v = _page("OLEADAS", _home)
 	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
-	var solo = _card("res://assets/ui/menu_%s.jpg" % GS.sel_map, "EN SOLITARIO", "Tú contra la horda. Elige ronda, arma y ventaja inicial.", MAP_INFO[GS.sel_map].name, false, _options, 380, 200)
-	var coop = _card("res://assets/ui/char_comando.png", "COOPERATIVO", "De 2 a 4 jugadores en la misma wifi. iPhone, Android y PC juntos.", "Crear o unirse a una partida", false, _coop, 380, 200)
+	var bb = int(GS.best.get(GS.sel_map, 0))
+	var solo = _tile("res://assets/ui/menu_%s.jpg" % GS.sel_map, "EN SOLITARIO", MAP_INFO[GS.sel_map].name.to_upper(), "Elige ronda, arma y ventaja · " + (("récord: ronda %d" % bb) if bb > 0 else "sin récord"), _options, Vector2(440, 280), 38)
+	var coop = _tile("res://assets/ui/menu_pueblo.jpg", "COOPERATIVO", "2 A 4 JUGADORES", "Misma wifi · iPhone, Android y PC juntos", _coop, Vector2(440, 280), 38)
 	h.add_child(solo); h.add_child(coop)
 	if Data.MAPS.size() > 1: v.add_child(_center(_btn("MAPA: %s" % MAP_INFO[GS.sel_map].name.to_upper(), _maps, 460, true)))
 	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	solo.grab_focus()
 
-## HISTORIA: misiones de la campaña «Operación Gamba Roja» (se desbloquean en orden)
+## HISTORIA: misiones de la campaña «Operación Gamba Roja» (se desbloquean en orden); la descripción de la elegida, debajo
 func _story() -> void:
 	var v = _page("HISTORIA", _home)
-	var sub = _lbl("OPERACIÓN GAMBA ROJA", font_bo, 26, Color(1.0, 0.62, 0.15)); sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(sub)
-	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
+	v.add_theme_constant_override("separation", 14)
+	var sub = _lbl("OPERACIÓN GAMBA ROJA", font_bo, 24, Color(1.0, 0.62, 0.15)); sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(sub)
+	var vs = get_viewport().get_visible_rect().size
+	var n = Campaign.MISSIONS.size() + 1
+	var w = clamp((vs.x - 160.0 - 14.0 * (n - 1)) / n, 200.0, 300.0)
+	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 14); v.add_child(h)
+	var desc = _lbl("", font_ui, 22, Color(0.92, 0.88, 0.8)); desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(min(vs.x - 200.0, 1000.0), 70)
 	var first: Control = null
 	var i = 0
 	for m in Campaign.MISSIONS:
 		var unlocked = i == 0 or GS.campaign.has(Campaign.MISSIONS[i - 1].id)
 		var st = int(GS.campaign.get(m.id, 0))
-		var tag = ("★".repeat(st) + "☆".repeat(3 - st)) if st > 0 else ("NUEVA" if unlocked else "BLOQUEADA: completa la anterior")
+		var foot = ("★".repeat(st) + "☆".repeat(3 - st)) if st > 0 else ("NUEVA" if unlocked else "BLOQUEADA")
 		var nd: int = m.get("intel", []).size()
 		if nd > 0 and unlocked:
 			var fd = 0
 			for k in nd: if GS.intel.has("%s_%d" % [m.id, k]): fd += 1
-			tag += "   ·   Documentos %d/%d" % [fd, nd]
+			foot += "  ·  Docs %d/%d" % [fd, nd]
 		var mid = m.id; var mmap = m.map
 		var go = func():
 			if not unlocked: return
 			GS.mode = "historia"; GS.mission = mid; GS.sel_map = mmap; GS.checkpoint = 0; GS.save_game(); main.start_game()
-		var card = _card("res://assets/ui/menu_%s.jpg" % m.map, "%d. %s" % [i + 1, String(m.name).to_upper()], String(m.desc), tag, false, go, 300, 210)
-		if not unlocked: card.modulate = Color(1, 1, 1, 0.45)
+		var card = _tile("res://assets/ui/menu_%s.jpg" % m.map, "MISIÓN %d" % (i + 1), String(m.name).to_upper(), foot, go, Vector2(w, 300), 30)
+		if not unlocked: card.modulate = Color(0.55, 0.55, 0.55)
+		var text = String(m.desc) if unlocked else "Completa la misión anterior para desbloquearla."
+		card.focus_entered.connect(func(): desc.text = text)
+		card.mouse_entered.connect(func(): desc.text = text)
 		h.add_child(card)
 		if first == null and unlocked and st == 0: first = card
 		i += 1
-	var soon = _lbl("PRÓXIMAMENTE: la Isla del Faro…", font_ui, 22, Color(0.75, 0.7, 0.62)); soon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(soon)
+	var soon = _tile("res://assets/ui/menu_conservera.jpg", "MISIÓN 5", "LA ISLA DEL FARO", "Próximamente", func(): pass, Vector2(w, 300), 30)
+	soon.modulate = Color(0.45, 0.45, 0.5); soon.focus_mode = Control.FOCUS_NONE; h.add_child(soon)
+	v.add_child(_center(desc))
 	var brow = HBoxContainer.new(); brow.alignment = BoxContainer.ALIGNMENT_CENTER; brow.add_theme_constant_override("separation", 24); v.add_child(brow)
-	brow.add_child(_btn("DOCUMENTOS", _docs, 300, true)); brow.add_child(_btn("VOLVER", _home, 300, true))
+	brow.add_child(_btn("DOCUMENTOS", _docs.bind(true), 300, true)); brow.add_child(_btn("VOLVER", _home, 300, true))
 	if first == null: first = h.get_child(0)
 	first.grab_focus()
 
 ## documentos encontrados en las misiones (la historia de Gamba Roja)
-func _docs() -> void:
-	var v = _page("DOCUMENTOS", _story)
+func _docs(from_story := false) -> void:
+	var back_to = _story if from_story else _home
+	var v = _page("DOCUMENTOS", back_to)
 	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1100, 560); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var c = CenterContainer.new(); c.add_child(sc); v.add_child(c)
 	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 10); list.custom_minimum_size.x = 1060; sc.add_child(list)
@@ -240,14 +343,17 @@ func _docs() -> void:
 			var t = _lbl(("· " + String(docs[k].title)) if got else "· ??? (sin encontrar)", font_ui, 24, Color(0.95, 0.92, 0.85) if got else Color(0.5, 0.48, 0.45)); list.add_child(t)
 			if got:
 				var x = _lbl(String(docs[k].text), font_ui, 20, Color(0.75, 0.72, 0.66)); x.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; x.custom_minimum_size.x = 1020; list.add_child(x)
-	var back = _btn("VOLVER", _story, 300, true); v.add_child(_center(back)); back.grab_focus()
+	var back = _btn("VOLVER", back_to, 300, true); v.add_child(_center(back)); back.grab_focus()
 
 ## ARSENAL: personaje y camuflajes
 func _arsenal() -> void:
 	var v = _page("ARSENAL", _home)
 	var h = HBoxContainer.new(); h.alignment = BoxContainer.ALIGNMENT_CENTER; h.add_theme_constant_override("separation", 26); v.add_child(h)
-	var ch = _card("res://assets/ui/char_%s.png" % GS.character, "PERSONAJE", "Elige con quién juegas.", Data.CHARACTERS[GS.character].name, false, _chars, 380, 200)
-	var ar = _card("res://assets/ui/menu_%s.jpg" % GS.sel_map, "ARMERÍA", "Camuflajes de cada arma: se ganan con bajas.", "", false, _armory, 380, 200)
+	var ch = _tile("res://assets/ui/menu_prison.jpg", "PERSONAJE", Data.CHARACTERS[GS.character].name.to_upper(), "Elige con quién juegas", _chars, Vector2(440, 280), 38)
+	var cimg = TextureRect.new(); cimg.texture = load("res://assets/ui/char_%s.png" % GS.character); cimg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; cimg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; cimg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ch.add_child(cimg); cimg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); cimg.offset_left = 200; cimg.offset_top = 8; cimg.offset_bottom = -8; cimg.show_behind_parent = true
+	ch.move_child(cimg, 1)
+	var ar = _tile("res://assets/ui/menu_puerto.jpg", "ARMERÍA", "CAMUFLAJES", "Se ganan con bajas de cada arma", _armory, Vector2(440, 280), 38)
 	h.add_child(ch); h.add_child(ar)
 	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
 	ch.grab_focus()
