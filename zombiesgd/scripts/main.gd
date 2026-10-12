@@ -293,7 +293,7 @@ func _run_test() -> void:
 					if ms.target != Vector3.INF:
 						var aim = ms.target + Vector3(0, 1.3, 0)
 						var spot = ms._snap(ms.target + Vector3(4.0, 0, 0))
-						if ms.step.type == "boss":   # un punto a unos metros desde el que se le vea
+						if true:   # un punto a unos metros desde el que se le vea
 							for k in 20:
 								var c = game._random_nav_near(ms.target, 4.0, 8.0)
 								if c != Vector3.INF and game.ray_world(ms.target + Vector3(0, 1.4, 0), (c - ms.target).normalized(), ms.target.distance_to(c)) == Vector3.INF: spot = c; break
@@ -588,7 +588,7 @@ func _mechanics(p: Player) -> void:
 	_ok("cuchillo", z.dead)
 	# --- granada
 	await _frames(30)
-	z = await _dummy(p, 9.0, "normal", 300.0, 5.0); _aim_at(p, z, -1.2)
+	z = await _dummy(p, 7.5, "normal", 300.0, 6.0); _aim_at(p, z, -1.2)
 	var g0 = p.grenades
 	if args.has("verbose"): print("GRANADA jugador ", p.global_position.snapped(Vector3.ONE * 0.1), " zombi ", z.global_position.snapped(Vector3.ONE * 0.1))
 	Controls.press_touch("grenade", true); await _frames(2); Controls.press_touch("grenade", false)

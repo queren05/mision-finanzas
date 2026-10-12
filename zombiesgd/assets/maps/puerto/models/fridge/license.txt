@@ -1,0 +1,11 @@
+Model Information:
+* title:	Old Fridge
+* source:	https://sketchfab.com/3d-models/old-fridge-6b2862c241754f5d81690e8664e41091
+* author:	sergeilihandristov (https://sketchfab.com/sergeilihandristov)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Old Fridge" (https://sketchfab.com/3d-models/old-fridge-6b2862c241754f5d81690e8664e41091) by sergeilihandristov (https://sketchfab.com/sergeilihandristov) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

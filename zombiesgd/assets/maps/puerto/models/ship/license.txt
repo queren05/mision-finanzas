@@ -1,0 +1,11 @@
+Model Information:
+* title:	Container Ship
+* source:	https://sketchfab.com/3d-models/container-ship-4f7cf10593824061bfe2e36ffd823cde
+* author:	LavaWave (https://sketchfab.com/lavawave)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Container Ship" (https://sketchfab.com/3d-models/container-ship-4f7cf10593824061bfe2e36ffd823cde) by LavaWave (https://sketchfab.com/lavawave) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

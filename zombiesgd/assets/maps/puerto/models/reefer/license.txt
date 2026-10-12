@@ -1,0 +1,11 @@
+Model Information:
+* title:	Refrigerated Trailer (Custom Model)
+* source:	https://sketchfab.com/3d-models/refrigerated-trailer-custom-model-1d23f8e7bbef4655a62ead4f92398de2
+* author:	matthew13482 (https://sketchfab.com/matthew13482)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Refrigerated Trailer (Custom Model)" (https://sketchfab.com/3d-models/refrigerated-trailer-custom-model-1d23f8e7bbef4655a62ead4f92398de2) by matthew13482 (https://sketchfab.com/matthew13482) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

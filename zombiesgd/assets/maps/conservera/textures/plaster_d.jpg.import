@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bho2b1csstg2h"
-path.s3tc="res://.godot/imported/plaster_d.jpg-af150b7ec7e872a94cf877b53cca5b77.s3tc.ctex"
-path.etc2="res://.godot/imported/plaster_d.jpg-af150b7ec7e872a94cf877b53cca5b77.etc2.ctex"
+path.s3tc="res://.godot/imported/plaster_d.jpg-a9e968eabea96aed690e96fa3e33a50d.s3tc.ctex"
+path.etc2="res://.godot/imported/plaster_d.jpg-a9e968eabea96aed690e96fa3e33a50d.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/maps/prison/extra/plaster_d.jpg"
-dest_files=["res://.godot/imported/plaster_d.jpg-af150b7ec7e872a94cf877b53cca5b77.s3tc.ctex", "res://.godot/imported/plaster_d.jpg-af150b7ec7e872a94cf877b53cca5b77.etc2.ctex"]
+source_file="res://assets/maps/conservera/textures/plaster_d.jpg"
+dest_files=["res://.godot/imported/plaster_d.jpg-a9e968eabea96aed690e96fa3e33a50d.s3tc.ctex", "res://.godot/imported/plaster_d.jpg-a9e968eabea96aed690e96fa3e33a50d.etc2.ctex"]
 
 [params]
 

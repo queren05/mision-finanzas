@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://q13e18xw6lcs"
-path.s3tc="res://.godot/imported/plaster_arm.jpg-4ca46723a2109477f7816661d6965223.s3tc.ctex"
-path.etc2="res://.godot/imported/plaster_arm.jpg-4ca46723a2109477f7816661d6965223.etc2.ctex"
+path.s3tc="res://.godot/imported/plaster_arm.jpg-be78712a63d4c27e6206311e2703a17b.s3tc.ctex"
+path.etc2="res://.godot/imported/plaster_arm.jpg-be78712a63d4c27e6206311e2703a17b.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/maps/prison/extra/plaster_arm.jpg"
-dest_files=["res://.godot/imported/plaster_arm.jpg-4ca46723a2109477f7816661d6965223.s3tc.ctex", "res://.godot/imported/plaster_arm.jpg-4ca46723a2109477f7816661d6965223.etc2.ctex"]
+source_file="res://assets/maps/conservera/textures/plaster_arm.jpg"
+dest_files=["res://.godot/imported/plaster_arm.jpg-be78712a63d4c27e6206311e2703a17b.s3tc.ctex", "res://.godot/imported/plaster_arm.jpg-be78712a63d4c27e6206311e2703a17b.etc2.ctex"]
 
 [params]
 

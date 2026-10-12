@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://021qo4q20u5l"
-path.s3tc="res://.godot/imported/tiles_dark_arm.jpg-a9621939298d14ac0fed23163302a5c3.s3tc.ctex"
-path.etc2="res://.godot/imported/tiles_dark_arm.jpg-a9621939298d14ac0fed23163302a5c3.etc2.ctex"
+path.s3tc="res://.godot/imported/tiles_dark_arm.jpg-4ec8c232bbf833233370ac77fec43c51.s3tc.ctex"
+path.etc2="res://.godot/imported/tiles_dark_arm.jpg-4ec8c232bbf833233370ac77fec43c51.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/maps/prison/extra/tiles_dark_arm.jpg"
-dest_files=["res://.godot/imported/tiles_dark_arm.jpg-a9621939298d14ac0fed23163302a5c3.s3tc.ctex", "res://.godot/imported/tiles_dark_arm.jpg-a9621939298d14ac0fed23163302a5c3.etc2.ctex"]
+source_file="res://assets/maps/conservera/textures/tiles_dark_arm.jpg"
+dest_files=["res://.godot/imported/tiles_dark_arm.jpg-4ec8c232bbf833233370ac77fec43c51.s3tc.ctex", "res://.godot/imported/tiles_dark_arm.jpg-4ec8c232bbf833233370ac77fec43c51.etc2.ctex"]
 
 [params]
 

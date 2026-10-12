@@ -1,0 +1,11 @@
+Model Information:
+* title:	Холодильная камера / cold storage chamber
+* source:	https://sketchfab.com/3d-models/cold-storage-chamber-2fc8c5b0d0a94809bf0f96498c222732
+* author:	Nikovgraphic (https://sketchfab.com/Nikovgraphic)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Холодильная камера / cold storage chamber" (https://sketchfab.com/3d-models/cold-storage-chamber-2fc8c5b0d0a94809bf0f96498c222732) by Nikovgraphic (https://sketchfab.com/Nikovgraphic) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

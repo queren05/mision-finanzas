@@ -16,6 +16,7 @@ const BEIGE = Color(0.725, 0.663, 0.541)
 const MAP_INFO := {
 	"prison": { "name": "Penitenciaría", "desc": "Una cárcel de máxima seguridad tomada por los muertos. Patios, pistas valladas y el bloque de celdas." },
 	"pueblo": { "name": "Pueblo", "desc": "Un cruce de un pueblo americano en llamas: el banco, el bar, el diner y la gasolinera. Cuidado con la lava del cruce." },
+	"puerto": { "name": "Puerto Viejo", "desc": "La terminal de contenedores donde Gamba Roja montó su Planta 2: el muelle, las calles entre contenedores, las oficinas, los camiones y la cámara frigorífica." },
 	"conservera": { "name": "La Conservera", "desc": "La fábrica de Gamba Roja junto al puerto, de noche: el muelle, el patio de carga, la nave de procesado, los depósitos y un laboratorio secreto." },
 
 }
@@ -212,12 +213,12 @@ func _story() -> void:
 		var go = func():
 			if not unlocked: return
 			GS.mode = "historia"; GS.mission = mid; GS.sel_map = mmap; GS.checkpoint = 0; GS.save_game(); main.start_game()
-		var card = _card("res://assets/ui/menu_%s.jpg" % m.map, "%d. %s" % [i + 1, String(m.name).to_upper()], String(m.desc), tag, false, go, 400, 210)
+		var card = _card("res://assets/ui/menu_%s.jpg" % m.map, "%d. %s" % [i + 1, String(m.name).to_upper()], String(m.desc), tag, false, go, 300, 210)
 		if not unlocked: card.modulate = Color(1, 1, 1, 0.45)
 		h.add_child(card)
 		if first == null and unlocked and st == 0: first = card
 		i += 1
-	var soon = _lbl("PRÓXIMAMENTE: los informes del laboratorio hablan de otras plantas de Gamba Roja…", font_ui, 22, Color(0.75, 0.7, 0.62)); soon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(soon)
+	var soon = _lbl("PRÓXIMAMENTE: la Isla del Faro…", font_ui, 22, Color(0.75, 0.7, 0.62)); soon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(soon)
 	var brow = HBoxContainer.new(); brow.alignment = BoxContainer.ALIGNMENT_CENTER; brow.add_theme_constant_override("separation", 24); v.add_child(brow)
 	brow.add_child(_btn("DOCUMENTOS", _docs, 300, true)); brow.add_child(_btn("VOLVER", _home, 300, true))
 	if first == null: first = h.get_child(0)

@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjntn04l1w5yg"
-path.s3tc="res://.godot/imported/tiles_n.jpg-049985092af0d4f62664de5d62c85601.s3tc.ctex"
-path.etc2="res://.godot/imported/tiles_n.jpg-049985092af0d4f62664de5d62c85601.etc2.ctex"
+path.s3tc="res://.godot/imported/tiles_n.jpg-9a8beca4315593f70ed6e629f50176f0.s3tc.ctex"
+path.etc2="res://.godot/imported/tiles_n.jpg-9a8beca4315593f70ed6e629f50176f0.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/maps/prison/extra/tiles_n.jpg"
-dest_files=["res://.godot/imported/tiles_n.jpg-049985092af0d4f62664de5d62c85601.s3tc.ctex", "res://.godot/imported/tiles_n.jpg-049985092af0d4f62664de5d62c85601.etc2.ctex"]
+source_file="res://assets/maps/conservera/textures/tiles_n.jpg"
+dest_files=["res://.godot/imported/tiles_n.jpg-9a8beca4315593f70ed6e629f50176f0.s3tc.ctex", "res://.godot/imported/tiles_n.jpg-9a8beca4315593f70ed6e629f50176f0.etc2.ctex"]
 
 [params]
 

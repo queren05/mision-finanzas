@@ -274,7 +274,7 @@ func _process(delta: float) -> void:
 		"escort":
 			if npc == null or not is_instance_valid(npc): return
 			bar.max_value = npc.MAX_HP; bar.value = npc.hp
-			if OS.get_cmdline_user_args().has("verbose") and Engine.get_process_frames() % 120 == 0: print("NPC ", npc.global_position.snapped(Vector3.ONE * 0.1), " sigue ", npc.following, " vida ", int(npc.hp), " siguiente ", npc.agent.get_next_path_position().snapped(Vector3.ONE * 0.1), " jugador ", pos.snapped(Vector3.ONE * 0.1))
+			if OS.get_cmdline_user_args().has("verbose") and Engine.get_process_frames() % 120 == 0: print("NPC ", npc.global_position.snapped(Vector3.ONE * 0.1), " sigue ", npc.following, " vida ", int(npc.hp), " siguiente ", (npc.path[npc.path_i] if npc.path_i < npc.path.size() else Vector3.ZERO).snapped(Vector3.ONE * 0.1), " jugador ", pos.snapped(Vector3.ONE * 0.1))
 			if npc.hp <= 0.0:
 				radio([["CONTROL", "Hemos perdido al superviviente…"]]); _finish(false); return
 			var goal = _snap(_xz(step.to))
@@ -469,11 +469,13 @@ class _Survivor extends CharacterBody3D:
 	var shoot_t = 0.0
 	var hurt_t = 0.0
 	var stuck_t = 0.0
+	var path = PackedVector3Array()
+	var path_i = 0
+	var repath_t = 0.0
 	var who = "GUARDIA"
 	var label: Label3D
 	func _ready() -> void:
-		collision_layer = 0; collision_mask = MapBuilder.LAYER_WORLD | MapBuilder.LAYER_SOFT
-		var cs = CollisionShape3D.new(); var cap = CapsuleShape3D.new(); cap.radius = 0.22; cap.height = 1.75; cs.shape = cap; cs.position.y = 0.875; add_child(cs)
+		collision_layer = 0; collision_mask = 0
 		model = CharacterModel.new(); add_child(model); model.setup("comando"); model.set_weapon("m1911")
 		agent = NavigationAgent3D.new(); agent.radius = 0.32; agent.path_desired_distance = 0.6; agent.target_desired_distance = 1.0; add_child(agent)
 		label = Label3D.new(); label.text = "GUARDIA"; label.font = load("res://assets/fonts/BlackOpsOne.ttf"); label.font_size = 44; label.pixel_size = 0.004
@@ -485,21 +487,21 @@ class _Survivor extends CharacterBody3D:
 		var p = game.player
 		var v = Vector3.ZERO
 		if following and global_position.distance_to(p.global_position) > 2.6:
-			agent.target_position = p.global_position
-			var nxt = agent.get_next_path_position()
-			v = (nxt - global_position); v.y = 0
-			v = v.normalized() * (4.6 if global_position.distance_to(p.global_position) > 7.0 else 3.2)
-		velocity.x = v.x; velocity.z = v.z
-		velocity.y = 0.0 if is_on_floor() else velocity.y - 18.0 * d
-		var before = global_position
-		move_and_slide()
-		# atascado en una esquina: avanza un poco por el camino aunque roce
-		if v.length() > 0.5 and before.distance_to(global_position) < v.length() * d * 0.2:
-			stuck_t += d
-			if stuck_t > 0.8:
-				var nxt2 = agent.get_next_path_position(); var step2 = (nxt2 - global_position); step2.y = 0
-				global_position += step2.normalized() * min(0.35, step2.length()); stuck_t = 0.0
-		else: stuck_t = 0.0
+			repath_t -= d
+			if repath_t <= 0.0 or path_i >= path.size():
+				repath_t = 1.0; path_i = 1
+				path = NavigationServer3D.map_get_path(get_world_3d().navigation_map, global_position, p.global_position, true)
+			while path_i < path.size() and Vector2(path[path_i].x - global_position.x, path[path_i].z - global_position.z).length() < 0.35: path_i += 1
+			if path_i < path.size():
+				v = (path[path_i] - global_position); v.y = 0
+				v = v.normalized() * (4.6 if global_position.distance_to(p.global_position) > 7.0 else 3.2)
+		# sigue el camino de la navegación (que ya esquiva los obstáculos) sin chocar con los muebles: así no se atasca nunca
+		velocity = v
+		if v.length() > 0.0:
+			global_position += v * d
+			var map = get_world_3d().navigation_map
+			var q = NavigationServer3D.map_get_closest_point(map, global_position + Vector3(0, 0.5, 0))
+			if q.distance_to(global_position) < 1.5: global_position = global_position.lerp(Vector3(global_position.x, q.y, global_position.z), min(1.0, d * 12.0))
 		# dispara a los zombis cercanos que vea (ayuda, pero no lo hace todo él)
 		shoot_t -= d
 		var near_z = null; var nd = 11.0
