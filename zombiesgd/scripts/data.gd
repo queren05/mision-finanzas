@@ -7,10 +7,10 @@ extends Node
 # cost = precio en la pared (0 = solo caja); class = tipo (pistola, escopeta, subfusil, fusil, ametralladora, francotirador, especial)
 # len = largo del modelo en metros; sound = sonido de disparo; pap = versión mejorada
 const WEAPONS := {
-	"m1911": { "name": "M1911", "class": "pistola", "model": "gun_m1911", "len": 0.22, "dmg": 40, "head": 2.5, "rpm": 400, "mag": 8, "res": 80, "reload": 1.6,
+	"m1911": { "name": "M1911", "class": "pistola", "model": "gun_m1911", "len": 0.25, "dmg": 40, "head": 2.5, "rpm": 400, "mag": 8, "res": 80, "reload": 1.6,
 		"spread": 2.0, "ads_spread": 0.6, "auto": false, "pellets": 1, "cost": 0, "sound": "shot_pistol", "reload_snd": "reload_pistol", "recoil": 1.2, "range": 40,
 		"pap": { "name": "Pareja de Ases", "dmg": 900, "mag": 12, "res": 60, "explosive": 2.2 } },
-	"python": { "name": "Python", "class": "pistola", "model": "gun_python", "len": 0.3, "dmg": 180, "head": 2.0, "rpm": 160, "mag": 6, "res": 36, "reload": 3.0,
+	"python": { "name": "Python", "class": "pistola", "model": "gun_python", "len": 0.32, "dmg": 180, "head": 2.0, "rpm": 160, "mag": 6, "res": 36, "reload": 3.0,
 		"spread": 1.6, "ads_spread": 0.3, "auto": false, "pellets": 1, "cost": 2200, "sound": "shot_magnum", "reload_snd": "reload_pistol", "recoil": 3.0, "range": 60,
 		"pap": { "name": "Mordisco", "dmg": 600, "mag": 12, "res": 84 } },
 	"olympia": { "name": "Recortada", "class": "escopeta", "model": "gun_olympia", "len": 0.95, "vm": { "fwd": -0.14 }, "dmg": 50, "head": 1.5, "rpm": 120, "mag": 2, "res": 38, "reload": 2.6,
@@ -25,7 +25,7 @@ const WEAPONS := {
 	"mp40": { "name": "MP40", "class": "subfusil", "model": "gun_mp40", "len": 0.8, "dmg": 45, "head": 2.0, "rpm": 520, "mag": 32, "res": 192, "reload": 2.3,
 		"spread": 2.6, "ads_spread": 0.9, "auto": true, "pellets": 1, "cost": 1000, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 0.9, "range": 40,
 		"pap": { "name": "Postquemador", "dmg": 110, "mag": 64, "res": 384 } },
-	"mp5k": { "name": "MP5K", "class": "subfusil", "model": "gun_mp5k", "len": 0.45, "dmg": 50, "head": 2.0, "rpm": 750, "mag": 30, "res": 210, "reload": 2.1,
+	"mp5k": { "name": "MP5K", "class": "subfusil", "model": "gun_mp5k", "arms": "pistol", "len": 0.36, "vm": { "up": -0.03 }, "dmg": 50, "head": 2.0, "rpm": 750, "mag": 30, "res": 210, "reload": 2.1,
 		"spread": 2.8, "ads_spread": 1.0, "auto": true, "pellets": 1, "cost": 1000, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 0.8, "range": 35,
 		"pap": { "name": "Colisionador", "dmg": 120, "mag": 40, "res": 320 } },
 	"ak74u": { "name": "AK-74u", "class": "subfusil", "model": "gun_ak74u", "len": 0.62, "vm": { "fwd": 0.08 }, "dmg": 55, "head": 2.0, "rpm": 700, "mag": 20, "res": 160, "reload": 2.0,

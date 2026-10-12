@@ -9,11 +9,11 @@ const KITS := {
 	"rifle": { "scene": "res://assets/models/arms/rifle/scene.gltf", "hide": ["Rifle", "Silencer", "Scope", "Pmag"],
 		"idle": "Armature|Arms_FPS_Anim_Idle", "walk": "Armature|Arms_FPS_Anim_Walk", "run": "Armature|Arms_FPS_Anim_Run",
 		"shoot": "Armature|Arms_FPS_Anim_Shoot", "reload": "Armature|Arms_FPS_Anim_Reload_Fast", "draw": "Armature|Arms_FPS_Anim_Draw",
-		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.045, -0.02, 0.0), "fwd": 0.1 },
+		"bone": "ACRRifle", "elev": 0.0, "shift": Vector3(0.045, 0.03, 0.0), "fwd": 0.1 },
 	"pistol": { "scene": "res://assets/models/arms/pistol/scene.gltf", "hide": ["Material"],
 		"idle": "Armature|FPS_Pistol_Idle", "walk": "Armature|FPS_Pistol_Walk", "run": "Armature|FPS_Pistol_Walk",
 		"shoot": "Armature|FPS_Pistol_Fire", "reload": "Armature|FPS_Pistol_Reload_full", "draw": "",
-		"bone": "PBody", "elev": -9.0, "shift": Vector3(0.07, 0.0, 0.03), "fwd": 0.0 },
+		"bone": "PBody", "elev": -9.0, "shift": Vector3(0.07, 0.05, 0.03), "fwd": 0.0 },
 }
 
 var kind = ""
@@ -44,6 +44,7 @@ func _ready() -> void:
 	holder = Node3D.new(); add_child(holder)
 
 static func kit_for(wid: String) -> String:
+	if Data.WEAPONS[wid].has("arms"): return String(Data.WEAPONS[wid].arms)
 	var c = String(Data.WEAPONS[wid].get("class", ""))
 	return "pistol" if c == "pistola" or c == "maravilla" else "rifle"
 
@@ -168,7 +169,7 @@ func _attach_gun() -> void:
 	var shift = -(float(theirs.length) - L) * (0.14 if kind == "rifle" else 0.0)
 	var basis = hold
 	var their_dir: Vector3 = theirs.dir
-	if their_dir != Vector3.ZERO: basis = Basis.looking_at(their_dir, hold.y)   # el arma con el mismo ángulo con que la sujetan las manos
+	if their_dir != Vector3.ZERO and kind == "rifle": basis = Basis.looking_at(their_dir, hold.y)   # el arma con el mismo ángulo con que la sujetan las manos (las pistolas, recto)
 	# la mano izquierda (en la parte delantera de su arma) tiene que quedar sobre el guardamanos de la nuestra:
 	# la boca de la nuestra va un poco por delante de la mano, según su largo (las cortas no se acercan a la cara)
 	var pos = c0 + basis * Vector3(0, 0.0, -shift)

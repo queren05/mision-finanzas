@@ -30,6 +30,27 @@ func _ready() -> void:
 	var vm = Viewmodel.new(); cam.add_child(vm)
 	var cross = _Cross.new(); var cl = CanvasLayer.new(); add_child(cl); cl.add_child(cross); cross.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var only = String(args.get("guns", "")).split(",", false)
+	if args.has("anim"):   # tira de fotogramas de una acción: reload | fire | sprint | walk | knife | draw
+		var what = String(args.anim)
+		for wid in Data.WEAPONS:
+			if only.size() and not wid in only: continue
+			vm.set_weapon(wid, false)
+			if what != "draw":
+				for f in 40: vm.update(1.0 / 60.0, 0.0, false, 0.0, false, Vector2.ZERO); await get_tree().process_frame
+			var dur = float(Data.WEAPONS[wid].reload)
+			if what == "reload": vm.reload(dur)
+			if what == "knife": vm.slash()
+			var total = {"reload": dur, "fire": 0.5, "sprint": 1.0, "walk": 1.0, "knife": 0.45, "draw": 0.6}[what]
+			var shots = 6
+			for k in shots:
+				var frames = int(total / shots * 60.0)
+				for f in frames:
+					if what == "fire" and f == 0 and k < 3: vm.fire()
+					vm.update(1.0 / 60.0, 6.5 if what == "sprint" else (3.5 if what == "walk" else 0.0), what == "sprint", 0.0, what == "reload", Vector2.ZERO)
+					await get_tree().process_frame
+				await RenderingServer.frame_post_draw
+				get_viewport().get_texture().get_image().save_png("%s_%s_%s_%d.png" % [args.get("out", "/tmp/vm"), wid, what, k])
+		get_tree().quit(); return
 	for wid in Data.WEAPONS:
 		if only.size() and not wid in only: continue
 		vm.set_weapon(wid, false)
