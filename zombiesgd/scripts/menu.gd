@@ -203,19 +203,43 @@ func _story() -> void:
 		var unlocked = i == 0 or GS.campaign.has(Campaign.MISSIONS[i - 1].id)
 		var st = int(GS.campaign.get(m.id, 0))
 		var tag = ("★".repeat(st) + "☆".repeat(3 - st)) if st > 0 else ("NUEVA" if unlocked else "BLOQUEADA: completa la anterior")
+		var nd: int = m.get("intel", []).size()
+		if nd > 0 and unlocked:
+			var fd = 0
+			for k in nd: if GS.intel.has("%s_%d" % [m.id, k]): fd += 1
+			tag += "   ·   Documentos %d/%d" % [fd, nd]
 		var mid = m.id; var mmap = m.map
 		var go = func():
 			if not unlocked: return
-			GS.mode = "historia"; GS.mission = mid; GS.sel_map = mmap; GS.save_game(); main.start_game()
+			GS.mode = "historia"; GS.mission = mid; GS.sel_map = mmap; GS.checkpoint = 0; GS.save_game(); main.start_game()
 		var card = _card("res://assets/ui/menu_%s.jpg" % m.map, "%d. %s" % [i + 1, String(m.name).to_upper()], String(m.desc), tag, false, go, 400, 210)
 		if not unlocked: card.modulate = Color(1, 1, 1, 0.45)
 		h.add_child(card)
 		if first == null and unlocked and st == 0: first = card
 		i += 1
 	var soon = _lbl("PRÓXIMAMENTE: los informes del laboratorio hablan de otras plantas de Gamba Roja…", font_ui, 22, Color(0.75, 0.7, 0.62)); soon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(soon)
-	v.add_child(_center(_btn("VOLVER", _home, 300, true)))
+	var brow = HBoxContainer.new(); brow.alignment = BoxContainer.ALIGNMENT_CENTER; brow.add_theme_constant_override("separation", 24); v.add_child(brow)
+	brow.add_child(_btn("DOCUMENTOS", _docs, 300, true)); brow.add_child(_btn("VOLVER", _home, 300, true))
 	if first == null: first = h.get_child(0)
 	first.grab_focus()
+
+## documentos encontrados en las misiones (la historia de Gamba Roja)
+func _docs() -> void:
+	var v = _page("DOCUMENTOS", _story)
+	var sc = ScrollContainer.new(); sc.custom_minimum_size = Vector2(1100, 560); sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var c = CenterContainer.new(); c.add_child(sc); v.add_child(c)
+	var list = VBoxContainer.new(); list.add_theme_constant_override("separation", 10); list.custom_minimum_size.x = 1060; sc.add_child(list)
+	var i = 0
+	for m in Campaign.MISSIONS:
+		i += 1
+		var head = _lbl("%d. %s" % [i, String(m.name).to_upper()], font_bo, 26, Color(1.0, 0.62, 0.15)); list.add_child(head)
+		var docs: Array = m.get("intel", [])
+		for k in docs.size():
+			var got = GS.intel.has("%s_%d" % [m.id, k])
+			var t = _lbl(("· " + String(docs[k].title)) if got else "· ??? (sin encontrar)", font_ui, 24, Color(0.95, 0.92, 0.85) if got else Color(0.5, 0.48, 0.45)); list.add_child(t)
+			if got:
+				var x = _lbl(String(docs[k].text), font_ui, 20, Color(0.75, 0.72, 0.66)); x.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; x.custom_minimum_size.x = 1020; list.add_child(x)
+	var back = _btn("VOLVER", _story, 300, true); v.add_child(_center(back)); back.grab_focus()
 
 ## ARSENAL: personaje y camuflajes
 func _arsenal() -> void:

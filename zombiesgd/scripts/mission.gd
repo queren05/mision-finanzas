@@ -20,6 +20,10 @@ var brute_sent = false
 var boss: Zombie = null      # jefe del paso «boss»
 var boss_max = 1.0
 var plant_t = 0.0            # colocar cargas: segundos quieto junto a la carga actual
+var last_cp = 0              # último punto de control (paso desde el que se puede reintentar)
+var intel_items: Array = []  # documentos escondidos por el mapa
+var doc_panel: PanelContainer
+var doc_t = 0.0
 
 # interfaz
 var obj_title: Label
@@ -87,7 +91,42 @@ func setup(g: Node, m: Dictionary) -> void:
 	radio_voice = AudioStreamPlayer.new(); radio_voice.bus = "Master"; add_child(radio_voice)
 	var f = FileAccess.open("res://assets/voice/radio/index.json", FileAccess.READ)
 	if f: radio_index = JSON.parse_string(f.get_as_text())
-	radio(data.get("intro", []))
+	# documentos escondidos (cuentan la historia de Gamba Roja)
+	var docs: Array = data.get("intel", [])
+	for k in docs.size():
+		if GS.intel.has("%s_%d" % [data.id, k]): continue
+		var it = _spawn_doc(_snap(_xz(docs[k].pos))); it.set_meta("doc", k); intel_items.append(it)
+	doc_panel = PanelContainer.new(); doc_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT); doc_panel.offset_left = 40; doc_panel.offset_right = 560
+	doc_panel.offset_top = -90; doc_panel.offset_bottom = -80; doc_panel.grow_vertical = Control.GROW_DIRECTION_BOTH; doc_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE; doc_panel.visible = false
+	var ds = StyleBoxFlat.new(); ds.bg_color = Color(0.9, 0.86, 0.74, 0.94); ds.set_corner_radius_all(3); ds.content_margin_left = 22; ds.content_margin_right = 22; ds.content_margin_top = 16; ds.content_margin_bottom = 18
+	doc_panel.add_theme_stylebox_override("panel", ds); add_child(doc_panel)
+	var dv = VBoxContainer.new(); dv.name = "V"; doc_panel.add_child(dv)
+	var dt = Label.new(); dt.name = "T"; dt.add_theme_font_override("font", font_bo); dt.add_theme_font_size_override("font_size", 22); dt.add_theme_color_override("font_color", Color(0.45, 0.08, 0.06)); dv.add_child(dt)
+	var dx = Label.new(); dx.name = "X"; dx.add_theme_font_override("font", font_ui); dx.add_theme_font_size_override("font_size", 22); dx.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+	dx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; dx.custom_minimum_size.x = 470; dv.add_child(dx)
+	# reintentar desde un punto de control: lo de antes ya está hecho
+	var steps: Array = data.steps
+	if GS.checkpoint > 0 and GS.checkpoint < steps.size():
+		var cp: int = GS.checkpoint
+		for i in cp:
+			var st: Dictionary = steps[i]
+			match st.type:
+				"door": game.evt("door", int(st.door))
+				"power": game.turn_power_on()
+				"collect": if st.has("give"): game.player.give_weapon(String(st.give))
+		game.player.points += 750 * cp; game.hud.update_points(game.player.points, 0)
+		var back: Dictionary = steps[cp - 1]
+		var at = Vector3.INF
+		if back.has("pos"): at = _xz(back.pos[0] if back.pos[0] is Array else back.pos)
+		elif back.type == "door": at = game.doors[int(back.door)].global_position
+		if at != Vector3.INF:   # (cuando la navegación ya está lista)
+			get_tree().create_timer(0.5).timeout.connect(func():
+				var q = game._random_nav_near(at, 1.0, 4.0)
+				if q != Vector3.INF: game.player.global_position = q + Vector3(0, 0.2, 0); game.player.velocity = Vector3.ZERO)
+		step_i = cp - 1; last_cp = cp
+		game.hud.toast("PUNTO DE CONTROL", "Sigues desde: " + String(steps[cp].get("text", "")))
+	else:
+		radio(data.get("intro", []))
 	_next_step()
 
 ## dificultad: cuántos zombis a la vez y cada cuánto sale uno (los pasos tranquilos, menos)
@@ -112,6 +151,7 @@ func _next_step() -> void:
 	var steps: Array = data.steps
 	if step_i >= steps.size(): _finish(true); return
 	step = steps[step_i]
+	if step_i > 0 and step.type in ["door", "power", "defend", "boss", "plant", "destroy", "survive"]: last_cp = step_i
 	radio(step.get("radio", []))
 	bar.visible = step.type in ["survive", "defend", "boss"]
 	obj_title.text = "OBJETIVO"; obj_title.add_theme_color_override("font_color", Color(1.0, 0.62, 0.15))
@@ -143,6 +183,19 @@ func _process(delta: float) -> void:
 	if game.paused: return
 	_radio_tick(delta)
 	var p: Player = game.player
+	# documentos
+	for it in intel_items:
+		if is_instance_valid(it) and it.visible and p.global_position.distance_to(it.global_position) < 1.5:
+			it.visible = false; it.queue_free()
+			var k: int = it.get_meta("doc"); var doc: Dictionary = data.intel[k]
+			GS.intel["%s_%d" % [data.id, k]] = true; GS.save_game()
+			Sfx.play("powerup", 0.6, 0.8)
+			doc_panel.get_node("V/T").text = "DOCUMENTO: " + String(doc.title).to_upper()
+			doc_panel.get_node("V/X").text = String(doc.text)
+			doc_panel.visible = true; doc_t = 9.0
+	if doc_t > 0.0:
+		doc_t -= delta
+		if doc_t <= 0.0: doc_panel.visible = false
 	if p.downed and not _was_down: downs += 1
 	_was_down = p.downed
 	t += delta
@@ -334,6 +387,16 @@ func _spawn_boss() -> void:
 	obj_title.text = String(step.get("name", "JEFE")).to_upper()
 	if step.get("ammo", false):   # munición para el combate
 		game._drop_powerup(game.player.global_position + game.player.global_transform.basis.z * -2.0, "max_ammo")
+
+## documento escondido: un papel amarillento que brilla un poco (para que se vea en la oscuridad)
+func _spawn_doc(at: Vector3) -> Node3D:
+	var n = Node3D.new(); game.add_child(n); n.global_position = at
+	var m = MeshInstance3D.new(); var bm = BoxMesh.new(); bm.size = Vector3(0.3, 0.02, 0.4); m.mesh = bm; m.position.y = 0.05; m.rotation.y = randf() * TAU
+	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.92, 0.88, 0.72); mat.emission_enabled = true; mat.emission = Color(0.9, 0.8, 0.5); mat.emission_energy_multiplier = 0.6
+	m.material_override = mat; n.add_child(m)
+	var l = OmniLight3D.new(); l.light_color = Color(1.0, 0.9, 0.6); l.light_energy = 0.7; l.omni_range = 2.2; l.position.y = 0.5; n.add_child(l)
+	var tw = l.create_tween().set_loops(); tw.tween_property(l, "light_energy", 0.2, 1.2); tw.tween_property(l, "light_energy", 0.8, 1.2)
+	return n
 
 # ------------------------------------------------------------------ radio
 func radio(lines: Array) -> void:

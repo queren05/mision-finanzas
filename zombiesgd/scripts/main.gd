@@ -20,6 +20,7 @@ func _ready() -> void:
 		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1")); GS.settings.third = args.has("tp"); Controls.device = args.get("dev", Controls.device); GS.character = args.get("char", GS.character)
 		GS.mode = "oleadas"
 		if args.has("mission"): GS.mode = "historia"; GS.mission = String(args.mission); GS.sel_map = Campaign.get_mission(GS.mission).map
+		if args.has("cp"): GS.checkpoint = int(args.cp)
 		start_game(); return
 	to_menu()
 
@@ -40,7 +41,7 @@ func _net_test() -> void:
 
 func _menu_shots() -> void:
 	to_menu()
-	for page in ["_home", "_story", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
+	for page in ["_home", "_story", "_docs", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings"]:
 		menu.call(page)
 		for i in 4: await get_tree().process_frame
 		if page == "_progress":
@@ -106,6 +107,9 @@ func _run_test() -> void:
 		var at = game._random_nav_near(p.global_position, 5.0, 7.0)
 		game.make_zombie("a", args.spawn, at, 1000.0, 0.9 if args.spawn != "dog" else 5.0)
 	if args.has("gun"): p.give_weapon(args.gun); await get_tree().create_timer(1.0).timeout
+	if args.has("goto"):   # goto=x,y,z: el jugador empieza ahí
+		await get_tree().create_timer(1.0).timeout
+		var gv = String(args.goto).split(","); p.global_position = Vector3(float(gv[0]), float(gv[1]), float(gv[2])); p.velocity = Vector3.ZERO
 	if args.has("pausetest"):
 		await get_tree().create_timer(14.0).timeout
 		var z = game.zombies.filter(func(q): return is_instance_valid(q) and not q.dead)

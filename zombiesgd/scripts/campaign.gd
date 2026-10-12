@@ -23,6 +23,11 @@ const MISSIONS := [
 	  "intro": [["CONTROL", "Comando, aquí Control. Hace seis horas que no sabemos nada de la penitenciaría de Punta Roja."],
 				["CONTROL", "El último camión de la conservera Gamba Roja descargó aquí ayer. Y después… nada. Ten cuidado ahí dentro."],
 				["COMANDO", "Recibido. Entrando por el patio."]],
+	  "intel": [
+		{ "pos": [30.0, -3.0], "title": "Albarán de entrega", "text": "Conservas Gamba Roja. 40 cajas de «Gambas al ajillo, lote 7» para el comedor de la prisión. Nota a mano: «No abrir antes del jueves»." },
+		{ "pos": [40.2, -40.6, 0.85], "title": "Diario del alcaide", "text": "«Los presos que comieron el lote 7 no duermen. No hablan. Se quedan mirando la pared, como si escucharan algo que viene del mar»." },
+		{ "pos": [21.9, -43.9, 4.45], "title": "Nota en una celda", "text": "«Me han cambiado la sangre. Huelo el mar. Si alguien lee esto: no comáis nada que venga en lata»." },
+	  ],
 	  "steps": [
 		{ "type": "collect", "text": "Coge el fusil del puesto de guardia", "pos": [[20.0, -1.0]], "give": "m16", "label": "M16", "calm": true,
 		  "radio": [["COMANDO", "Con una pistola no voy a ningún lado. El puesto de guardia tiene que tener armas."]] },
@@ -55,6 +60,11 @@ const MISSIONS := [
 	  "desc": "El helicóptero cae en el cruce del Pueblo. Consigue combustible, da la corriente, monta la baliza y aguanta hasta la extracción.",
 	  "intro": [["PILOTO", "¡Nos han dado! ¡Agarraos!"], ["CONTROL", "Comando, ¿sigues vivo? El helicóptero ha caído en el cruce del Pueblo."],
 				["COMANDO", "Vivo. Y rodeado. El pueblo entero está en llamas."]],
+	  "intel": [
+		{ "pos": [13.5, -11.0], "title": "Carta del banco", "text": "«Gamba Roja S.A. ha comprado medio pueblo en un mes. Pagan en efectivo, nunca dan nombres y nunca firman con la misma letra»." },
+		{ "pos": [-17.0, 20.0], "title": "Menú del diner", "text": "«Especial de la semana: gambas de la conservera, ¡gratis para los vecinos!». Alguien ha escrito encima con rotulador: «¿GRATIS?»." },
+		{ "pos": [44.0, 24.0], "title": "Parte de la gasolinera", "text": "«El camión de la conservera repostó a las tres de la mañana. El conductor tenía los ojos rojos y la piel dura, como un caparazón»." },
+	  ],
 	  "steps": [
 		{ "type": "survive", "text": "Aguanta en el cruce", "time": 45.0,
 		  "radio": [["CONTROL", "Aguanta en el cruce mientras buscamos otro transporte."]] },
@@ -68,7 +78,7 @@ const MISSIONS := [
 		  "radio": [["COMANDO", "El generador está aquí. Allá vamos."]] },
 		{ "type": "door", "text": "Entra en el banco", "door": 0,
 		  "radio": [["CONTROL", "Hay luz en el pueblo. La baliza está guardada en la cámara del banco."]] },
-		{ "type": "collect", "text": "Coge la baliza de emergencia", "pos": [[11.6, -14.6]], "label": "baliza",
+		{ "type": "collect", "text": "Coge la baliza de emergencia", "pos": [[10.0, -12.0]], "label": "baliza",
 		  "radio": [["COMANDO", "La tengo. Pesa como un muerto."]] },
 		{ "type": "door", "text": "Abre la calle Sur", "door": 6,
 		  "radio": [["CONTROL", "Tenemos un claro para aterrizar al final de la calle Sur. Ve hacia allí."]] },
@@ -85,6 +95,11 @@ const MISSIONS := [
 	  "intro": [["CONTROL", "Comando, estás en el muelle de la conservera Gamba Roja. Aquí empezó todo."],
 				["CONTROL", "Necesitamos pruebas de lo que hacían dentro. Y después, que no quede nada en pie."],
 				["COMANDO", "Huele a pescado podrido… y a algo peor."]],
+	  "intel": [
+		{ "pos": [-8.0, 22.5], "title": "Nota de un pescador", "text": "«Esta mañana las gambas saltaban solas a la cubierta. Iban todas hacia el pueblo, como si alguien las llamara»." },
+		{ "pos": [9.8, -27.2], "title": "Informe del laboratorio", "text": "«Sujeto G-7: regeneración por encima del 400 %. Agresividad controlable con frecuencias bajas. Recomendamos pasar a producción»." },
+		{ "pos": [-25.5, -8.0], "title": "Orden interna", "text": "«La Planta 2 (Puerto Viejo) y la Planta 3 (Isla del Faro) están listas para recibir cultivo. Destruid todos los registros de Punta Roja»." },
+	  ],
 	  "steps": [
 		{ "type": "door", "text": "Abre la verja del patio de carga", "door": 0, "calm": true,
 		  "radio": [["CONTROL", "La entrada de la nave da al patio de carga. Abre la verja del muelle."]] },

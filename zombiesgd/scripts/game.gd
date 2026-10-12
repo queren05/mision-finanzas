@@ -578,7 +578,7 @@ func _on_mission_finished(ok: bool) -> void:
 	else: Sfx.music_sting("game_over")
 	for z in zombies:
 		if is_instance_valid(z) and not z.dead and ok: z.queue_free()
-	hud.show_mission_end(ok, md, st, { "kills": player.kills, "heads": player.headshots, "time": time, "xp": xp, "downs": mission.downs })
+	hud.show_mission_end(ok, md, st, { "kills": player.kills, "heads": player.headshots, "time": time, "xp": xp, "downs": mission.downs, "cp": mission.last_cp })
 
 ## punto de interés para hacer aparecer zombis: un jugador vivo al azar
 func _focus() -> Vector3:

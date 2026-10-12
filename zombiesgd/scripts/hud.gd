@@ -368,16 +368,25 @@ func show_mission_end(ok: bool, md: Dictionary, stars: int, s: Dictionary) -> vo
 	for e in [[s.kills, "Bajas"], [s.heads, "A la cabeza"], ["%d:%02d" % [int(s.time) / 60, int(s.time) % 60], "Tiempo"], [s.xp, "XP"]]:
 		var c = VBoxContainer.new(); var a = _label(font_bo, 40, Color.WHITE); a.text = str(e[0]); a.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(a)
 		var b = _label(font_ui, 20, Color(0.73, 0.66, 0.54)); b.text = e[1]; b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; c.add_child(b); stats.add_child(c)
+	var docs: Array = md.get("intel", [])
+	if docs.size() > 0:
+		var found = 0
+		for k in docs.size(): if GS.intel.has("%s_%d" % [md.id, k]): found += 1
+		var dl = _label(font_ui, 22, Color(0.85, 0.8, 0.6)); dl.text = "Documentos encontrados: %d/%d" % [found, docs.size()]; dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; v.add_child(dl)
 	var row = HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 30); v.add_child(row)
 	var main = get_tree().root.get_node("Main")
 	var first: Control = null
 	var i = Campaign.index_of(md.id)
 	if ok and i + 1 < Campaign.MISSIONS.size():
 		var nx = Campaign.MISSIONS[i + 1]
-		first = _button("SIGUIENTE MISIÓN", func(): get_tree().paused = false; GS.mission = nx.id; GS.sel_map = nx.map; main.restart_game())
+		first = _button("SIGUIENTE MISIÓN", func(): get_tree().paused = false; GS.checkpoint = 0; GS.mission = nx.id; GS.sel_map = nx.map; main.restart_game())
 		row.add_child(first)
 	if not ok:
-		first = _button("REINTENTAR", func(): get_tree().paused = false; main.restart_game()); row.add_child(first)
+		if int(s.get("cp", 0)) > 0:
+			var cp = int(s.cp)
+			first = _button("DESDE EL PUNTO DE CONTROL", func(): get_tree().paused = false; GS.checkpoint = cp; main.restart_game()); row.add_child(first)
+		var again = _button("REINTENTAR", func(): get_tree().paused = false; GS.checkpoint = 0; main.restart_game()); row.add_child(again)
+		if first == null: first = again
 	var back = _button("VOLVER AL MENÚ", func(): get_tree().paused = false; main.to_menu()); row.add_child(back)
 	if first == null: first = back
 	first.grab_focus()
