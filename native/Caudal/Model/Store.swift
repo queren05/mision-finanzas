@@ -28,6 +28,7 @@ final class Store {
         } else {
             state = Seed.david()
         }
+        if state.seed < Seed.version && state.seed >= 3 { Seed.migrate(&state) }
         hideAmounts = state.settings.hideAmountsOnLaunch
         runRecurring()
     }
@@ -216,6 +217,11 @@ final class Store {
     func save(_ r: Recurring) {
         if let i = state.recurring.firstIndex(where: { $0.id == r.id }) { state.recurring[i] = r } else { state.recurring.append(r) }
         runRecurring()
+    }
+    /// lo ahorrado para un objetivo
+    func saved(_ g: Goal) -> Double {
+        if let id = g.accountId, let a = account(id) { return value(a) }
+        return g.saved
     }
     func save(_ g: Goal) {
         if let i = state.goals.firstIndex(where: { $0.id == g.id }) { state.goals[i] = g } else { state.goals.append(g) }

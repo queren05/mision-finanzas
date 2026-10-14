@@ -174,6 +174,8 @@ struct Goal: Codable, Identifiable, Hashable {
     var saved: Double = 0
     /// yyyy-MM-dd o vacío
     var deadline: String = ""
+    /// si está puesto, lo ahorrado es el valor de esa cuenta (si no, las aportaciones a mano)
+    var accountId: String? = nil
 }
 
 struct Settings: Codable, Hashable {

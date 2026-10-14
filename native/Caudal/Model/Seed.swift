@@ -2,7 +2,7 @@ import Foundation
 
 /// Datos de partida: categorías por defecto y las cuentas y movimientos reales de David (Revolut y Trade Republic, octubre de 2026).
 enum Seed {
-    static let version = 3
+    static let version = 4
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -23,6 +23,8 @@ enum Seed {
             ("c_pareja", "Pareja", "❤️", "miamor"),
             ("c_regalos", "Regalos", "🎁", ""),
             ("c_viajes", "Viajes", "✈️", "booking, airbnb, ryanair, iberia, vueling, hotel"),
+            ("c_formacion", "Formación", "📚", "udemy, coursera, google play console, libreria"),
+            ("c_comisiones", "Comisiones", "🏦", "comision, comisión, mantenimiento cuenta"),
             ("c_otros", "Otros gastos", "📦", ""),
         ]
         let i: [(String, String, String, String)] = [
@@ -35,7 +37,8 @@ enum Seed {
             ("i_otros", "Otros ingresos", "➕", ""),
         ]
         var out: [Category] = []
-        for (n, c) in e.enumerated() { out.append(Category(id: c.0, kind: .expense, name: c.1, icon: c.2, color: palette[n % palette.count], keywords: c.3)) }
+        let budgets: [String: Double] = ["c_rest": 100, "c_coche": 200, "c_ocio": 100, "c_compras": 100]   // los de la app antigua
+        for (n, c) in e.enumerated() { out.append(Category(id: c.0, kind: .expense, name: c.1, icon: c.2, color: palette[n % palette.count], budget: budgets[c.0] ?? 0, keywords: c.3)) }
         for (n, c) in i.enumerated() { out.append(Category(id: c.0, kind: .income, name: c.1, icon: c.2, color: palette[(n + 2) % palette.count], keywords: c.3)) }
         return out
     }
@@ -75,9 +78,7 @@ enum Seed {
         func t(_ date: String, _ time: String, _ from: String, _ to: String, _ amount: Double, _ title: String) -> Tx {
             Tx(type: .transfer, amount: amount, accountId: from, toAccountId: to, date: date, time: time, title: title)
         }
-        s.txs = [
-            // 1 y 2 de octubre: lo que no sale en las capturas va como ajuste para cuadrar el saldo real
-            Tx(type: .adjust, amount: -58.53, accountId: rev.id, date: "2026-10-02", time: "23:59", title: "Movimientos del 1 y 2 de octubre", note: "Sin detallar: cuadra el saldo de Revolut"),
+        s.txs = oldTxs(rev.id) + [
             g("2026-10-02", "22:25", "Alfonso", 3, "c_amigos", "Bizum"),
             // 3 de octubre
             g("2026-10-03", "14:28", "Miamor", 17.29, "c_super", "Mercadona"),
@@ -123,6 +124,42 @@ enum Seed {
             // Trade Republic: el efectivo disponible es de 100,00 € (con los intereses cobrados)
             Tx(type: .adjust, amount: 0.82, accountId: tr.id, date: "2026-10-13", time: "01:38", title: "Intereses de Trade Republic", note: "Cuadra el efectivo disponible (100,00 €)"),
         ]
+        s.goals = [Goal(id: "o_noruega", name: "Noruega", icon: "🇳🇴", color: "#ff8686", target: 5000, deadline: "2027-09-01", accountId: tr.id)]
         return s
+    }
+
+    /// los movimientos que había en la versión anterior de la app (30 de septiembre a 2 de octubre)
+    static func oldTxs(_ rev: String) -> [Tx] {
+        func g(_ id: String, _ date: String, _ time: String, _ title: String, _ amount: Double, _ cat: String, _ note: String = "") -> Tx {
+            Tx(id: id, type: .expense, amount: amount, accountId: rev, categoryId: cat, date: date, time: time, title: title, note: note)
+        }
+        return [
+            g("buiw1xzldej", "2026-09-30", "12:00", "Monster", 1.90, "c_snack"),
+            Tx(id: "a1cd2romrpc", type: .income, amount: 1.50, accountId: rev, categoryId: "i_bizum", date: "2026-09-30", time: "12:05", title: "Monster Alvaro", note: "Bizum"),
+            g("jexdq2b1zcm", "2026-09-30", "18:00", "Aceite de Rosa Mosqueta", 10.95, "c_salud", "Farmacia Méjico"),
+            g("qk7blpp1phe", "2026-10-01", "10:00", "Alimentación", 2.00, "c_super"),
+            g("wsxyh7o8d0e", "2026-10-01", "21:00", "Burguer Ruta 13", 16.90, "c_rest"),
+            g("xpxqzqqbpnq", "2026-10-01", "13:00", "Empanadilla Dia", 2.98, "c_super"),
+            g("i1c71f1vxwe", "2026-10-02", "12:00", "Google Play Console", 22.28, "c_formacion"),
+            g("l3xre2g80bl", "2026-10-02", "18:00", "Monster", 3.02, "c_snack"),
+        ]
+    }
+
+    /// pasa los datos guardados con la versión 3 de los datos de partida a la 4 sin tocar lo que haya apuntado el usuario
+    static func migrate(_ s: inout AppState) {
+        if s.seed < 4 {
+            s.txs.removeAll { $0.type == .adjust && $0.title == "Movimientos del 1 y 2 de octubre" }
+            let have = Set(s.txs.map(\.id))
+            s.txs += oldTxs("a_revolut").filter { !have.contains($0.id) }
+            let base = categories()
+            for c in base where !s.categories.contains(where: { $0.id == c.id }) { s.categories.append(c) }
+            for (id, b) in ["c_rest": 100.0, "c_coche": 200, "c_ocio": 100, "c_compras": 100] {
+                if let i = s.categories.firstIndex(where: { $0.id == id }), s.categories[i].budget == 0 { s.categories[i].budget = b }
+            }
+            if !s.goals.contains(where: { $0.id == "o_noruega" }) {
+                s.goals.append(Goal(id: "o_noruega", name: "Noruega", icon: "🇳🇴", color: "#ff8686", target: 5000, deadline: "2027-09-01", accountId: "a_tr"))
+            }
+            s.seed = 4
+        }
     }
 }

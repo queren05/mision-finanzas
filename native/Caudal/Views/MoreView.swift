@@ -490,17 +490,18 @@ struct GoalsList: View {
                                     if !g.deadline.isEmpty { Text("Para el \(Day.header(g.deadline))").font(.caption).foregroundStyle(.secondary) }
                                 }
                                 Spacer()
-                                Text("\(Int((g.saved / max(g.target, 0.01) * 100).rounded())) %").font(.title3.weight(.heavy)).foregroundStyle(Color(hex: g.color))
+                                Text("\(Int((store.saved(g) / max(g.target, 0.01) * 100).rounded())) %").font(.title3.weight(.heavy)).foregroundStyle(Color(hex: g.color))
                             }
-                            ProgressBar(value: g.saved / max(g.target, 0.01), color: Color(hex: g.color), height: 12)
+                            ProgressBar(value: store.saved(g) / max(g.target, 0.01), color: Color(hex: g.color), height: 12)
                             HStack {
-                                AmountText(value: g.saved, font: .subheadline.weight(.semibold))
+                                AmountText(value: store.saved(g), font: .subheadline.weight(.semibold))
                                 Spacer()
                                 Text("de \(Money.eur(g.target))").font(.subheadline).foregroundStyle(.secondary)
                             }
-                            if !g.deadline.isEmpty, g.saved < g.target {
+                            if let id = g.accountId, let a = store.account(id) { Text("Se mide con el saldo de \(a.name)").font(.caption).foregroundStyle(.secondary) }
+                            if !g.deadline.isEmpty, store.saved(g) < g.target {
                                 let months = max(1, Day.cal.dateComponents([.month], from: Date(), to: Day.date(g.deadline)).month ?? 1)
-                                Text("Aparta \(Money.eur((g.target - g.saved) / Double(months))) al mes").font(.footnote.weight(.semibold)).foregroundStyle(Color(hex: g.color))
+                                Text("Aparta \(Money.eur((g.target - store.saved(g)) / Double(months))) al mes").font(.footnote.weight(.semibold)).foregroundStyle(Color(hex: g.color))
                             }
                         }
                         .card()
@@ -543,6 +544,13 @@ struct GoalEditor: View {
                     Toggle("Con fecha límite", isOn: $hasDeadline.animation())
                     if hasDeadline { DatePicker("Fecha", selection: $deadline, displayedComponents: .date) }
                 }
+                Section("Se mide con") {
+                    Picker("Origen", selection: Binding(get: { g.accountId ?? "" }, set: { g.accountId = $0.isEmpty ? nil : $0 })) {
+                        Text("Aportaciones a mano").tag("")
+                        ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) }
+                    }
+                }
+                if g.accountId == nil {
                 Section("Ahorrado: \(Money.eur(g.saved))") {
                     HStack {
                         TextField("Importe", text: $add).keyboardType(.decimalPad)
@@ -550,6 +558,7 @@ struct GoalEditor: View {
                         Button("Quitar") { if let v = Money.parse(add) { withAnimation { g.saved = max(0, g.saved - v) }; add = ""; Haptic.tap() } }
                     }
                     .buttonStyle(.bordered)
+                }
                 }
                 Section("Color") { ColorRow(color: $g.color) }
                 if original != nil { Section { Button("Eliminar objetivo", role: .destructive) { askDelete = true } } }

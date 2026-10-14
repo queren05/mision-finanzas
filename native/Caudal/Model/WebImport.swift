@@ -60,7 +60,8 @@ enum WebImport {
         }
         for g in (root["goals"] as? [[String: Any]]) ?? [] {
             st.goals.append(Goal(id: s(g, "id", UUID().uuidString), name: s(g, "name", "Objetivo"), icon: s(g, "icon", "🎯"), color: s(g, "color", "#f0c46a"),
-                                 target: n(g, "target"), saved: n(g, "manual"), deadline: s(g, "deadline")))
+                                 target: n(g, "target"), saved: n(g, "manual"), deadline: s(g, "deadline"),
+                                 accountId: (g["source"] as? [String: Any]).flatMap { s($0, "t") == "account" ? $0["id"] as? String : nil }))
         }
         if let set = root["settings"] as? [String: Any] {
             let name = s(set, "name")
