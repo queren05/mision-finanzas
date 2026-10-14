@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Usar el Xcode más reciente (SDK de iOS 26: Liquid Glass)
+      - name: "Usar el Xcode más reciente (SDK de iOS 26, Liquid Glass)"
         run: |
           X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); [ -n "$X" ] || X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$X"; xcodebuild -version
