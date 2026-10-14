@@ -293,7 +293,11 @@ struct TxEditor: View {
     private func load() {
         accountId = store.state.accounts.first?.id ?? ""
         toAccountId = store.accounts.dropFirst().first?.id ?? accountId
-        guard let o = original else { return }
+        guard let o = original else {
+            let args = ProcessInfo.processInfo.arguments   // (capturas automáticas: -amount 123,45)
+            if let i = args.firstIndex(of: "-amount"), i + 1 < args.count { digits = args[i + 1] }
+            return
+        }
         type = o.type
         digits = Money.num(abs(o.amount)).replacingOccurrences(of: ".", with: "")
         if digits.hasSuffix(",00") { digits.removeLast(3) }
