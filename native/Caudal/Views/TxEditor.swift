@@ -120,17 +120,30 @@ struct TxEditor: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(type == .expense ? "−" : type == .income ? "+" : "")
                     .foregroundStyle(color(type))
-                TextField("0", text: $digits)
-                    .keyboardType(.decimalPad)
-                    .focused($amountFocused)
-                    .fixedSize()
-                    .multilineTextAlignment(.center)
-                    .onChange(of: digits) { _, v in let c = clean(v); if c != v { digits = c } }
+                // se ve siempre al mismo tamaño; lo que se teclea va a un campo invisible con el teclado del iPhone
+                Text(digits.isEmpty ? "0" : digits)
+                    .foregroundStyle(digits.isEmpty ? Color.secondary : Color.primary)
+                    .contentTransition(.numericText())
+                    .overlay(alignment: .trailing) {
+                        if amountFocused {
+                            Capsule().fill(color(type)).frame(width: 3, height: 52).offset(x: 6)
+                                .modifier(Blink())
+                        }
+                    }
                 Text("€").foregroundStyle(.secondary)
             }
-            .font(.system(size: 60, weight: .bold, design: .rounded))
+            // el mismo tamaño para todo (solo baja un punto, a la vez, si el número es muy largo)
+            .font(.system(size: digits.count > 8 ? 44 : (digits.count > 6 ? 52 : 60), weight: .bold, design: .rounded))
             .monospacedDigit()
-            .lineLimit(1).minimumScaleFactor(0.4)
+            .lineLimit(1)
+            .background {
+                TextField("", text: $digits)
+                    .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .onChange(of: digits) { _, v in let c = clean(v); if c != v { digits = c } }
+            }
             .modifier(Shake(animatable: CGFloat(shake)))
             .contentShape(Rectangle())
             .onTapGesture { amountFocused = true }
@@ -310,6 +323,15 @@ struct TxEditor: View {
         Haptic.success()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { saved = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) { dismiss() }
+    }
+}
+
+/// cursor que parpadea
+struct Blink: ViewModifier {
+    @State private var on = true
+    func body(content: Content) -> some View {
+        content.opacity(on ? 1 : 0)
+            .onAppear { withAnimation(.easeInOut(duration: 0.55).repeatForever()) { on = false } }
     }
 }
 
