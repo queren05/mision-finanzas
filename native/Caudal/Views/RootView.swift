@@ -63,6 +63,18 @@ struct RootView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: store.lastDeleted)
         .sheet(isPresented: $newTx) { TxEditor(original: nil) }
         .task {
+            // (capturas automáticas: -tab txs|invest|stats|more, -new abre el teclado de apuntar)
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
+                switch args[i + 1] {
+                case "txs": tab = .txs
+                case "invest": tab = .invest
+                case "stats": tab = .stats
+                case "more": tab = .more
+                default: break
+                }
+            }
+            if args.contains("-new") { newTx = true }
             await Prices.refresh(store)
         }
     }

@@ -74,6 +74,12 @@ struct TransactionsView: View {
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: typeFilter)
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: accountFilter)
             .sheet(item: $editing) { TxEditor(original: $0) }
+            .task {
+                if ProcessInfo.processInfo.arguments.contains("-askdelete"), let t = groups.first?.items.first {
+                    try? await Task.sleep(nanoseconds: 1_200_000_000)
+                    pendingDelete = t; askDelete = true
+                }
+            }
             .confirmationDialog(deleteTitle, isPresented: $askDelete, titleVisibility: .visible, presenting: pendingDelete) { t in
                 Button("Eliminar", role: .destructive) {
                     Haptic.heavy()
