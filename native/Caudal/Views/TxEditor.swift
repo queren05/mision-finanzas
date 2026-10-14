@@ -20,6 +20,7 @@ struct TxEditor: View {
     @State private var saved = false
     @State private var askDelete = false
     @FocusState private var titleFocused: Bool
+    @FocusState private var amountFocused: Bool
     @Namespace private var ns
 
     private var amount: Double { Money.parse(digits) ?? 0 }
@@ -33,12 +34,10 @@ struct TxEditor: View {
                     amountDisplay
                     if type == .transfer { transferAccounts } else { categoryGrid; accountPicker }
                     details
-                    if !titleFocused { keypad.transition(.move(edge: .bottom).combined(with: .opacity)) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
                 .animation(.spring(response: 0.4, dampingFraction: 0.82), value: type)
-                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: titleFocused)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Color(.systemGroupedBackground))
@@ -48,6 +47,11 @@ struct TxEditor: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { save() } label: { Text("Guardar").bold() }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button { amountFocused = false; titleFocused = false } label: { Text("Listo") }
+                    Button { save() } label: { Label("Guardar", systemImage: "checkmark.circle.fill").labelStyle(.titleAndIcon).bold() }
                 }
                 if original != nil {
                     ToolbarItem(placement: .bottomBar) {
@@ -68,7 +72,10 @@ struct TxEditor: View {
             .overlay { if saved { SavedBadge().transition(.scale(scale: 0.6).combined(with: .opacity)) } }
         }
         .presentationDragIndicator(.visible)
-        .onAppear(perform: load)
+        .onAppear {
+            load()
+            if original == nil { DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { amountFocused = true } }
+        }
     }
 
     // MARK: piezas
@@ -113,14 +120,20 @@ struct TxEditor: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(type == .expense ? "−" : type == .income ? "+" : "")
                     .foregroundStyle(color(type))
-                Text(digits.isEmpty ? "0" : digits)
-                    .contentTransition(.numericText())
+                TextField("0", text: $digits)
+                    .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .fixedSize()
+                    .multilineTextAlignment(.center)
+                    .onChange(of: digits) { _, v in let c = clean(v); if c != v { digits = c } }
                 Text("€").foregroundStyle(.secondary)
             }
             .font(.system(size: 60, weight: .bold, design: .rounded))
             .monospacedDigit()
             .lineLimit(1).minimumScaleFactor(0.4)
             .modifier(Shake(animatable: CGFloat(shake)))
+            .contentShape(Rectangle())
+            .onTapGesture { amountFocused = true }
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: digits)
             if let a = store.account(accountId), type != .transfer {
                 Text("Saldo de \(a.name): \(Money.eur(store.balance(a)))").font(.footnote).foregroundStyle(.secondary)
@@ -238,52 +251,20 @@ struct TxEditor: View {
         return Array(store.knownTitles.filter { q.isEmpty || ($0.lowercased().hasPrefix(q) && $0.lowercased() != q) }.prefix(8))
     }
 
-    private var keypad: some View {
-        let keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"]
-        return VStack(spacing: 10) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                ForEach(keys, id: \.self) { k in
-                    Button { press(k) } label: {
-                        Group {
-                            if k == "⌫" { Image(systemName: "delete.left.fill") } else { Text(k) }
-                        }
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity).frame(height: 58)
-                        .background(Color.cardBG, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    }
-                    .buttonStyle(PressableStyle(scale: 0.88))
-                    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
-                        if k == "⌫" { Haptic.heavy(); withAnimation { digits = "" } }
-                    })
-                }
-            }
-            Button(action: save) {
-                Label(original == nil ? "Guardar" : "Guardar cambios", systemImage: "checkmark")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity).frame(height: 58)
-                    .foregroundStyle(.black)
-                    .background(color(type).gradient, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            }
-            .buttonStyle(PressableStyle())
-            .opacity(amount > 0 ? 1 : 0.5)
-        }
-    }
-
     // MARK: lógica
 
-    private func press(_ k: String) {
-        Haptic.tap()
-        var d = digits
-        switch k {
-        case "⌫": if !d.isEmpty { d.removeLast() }
-        case ",":
-            if !d.contains(",") { d = (d.isEmpty ? "0" : d) + "," }
-        default:
-            if let comma = d.firstIndex(of: ","), d.distance(from: comma, to: d.endIndex) > 2 { shakeIt(); return }
-            if d.replacingOccurrences(of: ",", with: "").count >= 9 { shakeIt(); return }
-            if d == "0" { d = k } else { d += k }
+    /// deja solo números y una coma con dos decimales como mucho
+    private func clean(_ v: String) -> String {
+        var out = ""; var comma = false; var dec = 0
+        for ch in v.replacingOccurrences(of: ".", with: ",") {
+            if ch == "," { if !comma { comma = true; out += out.isEmpty ? "0," : "," } ; continue }
+            guard ch.isNumber else { continue }
+            if comma { if dec >= 2 { continue }; dec += 1 }
+            if !comma && out == "0" { out = "" }
+            if !comma && out.count >= 9 { continue }
+            out.append(ch)
         }
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { digits = d }
+        return out
     }
 
     private func shakeIt() {
