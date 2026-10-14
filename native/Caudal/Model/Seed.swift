@@ -2,7 +2,7 @@ import Foundation
 
 /// Datos de partida: categorías por defecto y las cuentas y movimientos reales de David (Revolut y Trade Republic, octubre de 2026).
 enum Seed {
-    static let version = 4
+    static let version = 5
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -10,7 +10,7 @@ enum Seed {
             ("c_rest", "Restaurantes", "🍽️", "restaurante, taberna, bar, sushi, glovo, just eat, uber eats, burger king, mcdonald, telepizza, kfc"),
             ("c_snack", "Cafés y snacks", "☕", "arbitrade, alliance vending, vending, starbucks, cafeteria"),
             ("c_transp", "Transporte", "🚇", "metro, renfe, emt, crtm, cabify, uber, bolt, blablacar, alsa"),
-            ("c_coche", "Coche y gasolina", "⛽", "e. s, e.s, estacion de servicio, repsol, cepsa, moeve, galp, shell, gasolinera, parking, itv, peaje"),
+            ("c_coche", "Coche y gasolina", "⛽", "easypark, e. s, e.s, estacion de servicio, repsol, cepsa, moeve, galp, shell, gasolinera, parking, itv, peaje"),
             ("c_casa", "Vivienda", "🏠", "alquiler, hipoteca, comunidad, ibi"),
             ("c_fact", "Facturas", "💡", "iberdrola, endesa, naturgy, movistar, vodafone, orange, digi, pepephone"),
             ("c_subs", "Suscripciones", "📺", "netflix, spotify, hbo, disney, amazon prime, youtube premium, icloud, chatgpt"),
@@ -32,6 +32,7 @@ enum Seed {
             ("i_bizum", "Bizum recibido", "📲", "bizum de"),
             ("i_reemb", "Reembolsos", "↩️", "refund, reembolso, devolucion"),
             ("i_familia", "Familia", "👨‍👩‍👦", "mama, papa"),
+            ("i_pareja", "Pareja", "❤️", "miamor"),
             ("i_int", "Intereses y dividendos", "📈", "intereses, dividendo"),
             ("i_ventas", "Ventas", "🏷️", "wallapop, vinted"),
             ("i_otros", "Otros ingresos", "➕", ""),
@@ -48,7 +49,7 @@ enum Seed {
         s.seed = version
         s.categories = categories()
         let rev = Account(id: "a_revolut", name: "Revolut", type: .corriente, initial: 115.10, color: "#8fb4ff", icon: "🏦", order: 0)
-        let conj = Account(id: "a_conjunta", name: "Conjunta", type: .ahorro, initial: 0, color: "#f59fc4", icon: "💞", order: 1, note: "Bolsillo conjunto de Revolut")
+        let conj = Account(id: "a_conjunta", name: "Conjunta", type: .ahorro, initial: 4.74, color: "#f59fc4", icon: "💞", order: 1, note: "Bolsillo conjunto de Revolut")
         let tr = Account(id: "a_tr", name: "Trade Republic", type: .ahorro, initial: 500, color: "#e4b3cb", icon: "🐷", order: 2, note: "Efectivo remunerado")
         let etf = Account(id: "a_etf", name: "TR · ETF", type: .broker, initial: 0, color: "#6fd49b", icon: "📊", order: 3)
         s.accounts = [rev, conj, tr, etf]
@@ -78,7 +79,7 @@ enum Seed {
         func t(_ date: String, _ time: String, _ from: String, _ to: String, _ amount: Double, _ title: String) -> Tx {
             Tx(type: .transfer, amount: amount, accountId: from, toAccountId: to, date: date, time: time, title: title)
         }
-        s.txs = oldTxs(rev.id) + [
+        s.txs = oldTxs(rev.id) + jointTxs() + [
             g("2026-10-02", "22:25", "Alfonso", 3, "c_amigos", "Bizum"),
             // 3 de octubre
             g("2026-10-03", "14:28", "Miamor", 17.29, "c_super", "Mercadona"),
@@ -145,6 +146,17 @@ enum Seed {
         ]
     }
 
+    /// cuenta conjunta (con Noelia) en octubre: empezó el mes con 4,74 €
+    static func jointTxs() -> [Tx] {
+        let c = "a_conjunta"
+        return [
+            Tx(id: "cj_miamor_1004", type: .income, amount: 10, accountId: c, categoryId: "i_pareja", date: "2026-10-04", time: "21:03", title: "Miamor", note: "Aportación a la conjunta"),
+            Tx(id: "cj_spotify_1005", type: .expense, amount: 16.99, accountId: c, categoryId: "c_subs", date: "2026-10-05", time: "13:05", title: "Spotify", note: "Pagó Noelia G"),
+            Tx(id: "cj_easypark_1007", type: .expense, amount: 1.42, accountId: c, categoryId: "c_coche", date: "2026-10-07", time: "07:27", title: "EasyPark", note: "Aparcamiento"),
+            Tx(id: "cj_easypark_1008", type: .expense, amount: 1.42, accountId: c, categoryId: "c_coche", date: "2026-10-08", time: "05:45", title: "EasyPark", note: "Aparcamiento"),
+        ]
+    }
+
     /// pasa los datos guardados con la versión 3 de los datos de partida a la 4 sin tocar lo que haya apuntado el usuario
     static func migrate(_ s: inout AppState) {
         if s.seed < 4 {
@@ -160,6 +172,13 @@ enum Seed {
                 s.goals.append(Goal(id: "o_noruega", name: "Noruega", icon: "🇳🇴", color: "#ff8686", target: 5000, deadline: "2027-09-01", accountId: "a_tr"))
             }
             s.seed = 4
+        }
+        if s.seed < 5 {
+            if let i = s.accounts.firstIndex(where: { $0.id == "a_conjunta" }), s.accounts[i].initial == 0 { s.accounts[i].initial = 4.74 }
+            for c in categories() where !s.categories.contains(where: { $0.id == c.id }) { s.categories.append(c) }
+            let have = Set(s.txs.map(\.id))
+            s.txs += jointTxs().filter { !have.contains($0.id) }
+            s.seed = 5
         }
     }
 }
