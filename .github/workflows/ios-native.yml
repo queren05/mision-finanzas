@@ -60,7 +60,7 @@ jobs:
           APP=$(find "$RUNNER_TEMP/sim/Build/Products" -name 'Caudal.app' -type d | head -1)
           xcrun simctl install "$DEV" "$APP"
           mkdir -p "$GITHUB_WORKSPACE/out"
-          shot() { xcrun simctl terminate "$DEV" es.david.caudal 2>/dev/null; xcrun simctl launch "$DEV" es.david.caudal "$@" >/dev/null; sleep 9; }
+          shot() { xcrun simctl terminate "$DEV" es.david.caudal 2>/dev/null || true; xcrun simctl launch "$DEV" es.david.caudal "$@" >/dev/null || true; sleep 9; }
           shot -tab home;   xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/1-inicio.png"
           shot -tab txs;    xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/2-movimientos.png"
           shot -tab txs -askdelete; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/3-eliminar.png"
@@ -75,5 +75,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete caudal-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create caudal-latest out/Caudal.ipa out/*.png --target "$GITHUB_SHA" --title "Caudal 3 (nativa) · IPA sin firmar" \
+          gh release create caudal-latest out/Caudal.ipa $(ls out/*.png 2>/dev/null) --target "$GITHUB_SHA" --title "Caudal 3 (nativa) · IPA sin firmar" \
             --notes "Build ${{ github.run_number }} · instálala con KSign o Sideloadly"
