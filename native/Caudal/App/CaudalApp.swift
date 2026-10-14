@@ -18,6 +18,7 @@ struct CaudalApp: App {
                 }
             }
             .environment(store)
+            .environment(\.locale, Locale(identifier: "es_ES"))
             .tint(Color(hex: store.state.settings.accent))
             .preferredColorScheme(.dark)
             .onAppear { if store.state.settings.faceID { locked = true; unlock() } }

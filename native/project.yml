@@ -1,6 +1,7 @@
 name: Caudal
 options:
   bundleIdPrefix: es.david
+  developmentLanguage: es
   deploymentTarget:
     iOS: "17.0"
 settings:
@@ -23,6 +24,8 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Caudal
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: es
+        DEVELOPMENT_LANGUAGE: es
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Para que solo tú puedas abrir Caudal."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
