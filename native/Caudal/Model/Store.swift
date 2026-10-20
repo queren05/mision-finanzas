@@ -387,7 +387,7 @@ struct PendingTx: Codable { var amount: Double; var merchant: String; var card: 
 /// buzón de gastos que llegan desde Atajos
 enum AutoInbox {
     static var url: URL {
-        let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetData.group)
+        let dir = WidgetData.sharedDir
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return dir.appendingPathComponent("inbox.json")
     }

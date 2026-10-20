@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Lo que la app deja preparado para los widgets de la pantalla de inicio (en el App Group compartido)
 struct WidgetData: Codable {
@@ -23,16 +24,44 @@ struct WidgetData: Codable {
     var accent = "#e4b3cb"
 
     static let group = "group.es.david.caudal"
-    static var url: URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group)?.appendingPathComponent("widget.json")
+    /// carpeta compartida con el widget: el App Group que tenga de verdad la firma (las apps de instalar a veces le cambian el nombre)
+    static let sharedDir: URL? = {
+        for id in [group] + profileGroups() {
+            guard let u = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: id) else { continue }
+            let probe = u.appendingPathComponent(".probe")
+            if (try? Data("ok".utf8).write(to: probe)) != nil { return u }
+        }
+        return nil
+    }()
+    /// grupos que trae el perfil de firma metido en la app (embedded.mobileprovision)
+    static func profileGroups() -> [String] {
+        guard let p = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let d = try? Data(contentsOf: p), let s = String(data: d, encoding: .isoLatin1),
+              let a = s.range(of: "<?xml"), let b = s.range(of: "</plist>"),
+              let plist = try? PropertyListSerialization.propertyList(from: Data(s[a.lowerBound..<b.upperBound].utf8), format: nil) as? [String: Any],
+              let ent = plist["Entitlements"] as? [String: Any] else { return [] }
+        return (ent["com.apple.security.application-groups"] as? [String]) ?? []
     }
+    static var url: URL? { sharedDir?.appendingPathComponent("widget.json") }
+
+    /// si no hay carpeta compartida: portapapeles privado de Caudal (lo comparten la app y el widget al ir firmados igual)
+    private static let pbName = UIPasteboard.Name("es.david.caudal.widget")
+    private static let pbType = "es.david.caudal.widget"
+
     static func load() -> WidgetData? {
-        guard let u = url, let d = try? Data(contentsOf: u) else { return nil }
-        return try? JSONDecoder().decode(WidgetData.self, from: d)
+        if let u = url, let d = try? Data(contentsOf: u), let w = try? JSONDecoder().decode(WidgetData.self, from: d) { return w }
+        if let d = UIPasteboard(name: pbName, create: false)?.data(forPasteboardType: pbType), let w = try? JSONDecoder().decode(WidgetData.self, from: d) { return w }
+        return nil
     }
     func save() {
-        guard let u = WidgetData.url, let d = try? JSONEncoder().encode(self) else { return }
-        try? d.write(to: u, options: .atomic)
+        guard let d = try? JSONEncoder().encode(self) else { return }
+        if let u = WidgetData.url { try? d.write(to: u, options: .atomic) }
+        UIPasteboard(name: WidgetData.pbName, create: true)?.setData(d, forPasteboardType: WidgetData.pbType)
+    }
+    /// cómo está llegando la información al widget (para Más → Widgets)
+    static var link: String {
+        if sharedDir != nil { return "Carpeta compartida" }
+        return UIPasteboard(name: pbName, create: false)?.data(forPasteboardType: pbType) != nil ? "Portapapeles privado" : "Sin enlace"
     }
 
     static let sample = WidgetData(netWorth: 1832.40, cash: 232.58, invest: 1599.82, investChange: 0.84,

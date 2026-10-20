@@ -33,6 +33,7 @@ struct WidgetsGallery: View {
             Label("Toca «Editar» → «Añadir widget»", systemImage: "2.circle.fill")
             Label("Busca Caudal y elige el que quieras", systemImage: "3.circle.fill")
             Label("«Gastos del mes» también va en la pantalla de bloqueo", systemImage: "lock.circle.fill")
+            Label("Enlace: \(WidgetData.link)", systemImage: "link.circle.fill").foregroundStyle(.secondary)
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
