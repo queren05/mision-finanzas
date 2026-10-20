@@ -125,6 +125,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(Money.int(store.s.km)).font(.system(size: 40, weight: .bold, design: .rounded)).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.6).layoutPriority(1)
                             .contentTransition(.numericText(value: Double(store.s.km)))
                         Text("km").font(.headline).foregroundStyle(.secondary)
                     }

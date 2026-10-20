@@ -26,6 +26,7 @@ struct MoreView: View {
                 }
                 Section("Gestión") {
                     NavigationLink { StatsView(embedded: true) } label: { row("Análisis", "chart.pie.fill", .green, "") }
+                    NavigationLink { WorkView() } label: { row("Horas trabajadas", "briefcase.fill", .teal, Hours.dec(store.summary(store.shifts(month: Day.monthKey(Day.today))).totalMin) + " h") }
                     NavigationLink { AccountsList() } label: { row("Cuentas", "building.columns.fill", .blue, "\(store.accounts.count)") }
                     NavigationLink { CategoriesList() } label: { row("Categorías y presupuestos", "square.grid.2x2.fill", .orange, "\(store.state.categories.count)") }
                     NavigationLink { RecurringList() } label: { row("Recurrentes", "repeat.circle.fill", .purple, "\(store.state.recurring.filter(\.active).count)") }

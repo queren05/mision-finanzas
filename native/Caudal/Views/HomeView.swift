@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var selected: Date? = nil
     @State private var editing: Tx? = nil
     @State private var showStats = false
+    @State private var showWork = false
 
     var body: some View {
         NavigationStack {
@@ -14,6 +15,7 @@ struct HomeView: View {
                 VStack(spacing: 22) {
                     hero.appear(0)
                     accountsStrip.appear(0.05)
+                    if !store.state.companies.isEmpty { WorkCard { showWork = true }.appear(0.08) }
                     monthCard.appear(0.1)
                     categoriesCard.appear(0.15)
                     upcomingCard.appear(0.2)
@@ -38,6 +40,8 @@ struct HomeView: View {
             }
             .navigationDestination(for: Account.self) { AccountDetail(accountId: $0.id) }
             .navigationDestination(isPresented: $showStats) { StatsView(embedded: true) }
+            .navigationDestination(isPresented: $showWork) { WorkView() }
+            .task { if ProcessInfo.processInfo.arguments.contains("-work") { showWork = true } }
             .sheet(item: $editing) { TxEditor(original: $0) }
         }
     }

@@ -252,11 +252,13 @@ struct AppState: Codable {
     var snapshots: [Snapshot] = []
     var people: [Person] = []
     var debts: [DebtMove] = []
+    var companies: [Company] = []
+    var shifts: [Shift] = []
 
     init() {}
 
     // lee también los datos guardados por versiones anteriores (a las que les faltan campos nuevos)
-    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts }
+    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts, companies, shifts }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 3
@@ -272,5 +274,7 @@ struct AppState: Codable {
         snapshots = try c.decodeIfPresent([Snapshot].self, forKey: .snapshots) ?? []
         people = try c.decodeIfPresent([Person].self, forKey: .people) ?? []
         debts = try c.decodeIfPresent([DebtMove].self, forKey: .debts) ?? []
+        companies = try c.decodeIfPresent([Company].self, forKey: .companies) ?? []
+        shifts = try c.decodeIfPresent([Shift].self, forKey: .shifts) ?? []
     }
 }

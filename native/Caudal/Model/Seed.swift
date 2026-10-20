@@ -2,7 +2,7 @@ import Foundation
 
 /// Datos de partida: categorías por defecto y las cuentas y movimientos reales de David (Revolut y Trade Republic, octubre de 2026).
 enum Seed {
-    static let version = 5
+    static let version = 6
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -125,6 +125,7 @@ enum Seed {
             // Trade Republic: el efectivo disponible es de 100,00 € (con los intereses cobrados)
             Tx(type: .adjust, amount: 0.82, accountId: tr.id, date: "2026-10-13", time: "01:38", title: "Intereses de Trade Republic", note: "Cuadra el efectivo disponible (100,00 €)"),
         ]
+        s.companies = [workCompany()]; s.shifts = workShifts()
         s.goals = [Goal(id: "o_noruega", name: "Noruega", icon: "🇳🇴", color: "#ff8686", target: 5000, deadline: "2027-09-01", accountId: tr.id)]
         return s
     }
@@ -145,6 +146,10 @@ enum Seed {
             g("l3xre2g80bl", "2026-10-02", "18:00", "Monster", 3.02, "c_snack"),
         ]
     }
+
+    /// la ETT con sus precios por hora y el primer turno que apuntó David (16 de octubre, de 16:00 a 23:00)
+    static func workCompany() -> Company { Company(id: "e_ett", name: "Mi ETT", color: "#7ac8ff", normalRate: 13.59, nightRate: 16.07, accountId: "a_revolut") }
+    static func workShifts() -> [Shift] { [Shift(id: "t_1016", companyId: "e_ett", date: "2026-10-16", start: 16 * 60, end: 23 * 60)] }
 
     /// cuenta conjunta (con Noelia) en octubre: empezó el mes con 4,74 €
     static func jointTxs() -> [Tx] {
@@ -179,6 +184,10 @@ enum Seed {
             let have = Set(s.txs.map(\.id))
             s.txs += jointTxs().filter { !have.contains($0.id) }
             s.seed = 5
+        }
+        if s.seed < 6 {
+            if s.companies.isEmpty { s.companies = [workCompany()]; s.shifts += workShifts() }
+            s.seed = 6
         }
     }
 }
