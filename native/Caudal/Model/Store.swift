@@ -212,6 +212,15 @@ final class Store {
     func save(_ c: Category) {
         if let i = state.categories.firstIndex(where: { $0.id == c.id }) { state.categories[i] = c } else { state.categories.append(c) }
     }
+    /// cambia el orden de las categorías de gastos o de ingresos (el resto se queda donde está)
+    func moveCategories(_ kind: CatKind, from: IndexSet, to: Int) {
+        var list = state.categories.filter { $0.kind == kind }
+        list.move(fromOffsets: from, toOffset: to)
+        var it = list.makeIterator()
+        withAnimation(.spring) {
+            for i in state.categories.indices where state.categories[i].kind == kind { if let c = it.next() { state.categories[i] = c } }
+        }
+    }
     func deleteCategory(_ c: Category) {
         for i in state.txs.indices where state.txs[i].categoryId == c.id { state.txs[i].categoryId = nil }
         state.categories.removeAll { $0.id == c.id }

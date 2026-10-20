@@ -50,8 +50,7 @@ struct TxEditor: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button { amountFocused = false; titleFocused = false } label: { Text("Listo") }
-                    Button { save() } label: { Label("Guardar", systemImage: "checkmark.circle.fill").labelStyle(.titleAndIcon).bold() }
+                    Button { amountFocused = false; titleFocused = false } label: { Text("Listo").bold() }
                 }
                 if original != nil {
                     ToolbarItem(placement: .bottomBar) {

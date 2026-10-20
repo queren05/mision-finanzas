@@ -291,6 +291,7 @@ struct CategoriesList: View {
     @State private var kind: CatKind = .expense
     @State private var editing: Category? = nil
     @State private var adding = false
+    @State private var editMode: EditMode = .inactive
     var body: some View {
         List {
             Picker("", selection: $kind.animation()) { ForEach(CatKind.allCases) { Text($0 == .expense ? "Gastos" : "Ingresos").tag($0) } }
@@ -309,9 +310,17 @@ struct CategoriesList: View {
                 }
                 .buttonStyle(.plain)
             }
+            .onMove { from, to in store.moveCategories(kind, from: from, to: to); Haptic.select() }
         }
         .navigationTitle("Categorías")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus") } } }
+        .environment(\.editMode, $editMode)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(editMode.isEditing ? "Hecho" : "Ordenar") { withAnimation { editMode = editMode.isEditing ? .inactive : .active } }
+                    .bold(editMode.isEditing)
+            }
+            ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus") } }
+        }
         .sheet(item: $editing) { CategoryEditor(original: $0, kind: $0.kind) }
         .sheet(isPresented: $adding) { CategoryEditor(original: nil, kind: kind) }
     }
@@ -325,14 +334,23 @@ struct CategoryEditor: View {
     @State private var c = Category(name: "")
     @State private var budget = ""
     @State private var askDelete = false
+    @State private var pickEmoji = false
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    HStack {
-                        TextField("📦", text: $c.icon).frame(width: 44).font(.title)
+                    HStack(spacing: 12) {
+                        Button { pickEmoji = true } label: {
+                            IconBubble(icon: c.icon.isEmpty ? "➕" : c.icon, color: c.color, size: 52)
+                        }
+                        .buttonStyle(.plain)
                         TextField("Nombre", text: $c.name).font(.title3.weight(.semibold))
                     }
+                }
+                Section("Emoji") {
+                    EmojiGrid(selected: $c.icon)
+                }
+                Section {
                     if kind == .expense {
                         LabeledContent("Presupuesto al mes") { TextField("Sin límite", text: $budget).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
                     }
@@ -356,6 +374,7 @@ struct CategoryEditor: View {
                     }.bold().disabled(c.name.isEmpty)
                 }
             }
+            .sheet(isPresented: $pickEmoji) { EmojiSheet(selected: $c.icon) }
             .confirmationDialog("¿Seguro que quieres eliminar «\(c.name)»?", isPresented: $askDelete, titleVisibility: .visible) {
                 Button("Eliminar", role: .destructive) { store.deleteCategory(c); dismiss() }
             } message: { Text("Sus movimientos se quedarán sin categoría.") }
@@ -584,5 +603,74 @@ struct GoalEditor: View {
                 } else { g.color = palette[store.state.goals.count % palette.count] }
             }
         }
+    }
+}
+
+
+// MARK: - Emojis
+
+enum Emojis {
+    static let groups: [(String, String)] = [
+        ("Comida", "🛒🍎🥦🥖🧀🥩🍗🍔🍟🍕🌮🥗🍣🍜🍝🥐🍩🍪🍫🍦☕️🧋🍺🍷🥂🍾🥤🧃"),
+        ("Casa", "🏠🏡🛋️🛏️🧹🧺🧼🪴💡🔌🔥💧🚿🧻🔑🛠️🔨🧰"),
+        ("Transporte", "🚗⛽️🚕🚌🚇🚆✈️🛵🚲🛴🅿️🚙🏍️🚦🛞🧾"),
+        ("Ocio", "🎮🎬🍿🎵🎧🎤🎟️🎳🎯🎲📚📖🎨📷🏖️🏕️🎉🎁🎂🎄"),
+        ("Salud y cuidado", "💊🩺🦷👓💇💅🧴🪒🏋️🧘⚽️🏀🎾🏊🚴"),
+        ("Ropa y compras", "👕👖👗👟👠🧥👜🎒💍⌚️🕶️🛍️📦"),
+        ("Tecnología", "📱💻🖥️⌨️🎧📺🔋🖨️📡🌐☁️"),
+        ("Dinero", "💶💰💳🏦📈📉🪙💸🧾📊💼🏧"),
+        ("Personas", "👨‍👩‍👧👶🧒👫❤️🐶🐱🐾🎓🏫✏️"),
+        ("Otros", "⭐️✅❗️❓🔔📌📎🗂️🗓️⏰🚬🍀🎰🙏🚫"),
+    ]
+    /// separa una cadena en emojis sueltos
+    static func split(_ s: String) -> [String] { s.map(String.init) }
+}
+
+/// rejilla de emojis para elegir uno (con un campo para poner cualquier otro)
+struct EmojiGrid: View {
+    @Binding var selected: String
+    var compact = true
+    @State private var custom = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(compact ? Array(Emojis.groups.prefix(4)) : Emojis.groups, id: \.0) { g in
+                if !compact { Text(g.0).font(.caption.weight(.bold)).foregroundStyle(.secondary) }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 6) {
+                    ForEach(Emojis.split(g.1).prefix(compact ? 8 : 200), id: \.self) { e in
+                        Button { selected = e; Haptic.select() } label: {
+                            Text(e).font(.system(size: 26)).frame(maxWidth: .infinity, minHeight: 38)
+                                .background(selected == e ? Color.accentColor.opacity(0.3) : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            HStack {
+                Image(systemName: "face.smiling").foregroundStyle(.secondary)
+                TextField("Otro emoji (teclado 🌐)", text: $custom)
+                    .onChange(of: custom) { _, v in
+                        if let last = v.last, last.unicodeScalars.contains(where: { $0.properties.isEmojiPresentation || $0.properties.isEmoji && $0.value > 0xFF }) {
+                            selected = String(last); Haptic.select()
+                        }
+                        if v.count > 1 { custom = v.last.map(String.init) ?? "" }
+                    }
+            }
+            .padding(.top, 4)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct EmojiSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selected: String
+    var body: some View {
+        NavigationStack {
+            ScrollView { EmojiGrid(selected: Binding(get: { selected }, set: { selected = $0; dismiss() }), compact: false).padding(16) }
+                .background(Color(.systemGroupedBackground))
+                .navigationTitle("Elige un emoji").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cerrar") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
