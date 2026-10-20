@@ -122,10 +122,11 @@ struct DebtsView: View {
                 }
                 .frame(height: 10)
                 HStack {
-                    Label { AmountText(value: them, font: .footnote.weight(.semibold)) } icon: { Text("Te deben") }.font(.footnote).foregroundStyle(.secondary)
+                    HStack(spacing: 4) { Circle().fill(Color.income).frame(width: 8, height: 8); Text("Te deben").foregroundStyle(.secondary); AmountText(value: them, font: .footnote.weight(.semibold)) }
                     Spacer()
-                    Label { AmountText(value: me, font: .footnote.weight(.semibold)) } icon: { Text("Debes") }.font(.footnote).foregroundStyle(.secondary)
+                    HStack(spacing: 4) { Circle().fill(Color.negative).frame(width: 8, height: 8); Text("Debes").foregroundStyle(.secondary); AmountText(value: me, font: .footnote.weight(.semibold)) }
                 }
+                .font(.footnote)
             }
         }
         .card(20)
