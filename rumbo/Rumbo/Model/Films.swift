@@ -83,37 +83,28 @@ enum FilmSearch {
         var film: Film
     }
 
+    /// sugerencias de IMDb (sin clave): título, año, reparto y póster
     static func search(_ q: String, kind: FilmKind) async -> [Result] {
-        var c = URLComponents(string: "https://itunes.apple.com/search")!
-        c.queryItems = [URLQueryItem(name: "term", value: q), URLQueryItem(name: "country", value: "es"), URLQueryItem(name: "lang", value: "es_es"),
-                        URLQueryItem(name: "limit", value: "25"),
-                        URLQueryItem(name: "media", value: kind == .pelicula ? "movie" : "tvShow"),
-                        URLQueryItem(name: "entity", value: kind == .pelicula ? "movie" : "tvSeason")]
-        guard let url = c.url, let (data, _) = try? await URLSession.shared.data(from: url),
+        let term = q.lowercased().trimmingCharacters(in: .whitespaces)
+        guard let enc = term.addingPercentEncoding(withAllowedCharacters: .alphanumerics),
+              let url = URL(string: "https://v3.sg.media-imdb.com/suggestion/x/\(enc).json"),
+              let (data, _) = try? await URLSession.shared.data(from: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let results = json["results"] as? [[String: Any]] else { return [] }
-        var seen = Set<String>()
-        return results.compactMap { r in
-            let art = (r["artworkUrl100"] as? String ?? "").replacingOccurrences(of: "100x100bb", with: "600x600bb")
-            let year = String((r["releaseDate"] as? String ?? "").prefix(4))
-            var f = Film(kind: kind, title: "")
-            if kind == .pelicula {
-                f.title = r["trackName"] as? String ?? ""
-                f.director = r["artistName"] as? String ?? ""
-                f.runtime = ((r["trackTimeMillis"] as? Int) ?? 0) / 60000
-            } else {
-                f.title = r["artistName"] as? String ?? (r["collectionName"] as? String ?? "")
-                let col = r["collectionName"] as? String ?? ""
-                f.season = col.hasPrefix(f.title) ? String(col.dropFirst(f.title.count)).trimmingCharacters(in: CharacterSet(charactersIn: " ,:-–")) : col
+              let items = json["d"] as? [[String: Any]] else { return [] }
+        return items.compactMap { r in
+            guard let id = r["id"] as? String, id.hasPrefix("tt"), let title = r["l"] as? String else { return nil }
+            let q = (r["q"] as? String ?? "").lowercased()
+            let isSeries = q.contains("series")
+            let isFilm = ["feature", "tv movie", "video", "short"].contains(q)
+            guard kind == .serie ? isSeries : isFilm else { return nil }
+            var f = Film(kind: kind, title: title)
+            f.year = (r["y"] as? Int).map(String.init) ?? ""
+            f.director = r["s"] as? String ?? ""
+            if let img = (r["i"] as? [String: Any])?["imageUrl"] as? String {
+                f.posterURL = img.replacingOccurrences(of: "._V1_.jpg", with: "._V1_UX500_.jpg")
             }
-            f.year = year
-            f.genre = r["primaryGenreName"] as? String ?? ""
-            f.synopsis = r["longDescription"] as? String ?? (r["shortDescription"] as? String ?? "")
-            f.posterURL = art
-            let key = f.title + f.season + f.year
-            guard !f.title.isEmpty, !seen.contains(key) else { return nil }
-            seen.insert(key)
-            return Result(id: key, film: f)
+            if let yr = r["yr"] as? String, kind == .serie { f.season = yr }
+            return Result(id: id, film: f)
         }
     }
 

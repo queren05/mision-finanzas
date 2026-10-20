@@ -61,8 +61,10 @@ struct Poster: View {
                 AsyncImage(url: u) { img in img.resizable().scaledToFill() } placeholder: { fallback }
             } else { fallback }
         }
-        .frame(width: width)
+        .frame(width: width, height: width.map { $0 * 1.5 })
+        .frame(maxWidth: width == nil ? .infinity : nil)
         .aspectRatio(2/3, contentMode: .fit)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(.white.opacity(0.12)))
         .shadow(color: .black.opacity(0.4), radius: 5, y: 3)
@@ -70,7 +72,7 @@ struct Poster: View {
     private var fallback: some View {
         ZStack(alignment: .bottomLeading) {
             LinearGradient(colors: [Color(hex: "#2c3440"), Color(hex: "#14181c")], startPoint: .top, endPoint: .bottom)
-            Text(film.title).font(.system(size: 12, weight: .heavy)).foregroundStyle(.white.opacity(0.9)).lineLimit(4).padding(8)
+            Text(film.title).font(.system(size: (width ?? 80) < 50 ? 7 : 12, weight: .heavy)).foregroundStyle(.white.opacity(0.9)).lineLimit(4).padding((width ?? 80) < 50 ? 3 : 8)
         }
     }
 }
@@ -249,7 +251,7 @@ struct FilmSearchSheet: View {
                                 Poster(film: r.film, width: 46)
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(r.film.title).font(.body.weight(.semibold)).lineLimit(2)
-                                    Text([r.film.year, r.film.kind == .pelicula ? r.film.director : r.film.season].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    Text([r.film.year, r.film.kind == .pelicula ? r.film.director : [r.film.season, r.film.director].filter { !$0.isEmpty }.joined(separator: " · ")].filter { !$0.isEmpty }.joined(separator: " · "))
                                         .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                 }
                                 Spacer()
