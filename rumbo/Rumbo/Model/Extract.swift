@@ -54,6 +54,38 @@ enum Extract {
         return await text(in: cg)
     }
 
+    /// importe total de un ticket o factura (la línea con «total», o el número más alto con decimales)
+    static func total(in text: String) -> Double? {
+        let num = try! NSRegularExpression(pattern: "(\\d{1,3}(?:[.\\s]\\d{3})*|\\d+)[,.](\\d{2})(?!\\d)")
+        func values(_ line: String) -> [Double] {
+            num.matches(in: line, range: NSRange(line.startIndex..., in: line)).compactMap { m in
+                guard let a = Range(m.range(at: 1), in: line), let b = Range(m.range(at: 2), in: line) else { return nil }
+                return Double(line[a].filter(\.isNumber) + "." + line[b])
+            }
+        }
+        let lines = text.components(separatedBy: .newlines)
+        for (i, l) in lines.enumerated() {
+            let low = l.lowercased()
+            guard low.contains("total"), !low.contains("subtotal"), !low.contains("base") else { continue }
+            if let v = values(l).last { return v }
+            if i + 1 < lines.count, let v = values(lines[i + 1]).first { return v }
+        }
+        return lines.flatMap(values).max()
+    }
+
+    /// primera fecha dd/mm/aaaa (o dd-mm-aa) del texto, como yyyy-MM-dd
+    static func date(in text: String) -> String? {
+        let re = try! NSRegularExpression(pattern: "\\b(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4}|\\d{2})\\b")
+        for m in re.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let d = Range(m.range(at: 1), in: text).flatMap({ Int(text[$0]) }), let mo = Range(m.range(at: 2), in: text).flatMap({ Int(text[$0]) }),
+                  var y = Range(m.range(at: 3), in: text).flatMap({ Int(text[$0]) }) else { continue }
+            if y < 100 { y += 2000 }
+            guard (1...31).contains(d), (1...12).contains(mo), (2000...2100).contains(y) else { continue }
+            return String(format: "%04d-%02d-%02d", y, mo, d)
+        }
+        return nil
+    }
+
     /// junta varias páginas escaneadas en un PDF
     static func pdf(from images: [UIImage]) -> Data {
         let doc = PDFDocument()

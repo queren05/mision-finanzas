@@ -182,6 +182,12 @@ struct BrainView: View {
     private func added(_ d: BrainDoc) async {
         var d = d
         if let folder { d.folder = folder }
+        // sin esperar a Claude: total y fecha leídos en el propio iPhone
+        if d.kind != "note" {
+            if d.amount == nil { d.amount = Extract.total(in: d.text) }
+            if let f = Extract.date(in: d.text) { d.docDate = f }
+            if d.amount != nil && folder == nil { d.folder = .recibos }
+        }
         store.save(d); Haptic.success()
         search = ""
         path.append(d)

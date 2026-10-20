@@ -28,7 +28,7 @@ struct RumboApp: App {
             .tint(Color(hex: store.s.settings.accent))
             .preferredColorScheme(.dark)
             .onAppear {
-                if !ProcessInfo.processInfo.arguments.contains("-demo") { store.scheduleNotifications() }
+                if !ProcessInfo.processInfo.arguments.contains("-demo") && !ProcessInfo.processInfo.arguments.contains("-testadd") && !ProcessInfo.processInfo.arguments.contains("-tab") { store.scheduleNotifications() }
                 if store.s.settings.faceID { locked = true; unlock() }
             }
             .onChange(of: phase) { _, p in
