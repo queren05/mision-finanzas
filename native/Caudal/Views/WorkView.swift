@@ -18,9 +18,9 @@ struct WorkView: View {
         let sum = store.summary(list)
         List {
             Section {
-                monthBar.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
-                if store.state.companies.count > 1 { companyChips.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
-                hero(sum).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+                monthBar.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
+                if store.state.companies.count > 1 { companyChips.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden) }
+                hero(sum).listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             Section {
                 ForEach(store.state.companies.filter { company == nil || $0.id == company }) { c in
@@ -86,9 +86,8 @@ struct WorkView: View {
     private var monthBar: some View {
         HStack {
             Button { move(-1) } label: { Image(systemName: "chevron.left.circle.fill").font(.title) }
-            Spacer()
             Text(Day.monthYearLabel(month + "-01")).font(.title3.weight(.bold)).contentTransition(.numericText())
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .center)
             Button { move(1) } label: { Image(systemName: "chevron.right.circle.fill").font(.title) }
         }
         .symbolRenderingMode(.hierarchical)
