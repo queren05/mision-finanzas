@@ -52,9 +52,7 @@ struct MoreView: View {
                     Button { importing = true } label: { Label("Importar copia (también de la versión web)", systemImage: "square.and.arrow.down") }
                     Button { askReset = true } label: { Label("Volver a mis datos de partida", systemImage: "arrow.counterclockwise") }
                     Button(role: .destructive) { askErase = true } label: { Label("Borrar todo", systemImage: "trash") }
-                } header: { Text("Datos") } footer: {
-                    Text("Tus datos se guardan solo en este iPhone. Para pasar lo que tenías en la web: en la web, Más → Copia de seguridad → Exportar JSON, y aquí, Importar copia.")
-                }
+                } header: { Text("Datos") }
                 Section {
                     LabeledContent("Versión", value: "3.0 · nativa")
                 }
@@ -342,7 +340,7 @@ struct CategoryEditor: View {
                 }
                 Section {
                     TextField("mercadona, lidl, …", text: $c.keywords, axis: .vertical)
-                } header: { Text("Palabras clave") } footer: { Text("Si el concepto contiene alguna, se elige esta categoría sola.") }
+                } header: { Text("Palabras clave") }
                 Section("Color") { ColorRow(color: $c.color) }
                 if original != nil { Section { Button("Eliminar categoría", role: .destructive) { askDelete = true } } }
             }

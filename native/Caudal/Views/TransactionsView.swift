@@ -17,8 +17,10 @@ struct TransactionsView: View {
                     monthPicker
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     summary
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
                 ForEach(groups, id: \.day) { g in
@@ -59,7 +61,7 @@ struct TransactionsView: View {
                 if groups.isEmpty {
                     ContentUnavailableView(search.isEmpty ? "Sin movimientos" : "Sin resultados",
                                            systemImage: search.isEmpty ? "tray" : "magnifyingglass",
-                                           description: Text(search.isEmpty ? "Pulsa + para apuntar un gasto." : "Prueba con otra búsqueda."))
+                                           description: nil)
                         .listRowBackground(Color.clear)
                 }
                 Color.clear.frame(height: 70).listRowBackground(Color.clear)

@@ -29,7 +29,7 @@ struct WorkView: View {
                         .onTapGesture { Haptic.tap(); editingCompany = c }
                 }
                 Button { Haptic.tap(); newCompany = true } label: { Label("Añadir empresa", systemImage: "plus.circle.fill") }
-            } header: { Text("Empresas") } footer: { Text("Toca una empresa para cambiar su nombre y lo que pagan la hora normal y la nocturna.") }
+            } header: { Text("Empresas") }
             Section {
                 ForEach(list) { s in
                     shiftRow(s)
@@ -44,10 +44,8 @@ struct WorkView: View {
                             .tint(s.status == .pagado ? .orange : .green)
                         }
                 }
-                if list.isEmpty { Text("No hay turnos este mes. Pulsa + para apuntar uno.").foregroundStyle(.secondary) }
-            } header: { Text("Turnos") } footer: {
-                Text("Desliza a la derecha para marcar pagado o pendiente. El neto es una estimación con las retenciones de cada empresa (Seguridad Social e IRPF); ajústalas en la empresa para que coincida con tu nómina.")
-            }
+                if list.isEmpty { Text("Sin turnos este mes").foregroundStyle(.secondary) }
+            } header: { Text("Turnos") }
             Color.clear.frame(height: 40).listRowBackground(Color.clear)
         }
         .navigationTitle("Horas trabajadas")
@@ -304,8 +302,7 @@ struct ShiftEditor: View {
             Form {
                 if store.state.companies.isEmpty {
                     Section {
-                        Text("¿Para qué empresa has trabajado? Créala con lo que te pagan la hora.").foregroundStyle(.secondary)
-                        Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
+                                                Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
                     }
                 } else {
                     Section("Empresa") {
@@ -329,7 +326,7 @@ struct ShiftEditor: View {
                         LabeledContent("Hora normal (€)") { TextField("13,59", text: $normalText).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
                         LabeledContent("Hora nocturna (€)") { TextField("16,07", text: $nightText).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
                         if rateChanged { Toggle("Guardarlo también como precio de \(store.company(companyId)?.name ?? "la empresa")", isOn: $saveRateInCompany) }
-                    } header: { Text("Cuánto pagan la hora") } footer: { Text("Sale el precio de la empresa. Si este día te pagan otro, cámbialo aquí.") }
+                    } header: { Text("Cuánto pagan la hora") }
                     if let c = store.company(companyId) {
                         let r = Hours.calc(preview, c)
                         Section {
@@ -345,8 +342,6 @@ struct ShiftEditor: View {
                                 }
                             }
                             .animation(.spring, value: r.totalMin)
-                        } footer: {
-                            Text("Las horas nocturnas cuentan de \(Hours.hm(c.nightStart)) a \(Hours.hm(c.nightEnd)). Si sales después de medianoche, cuenta hasta el día siguiente.")
                         }
                     }
                     Section {
@@ -441,7 +436,7 @@ struct PayMonthSheet: View {
                     LabeledContent("Lo que te han pagado") { TextField("0,00", text: $amount).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
                     Toggle("Apuntarlo como ingreso", isOn: $addIncome.animation())
                     if addIncome { Picker("Cuenta", selection: $accountId) { ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) } } }
-                } footer: { Text("Si lo que te pagan no coincide con el neto estimado, ajusta las retenciones de \(company.name).") }
+                }
             }
             .navigationTitle("Cobro de \(Day.month(month + "-01").lowercased())").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -487,9 +482,7 @@ struct CompanyEditor: View {
                         Text("Ninguna").tag("")
                         ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) }
                     }
-                } header: { Text("Para calcular el neto") } footer: {
-                    Text("En una ETT con contrato temporal la Seguridad Social del trabajador ronda el 6,5 %. El IRPF lo ves en tu nómina (suele ser bajo, del 2 al 10 %).")
-                }
+                } header: { Text("Para calcular el neto") }
                 Section("Color") { ColorRow(color: $c.color) }
                 if original != nil { Section { Button("Borrar empresa y sus turnos", role: .destructive) { askDelete = true } } }
             }

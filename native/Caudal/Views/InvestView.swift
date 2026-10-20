@@ -352,10 +352,10 @@ struct AssetEditor: View {
                     TextField(kind == "crypto" ? "Yahoo (BTC-EUR)" : "Símbolo de Yahoo (IUSQ.DE, AAPL…)", text: $ySymbol)
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                     if kind == "stock" { TextField("ISIN (opcional)", text: $isin).textInputAutocapitalization(.characters) }
-                } footer: {
                     HStack {
                         Button("Comprobar precio") { Task { await check() } }
-                        if checking { ProgressView().padding(.leading, 6) }
+                        Spacer()
+                        if checking { ProgressView() }
                         if let found { Text(Money.eur(found)).foregroundStyle(Color.income).bold() }
                     }
                 }

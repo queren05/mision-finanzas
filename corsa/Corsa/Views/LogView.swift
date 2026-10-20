@@ -46,7 +46,7 @@ struct LogView: View {
                         }
                     }
                     if logs.isEmpty {
-                        Text("Aún no has registrado ningún cambio. Cada vez que hagas algo al coche, apúntalo aquí: la app recalcula el próximo cambio.").foregroundStyle(.secondary)
+                        Text("Sin cambios registrados").foregroundStyle(.secondary)
                     }
                 }
             }
@@ -152,7 +152,6 @@ struct FaultsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Lo que más falla en este coche según talleres y foros, y por dónde empezar.").font(.subheadline).foregroundStyle(.secondary)
                     ForEach(Array(store.datos.AVERIAS.enumerated()), id: \.offset) { i, a in
                         FaultCard(a: a).appear(Double(i) * 0.04)
                     }
@@ -243,9 +242,7 @@ struct MoreView: View {
                         LabeledContent { Text(Day.monthYearLabel(store.s.matric)) } label: { Label("Matriculación", systemImage: "calendar") }
                     }
                     Button(role: .destructive) { askReset = true } label: { Label("Borrar todo", systemImage: "trash") }
-                } header: { Text("Datos") } footer: {
-                    Text("Los precios son orientativos (taller independiente en España). Ante la duda manda el manual del coche y el criterio de un taller de confianza.")
-                }
+                } header: { Text("Datos") }
             }
             .navigationTitle("Más")
             .alert("Importar", isPresented: $importing) {

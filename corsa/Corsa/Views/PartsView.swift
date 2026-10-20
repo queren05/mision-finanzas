@@ -33,7 +33,7 @@ struct PartsView: View {
                             }
                     }
                     if list.isEmpty { Text("Nada en esta categoría.").foregroundStyle(.secondary) }
-                } footer: { Text("Desliza una pieza hacia la derecha para apuntar que la has cambiado hoy.") }
+                }
             }
             .navigationTitle("Piezas")
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: filter)

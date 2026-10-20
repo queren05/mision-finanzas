@@ -96,8 +96,6 @@ struct DebtsView: View {
         VStack(spacing: 14) {
             Text("🤝").font(.system(size: 64))
             Text("Que no se te olvide nadie").font(.title2.weight(.bold))
-            Text("Añade a tus amigos y apunta quién te debe y a quién debes. Así nadie se queda con tu dinero.")
-                .multilineTextAlignment(.center).foregroundStyle(.secondary)
             Button { newPerson = true } label: { Label("Añadir a alguien", systemImage: "person.badge.plus").frame(maxWidth: .infinity) }
                 .buttonStyle(.borderedProminent).controlSize(.large)
             Button("Importar de Cuentas Claras") { importing = true }
