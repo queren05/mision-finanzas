@@ -68,6 +68,7 @@ jobs:
           shot -tab invest; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5-inversiones.png"
           shot -tab debts -demodebts;  xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/6-cuentas.png"
           shot -tab home -work; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-horas.png"
+          shot -tab home -work -newshift; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/9-turno.png"
           shot -tab more;   xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-mas.png"
           ls -la "$GITHUB_WORKSPACE/out"
 

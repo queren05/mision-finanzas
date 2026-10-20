@@ -35,6 +35,9 @@ struct Shift: Codable, Identifiable, Hashable {
     var note: String = ""
     var status: PayStatus = .pendiente
     var paidDate: String = ""
+    /// precio por hora de este turno (si no, el de la empresa)
+    var normalRate: Double? = nil
+    var nightRate: Double? = nil
 }
 
 struct ShiftCalc {
@@ -83,7 +86,7 @@ enum Hours {
         var br = max(0, s.breakMin)
         let fromNormal = min(br, normal); normal -= fromNormal; br -= fromNormal
         night = max(0, night - br)
-        let gross = (Double(normal) / 60 * c.normalRate + Double(night) / 60 * c.nightRate)
+        let gross = (Double(normal) / 60 * (s.normalRate ?? c.normalRate) + Double(night) / 60 * (s.nightRate ?? c.nightRate))
         return ShiftCalc(normalMin: normal, nightMin: night, gross: (gross * 100).rounded() / 100)
     }
 

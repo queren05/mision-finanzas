@@ -22,11 +22,14 @@ struct WorkView: View {
                 if store.state.companies.count > 1 { companyChips.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
                 hero(sum).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             }
-            if !store.state.companies.isEmpty {
-                Section("Por empresa") {
-                    ForEach(store.state.companies.filter { company == nil || $0.id == company }) { c in companyRow(c) }
+            Section {
+                ForEach(store.state.companies.filter { company == nil || $0.id == company }) { c in
+                    companyRow(c)
+                        .contentShape(Rectangle())
+                        .onTapGesture { Haptic.tap(); editingCompany = c }
                 }
-            }
+                Button { Haptic.tap(); newCompany = true } label: { Label("Añadir empresa", systemImage: "plus.circle.fill") }
+            } header: { Text("Empresas") } footer: { Text("Toca una empresa para cambiar su nombre y lo que pagan la hora normal y la nocturna.") }
             Section {
                 ForEach(list) { s in
                     shiftRow(s)
@@ -48,7 +51,7 @@ struct WorkView: View {
             Color.clear.frame(height: 40).listRowBackground(Color.clear)
         }
         .navigationTitle("Horas trabajadas")
-        .onAppear { withAnimation { store.hideFAB = true } }
+        .onAppear { withAnimation { store.hideFAB = true }; if ProcessInfo.processInfo.arguments.contains("-newshift") { adding = true } }
         .onDisappear { withAnimation { store.hideFAB = false } }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -172,6 +175,7 @@ struct WorkView: View {
             Circle().fill(Color(hex: c.color)).frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
                 Text(c.name).font(.body.weight(.semibold))
+                Text("Normal \(Money.eur(c.normalRate))/h · Nocturna \(Money.eur(c.nightRate))/h").font(.caption).foregroundStyle(.secondary)
                 Text("\(Hours.dec(w.totalMin)) h · bruto \(Money.eur(w.gross)) · neto \(Money.eur(w.net))").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
@@ -277,18 +281,39 @@ struct ShiftEditor: View {
     @State private var multi = false
     @State private var saved = false
     @State private var askDelete = false
+    @State private var normalText = ""
+    @State private var nightText = ""
+    @State private var saveRateInCompany = false
+    @State private var newCompany = false
+
+    private var normalRate: Double? { Money.parse(normalText) }
+    private var nightRate: Double? { Money.parse(nightText) }
+    private var rateChanged: Bool {
+        guard let c = store.company(companyId) else { return false }
+        return (normalRate.map { abs($0 - c.normalRate) > 0.001 } ?? false) || (nightRate.map { abs($0 - c.nightRate) > 0.001 } ?? false)
+    }
+    private func loadRates() {
+        guard let c = store.company(companyId) else { return }
+        normalText = Money.num(c.normalRate); nightText = Money.num(c.nightRate)
+    }
 
     private func minutes(_ d: Date) -> Int { Calendar.current.component(.hour, from: d) * 60 + Calendar.current.component(.minute, from: d) }
-    private var preview: Shift { Shift(companyId: companyId, date: Day.str(date), start: minutes(start), end: minutes(end), breakMin: breakMin) }
+    private var preview: Shift { Shift(companyId: companyId, date: Day.str(date), start: minutes(start), end: minutes(end), breakMin: breakMin, normalRate: normalRate, nightRate: nightRate) }
 
     var body: some View {
         NavigationStack {
             Form {
                 if store.state.companies.isEmpty {
-                    Section { Text("Primero crea una empresa (botón del edificio arriba en Horas trabajadas).").foregroundStyle(.secondary) }
-                } else {
                     Section {
-                        Picker("Empresa", selection: $companyId) { ForEach(store.state.companies) { Text($0.name).tag($0.id) } }
+                        Text("¿Para qué empresa has trabajado? Créala con lo que te pagan la hora.").foregroundStyle(.secondary)
+                        Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
+                    }
+                } else {
+                    Section("Empresa") {
+                        Picker("¿Para qué empresa?", selection: $companyId) { ForEach(store.state.companies) { Text($0.name).tag($0.id) } }
+                        Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
+                    }
+                    Section {
                         if original == nil { Toggle("Varios días", isOn: $multi.animation()) }
                         if multi {
                             MultiDatePicker("Días", selection: $days).frame(minHeight: 300)
@@ -301,6 +326,11 @@ struct ShiftEditor: View {
                         DatePicker("Salida", selection: $end, displayedComponents: .hourAndMinute)
                         Stepper("Descanso: \(breakMin) min", value: $breakMin, in: 0...240, step: 15)
                     }
+                    Section {
+                        LabeledContent("Hora normal (€)") { TextField("13,59", text: $normalText).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+                        LabeledContent("Hora nocturna (€)") { TextField("16,07", text: $nightText).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+                        if rateChanged { Toggle("Guardarlo también como precio de \(store.company(companyId)?.name ?? "la empresa")", isOn: $saveRateInCompany) }
+                    } header: { Text("Cuánto pagan la hora") } footer: { Text("Sale el precio de la empresa. Si este día te pagan otro, cámbialo aquí.") }
                     if let c = store.company(companyId) {
                         let r = Hours.calc(preview, c)
                         Section {
@@ -317,7 +347,7 @@ struct ShiftEditor: View {
                             }
                             .animation(.spring, value: r.totalMin)
                         } footer: {
-                            Text("Normal \(Money.eur(c.normalRate))/h · Nocturna \(Money.eur(c.nightRate))/h (de \(Hours.hm(c.nightStart)) a \(Hours.hm(c.nightEnd))). Si sales después de medianoche, cuenta hasta el día siguiente.")
+                            Text("Las horas nocturnas cuentan de \(Hours.hm(c.nightStart)) a \(Hours.hm(c.nightEnd)). Si sales después de medianoche, cuenta hasta el día siguiente.")
                         }
                     }
                     Section {
@@ -354,22 +384,33 @@ struct ShiftEditor: View {
                     start = Calendar.current.date(bySettingHour: o.start / 60, minute: o.start % 60, second: 0, of: Date()) ?? Date()
                     end = Calendar.current.date(bySettingHour: (o.end / 60) % 24, minute: o.end % 60, second: 0, of: Date()) ?? Date()
                     breakMin = o.breakMin; note = o.note; status = o.status
+                    loadRates()
+                    if let r = o.normalRate { normalText = Money.num(r) }
+                    if let r = o.nightRate { nightText = Money.num(r) }
                 } else if let last = store.state.shifts.filter({ $0.companyId == companyId }).max(by: { $0.date < $1.date }) {
                     // el último horario de esa empresa, para no tener que escribirlo cada vez
                     start = Calendar.current.date(bySettingHour: last.start / 60, minute: last.start % 60, second: 0, of: Date()) ?? start
                     end = Calendar.current.date(bySettingHour: (last.end / 60) % 24, minute: last.end % 60, second: 0, of: Date()) ?? end
                     breakMin = last.breakMin
                 }
+                if original == nil { loadRates() }
             }
+            .onChange(of: companyId) { _, _ in loadRates(); saveRateInCompany = false }
+            .sheet(isPresented: $newCompany) { CompanyEditor(original: nil) { c in companyId = c.id } }
         }
     }
 
     private func save() {
+        if rateChanged && saveRateInCompany, var c = store.company(companyId) {
+            c.normalRate = normalRate ?? c.normalRate; c.nightRate = nightRate ?? c.nightRate; store.save(c)
+        }
         let dates: [String] = multi ? days.compactMap { Calendar.current.date(from: $0) }.map { Day.str($0) }.sorted() : [Day.str(date)]
         for (i, d) in dates.enumerated() {
             var s = original ?? Shift(companyId: companyId, date: d, start: 0, end: 0)
             if i > 0 { s.id = UUID().uuidString }
             s.companyId = companyId; s.date = d; s.start = minutes(start); s.end = minutes(end); s.breakMin = breakMin; s.note = note
+            s.normalRate = rateChanged && !saveRateInCompany ? normalRate : nil
+            s.nightRate = rateChanged && !saveRateInCompany ? nightRate : nil
             if s.status != status { s.status = status; s.paidDate = status == .pagado ? Day.today : "" }
             store.save(s)
         }
@@ -423,6 +464,7 @@ struct CompanyEditor: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     let original: Company?
+    var onSave: ((Company) -> Void)? = nil
     @State private var c = Company(name: "")
     @State private var normal = ""
     @State private var night = ""
@@ -432,7 +474,7 @@ struct CompanyEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section { TextField("Nombre (p. ej. Adecco)", text: $c.name) }
+                Section("¿Dónde trabajas?") { TextField("Nombre de la empresa (p. ej. Adecco)", text: $c.name) }
                 Section("Precio por hora (bruto)") {
                     LabeledContent("Hora normal (€)") { TextField("13,59", text: $normal).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
                     LabeledContent("Hora nocturna (€)") { TextField("16,07", text: $night).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
@@ -463,7 +505,7 @@ struct CompanyEditor: View {
                         let cal = Calendar.current
                         n.nightStart = cal.component(.hour, from: nStart) * 60 + cal.component(.minute, from: nStart)
                         n.nightEnd = cal.component(.hour, from: nEnd) * 60 + cal.component(.minute, from: nEnd)
-                        store.save(n); Haptic.success(); dismiss()
+                        store.save(n); Haptic.success(); onSave?(n); dismiss()
                     }.bold().disabled(c.name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
