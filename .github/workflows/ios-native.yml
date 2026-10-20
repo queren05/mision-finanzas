@@ -46,6 +46,10 @@ jobs:
           test -d "$APP"
           mkdir -p "$RUNNER_TEMP/pkg/Payload" out
           cp -R "$APP" "$RUNNER_TEMP/pkg/Payload/"
+          P="$RUNNER_TEMP/pkg/Payload/Caudal.app"
+          for X in "$P"/PlugIns/*.appex; do codesign -f -s - --entitlements native/Widgets/Widgets.entitlements "$X"; done
+          codesign -f -s - --entitlements native/Caudal/Caudal.entitlements "$P"
+          codesign -d --entitlements - "$P" 2>&1 | tail -5; ls "$P/PlugIns"
           (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Caudal.ipa" Payload)
           ls -la out
 
@@ -70,6 +74,8 @@ jobs:
           shot -tab home -work; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-horas.png"
           shot -tab home -work -newshift; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/9-turno.png"
           shot -tab more;   xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-mas.png"
+          shot -tab home -customize; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/10-personalizar.png"
+          shot -tab more -widgets; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/11-widgets.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

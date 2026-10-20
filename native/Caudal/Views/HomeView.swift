@@ -8,20 +8,25 @@ struct HomeView: View {
     @State private var editing: Tx? = nil
     @State private var showStats = false
     @State private var showWork = false
+    @State private var customizing = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 22) {
-                    hero.appear(0)
-                    accountsStrip.appear(0.05)
-                    if !store.state.companies.isEmpty { WorkCard { showWork = true }.appear(0.08) }
-                    monthCard.appear(0.1)
-                    categoriesCard.appear(0.15)
-                    upcomingCard.appear(0.2)
-                    recentCard.appear(0.25)
+                    ForEach(Array(store.state.home.filter(\.on).enumerated()), id: \.element.id) { i, item in
+                        card(item.id).appear(Double(min(i, 6)) * 0.04)
+                    }
+                    Button { Haptic.tap(); customizing = true } label: {
+                        Label("Personalizar inicio", systemImage: "square.grid.2x2")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .background(Color.cardBG, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(PressableStyle())
                     Color.clear.frame(height: 80)
                 }
+                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.state.home)
                 .padding(.horizontal, 16)
             }
             .background(Color(.systemGroupedBackground))
@@ -43,7 +48,71 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showWork) { WorkView() }
             .task { if ProcessInfo.processInfo.arguments.contains("-work") { showWork = true } }
             .sheet(item: $editing) { TxEditor(original: $0) }
+            .sheet(isPresented: $customizing) { HomeCustomizer() }
+            .task { if ProcessInfo.processInfo.arguments.contains("-customize") { customizing = true } }
         }
+    }
+
+    @ViewBuilder private func card(_ id: String) -> some View {
+        switch id {
+        case "patrimonio": hero
+        case "cuentas": accountsStrip
+        case "horas": if !store.state.companies.isEmpty { WorkCard { showWork = true } }
+        case "mes": monthCard
+        case "categorias": categoriesCard
+        case "proximos": upcomingCard
+        case "recientes": recentCard
+        case "inversiones": investCard
+        case "deudas": debtsCard
+        default: EmptyView()
+        }
+    }
+
+    // MARK: inversiones
+
+    @ViewBuilder private var investCard: some View {
+        let assets = store.state.assets.filter { !$0.archived }.sorted { store.assetValue($0) > store.assetValue($1) }
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Inversiones", action: "Ver") { tab = .invest }
+            HStack {
+                AmountText(value: store.investValue, font: .title2.weight(.bold))
+                Spacer()
+            }
+            if assets.isEmpty { Text("Sin inversiones").foregroundStyle(.secondary) }
+            ForEach(assets.prefix(4)) { a in
+                HStack {
+                    Text(a.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Spacer()
+                    if let ch = store.dayChange(a) {
+                        Text((ch >= 0 ? "+" : "") + Money.num(ch) + " %").font(.caption.weight(.bold)).foregroundStyle(ch >= 0 ? Color.income : Color.negative)
+                    }
+                    AmountText(value: store.assetValue(a), font: .subheadline.weight(.semibold))
+                }
+            }
+        }
+        .card()
+    }
+
+    // MARK: cuentas claras
+
+    @ViewBuilder private var debtsCard: some View {
+        let people = store.peopleSorted.filter { abs(store.debtBalance($0.id)) > 0.004 }
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Cuentas claras", action: "Ver") { tab = .debts }
+            HStack(spacing: 12) {
+                tile("Te deben", store.owedToMe, "arrow.down.left.circle.fill", .income)
+                tile("Debes", store.iOwe, "arrow.up.right.circle.fill", .negative)
+            }
+            ForEach(people.prefix(4)) { p in
+                let b = store.debtBalance(p.id)
+                HStack {
+                    Text(p.emoji); Text(p.name).font(.subheadline.weight(.semibold))
+                    Spacer()
+                    AmountText(value: b, signed: true, font: .subheadline.weight(.semibold), color: b >= 0 ? .income : .negative)
+                }
+            }
+        }
+        .card()
     }
 
     private var greeting: String {
@@ -270,5 +339,64 @@ struct HomeView: View {
             }
         }
         .card()
+    }
+}
+
+
+/// elige qué tarjetas salen en Inicio y en qué orden
+struct HomeCustomizer: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("En inicio") {
+                    ForEach(store.state.home.filter(\.on)) { item in row(item) }
+                        .onMove { from, to in move(from, to, on: true) }
+                }
+                Section("Añadir") {
+                    let off = store.state.home.filter { !$0.on }
+                    if off.isEmpty { Text("Ya está todo en inicio").foregroundStyle(.secondary) }
+                    ForEach(off) { item in row(item) }
+                }
+                Section {
+                    Button("Restablecer") { Haptic.warning(); withAnimation { store.state.home = HomeItem.defaults } }
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Personalizar inicio").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { Haptic.success(); dismiss() }.bold() } }
+        }
+    }
+
+    private func row(_ item: HomeItem) -> some View {
+        let info = HomeItem.info(item.id)
+        return HStack(spacing: 12) {
+            Button {
+                Haptic.select()
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    if let i = store.state.home.firstIndex(where: { $0.id == item.id }) {
+                        var h = store.state.home
+                        var it = h.remove(at: i); it.on.toggle()
+                        // al añadir, va al final de lo que se ve
+                        if it.on { h.insert(it, at: (h.lastIndex(where: \.on) ?? -1) + 1) } else { h.append(it) }
+                        store.state.home = h
+                    }
+                }
+            } label: {
+                Image(systemName: item.on ? "minus.circle.fill" : "plus.circle.fill")
+                    .font(.title2).foregroundStyle(item.on ? Color.red : Color.green)
+            }
+            .buttonStyle(.plain)
+            Image(systemName: info.icon).foregroundStyle(Color.accentColor).frame(width: 26)
+            Text(info.name)
+        }
+    }
+
+    private func move(_ from: IndexSet, _ to: Int, on: Bool) {
+        var visible = store.state.home.filter(\.on)
+        visible.move(fromOffsets: from, toOffset: to)
+        store.state.home = visible + store.state.home.filter { !$0.on }
+        Haptic.select()
     }
 }

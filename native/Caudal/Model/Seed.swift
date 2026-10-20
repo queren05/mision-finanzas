@@ -2,7 +2,7 @@ import Foundation
 
 /// Datos de partida: categorías por defecto y las cuentas y movimientos reales de David (Revolut y Trade Republic, octubre de 2026).
 enum Seed {
-    static let version = 6
+    static let version = 7
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -49,8 +49,8 @@ enum Seed {
         s.seed = version
         s.categories = categories()
         let rev = Account(id: "a_revolut", name: "Revolut", type: .corriente, initial: 115.10, color: "#8fb4ff", icon: "🏦", order: 0)
-        let conj = Account(id: "a_conjunta", name: "Conjunta", type: .ahorro, initial: 4.74, color: "#f59fc4", icon: "💞", order: 1, note: "Bolsillo conjunto de Revolut")
-        let tr = Account(id: "a_tr", name: "Trade Republic", type: .ahorro, initial: 500, color: "#e4b3cb", icon: "🐷", order: 2, note: "Efectivo remunerado")
+        let conj = Account(id: "a_conjunta", name: "Conjunta", type: .ahorro, initial: 4.74, color: "#f59fc4", icon: "💞", order: 2, note: "Bolsillo conjunto de Revolut")
+        let tr = Account(id: "a_tr", name: "Trade Republic", type: .ahorro, initial: 500, color: "#e4b3cb", icon: "🐷", order: 1, note: "Efectivo remunerado")
         let etf = Account(id: "a_etf", name: "TR · ETF", type: .broker, initial: 0, color: "#6fd49b", icon: "📊", order: 3)
         s.accounts = [rev, conj, tr, etf]
 
@@ -188,6 +188,11 @@ enum Seed {
         if s.seed < 6 {
             if s.companies.isEmpty { s.companies = [workCompany()]; s.shifts += workShifts() }
             s.seed = 6
+        }
+        if s.seed < 7 {
+            let order = ["a_revolut": 0, "a_tr": 1, "a_conjunta": 2, "a_etf": 3]
+            for i in s.accounts.indices { if let o = order[s.accounts[i].id] { s.accounts[i].order = o } else if s.accounts[i].order < 4 { s.accounts[i].order += 4 } }
+            s.seed = 7
         }
     }
 }

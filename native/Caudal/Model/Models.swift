@@ -254,11 +254,13 @@ struct AppState: Codable {
     var debts: [DebtMove] = []
     var companies: [Company] = []
     var shifts: [Shift] = []
+    /// tarjetas de la pantalla de inicio, en orden (y si se ven o no)
+    var home: [HomeItem] = HomeItem.defaults
 
     init() {}
 
     // lee también los datos guardados por versiones anteriores (a las que les faltan campos nuevos)
-    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts, companies, shifts }
+    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts, companies, shifts, home }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 3
@@ -276,5 +278,37 @@ struct AppState: Codable {
         debts = try c.decodeIfPresent([DebtMove].self, forKey: .debts) ?? []
         companies = try c.decodeIfPresent([Company].self, forKey: .companies) ?? []
         shifts = try c.decodeIfPresent([Shift].self, forKey: .shifts) ?? []
+        home = HomeItem.normalized((try? c.decodeIfPresent([HomeItem].self, forKey: .home)) ?? nil)
+    }
+}
+
+
+// MARK: - Pantalla de inicio personalizable
+
+struct HomeItem: Codable, Hashable, Identifiable {
+    var id: String
+    var on: Bool = true
+
+    static let all: [(id: String, name: String, icon: String)] = [
+        ("patrimonio", "Patrimonio y gráfico", "chart.xyaxis.line"),
+        ("cuentas", "Cuentas", "creditcard.fill"),
+        ("horas", "Horas trabajadas", "clock.fill"),
+        ("mes", "Resumen del mes", "calendar"),
+        ("categorias", "En qué gastas", "chart.pie.fill"),
+        ("proximos", "Próximos cargos", "calendar.badge.clock"),
+        ("recientes", "Últimos movimientos", "list.bullet"),
+        ("inversiones", "Inversiones", "chart.line.uptrend.xyaxis"),
+        ("deudas", "Cuentas claras", "person.2.fill"),
+    ]
+    static let defaults: [HomeItem] = all.map { HomeItem(id: $0.id, on: !["inversiones", "deudas"].contains($0.id)) }
+    static func info(_ id: String) -> (name: String, icon: String) {
+        all.first { $0.id == id }.map { ($0.name, $0.icon) } ?? (id, "square")
+    }
+    /// quita lo desconocido y añade al final (apagado) lo que falte
+    static func normalized(_ list: [HomeItem]?) -> [HomeItem] {
+        guard let list, !list.isEmpty else { return defaults }
+        var out = list.filter { i in all.contains { $0.id == i.id } }
+        for d in defaults where !out.contains(where: { $0.id == d.id }) { out.append(HomeItem(id: d.id, on: false)) }
+        return out
     }
 }
