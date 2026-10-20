@@ -64,6 +64,42 @@ struct BrainDoc: Codable, Identifiable, Hashable {
     var text: String = ""
     var summary: String = ""
     var created: Date = Date()
+    /// importe total (recibos y facturas)
+    var amount: Double? = nil
+    /// fecha del documento (yyyy-MM-dd) y fecha en que vence o se renueva
+    var docDate: String = ""
+    var due: String = ""
+    /// tienda, empresa o quien lo emite
+    var issuer: String = ""
+}
+
+extension BrainDoc {
+    /// importe y fechas en una línea, para Claude
+    var facts: String {
+        var f: [String] = []
+        if !issuer.isEmpty { f.append("Emisor: \(issuer)") }
+        if let amount { f.append("Importe: \(String(format: "%.2f", amount)) €") }
+        if !docDate.isEmpty { f.append("Fecha: \(docDate)") }
+        if !due.isEmpty { f.append("Vence: \(due)") }
+        return f.joined(separator: ". ")
+    }
+    enum CodingKeys: String, CodingKey { case id, title, folder, kind, file, text, summary, created, amount, docDate, due, issuer }
+    // tolera documentos guardados por versiones anteriores
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? "Documento"
+        folder = (try? c.decodeIfPresent(BrainFolder.self, forKey: .folder)) ?? .documentos
+        kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "note"
+        file = try c.decodeIfPresent(String.self, forKey: .file)
+        text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+        summary = try c.decodeIfPresent(String.self, forKey: .summary) ?? ""
+        created = try c.decodeIfPresent(Date.self, forKey: .created) ?? Date()
+        amount = try c.decodeIfPresent(Double.self, forKey: .amount)
+        docDate = try c.decodeIfPresent(String.self, forKey: .docDate) ?? ""
+        due = try c.decodeIfPresent(String.self, forKey: .due) ?? ""
+        issuer = try c.decodeIfPresent(String.self, forKey: .issuer) ?? ""
+    }
 }
 
 struct QA: Codable, Identifiable, Hashable {

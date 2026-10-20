@@ -77,6 +77,17 @@ final class Store {
         } catch { calendarDenied = true }
     }
 
+    /// eventos del calendario del iPhone entre dos días (yyyy-MM-dd, ambos incluidos)
+    func events(from a: String, to b: String) -> [AgendaEvent] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
+        let start = Calendar.current.startOfDay(for: Day.date(a))
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Day.date(b)))!
+        return events.events(matching: events.predicateForEvents(withStart: start, end: end, calendars: nil)).sorted { $0.startDate < $1.startDate }.map {
+            AgendaEvent(id: ($0.eventIdentifier ?? UUID().uuidString) + Day.str($0.startDate), title: $0.title ?? "Evento", start: $0.startDate, end: $0.endDate,
+                        allDay: $0.isAllDay, color: Color(cgColor: $0.calendar.cgColor))
+        }
+    }
+
     // MARK: - Avisos (briefing por la mañana, chequeo por la noche, revisión del domingo)
 
     func scheduleNotifications() {
@@ -146,18 +157,41 @@ final class Store {
         withAnimation(.spring) { s.docs.removeAll { $0.id == d.id } }
     }
 
-    /// Claude le pone título, carpeta y resumen a un documento nuevo
+    /// Claude le pone título, carpeta, resumen, importe y fechas a un documento nuevo.
+    /// Si es una foto o un PDF sin texto, Claude lee el propio archivo.
     @MainActor
     func organize(_ docId: String) async {
-        guard Claude.hasKey, let d = s.docs.first(where: { $0.id == docId }), !d.text.isEmpty else { return }
+        guard Claude.hasKey, let d = s.docs.first(where: { $0.id == docId }) else { return }
+        var parts: [Claude.Part] = []
+        let hasText = d.text.trimmingCharacters(in: .whitespacesAndNewlines).count > 20
+        if let f = d.file, let data = try? Data(contentsOf: Extract.url(f)) {
+            if d.kind == "image", let ui = UIImage(data: data) { parts.append(.image(Extract.jpeg(ui), "image/jpeg")) }
+            else if d.kind == "pdf", !hasText, data.count < 20_000_000 { parts.append(.pdf(data)) }
+        }
+        if hasText { parts.append(.text("Texto reconocido:\n" + String(d.text.prefix(12000)))) }
+        guard !parts.isEmpty else { return }
         await run("org-" + docId) { [self] in
             let folders = BrainFolder.allCases.map(\.rawValue).joined(separator: ", ")
-            let j = try await Claude.askJSON(system: "Clasificas documentos personales. Devuelve {\"title\": título corto en español (máx. 6 palabras), \"folder\": una de [\(folders)], \"summary\": resumen de 1–2 frases con los datos clave (fechas, importes, vencimientos)}.",
-                                             parts: [.text(String(d.text.prefix(12000)))], effort: "low")
+            let j = try await Claude.askJSON(system: """
+                Clasificas documentos personales (contratos, seguros, recibos, facturas, tickets, nóminas…). Hoy es \(Day.today). Devuelve:
+                {"title": título corto en español (máx. 6 palabras, p. ej. «Factura Endesa septiembre»),
+                 "folder": una de [\(folders)] (tickets y facturas de compras van en recibos),
+                 "summary": 1–2 frases con los datos clave,
+                 "issuer": tienda o empresa que lo emite o "",
+                 "amount": importe total en euros como número (p. ej. 23.4) o null,
+                 "date": fecha del documento "yyyy-MM-dd" o "",
+                 "due": fecha en que vence, termina, se renueva o hay que pagarlo "yyyy-MM-dd" o "",
+                 "text": si no te he pasado texto, transcribe aquí lo importante del documento; si no, ""}
+                """, parts: parts, effort: "low")
             guard var n = s.docs.first(where: { $0.id == docId }) else { return }
-            if let t = j["title"] as? String, !t.isEmpty, n.title.hasPrefix("Documento") || n.title.hasPrefix("Escaneo") || n.title.hasPrefix("Foto") || n.title.hasPrefix("Nota del") { n.title = t }
+            if let t = j["title"] as? String, !t.isEmpty, n.title.hasPrefix("Documento") || n.title.hasPrefix("Escaneo") || n.title.hasPrefix("Foto") || n.title.hasPrefix("Nota del") || n.title.hasPrefix("IMG") { n.title = t }
             if let f = j["folder"] as? String, let bf = BrainFolder(rawValue: f) { n.folder = bf }
             if let sm = j["summary"] as? String { n.summary = sm }
+            if let i = j["issuer"] as? String { n.issuer = i }
+            if let a = j["amount"] as? Double { n.amount = a } else if let a = j["amount"] as? Int { n.amount = Double(a) }
+            if let dt = j["date"] as? String, dt.count == 10 { n.docDate = dt }
+            if let du = j["due"] as? String, du.count == 10 { n.due = du }
+            if !hasText, let t = j["text"] as? String, !t.isEmpty { n.text = t }
             save(n)
         }
     }
@@ -179,7 +213,7 @@ final class Store {
         await run("brain") { [self] in
             let docs = relevantDocs(q)
             guard !docs.isEmpty else { throw Claude.Failure.server("Aún no has guardado documentos en tu segundo cerebro.") }
-            let ctx = docs.enumerated().map { i, d in "<documento n=\"\(i + 1)\" titulo=\"\(d.title)\" carpeta=\"\(d.folder.label)\">\n\(d.summary)\n\(d.text.prefix(20000))\n</documento>" }.joined(separator: "\n\n")
+            let ctx = docs.enumerated().map { i, d in "<documento n=\"\(i + 1)\" titulo=\"\(d.title)\" carpeta=\"\(d.folder.label)\">\n\(d.facts)\n\(d.summary)\n\(d.text.prefix(20000))\n</documento>" }.joined(separator: "\n\n")
             let a = try await Claude.ask(system: "Eres el segundo cerebro de \(s.settings.name): respondes SOLO con lo que dicen sus documentos. Responde en español de España, directo y breve (1–4 frases), con fechas e importes exactos. Si la respuesta no está en los documentos, dilo claramente. Al final, en una línea aparte, escribe «Fuentes:» y los títulos de los documentos que has usado separados por «;».",
                                          parts: [.text(ctx + "\n\nPregunta: " + q)], effort: "medium")
             var answer = a; var sources: [String] = []

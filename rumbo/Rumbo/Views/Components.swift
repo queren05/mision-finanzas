@@ -161,7 +161,7 @@ struct EmptyCard: View {
         VStack(spacing: 10) {
             Image(systemName: icon).font(.system(size: 40)).foregroundStyle(Color.accentColor)
             Text(title).font(.headline)
-            Text(text).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            if !text.isEmpty { Text(text).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
         }
         .frame(maxWidth: .infinity).padding(24)
         .background(Color.cardBG, in: RoundedRectangle(cornerRadius: 22, style: .continuous))

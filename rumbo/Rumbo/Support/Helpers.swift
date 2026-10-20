@@ -69,6 +69,13 @@ enum Day {
         if cal.component(.year, from: d) != cal.component(.year, from: Date()) { return longYear.string(from: d) }
         return long.string(from: d)
     }
+    private static let weekday: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "es_ES")
+        f.dateFormat = "EEEE"
+        return f
+    }()
+    static func weekdayName(_ s: String) -> String { weekday.string(from: date(s)) }
     static func shortLabel(_ s: String) -> String { short.string(from: date(s)) }
     static func month(_ s: String) -> String { monthName.string(from: date(s)).capitalized }
     static func monthYearLabel(_ s: String) -> String { monthYear.string(from: date(s)).capitalized }
@@ -143,5 +150,26 @@ struct IconBubble: View {
             .frame(width: size, height: size)
             .background(Color(hex: color).opacity(0.22), in: Circle())
             .overlay(Circle().strokeBorder(Color(hex: color).opacity(0.35), lineWidth: 1))
+    }
+}
+
+// MARK: - Dinero
+
+enum Money {
+    private static let f: NumberFormatter = {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "es_ES")
+        f.numberStyle = .decimal
+        f.minimumFractionDigits = 2
+        f.maximumFractionDigits = 2
+        return f
+    }()
+    static func eur(_ v: Double) -> String { (f.string(from: NSNumber(value: v)) ?? "0,00") + " €" }
+    static func num(_ v: Double) -> String { f.string(from: NSNumber(value: v)) ?? "0,00" }
+    /// «23,40» o «23.40» → 23.4
+    static func parse(_ s: String) -> Double? {
+        let t = s.replacingOccurrences(of: "€", with: "").replacingOccurrences(of: " ", with: "")
+        let n = t.contains(",") ? t.replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: ".") : t
+        return Double(n)
     }
 }

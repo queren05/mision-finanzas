@@ -10,7 +10,15 @@ enum Demo {
             BrainDoc(title: "Seguro del coche Mapfre", folder: .seguros, kind: "pdf", text: "Póliza 123. Vencimiento 24/06/2027. Prima anual 420 €.", summary: "Póliza a todo riesgo. Vence el 24 de junio de 2027. Prima anual: 420 €."),
             BrainDoc(title: "Contrato de alquiler", folder: .alquileres, kind: "pdf", text: "Fin del contrato 12/11/2027. Renta 750 €.", summary: "Termina el 12 de noviembre de 2027. Renta de 750 € al mes."),
             BrainDoc(title: "Garantía del portátil", folder: .recibos, kind: "image", text: "Garantía 3 años desde 03/2025", summary: "Garantía hasta marzo de 2028."),
+            BrainDoc(title: "Factura de la luz", folder: .recibos, kind: "pdf", text: "Endesa", summary: "Factura de septiembre.", amount: 48.37, docDate: Day.add(Day.today, days: -6), due: Day.add(Day.today, days: 4), issuer: "Endesa"),
+            BrainDoc(title: "Compra Mercadona", folder: .recibos, kind: "image", text: "Ticket", summary: "Compra semanal.", amount: 32.15, docDate: Day.add(Day.today, days: -2), issuer: "Mercadona"),
+            BrainDoc(title: "Gasolina Repsol", folder: .recibos, kind: "image", text: "Ticket", summary: "Repostaje.", amount: 40, docDate: Day.today, issuer: "Repsol"),
         ]
+        st.docs[0].due = Day.add(Day.today, days: 9)
+        st.tasks = [TaskItem(title: "Revisar el presupuesto del mes", priority: true, due: Day.today),
+                    TaskItem(title: "Llamar al seguro del coche", due: Day.add(Day.today, days: 2)),
+                    TaskItem(title: "Pagar la factura de la luz", due: Day.add(Day.today, days: 4)),
+                    TaskItem(title: "Leer 20 páginas")]
         st.brainQA = [QA(question: "¿Cuándo vence mi seguro del coche?", answer: "Tu seguro del coche vence el 24 de junio de 2027 y la prima anual es de 420 €.", sources: ["Seguro del coche Mapfre"])]
         st.checkIns = [CheckIn(date: Day.today, mood: 4, text: "Cerré la propuesta y fui al gimnasio. Me distraje por la mañana.",
                                wins: ["Cerré la propuesta", "Buena llamada con cliente", "Fui al gimnasio"],

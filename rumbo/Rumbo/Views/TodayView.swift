@@ -8,12 +8,15 @@ struct TodayView: View {
     @State private var pendingDelete: TaskItem? = nil
     @State private var askDelete = false
     @FocusState private var adding: Bool
+    @State private var path = NavigationPath()
+    @State private var weekEvents: [AgendaEvent] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: 18) {
                     header.appear(0)
+                    WeekStrip(events: weekEvents).appear(0.03)
                     briefing.appear(0.05)
                     agenda.appear(0.1)
                     priorities.appear(0.15)
@@ -24,15 +27,31 @@ struct TodayView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(greeting)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { SettingsButton() } }
-            .refreshable { await store.loadAgenda() }
-            .task { await store.loadAgenda() }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { path.append(CalDay(day: Day.today)) } label: { Image(systemName: "calendar") }
+                }
+                ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
+            }
+            .navigationDestination(for: CalDay.self) { CalendarView(day: $0.day) }
+            .navigationDestination(for: BrainDoc.self) { DocDetail(docId: $0.id) }
+            .refreshable { await reload() }
+            .task {
+                await reload()
+                if ProcessInfo.processInfo.arguments.contains("-cal") && path.isEmpty { path.append(CalDay(day: Day.today)) }
+            }
             .sheet(item: $editing) { TaskEditor(original: $0) }
             .confirmationDialog("¿Seguro que quieres eliminar esta tarea?", isPresented: $askDelete, titleVisibility: .visible, presenting: pendingDelete) { t in
                 Button("Eliminar", role: .destructive) { Haptic.heavy(); store.delete(t) }
                 Button("Cancelar", role: .cancel) {}
             } message: { t in Text(t.title) }
         }
+    }
+
+    private func reload() async {
+        await store.loadAgenda()
+        let ws = Store.weekStart(Day.today)
+        weekEvents = store.events(from: ws, to: Day.add(ws, days: 6))
     }
 
     private var greeting: String {
@@ -170,11 +189,12 @@ struct TaskEditor: View {
                 Toggle("Con fecha", isOn: $hasDue.animation())
                 if hasDue { DatePicker("Para el", selection: $due, displayedComponents: .date) }
             }
-            .navigationTitle("Tarea").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(original.title.isEmpty ? "Nueva tarea" : "Tarea").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") { var n = t; n.due = hasDue ? Day.str(due) : ""; store.save(n); Haptic.success(); dismiss() }.bold()
+                        .disabled(t.title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .onAppear { t = original; if !original.due.isEmpty { hasDue = true; due = Day.date(original.due) } }
