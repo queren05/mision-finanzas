@@ -5,27 +5,46 @@ struct LibraryView: View {
     @Environment(Store.self) private var store
     @State private var status: ItemStatus? = nil
     @State private var adding = false
+    @State private var cine = false
+    @State private var searching = false
+    @State private var searchQuery = ""
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    shelf.appear(0)
-                    ask.appear(0.05)
-                    filters.appear(0.1)
-                    items.appear(0.15)
+                    Picker("", selection: $cine.animation(.spring(response: 0.4, dampingFraction: 0.85))) {
+                        Text("Lecturas").tag(false)
+                        Text("Pelis y series").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    if cine {
+                        CineSection()
+                    } else {
+                        shelf.appear(0)
+                        ask.appear(0.05)
+                        filters.appear(0.1)
+                        items.appear(0.15)
+                    }
                     Color.clear.frame(height: 30)
                 }
                 .padding(.horizontal, 16)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Mi biblioteca de vida")
+            .navigationTitle(cine ? "Mi cine" : "Mi biblioteca de vida")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus.circle.fill").font(.title3) } }
+                ToolbarItem(placement: .topBarTrailing) { Button { if cine { searchQuery = ""; searching = true } else { adding = true } } label: { Image(systemName: "plus.circle.fill").font(.title3) } }
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
             .navigationDestination(for: LibItem.self) { LibDetail(itemId: $0.id) }
+            .navigationDestination(for: Film.self) { FilmDetail(filmId: $0.id) }
             .sheet(isPresented: $adding) { LibEditor(original: nil) }
+            .sheet(isPresented: $searching) { FilmSearchSheet(query: searchQuery) }
+            .task {
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-films") { cine = true }
+                if let i = args.firstIndex(of: "-filmsearch"), i + 1 < args.count { cine = true; searchQuery = args[i + 1]; searching = true }
+            }
         }
     }
 

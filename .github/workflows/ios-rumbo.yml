@@ -71,6 +71,9 @@ jobs:
           shot -demo -cal;         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/6-calendario.png"
           shot -tab brain -testadd; sleep 6; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-recibo.png"
           shot -tab brain;         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-cerebro.png"
+          xcrun simctl uninstall "$DEV" es.david.rumbo; xcrun simctl install "$DEV" "$APP"; xcrun simctl privacy "$DEV" grant calendar es.david.rumbo || true
+          shot -demo -tab library -films; sleep 8; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/9-cine.png"
+          shot -tab library -filmsearch "Dune"; sleep 6; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/10-buscar-peli.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

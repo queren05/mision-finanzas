@@ -241,10 +241,12 @@ struct RState: Codable {
     var pieces: [BrandPiece] = []
     var library: [LibItem] = []
     var libraryQA: [QA] = []
+    var films: [Film] = []
+    var filmQA: [QA] = []
     var settings = Settings()
 
     init() {}
-    enum CodingKeys: String, CodingKey { case tasks, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, settings }
+    enum CodingKeys: String, CodingKey { case tasks, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, settings }
     // tolera datos guardados por versiones anteriores
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -259,6 +261,8 @@ struct RState: Codable {
         pieces = try c.decodeIfPresent([BrandPiece].self, forKey: .pieces) ?? []
         library = try c.decodeIfPresent([LibItem].self, forKey: .library) ?? []
         libraryQA = try c.decodeIfPresent([QA].self, forKey: .libraryQA) ?? []
+        films = (try? c.decodeIfPresent([Film].self, forKey: .films)) ?? []
+        filmQA = (try? c.decodeIfPresent([QA].self, forKey: .filmQA)) ?? []
         settings = try c.decodeIfPresent(Settings.self, forKey: .settings) ?? Settings()
     }
 }

@@ -41,6 +41,20 @@ enum Demo {
                           visual: ["Fondos oscuros con acentos naranjas", "Mucho aire", "Fotos reales de equipos"])
         st.pieces = [BrandPiece(type: "post", topic: "tareas repetitivas", title: "De tareas repetitivas a resultados reales", text: "Cada hora que pasas copiando datos es una hora que no dedicas a tus clientes. Te enseñamos a automatizarlo en una semana."),
                      BrandPiece(type: "web", topic: "landing", title: "Automatiza tu negocio con IA", text: "Más ventas, menos trabajo manual. Sistemas a medida para pymes.")]
+        st.films = [
+            Film(kind: .pelicula, title: "Dune: Parte dos", year: "2024", director: "Denis Villeneuve", runtime: 166, status: .vista, rating: 4.5, liked: true, review: "Brutal en el cine.", watched: [Day.add(Day.today, days: -1)]),
+            Film(kind: .pelicula, title: "Oppenheimer", year: "2023", director: "Christopher Nolan", runtime: 180, status: .vista, rating: 4, watched: [Day.add(Day.today, days: -5)]),
+            Film(kind: .serie, title: "The Bear", year: "2022", season: "Temporada 1", status: .viendo, rating: 4.5, liked: true, watched: [Day.add(Day.today, days: -3)]),
+            Film(kind: .pelicula, title: "Interstellar", year: "2014", director: "Christopher Nolan", runtime: 169, status: .vista, rating: 5, liked: true, watched: [Day.add(Day.today, days: -12), "2023-02-10"]),
+            Film(kind: .serie, title: "Breaking Bad", year: "2008", status: .quiero),
+            Film(kind: .pelicula, title: "La La Land", year: "2016", director: "Damien Chazelle", status: .quiero),
+        ]
         store.s = st
+        // pósteres de verdad para las capturas
+        Task { @MainActor in
+            for f in store.s.films where f.poster == nil {
+                if let r = await FilmSearch.search(f.title, kind: f.kind).first { var n = f; n.posterURL = r.film.posterURL; await store.add(n) }
+            }
+        }
     }
 }
