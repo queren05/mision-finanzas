@@ -62,6 +62,13 @@ final class Store {
     // MARK: búsquedas
 
     var accounts: [Account] { state.accounts.filter { !$0.archived }.sorted { $0.order < $1.order } }
+    func moveAccounts(from: IndexSet, to: Int) {
+        var list = accounts
+        list.move(fromOffsets: from, toOffset: to)
+        withAnimation(.spring) {
+            for (i, a) in list.enumerated() { if let k = state.accounts.firstIndex(where: { $0.id == a.id }) { state.accounts[k].order = i } }
+        }
+    }
     func account(_ id: String?) -> Account? { state.accounts.first { $0.id == id } }
     func category(_ id: String?) -> Category? { state.categories.first { $0.id == id } }
     func asset(_ id: String?) -> Asset? { state.assets.first { $0.id == id } }

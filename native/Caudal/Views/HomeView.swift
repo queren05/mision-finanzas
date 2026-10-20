@@ -49,7 +49,11 @@ struct HomeView: View {
             .task { if ProcessInfo.processInfo.arguments.contains("-work") { showWork = true } }
             .sheet(item: $editing) { TxEditor(original: $0) }
             .sheet(isPresented: $customizing) { HomeCustomizer() }
-            .task { if ProcessInfo.processInfo.arguments.contains("-customize") { customizing = true } }
+            .task {
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-customize") { customizing = true }
+                if let i = args.firstIndex(of: "-accstyle"), i + 1 < args.count { store.state.accountsStyle = args[i + 1] }
+            }
         }
     }
 
@@ -179,40 +183,124 @@ struct HomeView: View {
 
     // MARK: cuentas en tarjetas
 
+    static let accountStyles: [(id: String, name: String, icon: String)] = [
+        ("cuadricula", "Cuadrícula de 4", "square.grid.2x2"), ("carrusel", "Carrusel", "rectangle.split.2x1"),
+        ("lista", "Lista", "list.bullet"), ("pequeno", "Pequeñas", "square.grid.3x3"), ("grande", "Grandes", "rectangle.stack"),
+    ]
+
     private var accountsStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Cuentas")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+        let style = store.state.accountsStyle
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Cuentas").font(.title3.weight(.bold))
+                Spacer()
+                Menu {
+                    Picker("Estilo", selection: Binding(get: { store.state.accountsStyle }, set: { v in Haptic.select(); withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { store.state.accountsStyle = v } })) {
+                        ForEach(HomeView.accountStyles, id: \.id) { Label($0.name, systemImage: $0.icon).tag($0.id) }
+                    }
+                    Button { customizing = true } label: { Label("Ordenar cuentas", systemImage: "arrow.up.arrow.down") }
+                } label: {
+                    Image(systemName: HomeView.accountStyles.first { $0.id == style }?.icon ?? "square.grid.2x2")
+                        .font(.subheadline.weight(.semibold)).frame(width: 34, height: 34)
+                        .background(Color.cardBG, in: Circle())
+                }
+            }
+            switch style {
+            case "cuadricula":
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                    ForEach(store.accounts) { a in accountLink(a) { accountCard(a, height: 118) } }
+                }
+            case "lista":
+                VStack(spacing: 0) {
                     ForEach(store.accounts) { a in
-                        NavigationLink(value: a) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack {
-                                    Text(a.icon).font(.title2)
-                                    Spacer()
-                                    Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.6))
-                                }
-                                Spacer(minLength: 0)
-                                Text(a.name).font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                                AmountText(value: store.value(a), font: .title3.weight(.bold), color: .white)
+                        accountLink(a) {
+                            HStack(spacing: 12) {
+                                IconBubble(icon: a.icon, color: a.color, size: 38)
+                                Text(a.name).font(.body.weight(.semibold)).lineLimit(1)
+                                Spacer()
+                                AmountText(value: store.value(a), font: .body.weight(.semibold))
                             }
-                            .padding(16)
-                            .frame(width: 168, height: 128)
-                            .background(
-                                LinearGradient(colors: [Color(hex: a.color).opacity(0.95), Color(hex: a.color).opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.15)))
+                            .padding(.vertical, 9).contentShape(Rectangle())
                         }
-                        .buttonStyle(PressableStyle())
-                        .scrollTransition { c, phase in
-                            c.scaleEffect(phase.isIdentity ? 1 : 0.92).opacity(phase.isIdentity ? 1 : 0.6)
+                        if a.id != store.accounts.last?.id { Divider().padding(.leading, 50) }
+                    }
+                }
+                .card(12)
+            case "pequeno":
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                    ForEach(store.accounts) { a in
+                        accountLink(a) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(a.icon).font(.title3)
+                                Spacer(minLength: 0)
+                                Text(a.name).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                                AmountText(value: store.value(a), font: .subheadline.weight(.bold), color: .white)
+                                    .lineLimit(1).minimumScaleFactor(0.6)
+                            }
+                            .padding(11).frame(maxWidth: .infinity, alignment: .leading).frame(height: 92)
+                            .background(gradient(a), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                 }
-                .scrollTargetLayout()
+            case "grande":
+                VStack(spacing: 12) {
+                    ForEach(store.accounts) { a in
+                        accountLink(a) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(a.icon).font(.largeTitle)
+                                    Spacer()
+                                    Text(a.type.label).font(.caption.weight(.bold)).padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(.white.opacity(0.18), in: Capsule()).foregroundStyle(.white)
+                                }
+                                Spacer(minLength: 0)
+                                Text(a.name).font(.headline).foregroundStyle(.white.opacity(0.85))
+                                AmountText(value: store.value(a), font: .system(size: 34, weight: .bold, design: .rounded), color: .white)
+                            }
+                            .padding(20).frame(maxWidth: .infinity, alignment: .leading).frame(height: 170)
+                            .background(gradient(a), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.15)))
+                        }
+                    }
+                }
+            default:
+                // dos cuentas por pantalla, sin que asome la siguiente
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(store.accounts) { a in
+                            accountLink(a) { accountCard(a, height: 128) }
+                                .containerRelativeFrame(.horizontal, count: 2, spacing: 12)
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollClipDisabled(false)
             }
-            .scrollTargetBehavior(.viewAligned)
         }
+    }
+
+    private func gradient(_ a: Account) -> LinearGradient {
+        LinearGradient(colors: [Color(hex: a.color).opacity(0.95), Color(hex: a.color).opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    private func accountLink<C: View>(_ a: Account, @ViewBuilder _ c: () -> C) -> some View {
+        NavigationLink(value: a) { c() }.buttonStyle(PressableStyle())
+    }
+    private func accountCard(_ a: Account, height: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(a.icon).font(.title2)
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.6))
+            }
+            Spacer(minLength: 0)
+            Text(a.name).font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+            AmountText(value: store.value(a), font: .title3.weight(.bold), color: .white).lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading).frame(height: height)
+        .background(gradient(a), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.15)))
     }
 
     // MARK: el mes
@@ -358,6 +446,15 @@ struct HomeCustomizer: View {
                     let off = store.state.home.filter { !$0.on }
                     if off.isEmpty { Text("Ya está todo en inicio").foregroundStyle(.secondary) }
                     ForEach(off) { item in row(item) }
+                }
+                Section("Cuentas") {
+                    Picker("Estilo", selection: Binding(get: { store.state.accountsStyle }, set: { v in Haptic.select(); store.state.accountsStyle = v })) {
+                        ForEach(HomeView.accountStyles, id: \.id) { Label($0.name, systemImage: $0.icon).tag($0.id) }
+                    }
+                    ForEach(store.accounts) { a in
+                        HStack(spacing: 12) { Text(a.icon); Text(a.name) }
+                    }
+                    .onMove { from, to in store.moveAccounts(from: from, to: to); Haptic.select() }
                 }
                 Section {
                     Button("Restablecer") { Haptic.warning(); withAnimation { store.state.home = HomeItem.defaults } }

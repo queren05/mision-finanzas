@@ -256,11 +256,13 @@ struct AppState: Codable {
     var shifts: [Shift] = []
     /// tarjetas de la pantalla de inicio, en orden (y si se ven o no)
     var home: [HomeItem] = HomeItem.defaults
+    /// cómo se ven las cuentas en Inicio: cuadricula, carrusel, lista, pequeno, grande
+    var accountsStyle: String = "carrusel"
 
     init() {}
 
     // lee también los datos guardados por versiones anteriores (a las que les faltan campos nuevos)
-    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts, companies, shifts, home }
+    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts, companies, shifts, home, accountsStyle }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 3
@@ -279,6 +281,7 @@ struct AppState: Codable {
         companies = try c.decodeIfPresent([Company].self, forKey: .companies) ?? []
         shifts = try c.decodeIfPresent([Shift].self, forKey: .shifts) ?? []
         home = HomeItem.normalized((try? c.decodeIfPresent([HomeItem].self, forKey: .home)) ?? nil)
+        accountsStyle = (try? c.decodeIfPresent(String.self, forKey: .accountsStyle)) ?? "carrusel"
     }
 }
 

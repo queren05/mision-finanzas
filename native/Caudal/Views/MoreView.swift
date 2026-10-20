@@ -150,11 +150,7 @@ struct AccountsList: View {
                     }
                 }
             }
-            .onMove { from, to in
-                var list = store.accounts
-                list.move(fromOffsets: from, toOffset: to)
-                for (i, a) in list.enumerated() { if let k = store.state.accounts.firstIndex(where: { $0.id == a.id }) { store.state.accounts[k].order = i } }
-            }
+            .onMove { from, to in store.moveAccounts(from: from, to: to) }
             let archived = store.state.accounts.filter(\.archived)
             if !archived.isEmpty {
                 Section("Archivadas") {
