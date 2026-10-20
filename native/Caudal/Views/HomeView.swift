@@ -6,6 +6,7 @@ struct HomeView: View {
     @Binding var tab: MainTab
     @State private var selected: Date? = nil
     @State private var editing: Tx? = nil
+    @State private var showStats = false
 
     var body: some View {
         NavigationStack {
@@ -36,6 +37,7 @@ struct HomeView: View {
                 }
             }
             .navigationDestination(for: Account.self) { AccountDetail(accountId: $0.id) }
+            .navigationDestination(isPresented: $showStats) { StatsView(embedded: true) }
             .sheet(item: $editing) { TxEditor(original: $0) }
         }
     }
@@ -199,7 +201,7 @@ struct HomeView: View {
         let cats = Array(store.byCategory(in: r).prefix(6))
         let total = cats.reduce(0) { $0 + $1.total }
         return VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "En qué gastas", action: "Análisis") { tab = .stats }
+            SectionHeader(title: "En qué gastas", action: "Análisis") { showStats = true }
             if cats.isEmpty {
                 Text("Aún no hay gastos este mes").foregroundStyle(.secondary)
             } else {

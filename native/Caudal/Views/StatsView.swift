@@ -7,9 +7,14 @@ struct StatsView: View {
     @State private var showIncome = false
     @State private var selectedCat: String? = nil
     @State private var angle: Double? = nil
+    /// dentro de otra navegación (desde Inicio o Más) no lleva su propia barra
+    var embedded = false
 
     var body: some View {
-        NavigationStack {
+        if embedded { content } else { NavigationStack { content } }
+    }
+
+    private var content: some View {
             ScrollView {
                 VStack(spacing: 18) {
                     periodBar
@@ -25,7 +30,6 @@ struct StatsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Análisis")
             .onAppear { if start.isEmpty { start = store.periodStart(for: Day.today) } }
-        }
     }
 
     private var range: ClosedRange<String> { store.periodRange(start.isEmpty ? store.periodStart(for: Day.today) : start) }

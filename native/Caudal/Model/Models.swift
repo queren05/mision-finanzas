@@ -198,6 +198,46 @@ struct Snapshot: Codable, Hashable {
     var v: Double
 }
 
+// MARK: - Cuentas Claras (deudas con amigos)
+
+struct Person: Codable, Identifiable, Hashable {
+    var id: String = UUID().uuidString
+    var name: String
+    var emoji: String = "😎"
+    var color: String = "#b9a4ff"
+    var nick: String = ""
+    var phone: String = ""
+    var photo: Data? = nil
+}
+
+enum DebtKind: String, Codable, CaseIterable, Identifiable {
+    case owe, debt, split, theypaid, pay, ipay
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .owe: "Te debe"
+        case .debt: "Le debes"
+        case .split: "Gasto a medias"
+        case .theypaid: "Pagó por ti"
+        case .pay: "Te ha pagado"
+        case .ipay: "Le has pagado"
+        }
+    }
+}
+
+/// amount > 0: esa persona te debe; amount < 0: tú le debes
+struct DebtMove: Codable, Identifiable, Hashable {
+    var id: String = UUID().uuidString
+    var personId: String
+    var amount: Double
+    var kind: DebtKind
+    var concept: String = ""
+    var date: String
+    var created: Date = Date()
+    var group: String? = nil
+    var total: Double? = nil
+}
+
 struct AppState: Codable {
     var version: Int = 3
     var seed: Int = 0
@@ -210,4 +250,27 @@ struct AppState: Codable {
     var settings = Settings()
     var quotes: [String: Quote] = [:]
     var snapshots: [Snapshot] = []
+    var people: [Person] = []
+    var debts: [DebtMove] = []
+
+    init() {}
+
+    // lee también los datos guardados por versiones anteriores (a las que les faltan campos nuevos)
+    enum CodingKeys: String, CodingKey { case version, seed, accounts, categories, txs, recurring, assets, goals, settings, quotes, snapshots, people, debts }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 3
+        seed = try c.decodeIfPresent(Int.self, forKey: .seed) ?? 0
+        accounts = try c.decodeIfPresent([Account].self, forKey: .accounts) ?? []
+        categories = try c.decodeIfPresent([Category].self, forKey: .categories) ?? []
+        txs = try c.decodeIfPresent([Tx].self, forKey: .txs) ?? []
+        recurring = try c.decodeIfPresent([Recurring].self, forKey: .recurring) ?? []
+        assets = try c.decodeIfPresent([Asset].self, forKey: .assets) ?? []
+        goals = try c.decodeIfPresent([Goal].self, forKey: .goals) ?? []
+        settings = try c.decodeIfPresent(Settings.self, forKey: .settings) ?? Settings()
+        quotes = try c.decodeIfPresent([String: Quote].self, forKey: .quotes) ?? [:]
+        snapshots = try c.decodeIfPresent([Snapshot].self, forKey: .snapshots) ?? []
+        people = try c.decodeIfPresent([Person].self, forKey: .people) ?? []
+        debts = try c.decodeIfPresent([DebtMove].self, forKey: .debts) ?? []
+    }
 }

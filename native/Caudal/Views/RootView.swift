@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum MainTab: Hashable { case home, txs, invest, stats, more }
+enum MainTab: Hashable { case home, txs, debts, invest, more }
 
 struct RootView: View {
     @Environment(Store.self) private var store
@@ -15,10 +15,10 @@ struct RootView: View {
                     .tabItem { Label("Inicio", systemImage: "house.fill") }
                 TransactionsView().tag(MainTab.txs)
                     .tabItem { Label("Movimientos", systemImage: "list.bullet.rectangle.portrait.fill") }
+                DebtsView().tag(MainTab.debts)
+                    .tabItem { Label("Cuentas", systemImage: "person.2.fill") }
                 InvestView().tag(MainTab.invest)
                     .tabItem { Label("Inversiones", systemImage: "chart.line.uptrend.xyaxis") }
-                StatsView().tag(MainTab.stats)
-                    .tabItem { Label("Análisis", systemImage: "chart.pie.fill") }
                 MoreView().tag(MainTab.more)
                     .tabItem { Label("Más", systemImage: "ellipsis.circle.fill") }
             }
@@ -69,12 +69,22 @@ struct RootView: View {
                 switch args[i + 1] {
                 case "txs": tab = .txs
                 case "invest": tab = .invest
-                case "stats": tab = .stats
+                case "debts": tab = .debts
                 case "more": tab = .more
                 default: break
                 }
             }
             if args.contains("-new") { newTx = true }
+            if args.contains("-demodebts"), store.state.people.isEmpty {   // (solo para las capturas del simulador)
+                let a = Person(name: "Jorlo", emoji: "🥸", color: "#5fe0a0", phone: "600000000")
+                let b = Person(name: "Álvaro", emoji: "🦊", color: "#ffa94d")
+                let c = Person(name: "Daria", emoji: "🌸", color: "#ff9ecf")
+                store.state.people = [a, b, c]
+                store.state.debts = [DebtMove(personId: a.id, amount: 12.5, kind: .split, concept: "Cena del viernes", date: Day.add(Day.today, days: -2), total: 37.5),
+                                     DebtMove(personId: b.id, amount: 12.5, kind: .split, concept: "Cena del viernes", date: Day.add(Day.today, days: -2), total: 37.5),
+                                     DebtMove(personId: c.id, amount: -8, kind: .debt, concept: "Entradas del cine", date: Day.add(Day.today, days: -1)),
+                                     DebtMove(personId: a.id, amount: -5, kind: .pay, date: Day.today)]
+            }
             await Prices.refresh(store)
         }
     }
