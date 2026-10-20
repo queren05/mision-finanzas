@@ -59,6 +59,8 @@ jobs:
           xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 || true
           APP=$(find "$RUNNER_TEMP/sim/Build/Products" -name 'Rumbo.app' -type d | head -1)
           xcrun simctl install "$DEV" "$APP"
+          xcrun simctl privacy "$DEV" grant calendar es.david.rumbo || true
+          xcrun simctl privacy "$DEV" grant photos es.david.rumbo || true
           mkdir -p "$GITHUB_WORKSPACE/out"
           shot() { xcrun simctl terminate "$DEV" es.david.rumbo 2>/dev/null || true; xcrun simctl launch "$DEV" es.david.rumbo "$@" >/dev/null || true; sleep 9; }
           shot -demo;              xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/1-hoy.png"
