@@ -48,6 +48,8 @@ struct WorkView: View {
             Color.clear.frame(height: 40).listRowBackground(Color.clear)
         }
         .navigationTitle("Horas trabajadas")
+        .onAppear { withAnimation { store.hideFAB = true } }
+        .onDisappear { withAnimation { store.hideFAB = false } }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

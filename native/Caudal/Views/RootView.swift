@@ -25,7 +25,7 @@ struct RootView: View {
             .onChange(of: tab) { _, _ in Haptic.select() }
 
             // botón de apuntar, siempre a mano
-            if tab == .home || tab == .txs {
+            if (tab == .home || tab == .txs) && !store.hideFAB {
                 Button {
                     Haptic.heavy()
                     fabSpin.toggle()

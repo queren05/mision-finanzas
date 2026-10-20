@@ -127,7 +127,7 @@ struct HomeView: View {
                         Text(Money.int(store.s.km)).font(.system(size: 40, weight: .bold, design: .rounded)).monospacedDigit()
                             .lineLimit(1).minimumScaleFactor(0.6).layoutPriority(1)
                             .contentTransition(.numericText(value: Double(store.s.km)))
-                        Text("km").font(.headline).foregroundStyle(.secondary)
+                        Text("km").font(.headline).foregroundStyle(.secondary).fixedSize()
                     }
                     Text([store.kmPerMonth.map { "≈ \(Money.km($0))/mes" }, "actualizado " + (store.s.kmLog.last.map { Day.header($0.d).lowercased() } ?? "nunca")].compactMap { $0 }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(.secondary)

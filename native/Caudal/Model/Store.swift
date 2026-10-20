@@ -15,6 +15,8 @@ final class Store {
     /// último movimiento borrado (para deshacer)
     var lastDeleted: Tx? = nil
     var refreshing = false
+    /// se oculta el botón + flotante (pantallas que lo tapan, como Horas trabajadas)
+    var hideFAB = false
 
     @ObservationIgnored private var saveTask: Task<Void, Never>? = nil
     @ObservationIgnored private let url: URL = {
