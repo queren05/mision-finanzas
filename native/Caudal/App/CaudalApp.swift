@@ -29,6 +29,7 @@ struct CaudalApp: App {
                     if store.state.settings.faceID { locked = true }
                 case .active:
                     store.runRecurring()
+                    store.updateWidgets()
                     if locked { unlock() }
                 default: break
                 }

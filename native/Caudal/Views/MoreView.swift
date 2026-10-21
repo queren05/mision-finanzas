@@ -33,6 +33,7 @@ struct MoreView: View {
                     NavigationLink { GoalsList() } label: { row("Objetivos", "target", .pink, "\(store.state.goals.count)") }
                 }
                 Section("iPhone") {
+                    NavigationLink { WidgetsGallery() } label: { row("Widgets", "square.grid.3x3.square", .indigo, "") }
                     NavigationLink { AutoExpensesView() } label: { row("Gastos automáticos", "wave.3.right.circle.fill", .mint, "") }
                 }
                 Section("Ajustes") {
