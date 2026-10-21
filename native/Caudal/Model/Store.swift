@@ -1,6 +1,5 @@
 import SwiftUI
 import Observation
-import WidgetKit
 
 struct NWPoint: Identifiable { var date: Date; var value: Double; var id: Date { date } }
 struct CatTotal: Identifiable { var cat: Category; var total: Double; var id: String { cat.id } }
@@ -52,7 +51,6 @@ final class Store {
     func saveNow() {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let data = try? enc.encode(state) { try? data.write(to: url, options: .atomic) }
-        updateWidgets()
     }
     func exportData() -> Data {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -343,35 +341,9 @@ final class Store {
 }
 
 
-// MARK: - Widgets y gastos automáticos
+// MARK: - Gastos automáticos
 
 extension Store {
-    func widgetData() -> WidgetData {
-        var w = WidgetData()
-        w.netWorth = netWorth; w.cash = cashTotal; w.invest = investValue
-        let assets = state.assets.filter { !$0.archived }
-        let ch = assets.compactMap { a in dayChange(a).map { (assetValue(a), $0) } }
-        let tot = ch.reduce(0) { $0 + $1.0 }
-        if tot > 0 { w.investChange = ch.reduce(0) { $0 + $1.0 * $1.1 } / tot }
-        w.accounts = accounts.map { WidgetData.Acc(name: $0.name, icon: $0.icon, color: $0.color, value: value($0)) }
-        let start = periodStart(for: Day.today), r = periodRange(start)
-        w.month = Day.month(start); w.spent = spent(in: r); w.earned = earned(in: r)
-        w.budget = state.categories.filter { $0.kind == .expense }.reduce(0) { $0 + $1.budget }
-        w.cats = byCategory(in: r).prefix(4).map { WidgetData.Cat(name: $0.cat.name, icon: $0.cat.icon, color: $0.cat.color, total: $0.total) }
-        w.positions = assets.sorted { assetValue($0) > assetValue($1) }.prefix(4).map { WidgetData.Pos(name: $0.name, value: assetValue($0), change: dayChange($0)) }
-        w.recent = state.txs.filter { $0.type != .adjust }.sorted { $0.sortKey > $1.sortKey }.prefix(5).map { t in
-            let c = category(t.categoryId)
-            return WidgetData.Mov(title: t.title.isEmpty ? (c?.name ?? "Movimiento") : t.title, icon: c?.icon ?? (t.type == .transfer ? "🔁" : "💸"),
-                                  amount: t.type == .income ? t.amount : -t.amount, date: t.date)
-        }
-        w.accent = state.settings.accent
-        return w
-    }
-    func updateWidgets() {
-        widgetData().save()
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
     /// apunta los gastos que han llegado de Atajos (Apple Pay) mientras la app estaba cerrada
     func mergeInbox() {
         let list = AutoInbox.take()
@@ -394,9 +366,7 @@ struct PendingTx: Codable { var amount: Double; var merchant: String; var card: 
 /// buzón de gastos que llegan desde Atajos
 enum AutoInbox {
     static var url: URL {
-        let dir = WidgetData.sharedDir
-            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return dir.appendingPathComponent("inbox.json")
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("inbox.json")
     }
     static func read() -> [PendingTx] { (try? JSONDecoder().decode([PendingTx].self, from: Data(contentsOf: url))) ?? [] }
     static func add(_ p: PendingTx) {

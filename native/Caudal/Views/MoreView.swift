@@ -7,7 +7,6 @@ struct MoreView: View {
     @State private var message: String? = nil
     @State private var askReset = false
     @State private var askErase = false
-    @State private var openWidgets = false
 
     var body: some View {
         @Bindable var store = store
@@ -34,7 +33,6 @@ struct MoreView: View {
                     NavigationLink { GoalsList() } label: { row("Objetivos", "target", .pink, "\(store.state.goals.count)") }
                 }
                 Section("iPhone") {
-                    NavigationLink { WidgetsGallery() } label: { row("Widgets", "square.grid.3x3.square", .indigo, "") }
                     NavigationLink { AutoExpensesView() } label: { row("Gastos automáticos", "wave.3.right.circle.fill", .mint, "") }
                 }
                 Section("Ajustes") {
@@ -64,8 +62,6 @@ struct MoreView: View {
                 Color.clear.frame(height: 40).listRowBackground(Color.clear)
             }
             .navigationTitle("Más")
-            .navigationDestination(isPresented: $openWidgets) { WidgetsGallery() }
-            .task { if ProcessInfo.processInfo.arguments.contains("-widgets") { openWidgets = true } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
                 guard case .success(let url) = result else { return }
                 let ok = url.startAccessingSecurityScopedResource()

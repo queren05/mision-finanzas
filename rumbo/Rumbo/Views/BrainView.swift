@@ -46,11 +46,14 @@ struct BrainView: View {
                 }
                 .ignoresSafeArea()
             }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, .image, .plainText, .text], allowsMultipleSelection: true) { r in
-                switch r {
-                case .success(let urls): Task { for u in urls { await addFile(u) } }
-                case .failure(let e): store.error = "No se ha podido abrir el archivo: \(e.localizedDescription)"
+            .sheet(isPresented: $importing) {
+                DocPicker { files in
+                    importing = false
+                    guard let files else { return }
+                    if files.isEmpty { store.error = "No se ha podido abrir el archivo."; return }
+                    Task { for f in files { await addFile(name: f.name, ext: f.ext, data: f.data) } }
                 }
+                .ignoresSafeArea()
             }
             .photosPicker(isPresented: $pickingPhotos, selection: $photos, maxSelectionCount: 10, matching: .images)
             .onChange(of: photos) { _, items in
@@ -183,7 +186,7 @@ struct BrainView: View {
         var d = d
         if let folder { d.folder = folder }
         // sin esperar a Claude: total y fecha leídos en el propio iPhone
-        if d.kind != "note" {
+        if d.kind == "pdf" || d.kind == "image" {
             if d.amount == nil { d.amount = Extract.total(in: d.text) }
             if let f = Extract.date(in: d.text) { d.docDate = f }
             if d.amount != nil && folder == nil { d.folder = .recibos }
@@ -211,17 +214,20 @@ struct BrainView: View {
         let text = await Extract.imageText(data)
         await added(BrainDoc(title: "Foto del \(Day.shortLabel(Day.today))", kind: "image", file: Extract.store(data, ext: "jpg"), text: text))
     }
-    private func addFile(_ url: URL) async {
+    private func addFile(name: String, ext: String, data: Data) async {
         working += 1; defer { working -= 1 }
-        let ok = url.startAccessingSecurityScopedResource()
-        defer { if ok { url.stopAccessingSecurityScopedResource() } }
-        guard let data = try? Data(contentsOf: url) else { store.error = "No se ha podido leer «\(url.lastPathComponent)»."; return }
-        let ext = url.pathExtension.lowercased()
-        var d = BrainDoc(title: url.deletingPathExtension().lastPathComponent)
+        var d = BrainDoc(title: name)
         if ext == "pdf" { d.kind = "pdf"; d.text = await Extract.pdfText(data); d.file = Extract.store(data, ext: "pdf") }
         else if let img = UIImage(data: data) { d.kind = "image"; let j = Extract.jpeg(img, maxSide: 2200); d.text = await Extract.imageText(j); d.file = Extract.store(j, ext: "jpg") }
-        else if let t = String(data: data, encoding: .utf8) { d.kind = "note"; d.text = t }
-        else { store.error = "«\(url.lastPathComponent)» no es un PDF, una imagen ni un texto."; return }
+        else if ["txt", "text", "md", "csv"].contains(ext), let t = String(data: data, encoding: .utf8) { d.kind = "note"; d.text = t }
+        else {
+            // Word, Pages, RTF…: se guarda el archivo tal cual y se saca el texto que se pueda
+            d.kind = "file"
+            d.file = Extract.store(data, ext: ext.isEmpty ? "dat" : ext)
+            if ["docx", "odt"].contains(ext) { d.text = OfficeText.read(data) }
+            else if ["rtf", "rtfd"].contains(ext), let a = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) { d.text = a.string }
+            else if let t = String(data: data, encoding: .utf8), !t.contains("\0") { d.text = t }
+        }
         await added(d)
     }
 
@@ -275,7 +281,7 @@ struct Thumb: View {
             if doc.kind == "image", let f = doc.file, let ui = UIImage(contentsOfFile: Extract.url(f).path) {
                 Image(uiImage: ui).resizable().scaledToFill()
             } else {
-                Image(systemName: doc.kind == "pdf" ? "doc.richtext.fill" : doc.folder == .recibos ? "receipt.fill" : doc.kind == "note" ? "note.text" : doc.folder.icon)
+                Image(systemName: doc.kind == "pdf" ? "doc.richtext.fill" : doc.kind == "file" ? "doc.text.fill" : doc.folder == .recibos ? "receipt.fill" : doc.kind == "note" ? "note.text" : doc.folder.icon)
                     .font(.system(size: size * 0.45)).foregroundStyle(Color(hex: doc.folder.color))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(hex: doc.folder.color).opacity(0.18))
@@ -306,7 +312,7 @@ struct DocDetail: View {
                                 Image(uiImage: ui).resizable().scaledToFit().frame(maxHeight: 260).frame(maxWidth: .infinity)
                                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             } else {
-                                Label("Ver el PDF", systemImage: "doc.richtext")
+                                Label(d.kind == "pdf" ? "Ver el PDF" : "Ver el archivo", systemImage: "doc.richtext")
                             }
                         }
                     }

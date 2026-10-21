@@ -2,6 +2,8 @@ import SwiftUI
 import PDFKit
 import Vision
 import VisionKit
+import Compression
+import UniformTypeIdentifiers
 
 /// Saca el texto de PDFs y fotos (en el propio iPhone, sin internet)
 enum Extract {
@@ -117,5 +119,92 @@ struct DocScanner: UIViewControllerRepresentable {
         }
         func documentCameraViewControllerDidCancel(_ c: VNDocumentCameraViewController) { done([]); c.dismiss(animated: true) }
         func documentCameraViewController(_ c: VNDocumentCameraViewController, didFailWithError error: Error) { done([]); c.dismiss(animated: true) }
+    }
+}
+
+/// texto de un Word (.docx) u OpenDocument (.odt): son un zip con el texto en XML
+enum OfficeText {
+    static func read(_ data: Data) -> String {
+        let b = [UInt8](data)
+        func u16(_ i: Int) -> Int { i + 1 < b.count ? Int(b[i]) | Int(b[i + 1]) << 8 : 0 }
+        func u32(_ i: Int) -> Int { u16(i) | u16(i + 2) << 16 }
+        // fin del directorio del zip
+        guard b.count > 22, let end = stride(from: b.count - 22, through: max(0, b.count - 65_557), by: -1).first(where: { u32($0) == 0x06054b50 }) else { return "" }
+        var p = u32(end + 16)
+        var out = ""
+        for _ in 0..<u16(end + 10) {
+            guard p + 46 <= b.count, u32(p) == 0x02014b50 else { break }
+            let method = u16(p + 10), csize = u32(p + 20), usize = u32(p + 24)
+            let nlen = u16(p + 28), elen = u16(p + 30), clen = u16(p + 32), local = u32(p + 42)
+            let name = String(decoding: b[(p + 46)..<min(b.count, p + 46 + nlen)], as: UTF8.self)
+            p += 46 + nlen + elen + clen
+            guard name == "word/document.xml" || name == "content.xml" else { continue }
+            let start = local + 30 + u16(local + 26) + u16(local + 28)
+            guard start + csize <= b.count else { break }
+            let raw = Data(b[start..<(start + csize)])
+            let xml: Data
+            if method == 0 { xml = raw }
+            else if method == 8, let d = inflate(raw, size: usize) { xml = d }
+            else { break }
+            out = strip(String(decoding: xml, as: UTF8.self))
+            break
+        }
+        return out
+    }
+
+    private static func inflate(_ src: Data, size: Int) -> Data? {
+        guard size > 0, size < 200_000_000 else { return nil }
+        var dst = Data(count: size)
+        let n = dst.withUnsafeMutableBytes { d in
+            src.withUnsafeBytes { s in
+                compression_decode_buffer(d.bindMemory(to: UInt8.self).baseAddress!, size,
+                                          s.bindMemory(to: UInt8.self).baseAddress!, src.count, nil, COMPRESSION_ZLIB)
+            }
+        }
+        return n > 0 ? dst.prefix(n) : nil
+    }
+
+    private static func strip(_ xml: String) -> String {
+        var s = xml
+        for (a, b) in [("</w:p>", "\n"), ("</text:p>", "\n"), ("</text:h>", "\n"), ("<w:tab/>", "\t"), ("<w:br/>", "\n"), ("<text:line-break/>", "\n")] {
+            s = s.replacingOccurrences(of: a, with: b)
+        }
+        s = s.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        for (a, b) in [("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&apos;", "'"), ("&amp;", "&")] {
+            s = s.replacingOccurrences(of: a, with: b)
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+/// selector de archivos de iOS que copia el archivo dentro de la app (funciona con iCloud, Drive, etc.)
+struct DocPicker: UIViewControllerRepresentable {
+    var onPick: ([(name: String, ext: String, data: Data)]?) -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let types: [UTType] = [.pdf, .image, .plainText, .text, .rtf, .rtfd, .item]
+            + ["docx", "doc", "odt", "pages"].compactMap { UTType(filenameExtension: $0) }
+        let vc = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
+        vc.allowsMultipleSelection = true
+        vc.delegate = context.coordinator
+        return vc
+    }
+    func updateUIViewController(_ vc: UIDocumentPickerViewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: ([(name: String, ext: String, data: Data)]?) -> Void
+        init(onPick: @escaping ([(name: String, ext: String, data: Data)]?) -> Void) { self.onPick = onPick }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { onPick(nil) }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            // se lee ya, antes de que iOS borre la copia temporal
+            let files = urls.compactMap { u -> (name: String, ext: String, data: Data)? in
+                let ok = u.startAccessingSecurityScopedResource()
+                defer { if ok { u.stopAccessingSecurityScopedResource() } }
+                guard let d = try? Data(contentsOf: u) else { return nil }
+                return (u.deletingPathExtension().lastPathComponent, u.pathExtension.lowercased(), d)
+            }
+            onPick(files)
+        }
     }
 }
