@@ -2,3 +2,6 @@ node_modules/
 ios-app/ios/
 ios-app/node_modules/
 .DS_Store
+
+# datos personales de Caudal (los pone GitHub Actions desde el secreto CAUDAL_SEED_JSON)
+native/Caudal/Resources/seed-personal.json

@@ -23,6 +23,13 @@ jobs:
           X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); [ -n "$X" ] || X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$X"; xcodebuild -version
 
+      - name: Datos de partida personales (secreto, no están en git)
+        env:
+          SEED: ${{ secrets.CAUDAL_SEED_JSON }}
+        run: |
+          mkdir -p native/Caudal/Resources
+          if [ -n "$SEED" ]; then echo "$SEED" | base64 -d > native/Caudal/Resources/seed-personal.json; echo "con datos personales"; else echo "sin datos personales"; fi
+
       - name: Generar el proyecto (XcodeGen)
         working-directory: native
         run: |
