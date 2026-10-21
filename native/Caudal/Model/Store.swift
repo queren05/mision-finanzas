@@ -55,7 +55,7 @@ final class Store {
     func saveNow() {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let data = try? enc.encode(state) { try? data.write(to: url, options: .atomic) }
-        updateWidgets()
+        updateWidgets(now: UIApplication.shared.applicationState != .active)
     }
     func exportData() -> Data {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -370,15 +370,18 @@ extension Store {
         w.accent = state.settings.accent
         return w
     }
-    /// manda el resumen al servidor (como mucho una vez cada 3 s) y avisa a los widgets
-    func updateWidgets() {
+    /// manda el resumen al servidor (agrupando cambios seguidos) y avisa a los widgets; sigue aunque la app pase a segundo plano
+    func updateWidgets(now: Bool = false) {
         widgetUpload?.cancel()
         let d = widgetData()
         widgetUpload = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            if !now { try? await Task.sleep(nanoseconds: 1_500_000_000) }
             guard !Task.isCancelled else { return }
-            let ok = await d.upload()
-            widgetSync = ok ? Date() : nil
+            let bg = UIApplication.shared.beginBackgroundTask(withName: "widgets")
+            defer { UIApplication.shared.endBackgroundTask(bg) }
+            var ok = await d.upload()
+            if !ok { try? await Task.sleep(nanoseconds: 2_000_000_000); ok = await d.upload() }
+            widgetSync = ok ? Date() : widgetSync
             widgetSyncFailed = !ok
             if ok { WidgetCenter.shared.reloadAllTimelines() }
         }

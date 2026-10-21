@@ -21,7 +21,7 @@ struct CaudalApp: App {
             .environment(\.locale, Locale(identifier: "es_ES"))
             .tint(Color(hex: store.state.settings.accent))
             .preferredColorScheme(.dark)
-            .onAppear { if store.state.settings.faceID { locked = true; unlock() } }
+            .onAppear { if store.state.settings.faceID { locked = true; unlock() }; store.updateWidgets(now: true) }
             .onChange(of: phase) { _, p in
                 switch p {
                 case .background:

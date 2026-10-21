@@ -30,7 +30,7 @@ struct Shell<C: View>: View {
             else {
                 VStack(spacing: 6) {
                     Image(systemName: "drop.fill").font(.title2).foregroundStyle(Color(wHex: "#e4b3cb"))
-                    Text("Sin conexión").font(.caption.weight(.semibold))
+                    Text("Abre Caudal").font(.caption.weight(.semibold))
                 }
             }
         }
