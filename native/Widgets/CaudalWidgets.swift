@@ -28,6 +28,7 @@ struct Shell<C: View>: View {
                 VStack(spacing: 6) {
                     Image(systemName: "drop.fill").font(.title2).foregroundStyle(Color(wHex: "#e4b3cb"))
                     Text("Abre Caudal").font(.caption.weight(.semibold))
+                    Text(WidgetData.link).font(.system(size: 8)).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
             }
         }

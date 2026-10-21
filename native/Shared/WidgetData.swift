@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Security
 
 /// Lo que la app deja preparado para los widgets de la pantalla de inicio (en el App Group compartido)
 struct WidgetData: Codable {
@@ -48,20 +49,75 @@ struct WidgetData: Codable {
     private static let pbName = UIPasteboard.Name("es.david.caudal.widget")
     private static let pbType = "es.david.caudal.widget"
 
+    // MARK: llavero compartido (con los certificados de KSign/zsign el perfil permite «EQUIPO.*»)
+
+    /// equipo de la firma: del perfil, o del grupo por defecto del llavero
+    static let teamID: String? = {
+        if let p = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+           let d = try? Data(contentsOf: p), let s = String(data: d, encoding: .isoLatin1),
+           let a = s.range(of: "<?xml"), let b = s.range(of: "</plist>"),
+           let plist = try? PropertyListSerialization.propertyList(from: Data(s[a.lowerBound..<b.upperBound].utf8), format: nil) as? [String: Any] {
+            if let t = (plist["TeamIdentifier"] as? [String])?.first { return t }
+            if let t = (plist["ApplicationIdentifierPrefix"] as? [String])?.first { return t }
+        }
+        // sin perfil: se mira el grupo que el sistema pone a un elemento de prueba
+        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrAccount as String: "caudal.probe",
+                                kSecAttrService as String: "caudal", kSecReturnAttributes as String: true]
+        var out: AnyObject?
+        var st = SecItemCopyMatching(q as CFDictionary, &out)
+        if st == errSecItemNotFound {
+            var add = q; add.removeValue(forKey: kSecReturnAttributes as String); add[kSecValueData as String] = Data("1".utf8)
+            SecItemAdd(add as CFDictionary, nil)
+            st = SecItemCopyMatching(q as CFDictionary, &out)
+        }
+        guard st == errSecSuccess, let g = (out as? [String: Any])?[kSecAttrAccessGroup as String] as? String, let dot = g.firstIndex(of: ".") else { return nil }
+        return String(g[..<dot])
+    }()
+    static var keyGroup: String? { teamID.map { "\($0).es.david.caudal.shared" } }
+    private static func keyQuery() -> [String: Any]? {
+        guard let g = keyGroup else { return nil }
+        return [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "es.david.caudal.widget",
+                kSecAttrAccount as String: "datos", kSecAttrAccessGroup as String: g]
+    }
+    @discardableResult
+    static func keychainWrite(_ d: Data) -> OSStatus {
+        guard let q = keyQuery() else { return errSecMissingEntitlement }
+        let st = SecItemUpdate(q as CFDictionary, [kSecValueData as String: d] as CFDictionary)
+        if st != errSecItemNotFound { return st }
+        var add = q
+        add[kSecValueData as String] = d
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        return SecItemAdd(add as CFDictionary, nil)
+    }
+    static func keychainRead() -> (Data?, OSStatus) {
+        guard var q = keyQuery() else { return (nil, errSecMissingEntitlement) }
+        q[kSecReturnData as String] = true
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        var out: AnyObject?
+        let st = SecItemCopyMatching(q as CFDictionary, &out)
+        return (out as? Data, st)
+    }
+
     static func load() -> WidgetData? {
         if let u = url, let d = try? Data(contentsOf: u), let w = try? JSONDecoder().decode(WidgetData.self, from: d) { return w }
+        if let d = keychainRead().0, let w = try? JSONDecoder().decode(WidgetData.self, from: d) { return w }
         if let d = UIPasteboard(name: pbName, create: false)?.data(forPasteboardType: pbType), let w = try? JSONDecoder().decode(WidgetData.self, from: d) { return w }
         return nil
     }
     func save() {
         guard let d = try? JSONEncoder().encode(self) else { return }
         if let u = WidgetData.url { try? d.write(to: u, options: .atomic) }
+        WidgetData.lastKeychain = WidgetData.keychainWrite(d)
         UIPasteboard(name: WidgetData.pbName, create: true)?.setData(d, forPasteboardType: WidgetData.pbType)
     }
-    /// cómo está llegando la información al widget (para Más → Widgets)
+    static var lastKeychain: OSStatus = 0
+    /// cómo está llegando la información al widget (para Más → Widgets y para el propio widget)
     static var link: String {
-        if sharedDir != nil { return "Carpeta compartida" }
-        return UIPasteboard(name: pbName, create: false)?.data(forPasteboardType: pbType) != nil ? "Portapapeles privado" : "Sin enlace"
+        let g = sharedDir != nil ? "grupo ✓" : "grupo ✗"
+        let k = keychainRead().1
+        let kc = k == errSecSuccess ? "llavero ✓" : "llavero ✗ \(k)"
+        let pb = UIPasteboard(name: pbName, create: false)?.data(forPasteboardType: pbType) != nil ? "portapapeles ✓" : "portapapeles ✗"
+        return "\(g) · \(kc) · \(pb) · equipo \(teamID ?? "?")"
     }
 
     static let sample = WidgetData(netWorth: 1832.40, cash: 232.58, invest: 1599.82, investChange: 0.84,
