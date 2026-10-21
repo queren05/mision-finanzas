@@ -35,6 +35,14 @@ struct WidgetData: Codable {
         return nil
     }()
     /// grupos que trae el perfil de firma metido en la app (embedded.mobileprovision)
+    /// permisos del perfil de firma (para el diagnóstico)
+    static func profileEntitlements() -> [String: Any] {
+        guard let p = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let d = try? Data(contentsOf: p), let s = String(data: d, encoding: .isoLatin1),
+              let a = s.range(of: "<?xml"), let b = s.range(of: "</plist>"),
+              let plist = try? PropertyListSerialization.propertyList(from: Data(s[a.lowerBound..<b.upperBound].utf8), format: nil) as? [String: Any] else { return [:] }
+        return plist["Entitlements"] as? [String: Any] ?? [:]
+    }
     static func profileGroups() -> [String] {
         guard let p = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
               let d = try? Data(contentsOf: p), let s = String(data: d, encoding: .isoLatin1),

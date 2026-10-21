@@ -34,6 +34,9 @@ struct WidgetsGallery: View {
             Label("Busca Caudal y elige el que quieras", systemImage: "3.circle.fill")
             Label("«Gastos del mes» también va en la pantalla de bloqueo", systemImage: "lock.circle.fill")
             Label("Enlace: \(WidgetData.link)", systemImage: "link.circle.fill").foregroundStyle(.secondary)
+            let ent = WidgetData.profileEntitlements()
+            Text("Perfil: " + ent.keys.sorted().map { k in "\(k) = \(ent[k].map { "\($0)" } ?? "")" }.joined(separator: " · "))
+                .font(.system(size: 9)).foregroundStyle(.secondary).textSelection(.enabled)
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)

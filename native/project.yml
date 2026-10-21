@@ -21,6 +21,7 @@ targets:
       path: Caudal/Caudal.entitlements
       properties:
         com.apple.security.application-groups: [group.es.david.caudal]
+        keychain-access-groups: [3J96GNXKKU.es.david.caudal.shared, 3J96GNXKKU.es.david.caudal]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.caudal
@@ -55,6 +56,7 @@ targets:
       path: Widgets/Widgets.entitlements
       properties:
         com.apple.security.application-groups: [group.es.david.caudal]
+        keychain-access-groups: [3J96GNXKKU.es.david.caudal.shared, 3J96GNXKKU.es.david.caudal]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.caudal.widgets
