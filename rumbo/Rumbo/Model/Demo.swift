@@ -15,6 +15,8 @@ enum Demo {
             BrainDoc(title: "Gasolina Repsol", folder: .recibos, kind: "image", text: "Ticket", summary: "Repostaje.", amount: 40, docDate: Day.today, issuer: "Repsol"),
         ]
         st.docs[0].due = Day.add(Day.today, days: 9)
+        st.reminders = [Reminder(title: "Sacar la basura", date: Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: Date())!, repeats: "dia"),
+                        Reminder(title: "Llamar a mamá", date: Date().addingTimeInterval(26 * 3600))]
         st.tasks = [TaskItem(title: "Revisar el presupuesto del mes", priority: true, due: Day.today),
                     TaskItem(title: "Llamar al seguro del coche", due: Day.add(Day.today, days: 2)),
                     TaskItem(title: "Pagar la factura de la luz", due: Day.add(Day.today, days: 4)),

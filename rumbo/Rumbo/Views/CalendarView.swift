@@ -5,7 +5,7 @@ struct CalDay: Hashable { var day: String }
 
 /// una cosa que pasa un día: evento del iPhone, tarea, vencimiento, recibo o chequeo
 struct CalEntry: Identifiable {
-    enum Kind: Int { case event, task, due, receipt, checkIn }
+    enum Kind: Int { case event, reminder, task, due, receipt, checkIn }
     var id: String
     var kind: Kind
     var title: String
@@ -17,6 +17,7 @@ struct CalEntry: Identifiable {
     static func color(_ k: Kind) -> Color {
         switch k {
         case .event: Color(hex: "#7ac8ff")
+        case .reminder: Color(hex: "#ff9ecf")
         case .task: Color(hex: "#f0c46a")
         case .due: Color(hex: "#ff8686")
         case .receipt: Color(hex: "#62cfd0")
@@ -34,6 +35,10 @@ extension Store {
         for e in events where e.start < end && e.end > start {
             out.append(CalEntry(id: "e" + e.id, kind: .event, title: e.title,
                                 detail: e.allDay ? "Todo el día" : "\(Day.time(e.start)) – \(Day.time(e.end))", color: e.color))
+        }
+        for r in s.reminders where r.occurs(on: day) {
+            out.append(CalEntry(id: "a" + r.id, kind: .reminder, title: r.title.isEmpty ? "Recordatorio" : r.title,
+                                detail: "⏰ " + Day.time(r.date) + (r.rep == .nunca ? "" : " · " + r.rep.label.lowercased()), color: CalEntry.color(.reminder)))
         }
         for t in s.tasks where t.due == day {
             out.append(CalEntry(id: "t" + t.id, kind: .task, title: t.title, detail: t.priority ? "Prioridad" : "Tarea", color: CalEntry.color(.task), task: t))
@@ -170,7 +175,7 @@ struct CalendarView: View {
 
     private var legend: some View {
         HStack(spacing: 12) {
-            ForEach([(CalEntry.Kind.event, "Agenda"), (.task, "Tareas"), (.due, "Vence"), (.receipt, "Recibos"), (.checkIn, "Chequeo")], id: \.1) { k, t in
+            ForEach([(CalEntry.Kind.event, "Agenda"), (.reminder, "Avisos"), (.task, "Tareas"), (.due, "Vence"), (.receipt, "Recibos"), (.checkIn, "Chequeo")], id: \.1) { k, t in
                 HStack(spacing: 4) { Circle().fill(CalEntry.color(k)).frame(width: 7, height: 7); Text(t).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
             }
         }

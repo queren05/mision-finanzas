@@ -19,6 +19,7 @@ struct TodayView: View {
                     WeekStrip(events: weekEvents).appear(0.03)
                     briefing.appear(0.05)
                     agenda.appear(0.1)
+                    RemindersCard().appear(0.12)
                     priorities.appear(0.15)
                     tasks.appear(0.2)
                     Color.clear.frame(height: 30)

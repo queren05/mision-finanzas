@@ -13,6 +13,28 @@ struct TaskItem: Codable, Identifiable, Hashable {
     var doneAt: Date? = nil
 }
 
+/// recordatorio con fecha y hora: salta una notificación
+struct Reminder: Codable, Identifiable, Hashable {
+    var id: String = UUID().uuidString
+    var title: String = ""
+    var note: String = ""
+    var date: Date = Date()
+    /// "", "dia", "semana", "mes", "año"
+    var repeats: String = ""
+
+    init(title: String = "", note: String = "", date: Date = Date(), repeats: String = "") {
+        self.title = title; self.note = note; self.date = date; self.repeats = repeats
+    }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = (try? c.decodeIfPresent(String.self, forKey: .id)) ?? UUID().uuidString
+        title = (try? c.decodeIfPresent(String.self, forKey: .title)) ?? ""
+        note = (try? c.decodeIfPresent(String.self, forKey: .note)) ?? ""
+        date = (try? c.decodeIfPresent(Date.self, forKey: .date)) ?? Date()
+        repeats = (try? c.decodeIfPresent(String.self, forKey: .repeats)) ?? ""
+    }
+}
+
 struct Briefing: Codable, Hashable {
     var date: String
     var text: String
@@ -231,6 +253,7 @@ struct Settings: Codable, Hashable {
 
 struct RState: Codable {
     var tasks: [TaskItem] = []
+    var reminders: [Reminder] = []
     var briefing: Briefing? = nil
     var docs: [BrainDoc] = []
     var brainQA: [QA] = []
@@ -246,11 +269,12 @@ struct RState: Codable {
     var settings = Settings()
 
     init() {}
-    enum CodingKeys: String, CodingKey { case tasks, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, settings }
+    enum CodingKeys: String, CodingKey { case tasks, reminders, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, settings }
     // tolera datos guardados por versiones anteriores
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         tasks = try c.decodeIfPresent([TaskItem].self, forKey: .tasks) ?? []
+        reminders = (try? c.decodeIfPresent([Reminder].self, forKey: .reminders)) ?? []
         briefing = try c.decodeIfPresent(Briefing.self, forKey: .briefing)
         docs = try c.decodeIfPresent([BrainDoc].self, forKey: .docs) ?? []
         brainQA = try c.decodeIfPresent([QA].self, forKey: .brainQA) ?? []

@@ -26,6 +26,7 @@ final class Store {
 
     init() {
         if let d = try? Data(contentsOf: url), let st = try? JSONDecoder().decode(RState.self, from: d) { s = st } else { s = Store.starter() }
+        UNUserNotificationCenter.current().delegate = NotiDelegate.shared
     }
 
     static func starter() -> RState {
@@ -93,7 +94,7 @@ final class Store {
     func scheduleNotifications() {
         let c = UNUserNotificationCenter.current()
         c.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
-        c.removeAllPendingNotificationRequests()
+        c.removePendingNotificationRequests(withIdentifiers: ["briefing", "checkin", "weekly"])
         let st = s.settings
         func add(_ id: String, _ title: String, _ body: String, _ comps: DateComponents) {
             let n = UNMutableNotificationContent(); n.title = title; n.body = body; n.sound = .default
@@ -102,6 +103,7 @@ final class Store {
         if st.notifyBriefing { add("briefing", "Buenos días, \(st.name) ☀️", "Abre Rumbo y mira tu briefing de hoy: agenda, prioridades y tareas.", DateComponents(hour: st.briefingHour, minute: 0)) }
         if st.notifyCheckIn { add("checkin", "Chequeo nocturno 🌙", "¿Cómo ha ido hoy? Apunta tus logros y qué mejorar.", DateComponents(hour: st.checkInHour, minute: 0)) }
         if st.notifyWeekly { add("weekly", "Revisión semanal 📅", "Tu semana en un resumen y el plan para la siguiente.", DateComponents(hour: 19, minute: 0, weekday: 1)) }
+        syncReminders()
     }
 
     // MARK: - 1. Panel de vida
