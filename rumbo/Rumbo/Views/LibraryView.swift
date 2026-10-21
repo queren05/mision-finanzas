@@ -5,7 +5,7 @@ struct LibraryView: View {
     @Environment(Store.self) private var store
     @State private var status: ItemStatus? = nil
     @State private var adding = false
-    @State private var cine = false
+    @State private var cine = true
     @State private var searching = false
     @State private var searchQuery = ""
 
@@ -13,25 +13,13 @@ struct LibraryView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    Picker("", selection: $cine.animation(.spring(response: 0.4, dampingFraction: 0.85))) {
-                        Text("Lecturas").tag(false)
-                        Text("Pelis y series").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    if cine {
-                        CineSection()
-                    } else {
-                        shelf.appear(0)
-                        ask.appear(0.05)
-                        filters.appear(0.1)
-                        items.appear(0.15)
-                    }
+                    CineSection()
                     Color.clear.frame(height: 30)
                 }
                 .padding(.horizontal, 16)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle(cine ? "Mi cine" : "Mi biblioteca de vida")
+            .navigationTitle("Mi cine")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button { if cine { searchQuery = ""; searching = true } else { adding = true } } label: { Image(systemName: "plus.circle.fill").font(.title3) } }
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }

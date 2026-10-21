@@ -6,7 +6,7 @@ struct CorsaApp: App {
     @State private var store = Store()
     var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView().scrollIndicators(.hidden)
                 .environment(store)
                 .environment(\.locale, Locale(identifier: "es_ES"))
                 .tint(Color(hex: "#7ac8ff"))

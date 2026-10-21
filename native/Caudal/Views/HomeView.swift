@@ -310,7 +310,9 @@ struct HomeView: View {
         let r = store.periodRange(start)
         let prevR = store.periodRange(Day.add(start, months: -1))
         let spent = store.spent(in: r), earned = store.earned(in: r)
-        let prevSpent = store.spent(in: prevR)
+        let elapsed = Day.cal.dateComponents([.day], from: Day.date(start), to: Day.date(Day.today)).day ?? 0
+        let prevSpent = store.spent(in: prevR.lowerBound...min(prevR.upperBound, Day.add(prevR.lowerBound, days: elapsed)))
+        let prevMonthTotal = store.spent(in: prevR)
         let budget = store.state.categories.filter { $0.kind == .expense }.reduce(0) { $0 + $1.budget }
         return VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: Day.month(start))
@@ -323,7 +325,7 @@ struct HomeView: View {
                 Spacer()
                 AmountText(value: earned - spent, signed: true, font: .headline, color: earned - spent >= 0 ? .income : .negative)
             }
-            if prevSpent > 0 {
+            if prevSpent > 0, prevMonthTotal >= 100 {
                 let pct = (spent / prevSpent - 1) * 100
                 Label(pct <= 0 ? "Llevas un \(Money.num(-pct)) % menos que el mes pasado" : "Llevas un \(Money.num(pct)) % más que el mes pasado",
                       systemImage: pct <= 0 ? "hand.thumbsup.fill" : "exclamationmark.triangle.fill")

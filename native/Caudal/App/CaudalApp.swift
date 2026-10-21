@@ -10,7 +10,7 @@ struct CaudalApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                RootView()
+                RootView().scrollIndicators(.hidden)
                 if locked {
                     LockView(unlock: unlock)
                         .transition(.opacity.combined(with: .scale(scale: 1.08)))

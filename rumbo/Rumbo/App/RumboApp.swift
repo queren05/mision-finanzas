@@ -10,7 +10,7 @@ struct RumboApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                RootView()
+                RootView().scrollIndicators(.hidden)
                 if locked {
                     ZStack {
                         Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
@@ -58,7 +58,7 @@ struct RootView: View {
             TodayView().tag(RTab.today).tabItem { Label("Hoy", systemImage: "sun.max.fill") }
             BrainView().tag(RTab.brain).tabItem { Label("Cerebro", systemImage: "brain.head.profile") }
             ReviewView().tag(RTab.review).tabItem { Label("Revisión", systemImage: "moon.stars.fill") }
-            LibraryView().tag(RTab.library).tabItem { Label("Biblioteca", systemImage: "books.vertical.fill") }
+            LibraryView().tag(RTab.library).tabItem { Label("Cine", systemImage: "film.stack.fill") }
             BrandView().tag(RTab.brand).tabItem { Label("Marca", systemImage: "paintpalette.fill") }
         }
         .onChange(of: tab) { _, _ in Haptic.select() }
