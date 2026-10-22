@@ -50,7 +50,7 @@ Las claves en **negrita** son obligatorias para iPhone. Las que llevan `?` son o
 |---|---|
 | `accounts` | **id, name, type, currency, initial, color, icon, includeInTotal, archived, order, note**. `type` es uno de: `corriente`, `ahorro`, `efectivo`, `tarjeta`, `exchange`, `broker`, `activo`, `deuda`, `otro`. |
 | `categories` | **id, kind** (`expense` o `income`), **name, icon, color, budget, keywords** (separadas por comas), **hidden**. El orden de la lista es el orden en pantalla. |
-| `txs` | **id, type** (`expense`, `income`, `transfer` o `adjust`), **amount** (positivo salvo en `adjust`, que lleva signo), **accountId**, toAccountId?, categoryId?, **date, time, title, note, excluded**, recurringId?. Android añade `currency`. |
+| `txs` | **id, type** (`expense`, `income`, `transfer` o `adjust`), **amount** (positivo salvo en `adjust`, que lleva signo), **accountId**, toAccountId?, categoryId?, **date, time, title, note, excluded**, recurringId?. Android añade `currency`, `mood` («¿valió la pena?»: un emoji) y `tags` (lista de etiquetas sin «#»); iPhone los ignora. |
 | `recurring` | **id, name, type** (`expense`, `income`, `transfer` o `invest`), **amount, accountId**, toAccountId?, categoryId?, assetId?, **freq** (`weekly`, `monthly` o `yearly`), **day, next, active**. |
 | `assets` | **id, kind** (`stock` o `crypto`), **symbol, ySymbol, name, isin**, accountId?, **manualPrice, color, archived, ops**. |
 | `assets[].ops` | **id, side** (`buy`, `sell` o `reward`), **qty, price, fee, date**, cashAccountId?. |
@@ -82,3 +82,24 @@ Cada movimiento y cada cuenta ya llevan su `currency`. Para activar la multimone
 - convertir los totales a la moneda principal con una tabla de cambios (nueva clave opcional `rates`).
 
 No hace falta tocar los datos que ya existen.
+
+## Copia cifrada
+
+Desde Datos se puede exportar la copia protegida con contraseña. Es un JSON con estas claves:
+
+| Clave | Valor |
+|---|---|
+| `format` | `"caudal-backup-encrypted"` |
+| `formatVersion` | `1` |
+| `kdf` | `"PBKDF2WithHmacSHA256"` |
+| `iterations` | iteraciones de PBKDF2 (210 000 por defecto) |
+| `cipher` | `"AES-256-GCM"` |
+| `salt` | 16 bytes aleatorios, en base64 |
+| `iv` | 12 bytes aleatorios, en base64 |
+| `data` | la copia normal (este mismo formato) cifrada con AES-256-GCM, etiqueta de 128 bits incluida, en base64 |
+
+- **Clave:** PBKDF2-HMAC-SHA256(contraseña, `salt`, `iterations`), 256 bits.
+- **Datos adicionales autenticados (AAD):** el texto `caudal-backup-encrypted`.
+- **Al importar:** Android la reconoce por `format`, pide la contraseña y, si es correcta, la trata como una copia normal.
+- **Si se olvida la contraseña,** no hay forma de abrirla.
+- **iPhone** todavía no lee este formato.

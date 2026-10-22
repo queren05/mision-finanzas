@@ -75,6 +75,8 @@ data class Tx(
     val recurringId: String? = null,
     /** «¿valió la pena?»: un emoji (😍 🙂 😐 😩) o vacío */
     val mood: String = "",
+    /** etiquetas libres (sin «#»), p. ej. «viaje», «trabajo» */
+    val tags: List<String> = emptyList(),
     val extra: String = "",
 ) {
     val sortKey: String get() = "$date $time"

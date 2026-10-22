@@ -95,7 +95,7 @@ interface FinanceDao {
         """
         SELECT t.* FROM txs t LEFT JOIN categories c ON c.id = t.categoryId
         WHERE (:q = '' AND substr(t.date, 1, 7) = :month OR :q != '' AND (
-                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%'
+                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%' OR t.tags LIKE '%' || :q || '%'
                 OR replace(printf('%.2f', abs(t.amount) / 100.0), '.', ',') LIKE '%' || :q || '%'))
           AND (:type IS NULL OR t.type = :type)
           AND (:account IS NULL OR t.accountId = :account OR t.toAccountId = :account)
@@ -113,7 +113,7 @@ interface FinanceDao {
             ELSE CASE WHEN :account IS NULL THEN 0 WHEN t.toAccountId = :account THEN t.amount ELSE -t.amount END END) AS total
         FROM txs t LEFT JOIN categories c ON c.id = t.categoryId
         WHERE (:q = '' AND substr(t.date, 1, 7) = :month OR :q != '' AND (
-                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%'
+                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%' OR t.tags LIKE '%' || :q || '%'
                 OR replace(printf('%.2f', abs(t.amount) / 100.0), '.', ',') LIKE '%' || :q || '%'))
           AND (:type IS NULL OR t.type = :type)
           AND (:account IS NULL OR t.accountId = :account OR t.toAccountId = :account)
@@ -128,7 +128,7 @@ interface FinanceDao {
                SUM(CASE WHEN t.type = 'income' AND t.excluded = 0 THEN t.amount ELSE 0 END) AS earned
         FROM txs t LEFT JOIN categories c ON c.id = t.categoryId
         WHERE (:q = '' AND substr(t.date, 1, 7) = :month OR :q != '' AND (
-                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%'
+                t.title LIKE '%' || :q || '%' OR t.note LIKE '%' || :q || '%' OR c.name LIKE '%' || :q || '%' OR t.tags LIKE '%' || :q || '%'
                 OR replace(printf('%.2f', abs(t.amount) / 100.0), '.', ',') LIKE '%' || :q || '%'))
           AND (:type IS NULL OR t.type = :type)
           AND (:account IS NULL OR t.accountId = :account OR t.toAccountId = :account)

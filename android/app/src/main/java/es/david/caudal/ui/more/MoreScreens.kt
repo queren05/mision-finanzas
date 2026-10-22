@@ -47,6 +47,9 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PieChart
@@ -218,6 +221,7 @@ fun SettingsScreen(nav: NavController) {
     var name by rememberSaveable { mutableStateOf<String?>(null) }
     var noLock by remember { mutableStateOf(false) }
     val shownName = name ?: s.name
+    val pinSet = es.david.caudal.ui.subs.hasPin()
     ScreenScaffold(stringResource(R.string.settings_title), onBack = { nav.popBackStack() }) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             item {
@@ -235,12 +239,15 @@ fun SettingsScreen(nav: NavController) {
             item {
                 FormSection(stringResource(R.string.settings_security)) {
                     SwitchRow(stringResource(R.string.settings_lock), s.lock, icon = Icons.Filled.Fingerprint, iconColor = Color(0xFF4AD68F)) { on ->
-                        if (on && !canLock(ctx)) { noLock = true; h.warning() } else vm.updateSettings { it.copy(lock = on) }
+                        if (on && !canLock(ctx) && !pinSet) { noLock = true; h.warning() } else vm.updateSettings { it.copy(lock = on) }
                     }
+                    RowDivider()
+                    es.david.caudal.ui.subs.PinRow(nav)
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_hide_on_launch), s.hideAmountsOnLaunch, icon = Icons.Filled.VisibilityOff, iconColor = Color(0xFF8E8E98)) { on -> vm.updateSettings { it.copy(hideAmountsOnLaunch = on) } }
                 }
             }
+            item { es.david.caudal.ui.subs.AlertsSection(nav) }
             item {
                 FormSection(stringResource(R.string.settings_month)) {
                     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -272,7 +279,7 @@ fun SettingsScreen(nav: NavController) {
     if (noLock) {
         AlertDialog(
             onDismissRequest = { noLock = false },
-            text = { Text(stringResource(R.string.settings_lock_unavailable)) },
+            text = { Text(stringResource(R.string.f4_lock_pin_needed)) },
             confirmButton = { TextButton(onClick = { noLock = false }) { Text(stringResource(R.string.ok)) } },
         )
     }
@@ -303,6 +310,8 @@ fun DataScreen(nav: NavController) {
     val h = rememberHaptics()
     val scope = rememberCoroutineScope()
     var pendingImport by remember { mutableStateOf<String?>(null) }
+    var encryptedToOpen by remember { mutableStateOf<String?>(null) }
+    var askEncPassword by remember { mutableStateOf(false) }
     var askErase by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     val failed = stringResource(R.string.import_failed)
@@ -322,8 +331,39 @@ fun DataScreen(nav: NavController) {
     val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             val text = runCatching { withContext(Dispatchers.IO) { ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } } }.getOrNull()
-            if (text.isNullOrBlank()) message = failed else pendingImport = text
+            when {
+                text.isNullOrBlank() -> message = failed
+                // copia cifrada: primero la contraseña
+                es.david.caudal.data.export.EncryptedBackup.isEncrypted(text) -> encryptedToOpen = text
+                else -> pendingImport = text
+            }
         }
+    }
+    // exportar movimientos (CSV o Excel) y copia cifrada
+    val doneMsg = stringResource(R.string.f4_export_done)
+    fun labels() = es.david.caudal.data.export.Exports.Labels(
+        headers = listOf(R.string.f4_h_date, R.string.f4_h_time, R.string.f4_h_type, R.string.f4_h_amount, R.string.f4_h_account, R.string.f4_h_category, R.string.f4_h_concept, R.string.f4_h_note, R.string.f4_h_tags).map { ctx.getString(it) },
+        expense = ctx.getString(R.string.tx_expense), income = ctx.getString(R.string.tx_income), transfer = ctx.getString(R.string.tx_transfer), adjust = ctx.getString(R.string.tx_adjust),
+    )
+    fun write(uri: android.net.Uri?, bytes: suspend () -> ByteArray) {
+        if (uri == null) return
+        scope.launch {
+            val ok = runCatching { val b = bytes(); withContext(Dispatchers.IO) { ctx.contentResolver.openOutputStream(uri)?.use { it.write(b) } } }.isSuccess
+            if (ok) h.success() else h.warning()
+            message = if (ok) doneMsg else ctx.getString(R.string.error_generic)
+        }
+    }
+    val exportCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        write(uri) { val l = labels(); withContext(Dispatchers.Default) { es.david.caudal.data.export.Exports.csv(es.david.caudal.data.export.Exports.rows(vm.repo.snapshot(), l), l.headers) } }
+    }
+    val exportXlsx = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri ->
+        write(uri) { val l = labels(); withContext(Dispatchers.Default) { es.david.caudal.data.export.Exports.xlsx(es.david.caudal.data.export.Exports.rows(vm.repo.snapshot(), l), l.headers, ctx.getString(R.string.f4_sheet)) } }
+    }
+    var encPassword by remember { mutableStateOf<String?>(null) }
+    val exportEnc = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val pw = encPassword
+        encPassword = null
+        if (pw != null) write(uri) { withContext(Dispatchers.Default) { es.david.caudal.data.export.EncryptedBackup.encrypt(vm.repo.exportBackup(), pw).toByteArray() } }
     }
 
     ScreenScaffold(stringResource(R.string.data_title), onBack = { nav.popBackStack() }) { pad ->
@@ -337,6 +377,15 @@ fun DataScreen(nav: NavController) {
                     NavRow(Icons.Filled.Download, Color(0xFF8FB4FF), stringResource(R.string.data_import)) {
                         import.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                     }
+                }
+            }
+            item {
+                FormSection(stringResource(R.string.f4_export)) {
+                    NavRow(Icons.Filled.TableChart, Color(0xFF4AD68F), stringResource(R.string.f4_export_xlsx)) { exportXlsx.launch(ctx.getString(R.string.f4_xlsx_name, Day.today)) }
+                    RowDivider()
+                    NavRow(Icons.Filled.Description, Color(0xFF8E8E98), stringResource(R.string.f4_export_csv)) { exportCsv.launch(ctx.getString(R.string.f4_csv_name, Day.today)) }
+                    RowDivider()
+                    NavRow(Icons.Filled.Lock, Color(0xFF9B7BFF), stringResource(R.string.f4_encrypted)) { askEncPassword = true }
                 }
             }
             item {
@@ -367,6 +416,22 @@ fun DataScreen(nav: NavController) {
             onDismiss = { pendingImport = null },
         )
     }
+    if (askEncPassword) {
+        PasswordDialog(stringResource(R.string.f4_enc_title), confirmRepeat = true, confirm = stringResource(R.string.f4_enc_export), onDismiss = { askEncPassword = false }) { pw ->
+            askEncPassword = false
+            encPassword = pw
+            exportEnc.launch(ctx.getString(R.string.f4_enc_name, Day.today))
+        }
+    }
+    encryptedToOpen?.let { text ->
+        var wrong by remember { mutableStateOf(false) }
+        PasswordDialog(stringResource(R.string.f4_enc_open_title), confirmRepeat = false, confirm = stringResource(R.string.f4_enc_open), error = if (wrong) stringResource(R.string.f4_enc_wrong) else null, onDismiss = { encryptedToOpen = null }) { pw ->
+            scope.launch {
+                val plain = runCatching { withContext(Dispatchers.Default) { es.david.caudal.data.export.EncryptedBackup.decrypt(text, pw) } }.getOrNull()
+                if (plain == null) { wrong = true; h.warning() } else { encryptedToOpen = null; pendingImport = plain }
+            }
+        }
+    }
     if (askErase) {
         ConfirmDialog(
             title = stringResource(R.string.data_erase_confirm_title),
@@ -389,4 +454,41 @@ fun DataScreen(nav: NavController) {
             confirmButton = { TextButton(onClick = { message = null }) { Text(stringResource(R.string.ok), fontWeight = FontWeight.Bold) } },
         )
     }
+}
+
+/** contraseña de la copia cifrada (con repetición al crearla) */
+@Composable
+private fun PasswordDialog(title: String, confirmRepeat: Boolean, confirm: String, error: String? = null, onDismiss: () -> Unit, onOk: (String) -> Unit) {
+    var pw by remember { mutableStateOf("") }
+    var pw2 by remember { mutableStateOf("") }
+    val short = stringResource(R.string.f4_enc_short)
+    val mismatch = stringResource(R.string.f4_enc_mismatch)
+    val problem = when {
+        confirmRepeat && pw.isNotEmpty() && pw.length < 6 -> short
+        confirmRepeat && pw2.isNotEmpty() && pw != pw2 -> mismatch
+        else -> error
+    }
+    val ok = pw.isNotEmpty() && (!confirmRepeat || (pw.length >= 6 && pw == pw2))
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = CaudalTheme.colors.card,
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(pw, { pw = it }, label = { Text(stringResource(R.string.f4_enc_password)) }, singleLine = true, shape = RoundedCornerShape(16.dp),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+                if (confirmRepeat) {
+                    OutlinedTextField(pw2, { pw2 = it }, label = { Text(stringResource(R.string.f4_enc_repeat)) }, singleLine = true, shape = RoundedCornerShape(16.dp),
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+                    Text(stringResource(R.string.f4_enc_warning), style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim)
+                }
+                if (problem != null) Text(problem, style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.negative)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onOk(pw) }, enabled = ok) { Text(confirm, fontWeight = FontWeight.Bold) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- avisos -->
+    <string name="f4_channel_budgets">Presupuestos</string>
+    <string name="f4_channel_charges">Cargos</string>
+    <string name="f4_budget_total">Presupuesto del mes</string>
+    <string name="f4_budget_80_title">%1$s: al 80 %%</string>
+    <string name="f4_budget_over_title">%1$s: presupuesto superado</string>
+    <string name="f4_budget_text">Llevas %1$s de %2$s este mes.</string>
+    <string name="f4_charge_title">Mañana: %1$s</string>
+    <string name="f4_charge_text">Se cargarán %1$s.</string>
+    <string name="f4_alerts">Avisos</string>
+    <string name="f4_alert_budgets">Presupuesto al 80 % y al 100 %</string>
+    <string name="f4_alert_charges">Cargo recurrente el día antes</string>
+    <string name="f4_permission_title">Avisos de Caudal</string>
+    <string name="f4_permission_text">Para avisarte, Caudal necesita permiso para mostrar notificaciones. Solo te avisará de lo que actives aquí.</string>
+    <string name="f4_permission_ok">Permitir</string>
+    <string name="f4_permission_denied">Sin permiso de notificaciones no se pueden enviar avisos. Puedes darlo en los ajustes del móvil.</string>
+
+    <!-- PIN -->
+    <string name="f4_pin">PIN de Caudal</string>
+    <string name="f4_pin_on">Activado</string>
+    <string name="f4_pin_off">Sin PIN</string>
+    <string name="f4_pin_create">Elige un PIN</string>
+    <string name="f4_pin_repeat">Repite el PIN</string>
+    <string name="f4_pin_current">Escribe tu PIN actual</string>
+    <string name="f4_pin_mismatch">Los PIN no coinciden</string>
+    <string name="f4_pin_saved">PIN guardado</string>
+    <string name="f4_pin_change">Cambiar PIN</string>
+    <string name="f4_pin_remove">Quitar PIN</string>
+    <string name="f4_pin_remove_confirm">¿Seguro que quieres quitar el PIN?</string>
+    <string name="f4_pin_remove_msg">Caudal se abrirá sin PIN (con huella si la tienes activada).</string>
+    <string name="f4_pin_removed">PIN quitado</string>
+    <string name="f4_pin_length">Cifras: %1$d</string>
+    <string name="f4_pin_enter">Escribe tu PIN</string>
+    <string name="f4_pin_wrong">PIN incorrecto. Te quedan %1$d intentos</string>
+    <string name="f4_pin_wait">Demasiados intentos. Espera %1$d s</string>
+    <string name="f4_pin_ok">Listo</string>
+    <string name="f4_pin_digit">Cifra %1$s</string>
+    <string name="f4_pin_delete">Borrar cifra</string>
+    <string name="f4_pin_biometric">Usar huella</string>
+    <string name="f4_pin_dots">%1$d de %2$d cifras</string>
+    <string name="f4_lock_pin_needed">Pon un PIN o activa la huella o el código del móvil para bloquear Caudal.</string>
+
+    <!-- suscripciones -->
+    <string name="f4_subs_title">Suscripciones</string>
+    <string name="f4_subs_detected">Detectadas en tus gastos</string>
+    <string name="f4_subs_none">No he encontrado pagos que se repitan</string>
+    <string name="f4_subs_add">Añadir a recurrentes</string>
+    <string name="f4_subs_added">«%1$s» añadido a recurrentes</string>
+    <string name="f4_subs_weekly">cada semana</string>
+    <string name="f4_subs_monthly">cada mes</string>
+    <string name="f4_subs_yearly">cada año</string>
+    <string name="f4_subs_row">%1$s · %2$s · %3$d veces</string>
+    <string name="f4_subs_next">Próximo: %1$s</string>
+    <string name="f4_subs_yearly_cost">Al año: %1$s</string>
+    <string name="f4_subs_total">Lo que suman al año</string>
+
+    <!-- exportar -->
+    <string name="f4_export">Exportar movimientos</string>
+    <string name="f4_export_csv">CSV</string>
+    <string name="f4_export_xlsx">Excel</string>
+    <string name="f4_export_done">Movimientos exportados</string>
+    <string name="f4_csv_name">caudal-movimientos-%1$s.csv</string>
+    <string name="f4_xlsx_name">caudal-movimientos-%1$s.xlsx</string>
+    <string name="f4_enc_name">caudal-cifrada-%1$s.json</string>
+    <string name="f4_sheet">Movimientos</string>
+    <string name="f4_h_date">Fecha</string>
+    <string name="f4_h_time">Hora</string>
+    <string name="f4_h_type">Tipo</string>
+    <string name="f4_h_amount">Importe</string>
+    <string name="f4_h_account">Cuenta</string>
+    <string name="f4_h_category">Categoría</string>
+    <string name="f4_h_concept">Concepto</string>
+    <string name="f4_h_note">Nota</string>
+    <string name="f4_h_tags">Etiquetas</string>
+    <string name="f4_encrypted">Copia cifrada con contraseña</string>
+    <string name="f4_enc_password">Contraseña</string>
+    <string name="f4_enc_repeat">Repite la contraseña</string>
+    <string name="f4_enc_mismatch">Las contraseñas no coinciden</string>
+    <string name="f4_enc_short">Al menos 6 caracteres</string>
+    <string name="f4_enc_title">Contraseña de la copia</string>
+    <string name="f4_enc_open_title">Esta copia está cifrada</string>
+    <string name="f4_enc_wrong">Contraseña incorrecta</string>
+    <string name="f4_enc_export">Exportar</string>
+    <string name="f4_enc_open">Abrir</string>
+    <string name="f4_enc_warning">Si olvidas la contraseña no se podrá abrir la copia.</string>
+
+    <!-- mosaico -->
+    <string name="f4_tile_label">Apuntar gasto</string>
+</resources>

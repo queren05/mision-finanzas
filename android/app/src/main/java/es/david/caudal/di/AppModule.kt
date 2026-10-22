@@ -21,7 +21,7 @@ object AppModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): CaudalDatabase =
-        Room.databaseBuilder(context, CaudalDatabase::class.java, "caudal.db").addMigrations(CaudalDatabase.MIGRATION_1_2).build()
+        Room.databaseBuilder(context, CaudalDatabase::class.java, "caudal.db").addMigrations(CaudalDatabase.MIGRATION_1_2, CaudalDatabase.MIGRATION_2_3).build()
 }
 
 @Module

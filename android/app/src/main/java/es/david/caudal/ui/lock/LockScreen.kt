@@ -27,6 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,9 +50,74 @@ import es.david.caudal.ui.common.contentOn
 import es.david.caudal.ui.common.pressable
 import es.david.caudal.ui.theme.CaudalTheme
 
-/** Caudal bloqueada: Gotita dormida y huella, cara o el código del móvil (BiometricPrompt) */
+@dagger.hilt.android.lifecycle.HiltViewModel
+class LockViewModel @javax.inject.Inject constructor(val pins: es.david.caudal.data.security.PinStore) : androidx.lifecycle.ViewModel() {
+    val pinLength = pins.pinLength.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, -1)
+}
+
+/**
+ * Caudal bloqueada. Con PIN: teclado propio (y huella si el móvil la tiene). Sin PIN: huella, cara
+ * o el código del móvil (BiometricPrompt).
+ */
 @Composable
 fun LockScreen(onUnlocked: () -> Unit) {
+    val vm: LockViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+    val pinLength by vm.pinLength.collectAsStateWithLifecycle()
+    when {
+        pinLength < 0 -> Box(Modifier.fillMaxSize())
+        pinLength > 0 -> PinLock(vm, pinLength, onUnlocked)
+        else -> BiometricLock(onUnlocked)
+    }
+}
+
+@Composable
+private fun PinLock(vm: LockViewModel, length: Int, onUnlocked: () -> Unit) {
+    val ctx = LocalContext.current
+    val c = CaudalTheme.colors
+    val h = es.david.caudal.ui.common.rememberHaptics()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var typed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var shake by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var error by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val title = stringResource(R.string.unlock_reason)
+    val bio = canBiometric(ctx)
+    LaunchedEffect(Unit) { if (bio) prompt(ctx, title, onUnlocked, autoUnlock = false) }
+    fun digit(d: Char) {
+        if (busy || typed.length >= length) return
+        typed += d
+        error = null
+        if (typed.length == length) {
+            busy = true
+            scope.launch {
+                when (val r = vm.pins.verify(typed)) {
+                    is es.david.caudal.data.security.PinStore.Result.Ok -> { h.success(); onUnlocked() }
+                    is es.david.caudal.data.security.PinStore.Result.Wrong -> { h.warning(); shake++; error = ctx.getString(R.string.f4_pin_wrong, r.left) }
+                    is es.david.caudal.data.security.PinStore.Result.Wait -> { h.warning(); shake++; error = ctx.getString(R.string.f4_pin_wait, ((r.millis + 999) / 1000).toInt()) }
+                }
+                typed = ""
+                busy = false
+            }
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
+        GlowBackground(c.accent, Modifier.fillMaxWidth().height(420.dp))
+        Column(
+            Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Gotita(if (error != null) Mood.WOW else Mood.SLEEPY, 110.dp, description = stringResource(R.string.gotita))
+            Text(stringResource(R.string.f4_pin_enter), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            PinDots(typed.length, length, shake)
+            Text(error ?: " ", style = MaterialTheme.typography.bodyMedium, color = c.negative, textAlign = TextAlign.Center)
+            PinPad(::digit, { if (typed.isNotEmpty()) typed = typed.dropLast(1) }, if (bio) ({ prompt(ctx, title, onUnlocked, autoUnlock = false) }) else null)
+        }
+    }
+}
+
+@Composable
+private fun BiometricLock(onUnlocked: () -> Unit) {
     val ctx = LocalContext.current
     val c = CaudalTheme.colors
     val title = stringResource(R.string.unlock_reason)
@@ -74,17 +145,21 @@ fun LockScreen(onUnlocked: () -> Unit) {
     }
 }
 
-private fun prompt(ctx: Context, title: String, onUnlocked: () -> Unit) {
+private fun canBiometric(ctx: Context) =
+    BiometricManager.from(ctx).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+
+/** `autoUnlock`: si no hay con qué comprobar, se abre (solo cuando no hay PIN) */
+private fun prompt(ctx: Context, title: String, onUnlocked: () -> Unit, autoUnlock: Boolean = true) {
     val activity = ctx.findActivity() ?: return
     // si el móvil no tiene huella ni código, no hay con qué bloquear: se abre directamente
-    if (BiometricManager.from(activity).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) != BiometricManager.BIOMETRIC_SUCCESS) { onUnlocked(); return }
+    if (!canBiometric(activity)) { if (autoUnlock) onUnlocked(); return }
     val prompt = BiometricPrompt(
         activity, ContextCompat.getMainExecutor(activity),
         object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onUnlocked()
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                if (errorCode in setOf(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL, BiometricPrompt.ERROR_NO_BIOMETRICS, BiometricPrompt.ERROR_HW_NOT_PRESENT, BiometricPrompt.ERROR_HW_UNAVAILABLE)) onUnlocked()
+                if (autoUnlock && errorCode in setOf(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL, BiometricPrompt.ERROR_NO_BIOMETRICS, BiometricPrompt.ERROR_HW_NOT_PRESENT, BiometricPrompt.ERROR_HW_UNAVAILABLE)) onUnlocked()
             }
         },
     )
@@ -92,7 +167,7 @@ private fun prompt(ctx: Context, title: String, onUnlocked: () -> Unit) {
         .setTitle(title)
         .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
         .build()
-    runCatching { prompt.authenticate(info) }.onFailure { onUnlocked() }
+    runCatching { prompt.authenticate(info) }.onFailure { if (autoUnlock) onUnlocked() }
 }
 
 private tailrec fun Context.findActivity(): FragmentActivity? = when (this) {
