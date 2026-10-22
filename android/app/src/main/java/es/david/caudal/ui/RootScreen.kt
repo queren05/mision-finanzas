@@ -218,6 +218,7 @@ private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled:
             }
         }
 
+        es.david.caudal.ui.gotita.AchievementCelebration()
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = if (onTab) 96.dp else 16.dp))
     }
 }

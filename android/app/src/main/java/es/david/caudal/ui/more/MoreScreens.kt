@@ -53,6 +53,8 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Work
@@ -190,6 +192,10 @@ fun MoreScreen(nav: NavController) {
             }
             item {
                 FormSection(stringResource(R.string.more_app), Modifier.appear(3)) {
+                    NavRow(Icons.Filled.Checkroom, Color(0xFFF59FC4), stringResource(R.string.gt_title)) { nav.navigate(es.david.caudal.ui.nav.GotitaRoute) }
+                    RowDivider()
+                    NavRow(Icons.Filled.EmojiEvents, Color(0xFFFFC94D), stringResource(R.string.ach_title)) { nav.navigate(es.david.caudal.ui.nav.AchievementsRoute) }
+                    RowDivider()
                     NavRow(Icons.Filled.Settings, Color(0xFF8E8E98), stringResource(R.string.more_settings)) { nav.navigate(SettingsRoute) }
                     RowDivider()
                     NavRow(Icons.Filled.Backup, Color(0xFFF2B33D), stringResource(R.string.more_data)) { nav.navigate(DataRoute) }
