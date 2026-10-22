@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="work_title">Horas trabajadas</string>
+    <string name="work_prev_month">Mes anterior</string>
+    <string name="work_next_month">Mes siguiente</string>
+    <string name="work_all_companies">Todas</string>
+    <string name="work_net_estimated">Neto estimado</string>
+    <string name="work_gross_value">Bruto %1$s</string>
+    <string name="work_hours_value">%1$s h</string>
+    <plurals name="work_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="work_normal">Normales</string>
+    <string name="work_night">Nocturnas</string>
+    <string name="work_paid">Pagado</string>
+    <string name="work_pending">Pendiente</string>
+    <string name="work_companies">Empresas</string>
+    <string name="work_add_company">Añadir empresa</string>
+    <string name="work_new_company">Nueva empresa</string>
+    <string name="work_company_rates">Normal %1$s/h · Nocturna %2$s/h</string>
+    <string name="work_company_summary">%1$s h · bruto %2$s · neto %3$s</string>
+    <string name="work_collect">Cobrar</string>
+    <string name="work_shifts">Turnos</string>
+    <string name="work_no_shifts">Sin turnos este mes</string>
+    <string name="work_add_shift">Apuntar horas</string>
+    <string name="work_mark_paid">Pagado</string>
+    <string name="work_mark_pending">Pendiente</string>
+    <string name="work_delete_shift">Borrar</string>
+    <string name="work_confirm_delete_shift">¿Seguro que quieres borrar este turno?</string>
+    <string name="work_shift_desc">%1$s · %2$s–%3$s · %4$s</string>
+    <string name="work_shift_times">%1$s – %2$s · %3$s</string>
+    <string name="work_night_hours">%1$s nocturnas</string>
+
+    <!-- cobrar -->
+    <string name="work_pay_title">Cobro de %1$s</string>
+    <string name="work_pending_hours">Horas pendientes</string>
+    <string name="work_gross">Bruto</string>
+    <string name="work_what_paid">Lo que te han pagado</string>
+    <string name="work_add_income">Apuntarlo como ingreso</string>
+    <string name="work_mark_paid_action">Marcar pagado</string>
+    <string name="work_payroll_title">Nómina %1$s</string>
+    <string name="work_payroll_note">Horas de %1$s</string>
+
+    <!-- turno -->
+    <string name="shift_new">Apuntar horas</string>
+    <string name="shift_edit">Editar turno</string>
+    <string name="shift_company">Empresa</string>
+    <string name="shift_which_company">¿Para qué empresa?</string>
+    <string name="shift_multi">Varios días</string>
+    <string name="shift_days">Días</string>
+    <string name="shift_day">Día</string>
+    <string name="shift_schedule">Horario</string>
+    <string name="shift_start">Entrada</string>
+    <string name="shift_end">Salida</string>
+    <string name="shift_break">Descanso: %1$d min</string>
+    <string name="shift_break_less">Menos descanso</string>
+    <string name="shift_break_more">Más descanso</string>
+    <string name="shift_rates">Cuánto pagan la hora</string>
+    <string name="shift_normal_rate">Hora normal (€)</string>
+    <string name="shift_night_rate">Hora nocturna (€)</string>
+    <string name="shift_save_rate">Guardarlo también como precio de %1$s</string>
+    <string name="shift_split">%1$s normales · %2$s nocturnas</string>
+    <string name="shift_gross_days">bruto (%1$d días) · neto %2$s</string>
+    <string name="shift_gross">bruto · neto %1$s</string>
+    <string name="shift_status">Estado</string>
+    <string name="shift_note">Nota (opcional)</string>
+    <string name="shift_delete">Borrar turno</string>
+    <string name="shift_saved">Apuntado</string>
+    <string name="shift_prev_month">Mes anterior</string>
+    <string name="shift_next_month">Mes siguiente</string>
+    <string name="shift_day_selected">%1$s, seleccionado</string>
+
+    <!-- empresa -->
+    <string name="company_where">¿Dónde trabajas?</string>
+    <string name="company_name">Nombre de la empresa (p. ej. Adecco)</string>
+    <string name="company_rates">Precio por hora (bruto)</string>
+    <string name="company_night_from">Nocturna desde</string>
+    <string name="company_night_to">Hasta</string>
+    <string name="company_net">Para calcular el neto</string>
+    <string name="company_ss">Seguridad Social: %1$s %%</string>
+    <string name="company_irpf">IRPF: %1$s %%</string>
+    <string name="company_less">Bajar</string>
+    <string name="company_more">Subir</string>
+    <string name="company_account">Cuenta donde cobras</string>
+    <string name="company_delete">Borrar empresa y sus turnos</string>
+    <string name="company_confirm_delete">¿Seguro que quieres borrar %1$s?</string>
+    <string name="company_confirm_delete_msg">Se borrarán también todas sus horas apuntadas.</string>
+</resources>
