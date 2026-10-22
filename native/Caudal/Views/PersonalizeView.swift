@@ -321,7 +321,7 @@ struct TabsCustomizer: View {
     }
 
     private func row(_ id: String, on: Bool) -> some View {
-        let info = MainTab.names[id] ?? (id, "square")
+        let info = MainTab.names[id] ?? (name: id, icon: "square")
         let full = !on && store.state.settings.tabs.count >= TabsCustomizer.limit
         return HStack(spacing: 12) {
             Button {
