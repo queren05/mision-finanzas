@@ -1,1 +1,221 @@
-<resources><string name="app_name">Caudal</string></resources>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caudal</string>
+    <!-- idioma de fechas e importes (cambiarlo en cada traducción) -->
+    <string name="locale_tag" translatable="false">es-ES</string>
+
+    <!-- generales -->
+    <string name="today">Hoy</string>
+    <string name="yesterday">Ayer</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="duplicate">Duplicar</string>
+    <string name="close">Cerrar</string>
+    <string name="done">Listo</string>
+    <string name="back">Atrás</string>
+    <string name="add">Añadir</string>
+    <string name="undo">Deshacer</string>
+    <string name="see">Ver</string>
+    <string name="see_all">Ver todos</string>
+    <string name="ok">Vale</string>
+    <string name="more_options">Más opciones</string>
+    <string name="amount">Importe</string>
+    <string name="none">Ninguna</string>
+    <string name="color">Color</string>
+    <string name="color_option">Color %1$s</string>
+    <string name="name">Nombre</string>
+    <string name="note">Nota</string>
+    <string name="date">Fecha</string>
+    <string name="time">Hora</string>
+    <string name="account">Cuenta</string>
+    <string name="category">Categoría</string>
+    <string name="no_category">Sin categoría</string>
+    <string name="error_generic">Algo ha fallado</string>
+    <string name="hide_amounts">Ocultar importes</string>
+    <string name="show_amounts">Enseñar importes</string>
+
+    <!-- pestañas -->
+    <string name="tab_home">Inicio</string>
+    <string name="tab_txs">Movimientos</string>
+    <string name="tab_debts">Cuentas</string>
+    <string name="tab_invest">Inversiones</string>
+    <string name="tab_more">Más</string>
+    <string name="new_tx">Apuntar</string>
+
+    <!-- tipos de movimiento -->
+    <string name="tx_expense">Gasto</string>
+    <string name="tx_income">Ingreso</string>
+    <string name="tx_transfer">Transferencia</string>
+    <string name="tx_adjust">Ajuste de saldo</string>
+    <string name="tx_excluded_short">Excluido</string>
+    <string name="tx_deleted">«%1$s» eliminado</string>
+
+    <!-- inicio -->
+    <string name="greeting_morning">Buenos días</string>
+    <string name="greeting_afternoon">Buenas tardes</string>
+    <string name="greeting_night">Buenas noches</string>
+    <string name="greeting_name">%1$s, %2$s</string>
+    <string name="net_worth">Patrimonio</string>
+    <string name="in_30_days">en 30 días</string>
+    <string name="net_worth_chart">Gráfico del patrimonio de los últimos 30 días</string>
+    <string name="accounts">Cuentas</string>
+    <string name="accounts_style">Estilo de las cuentas</string>
+    <string name="style_cuadricula">Cuadrícula</string>
+    <string name="style_carrusel">Carrusel</string>
+    <string name="style_lista">Lista</string>
+    <string name="style_pequeno">Pequeñas</string>
+    <string name="style_grande">Grandes</string>
+    <string name="spent">Gastado</string>
+    <string name="earned">Ingresado</string>
+    <string name="month_balance">Balance del mes</string>
+    <string name="vs_last_month_less">Llevas un %1$s %% menos que el mes pasado</string>
+    <string name="vs_last_month_more">Llevas un %1$s %% más que el mes pasado</string>
+    <string name="budget">Presupuesto</string>
+    <string name="budget_of">%1$s de %2$s</string>
+    <string name="where_you_spend">En qué gastas</string>
+    <string name="analysis">Análisis</string>
+    <string name="upcoming">Próximos cargos</string>
+    <string name="recent">Últimos movimientos</string>
+    <string name="no_movements">Sin movimientos todavía</string>
+    <string name="no_spending">Sin gastos este mes</string>
+    <string name="customize_home">Personalizar inicio</string>
+    <string name="home_on">En inicio</string>
+    <string name="home_add">Añadir</string>
+    <string name="home_patrimonio">Patrimonio y gráfico</string>
+    <string name="home_cuentas">Cuentas</string>
+    <string name="home_horas">Horas trabajadas</string>
+    <string name="home_mes">Resumen del mes</string>
+    <string name="home_categorias">En qué gastas</string>
+    <string name="home_proximos">Próximos cargos</string>
+    <string name="home_recientes">Últimos movimientos</string>
+    <string name="home_inversiones">Inversiones</string>
+    <string name="home_deudas">Cuentas claras</string>
+    <string name="move_up">Subir</string>
+    <string name="move_down">Bajar</string>
+    <string name="remove_from_home">Quitar de inicio</string>
+    <string name="add_to_home">Añadir a inicio</string>
+    <string name="hours_this_month">Horas este mes</string>
+    <string name="pending_to_collect">Pendiente de cobrar</string>
+    <string name="portfolio">Cartera</string>
+    <string name="owed_to_me">Te deben</string>
+    <string name="i_owe">Debes</string>
+
+    <!-- movimientos -->
+    <string name="search_txs">Buscar movimientos</string>
+    <string name="filter">Filtrar</string>
+    <string name="filter_type">Tipo</string>
+    <string name="filter_account">Cuenta</string>
+    <string name="all">Todos</string>
+    <string name="all_accounts">Todas las cuentas</string>
+    <string name="expenses">Gastos</string>
+    <string name="incomes">Ingresos</string>
+    <string name="nothing_here">Nada por aquí</string>
+    <string name="confirm_delete_expense">¿Seguro que quieres eliminar este gasto?</string>
+    <string name="confirm_delete_income">¿Seguro que quieres eliminar este ingreso?</string>
+    <string name="confirm_delete_transfer">¿Seguro que quieres eliminar esta transferencia?</string>
+    <string name="confirm_delete_adjust">¿Seguro que quieres eliminar este ajuste?</string>
+    <string name="confirm_delete_tx_msg">%1$s · %2$s · %3$s. Podrás deshacerlo justo después.</string>
+
+    <!-- apuntar -->
+    <string name="new_movement">Nuevo movimiento</string>
+    <string name="edit_movement">Editar</string>
+    <string name="from">Desde</string>
+    <string name="to">Hacia</string>
+    <string name="concept">Concepto</string>
+    <string name="exclude_stats">Excluir de las estadísticas</string>
+    <string name="delete_movement">Eliminar movimiento</string>
+    <string name="saved">Guardado</string>
+    <string name="amount_needed">Pon un importe</string>
+    <string name="same_account">Elige dos cuentas distintas</string>
+    <string name="no_accounts_yet">Primero crea una cuenta</string>
+    <string name="pick_date">Elegir fecha</string>
+    <string name="pick_time">Elegir hora</string>
+
+    <!-- bloqueo -->
+    <string name="lock_title">Caudal está bloqueada</string>
+    <string name="unlock">Desbloquear</string>
+    <string name="unlock_reason">Desbloquea Caudal</string>
+
+    <!-- bienvenida -->
+    <string name="welcome_title">Tu dinero, claro</string>
+    <string name="welcome_text">Apunta tus gastos en segundos y mira en qué se va el dinero. Todo se queda en tu móvil.</string>
+    <string name="welcome_start">Empezar</string>
+    <string name="welcome_import">Tengo una copia de Caudal</string>
+    <string name="welcome_name">¿Cómo te llamas?</string>
+    <string name="welcome_currency">Moneda</string>
+    <string name="welcome_first_account">Tu primera cuenta</string>
+    <string name="welcome_account_name">Nombre de la cuenta</string>
+    <string name="welcome_account_default">Cuenta principal</string>
+    <string name="welcome_balance">Saldo actual</string>
+    <string name="welcome_done">Listo</string>
+    <string name="import_failed">El archivo no es una copia de seguridad de Caudal.</string>
+    <string name="import_done">Copia restaurada: %1$d movimientos</string>
+    <string name="import_done_web">Importado de la versión web: %1$d cuentas y %2$d movimientos</string>
+
+    <!-- emojis -->
+    <string name="emoji_food">Comida</string>
+    <string name="emoji_home">Casa</string>
+    <string name="emoji_transport">Transporte</string>
+    <string name="emoji_leisure">Ocio</string>
+    <string name="emoji_health">Salud y cuidado</string>
+    <string name="emoji_shopping">Ropa y compras</string>
+    <string name="emoji_tech">Tecnología</string>
+    <string name="emoji_money">Dinero</string>
+    <string name="emoji_people">Personas</string>
+    <string name="emoji_other">Otros</string>
+    <string name="emoji_other_field">Otro emoji (con el teclado)</string>
+    <string name="pick_emoji">Elige un emoji</string>
+
+    <!-- categorías de partida (ids de iPhone) -->
+    <string name="cat_c_super">Supermercado</string>
+    <string name="cat_c_rest">Restaurantes</string>
+    <string name="cat_c_snack">Cafés y snacks</string>
+    <string name="cat_c_transp">Transporte</string>
+    <string name="cat_c_coche">Coche y gasolina</string>
+    <string name="cat_c_casa">Vivienda</string>
+    <string name="cat_c_fact">Facturas</string>
+    <string name="cat_c_subs">Suscripciones</string>
+    <string name="cat_c_ocio">Ocio</string>
+    <string name="cat_c_compras">Compras</string>
+    <string name="cat_c_tabaco">Tabaco</string>
+    <string name="cat_c_salud">Salud</string>
+    <string name="cat_c_deporte">Deporte</string>
+    <string name="cat_c_amigos">Amigos y Bizum</string>
+    <string name="cat_c_pareja">Pareja</string>
+    <string name="cat_c_regalos">Regalos</string>
+    <string name="cat_c_viajes">Viajes</string>
+    <string name="cat_c_formacion">Formación</string>
+    <string name="cat_c_comisiones">Comisiones</string>
+    <string name="cat_c_otros">Otros gastos</string>
+    <string name="cat_i_nomina">Nómina</string>
+    <string name="cat_i_bizum">Bizum recibido</string>
+    <string name="cat_i_reemb">Reembolsos</string>
+    <string name="cat_i_familia">Familia</string>
+    <string name="cat_i_pareja">Pareja</string>
+    <string name="cat_i_int">Intereses y dividendos</string>
+    <string name="cat_i_ventas">Ventas</string>
+    <string name="cat_i_otros">Otros ingresos</string>
+
+    <!-- tipos de cuenta -->
+    <string name="acc_corriente">Cuenta corriente</string>
+    <string name="acc_ahorro">Ahorro</string>
+    <string name="acc_efectivo">Efectivo</string>
+    <string name="acc_tarjeta">Tarjeta de crédito</string>
+    <string name="acc_exchange">Exchange cripto</string>
+    <string name="acc_broker">Bróker</string>
+    <string name="acc_activo">Bien (casa, coche…)</string>
+    <string name="acc_deuda">Préstamo o hipoteca</string>
+    <string name="acc_otro">Otro</string>
+
+    <!-- widgets -->
+    <string name="widget_balance_name">Cuentas</string>
+    <string name="widget_balance_desc">Tu patrimonio y el saldo de cada cuenta.</string>
+    <string name="widget_spent_name">Gastos del mes</string>
+    <string name="widget_spent_desc">Lo que llevas gastado y en qué.</string>
+    <string name="widget_invest_name">Inversiones</string>
+    <string name="widget_invest_desc">El valor de tu cartera.</string>
+    <string name="widget_open">Abre Caudal</string>
+    <string name="widget_budget_left">Quedan %1$s</string>
+</resources>
