@@ -110,7 +110,7 @@ private fun t(f: FontFamily, size: Int, weight: Int, line: Int = (size * 1.3f).t
 /** títulos y cifras con la letra de títulos; el resto con la del texto. Fredoka no pasa de 700. */
 fun caudalTypography(p: FontPair): Typography {
     val d = p.display
-    val heavy = if (d == Fredoka || d == Quicksand) 700 else 800
+    val heavy = if (d == Fredoka || d == Quicksand) 600 else 800
     val black = if (d == Fredoka || d == Quicksand) 700 else 900
     return Typography(
         displayLarge = t(d, 54, black, 60, -1f),

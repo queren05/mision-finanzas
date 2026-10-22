@@ -19,6 +19,9 @@ import kotlinx.serialization.Serializable
 /** resumen del mes en historias (tipo Wrapped); month = yyyy-MM */
 @Serializable data class WrappedRoute(val month: String? = null)
 @Serializable data object PersonalizeRoute
+/** vestir a Gotita (complementos y color) */
+@Serializable data object GotitaRoute
+@Serializable data object AchievementsRoute
 
 // gestión (Más)
 @Serializable data object AccountsRoute
