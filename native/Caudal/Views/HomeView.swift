@@ -104,8 +104,6 @@ struct HomeView: View {
                         Text("Sin presupuesto").font(.title3.weight(.bold))
                     } else {
                         AmountText(value: a.perDay, font: .system(size: 40, weight: .bold, design: .rounded))
-                        Text(store.hideAmounts ? "•••• €" : a.left >= 0 ? "\(Money.eur(a.left)) para \(a.daysLeft) días" : "Te has pasado \(Money.eur(-a.left))")
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                     }
                 }
                 .padding(18)
@@ -113,6 +111,12 @@ struct HomeView: View {
             .frame(height: 170)
             .background(Color.primary.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 18 * L.cornerScale, style: .continuous))
+            if a.base > 0 {
+                Text(store.hideAmounts ? "•••• €" : a.left >= 0 ? "\(Money.eur(a.left)) para \(a.daysLeft) días" : "Te has pasado \(Money.eur(-a.left))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(a.left >= 0 ? Color.secondary : Color.negative)
+                    .padding(.horizontal, 4)
+            }
         }
         .card()
     }
