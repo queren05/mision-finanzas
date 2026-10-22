@@ -1,6 +1,15 @@
 package es.david.caudal.ui.more
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.border
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import es.david.caudal.ui.common.IconTile
+import es.david.caudal.ui.common.pressable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +68,6 @@ import androidx.compose.ui.unit.dp
 import es.david.caudal.R
 import es.david.caudal.core.Day
 import es.david.caudal.ui.common.LocalFmt
-import es.david.caudal.ui.common.SymbolBubble
 import es.david.caudal.ui.common.rememberHaptics
 import es.david.caudal.ui.theme.CaudalTheme
 import kotlinx.coroutines.launch
@@ -69,52 +77,73 @@ import java.time.ZoneOffset
 
 // Piezas de formulario de las pantallas de Más e Inversiones (al estilo de los Form de iPhone)
 
-/** grupo de filas dentro de una tarjeta, con título opcional encima */
+/** grupo de filas dentro de una tarjeta redondeada (como los Form de iPhone), con título opcional encima */
 @Composable
 fun FormSection(title: String? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val c = CaudalTheme.colors
+    val shape = RoundedCornerShape(24.dp)
     Column(modifier.fillMaxWidth()) {
         if (title != null) {
             Text(
-                title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
+                title, style = MaterialTheme.typography.labelLarge, color = c.textDim,
+                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp).semantics { heading() },
             )
         }
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CaudalTheme.colors.card)
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth()
+                .then(if (!c.dark) Modifier.shadow(10.dp, shape, ambientColor = c.accent.copy(alpha = 0.25f), spotColor = c.accent.copy(alpha = 0.18f)) else Modifier)
+                .clip(shape).background(c.card)
+                .then(if (c.dark) Modifier.border(1.dp, c.hairline, shape) else Modifier)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .animateContentSize(),
             content = content,
         )
     }
 }
 
-/** fila que lleva a otra pantalla (icono de color, texto y valor) */
+/** fila que lleva a otra pantalla: cuadradito de color con icono (como Ajustes de iPhone), texto y valor */
 @Composable
 fun NavRow(icon: ImageVector, color: Color, label: String, value: String = "", onClick: () -> Unit) {
     val h = rememberHaptics()
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { h.tap(); onClick() }
+        Modifier.fillMaxWidth().heightIn(min = 58.dp).pressable(0.98f) { h.tap(); onClick() }
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SymbolBubble(icon, color, 36.dp)
+        IconTile(icon, color)
         Spacer(Modifier.width(14.dp))
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (value.isNotEmpty()) Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (value.isNotEmpty()) {
+            Text(value, color = CaudalTheme.colors.textDim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = CaudalTheme.colors.textDim.copy(alpha = 0.6f))
     }
 }
 
+/** fila con interruptor (todo el ancho se puede tocar); con icono de color opcional */
 @Composable
-fun SwitchRow(label: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+fun SwitchRow(label: String, checked: Boolean, enabled: Boolean = true, icon: ImageVector? = null, iconColor: Color = CaudalTheme.colors.accent, subtitle: String? = null, onChange: (Boolean) -> Unit) {
     val h = rememberHaptics()
+    val c = CaudalTheme.colors
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .clickable(enabled = enabled, role = Role.Switch) { h.select(); onChange(!checked) },
+        Modifier.fillMaxWidth().heightIn(min = 58.dp)
+            .clickable(enabled = enabled, role = Role.Switch) { h.select(); onChange(!checked) }
+            .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+        if (icon != null) { IconTile(icon, iconColor); Spacer(Modifier.width(14.dp)) }
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = if (enabled) c.text else c.textDim)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.textDim)
+        }
+        Spacer(Modifier.width(8.dp))
+        Switch(
+            checked = checked, onCheckedChange = null, enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White, checkedTrackColor = c.accent, checkedBorderColor = c.accent,
+                uncheckedThumbColor = Color.White, uncheckedTrackColor = c.cardAlt, uncheckedBorderColor = c.cardAlt,
+            ),
+        )
     }
 }
 
@@ -129,14 +158,14 @@ fun <T> PickerRow(label: String, options: List<Pair<T, String>>, selected: T, on
                 .semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
             Text(
-                options.firstOrNull { it.first == selected }?.second ?: "", color = MaterialTheme.colorScheme.primary,
+                options.firstOrNull { it.first == selected }?.second ?: "", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
             )
             Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary)
         }
-        DropdownMenu(open, onDismissRequest = { open = false }) {
+        DropdownMenu(open, onDismissRequest = { open = false }, shape = RoundedCornerShape(20.dp), containerColor = CaudalTheme.colors.card) {
             options.forEach { (k, v) ->
                 DropdownMenuItem(text = { Text(v, fontWeight = if (k == selected) FontWeight.Bold else null) }, onClick = { h.select(); onSelect(k); open = false })
             }
@@ -153,14 +182,20 @@ fun FieldRow(label: String, value: String, onChange: (String) -> Unit, numeric: 
         label = { Text(label) },
         placeholder = placeholder?.let { { Text(it) } },
         singleLine = singleLine,
-        keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions.Default,
+        keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = CaudalTheme.colors.accent, unfocusedBorderColor = CaudalTheme.colors.hairline,
+            focusedContainerColor = CaudalTheme.colors.cardAlt.copy(alpha = 0.5f), unfocusedContainerColor = CaudalTheme.colors.cardAlt.copy(alpha = 0.5f),
+            focusedLabelColor = CaudalTheme.colors.accent,
+        ),
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
     )
 }
 
 /** separador fino entre filas */
 @Composable
-fun RowDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+fun RowDivider() = HorizontalDivider(color = CaudalTheme.colors.hairline)
 
 /** fila con una fecha (yyyy-MM-dd) que abre el calendario */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,8 +207,8 @@ fun DateRow(label: String, date: String, onChange: (String) -> Unit) {
         Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { open = true }.semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        Text(f.header(date), color = MaterialTheme.colorScheme.primary)
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        Text(f.header(date), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
     }
     if (open) {
         val state = rememberDatePickerState(initialSelectedDateMillis = Day.date(date).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
@@ -213,7 +248,7 @@ fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
         },
         backgroundContent = {
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.error).padding(horizontal = 20.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CaudalTheme.colors.negative).padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically,
             ) { Icon(Icons.Filled.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(24.dp)) }
         },

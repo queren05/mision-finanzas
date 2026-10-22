@@ -2,6 +2,9 @@ package es.david.caudal.ui.more
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,7 +90,7 @@ fun CategoriesScreen(nav: NavController) {
             TextButton(onClick = { h.tap(); sorting = !sorting }) {
                 Text(stringResource(if (sorting) R.string.accounts_sort_done else R.string.accounts_sort), fontWeight = if (sorting) FontWeight.Bold else null)
             }
-            IconButton(onClick = { nav.navigate(CategoryEditorRoute(kind = kind.raw)) }) { Icon(Icons.Filled.Add, stringResource(R.string.categories_new)) }
+            CircleIconButton(Icons.Filled.Add, stringResource(R.string.categories_new)) { nav.navigate(CategoryEditorRoute(kind = kind.raw)) }
         },
     ) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -103,13 +106,13 @@ fun CategoriesScreen(nav: NavController) {
                 val c = byId[id] ?: return@items
                 val i = order.indexOf(id)
                 Row(
-                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CaudalTheme.colors.card)
-                        .clickable(enabled = !sorting, role = Role.Button) { nav.navigate(CategoryEditorRoute(c.id, c.kind.raw)) }
+                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CaudalTheme.colors.card).border(1.dp, CaudalTheme.colors.hairline, RoundedCornerShape(22.dp))
+                        .pressable(0.98f, enabled = !sorting) { nav.navigate(CategoryEditorRoute(c.id, c.kind.raw)) }
                         .heightIn(min = 60.dp).padding(horizontal = 14.dp, vertical = 8.dp)
                         .semantics(mergeDescendants = !sorting) {},
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconBubble(c.icon, c.color, 38.dp)
+                    IconBubble(c.icon, c.color, 46.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(c.name, color = if (c.hidden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
@@ -172,7 +175,7 @@ fun CategoryEditorScreen(id: String?, kind: String, nav: NavController) {
             item {
                 FormSection {
                     Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.clickable(role = Role.Button) { pickEmoji = true }) { IconBubble(icon.ifEmpty { "➕" }, color, 52.dp) }
+                        Box(Modifier.pressable(0.98f) { pickEmoji = true }) { IconBubble(icon.ifEmpty { "➕" }, color, 72.dp) }
                         Spacer(Modifier.width(12.dp))
                         OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true, modifier = Modifier.weight(1f))
                     }
