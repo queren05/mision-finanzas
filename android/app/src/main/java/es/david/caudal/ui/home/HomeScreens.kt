@@ -155,7 +155,7 @@ fun HomeScreen(nav: NavController, onToggleHidden: () -> Unit) {
                             "consejos" -> InsightsCard(l)
                             "horas" -> WorkCard(l) { nav.navigate(WorkRoute) }
                             "mes" -> MonthCard(l)
-                            "calendario" -> CalendarCard(l) { nav.navigate(es.david.caudal.ui.nav.CalendarRoute()) }
+                            "calendario" -> CalendarCard(l, s.weekStart) { nav.navigate(es.david.caudal.ui.nav.CalendarRoute()) }
                             "categorias" -> CategoriesCard(l) { nav.navigate(StatsRoute) }
                             "proximos" -> UpcomingCard(l)
                             "recientes" -> RecentCard(l, onTx = { nav.navigate(TxEditorRoute(id = it)) }, onAll = { nav.navigateTab(TxsRoute) })
@@ -436,15 +436,17 @@ private fun InsightsCard(l: Ledger) {
 // MARK: calendario de gastos del mes
 
 @Composable
-private fun CalendarCard(l: Ledger, open: () -> Unit) {
+private fun CalendarCard(l: Ledger, weekStart: Int = 1, open: () -> Unit) {
     val f = LocalFmt.current
     val c = CaudalTheme.colors
     val start = Day.monthStart(Day.today)
     val days = Day.daysInMonth(start)
     val byDay = remember(l) { Insights.spentByDay(l, es.david.caudal.domain.calc.DateRange(start, Day.addDays(start, days - 1))) }
     val hi = byDay.values.maxOrNull()?.takeIf { it > 0 } ?: 1.0
-    val firstDow = Day.date(start).dayOfWeek.value - 1
-    val labels = stringResource(R.string.weekdays_short).split(",")
+    // la semana empieza en lunes (1) o domingo (7), según Personalizar
+    val sunday = weekStart == 7
+    val firstDow = if (sunday) Day.date(start).dayOfWeek.value % 7 else Day.date(start).dayOfWeek.value - 1
+    val labels = stringResource(R.string.weekdays_short).split(",").let { if (sunday) listOf(it.last()) + it.dropLast(1) else it }
     Card(onClick = open) {
         SectionHeader(f.month(start), emoji = "🗓️")
         Spacer(Modifier.height(8.dp))

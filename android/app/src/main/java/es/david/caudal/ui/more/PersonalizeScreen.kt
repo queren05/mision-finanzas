@@ -83,6 +83,42 @@ import es.david.caudal.ui.nav.HomeCustomizeRoute
 import es.david.caudal.ui.theme.ACCENTS
 import es.david.caudal.ui.theme.CaudalTheme
 import es.david.caudal.ui.theme.hexColor
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Euro
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import es.david.caudal.domain.model.ALL_TABS
+import es.david.caudal.ui.common.Card
+import es.david.caudal.ui.common.GlowBackground
+import es.david.caudal.ui.common.IconTile
+import es.david.caudal.ui.common.SegmentedPills
+import es.david.caudal.ui.common.Sounds
+import es.david.caudal.ui.common.rememberSounds
+import es.david.caudal.ui.nav.GotitaRoute
+import es.david.caudal.ui.theme.BackdropStyle
+import es.david.caudal.ui.theme.CardStyle
+import es.david.caudal.ui.theme.FONT_PAIRS
+import es.david.caudal.ui.theme.FontPair
+import es.david.caudal.ui.theme.LocalUiStyle
 
 /** iconos de la app (alias de MainActivity en el manifiesto) */
 data class AppIcon(val id: String, val alias: String, val mipmap: Int, val name: Int)
@@ -114,7 +150,10 @@ fun applyAppIcon(context: Context, id: String) {
     }
 }
 
-/** Personalizar: colores, tema, icono, Gotita y detalles, con una vista previa en vivo */
+/**
+ * Personalizar: todo el aspecto de Caudal, con una vista previa que cambia al momento.
+ * Color, tema, letras, tarjetas, esquinas, densidad, fondo, barra de abajo, importes, Gotita, experiencia e icono.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PersonalizeScreen(nav: NavController) {
@@ -123,10 +162,12 @@ fun PersonalizeScreen(nav: NavController) {
     val s = settings ?: return
     val ctx = LocalContext.current
     val h = rememberHaptics()
+    val sounds = rememberSounds()
     ScreenScaffold(stringResource(R.string.pz_title), onBack = { nav.popBackStack() }) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             item { Box(Modifier.appear(0)) { Preview(s) } }
 
+            // color
             item {
                 FormSection(stringResource(R.string.pz_accent), Modifier.appear(1)) {
                     FlowRow(
@@ -148,6 +189,7 @@ fun PersonalizeScreen(nav: NavController) {
                 }
             }
 
+            // tema
             item {
                 FormSection(stringResource(R.string.pz_theme), Modifier.appear(2)) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -168,8 +210,182 @@ fun PersonalizeScreen(nav: NavController) {
                 }
             }
 
+            // letras
             item {
-                FormSection(stringResource(R.string.pz_icon), Modifier.appear(3)) {
+                FormSection(stringResource(R.string.pz_fonts), Modifier.appear(3)) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        maxItemsInEachRow = 2,
+                    ) {
+                        FONT_PAIRS.forEach { p ->
+                            FontChoice(Modifier.weight(1f), p, p.id == s.font) { h.select(); vm.updateSettings { it.copy(font = p.id) } }
+                        }
+                    }
+                }
+            }
+
+            // tarjetas, esquinas y densidad
+            item {
+                FormSection(stringResource(R.string.pz_cards), Modifier.appear(4)) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CardStyle.entries.forEach { cs ->
+                            OptionTile(
+                                Modifier.weight(1f), stringResource(cardName(cs)), s.cardStyle == cs.id,
+                                onClick = { h.select(); vm.updateSettings { it.copy(cardStyle = cs.id) } },
+                            ) {
+                                val base = LocalUiStyle.current
+                                CompositionLocalProvider(LocalUiStyle provides base.copy(card = cs)) {
+                                    Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(CaudalTheme.colors.accent.copy(alpha = 0.35f), CaudalTheme.colors.bg))).padding(10.dp), contentAlignment = Alignment.Center) {
+                                        Card(padding = 8.dp) {
+                                            Box(Modifier.fillMaxWidth(0.7f).height(6.dp).clip(CircleShape).background(CaudalTheme.colors.accent))
+                                            Spacer(Modifier.height(5.dp))
+                                            Box(Modifier.fillMaxWidth(0.45f).height(6.dp).clip(CircleShape).background(CaudalTheme.colors.textDim.copy(alpha = 0.4f)))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    RowDivider()
+                    Text(stringResource(R.string.pz_corners), style = MaterialTheme.typography.labelLarge, color = CaudalTheme.colors.textDim, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
+                    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listOf("suaves" to 8.dp, "redondas" to 16.dp, "muy" to 24.dp).forEach { (id, r) ->
+                            OptionTile(
+                                Modifier.weight(1f), stringResource(cornerName(id)), s.corners == id, height = 64.dp,
+                                onClick = { h.select(); vm.updateSettings { it.copy(corners = id) } },
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Box(Modifier.size(width = 52.dp, height = 36.dp).clip(RoundedCornerShape(r * 0.6f)).background(CaudalTheme.colors.accent.copy(alpha = 0.5f)))
+                                }
+                            }
+                        }
+                    }
+                    RowDivider()
+                    Text(stringResource(R.string.pz_density), style = MaterialTheme.typography.labelLarge, color = CaudalTheme.colors.textDim, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
+                    Box(Modifier.padding(bottom = 14.dp)) {
+                        SegmentedPills(
+                            listOf(stringResource(R.string.pz_density_comoda), stringResource(R.string.pz_density_compacta)),
+                            if (s.density == "compacta") 1 else 0,
+                            { i -> vm.updateSettings { it.copy(density = if (i == 1) "compacta" else "comoda") } },
+                        )
+                    }
+                }
+            }
+
+            // fondo
+            item {
+                FormSection(stringResource(R.string.pz_background), Modifier.appear(5)) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        maxItemsInEachRow = 2,
+                    ) {
+                        BackdropStyle.entries.forEach { b ->
+                            OptionTile(
+                                Modifier.weight(1f), stringResource(backdropName(b)), s.background == b.id, height = 96.dp,
+                                onClick = { h.select(); vm.updateSettings { it.copy(background = b.id) } },
+                            ) {
+                                val base = LocalUiStyle.current
+                                CompositionLocalProvider(LocalUiStyle provides base.copy(backdrop = b)) {
+                                    Box(Modifier.fillMaxSize().background(CaudalTheme.colors.bg)) {
+                                        GlowBackground(CaudalTheme.colors.accent, Modifier.fillMaxSize())
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // barra de abajo
+            item {
+                FormSection(stringResource(R.string.pz_tabbar), Modifier.appear(6)) {
+                    Box(Modifier.padding(vertical = 12.dp)) { MiniTabBar(s) }
+                    RowDivider()
+                    val active = s.tabs
+                    val ordered = active + ALL_TABS.filter { it !in active }
+                    ordered.forEach { id ->
+                        val on = id in active
+                        val i = active.indexOf(id)
+                        TabRow(
+                            id = id,
+                            on = on,
+                            canEnable = on || active.size < 4,
+                            canUp = on && i > 0,
+                            canDown = on && i < active.lastIndex,
+                            onToggle = {
+                                h.select()
+                                vm.updateSettings { st -> st.copy(tabs = if (on) st.tabs - id else (st.tabs + id).take(4)) }
+                            },
+                            onUp = { h.select(); vm.updateSettings { st -> st.copy(tabs = st.tabs.toMutableList().apply { add(i - 1, removeAt(i)) }) } },
+                            onDown = { h.select(); vm.updateSettings { st -> st.copy(tabs = st.tabs.toMutableList().apply { add(i + 1, removeAt(i)) }) } },
+                        )
+                        RowDivider()
+                    }
+                    SwitchRow(stringResource(R.string.pz_tab_labels), s.tabLabels, icon = Icons.Filled.ShortText, iconColor = Color(0xFF8FB4FF)) { on -> vm.updateSettings { it.copy(tabLabels = on) } }
+                }
+            }
+
+            // importes
+            item {
+                FormSection(stringResource(R.string.pz_amounts), Modifier.appear(7)) {
+                    SwitchRow(stringResource(R.string.pz_hide_cents), s.hideCents, icon = Icons.Filled.Euro, iconColor = Color(0xFF6FD49B)) { on -> vm.updateSettings { it.copy(hideCents = on) } }
+                    RowDivider()
+                    PickerRow(
+                        stringResource(R.string.pz_week_start),
+                        listOf(1 to stringResource(R.string.pz_week_monday), 7 to stringResource(R.string.pz_week_sunday)),
+                        s.weekStart,
+                    ) { d -> vm.updateSettings { it.copy(weekStart = d) } }
+                    RowDivider()
+                    PickerRow(
+                        stringResource(R.string.pz_accounts_style),
+                        AccountsStyle.entries.map { it to stringResource(styleName(it)) },
+                        s.accountsStyle,
+                    ) { st -> vm.updateSettings { it.copy(accountsStyle = st) } }
+                    RowDivider()
+                    NavRow(Icons.Filled.Dashboard, Color(0xFFFF9F7A), stringResource(R.string.pz_home)) { nav.navigate(HomeCustomizeRoute) }
+                }
+            }
+
+            // Gotita
+            item {
+                FormSection(stringResource(R.string.pz_gotita), Modifier.appear(8)) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 72.dp).pressable(0.98f) { h.tap(); nav.navigate(GotitaRoute) }.semantics(mergeDescendants = true) {},
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Gotita(Mood.WINK, 48.dp)
+                        Spacer(Modifier.width(14.dp))
+                        Text(stringResource(R.string.pz_gotita_dress), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = CaudalTheme.colors.textDim.copy(alpha = 0.6f))
+                    }
+                    RowDivider()
+                    SwitchRow(stringResource(R.string.pz_mascot), s.mascot, icon = Icons.Filled.Face, iconColor = Color(0xFFF59FC4)) { on ->
+                        vm.updateSettings { it.copy(mascot = on) }
+                    }
+                }
+            }
+
+            // experiencia
+            item {
+                FormSection(stringResource(R.string.pz_experience), Modifier.appear(9)) {
+                    SwitchRow(stringResource(R.string.pz_sounds), s.sounds, icon = Icons.Filled.MusicNote, iconColor = Color(0xFFFFB38A)) { on ->
+                        vm.updateSettings { it.copy(sounds = on) }
+                        if (on) Sounds.get(ctx).also { it.enabled = true }.pop() else sounds.enabled = false
+                    }
+                    RowDivider()
+                    SwitchRow(stringResource(R.string.pz_haptics), s.haptics, icon = Icons.Filled.Vibration, iconColor = Color(0xFFB39CFF)) { on -> vm.updateSettings { it.copy(haptics = on) } }
+                    RowDivider()
+                    SwitchRow(stringResource(R.string.pz_reduced_motion), s.reducedMotion, icon = Icons.Filled.Animation, iconColor = Color(0xFF62CFD0)) { on -> vm.updateSettings { it.copy(reducedMotion = on) } }
+                }
+            }
+
+            // icono de la app
+            item {
+                FormSection(stringResource(R.string.pz_icon), Modifier.appear(10)) {
                     LazyRow(Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(APP_ICONS, key = { it.id }) { icon ->
                             val on = icon.id == s.appIcon
@@ -180,26 +396,6 @@ fun PersonalizeScreen(nav: NavController) {
                             }
                         }
                     }
-                }
-            }
-
-            item {
-                FormSection(stringResource(R.string.pz_details), Modifier.appear(4)) {
-                    SwitchRow(stringResource(R.string.pz_mascot), s.mascot, icon = Icons.Filled.Face, iconColor = Color(0xFFF59FC4)) { on ->
-                        vm.updateSettings { it.copy(mascot = on) }
-                    }
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.pz_tab_labels), s.tabLabels, icon = Icons.Filled.ShortText, iconColor = Color(0xFF8FB4FF)) { on -> vm.updateSettings { it.copy(tabLabels = on) } }
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.pz_haptics), s.haptics, icon = Icons.Filled.Vibration, iconColor = Color(0xFFB39CFF)) { on -> vm.updateSettings { it.copy(haptics = on) } }
-                    RowDivider()
-                    PickerRow(
-                        stringResource(R.string.pz_accounts_style),
-                        AccountsStyle.entries.map { it to stringResource(styleName(it)) },
-                        s.accountsStyle,
-                    ) { st -> vm.updateSettings { it.copy(accountsStyle = st) } }
-                    RowDivider()
-                    NavRow(Icons.Filled.Dashboard, Color(0xFFFF9F7A), stringResource(R.string.pz_home)) { nav.navigate(HomeCustomizeRoute) }
                 }
             }
         }
@@ -214,58 +410,187 @@ private fun styleName(s: AccountsStyle) = when (s) {
     AccountsStyle.GRANDE -> R.string.style_grande
 }
 
-/** mini tarjeta de inicio con los colores que se están eligiendo (cambia al momento) */
+private fun cardName(c: CardStyle) = when (c) {
+    CardStyle.CRISTAL -> R.string.pz_card_cristal
+    CardStyle.SOLIDA -> R.string.pz_card_solida
+    CardStyle.CONTORNO -> R.string.pz_card_contorno
+}
+
+private fun cornerName(id: String) = when (id) {
+    "suaves" -> R.string.pz_corners_suaves
+    "muy" -> R.string.pz_corners_muy
+    else -> R.string.pz_corners_redondas
+}
+
+private fun backdropName(b: BackdropStyle) = when (b) {
+    BackdropStyle.AGUA -> R.string.pz_bg_agua
+    BackdropStyle.BRILLO -> R.string.pz_bg_brillo
+    BackdropStyle.PUNTOS -> R.string.pz_bg_puntos
+    BackdropStyle.LISO -> R.string.pz_bg_liso
+}
+
+/** nombre e icono de cada pestaña posible de la barra de abajo */
+private fun tabName(id: String) = when (id) {
+    "movimientos" -> R.string.tab_txs
+    "cuentas" -> R.string.tab_debts
+    "inversiones" -> R.string.tab_invest
+    "analisis" -> R.string.analysis
+    "calendario" -> R.string.tab_calendar
+    else -> R.string.tab_goals
+}
+
+private fun tabIcon(id: String): ImageVector = when (id) {
+    "movimientos" -> Icons.AutoMirrored.Filled.ViewList
+    "cuentas" -> Icons.Filled.Group
+    "inversiones" -> Icons.AutoMirrored.Filled.ShowChart
+    "analisis" -> Icons.Filled.PieChart
+    "calendario" -> Icons.Filled.CalendarMonth
+    else -> Icons.Filled.Savings
+}
+
+private val TAB_COLORS = mapOf(
+    "movimientos" to Color(0xFF8FB4FF), "cuentas" to Color(0xFFFF9F7A), "inversiones" to Color(0xFF6FD49B),
+    "analisis" to Color(0xFFB39CFF), "calendario" to Color(0xFF62CFD0), "objetivos" to Color(0xFFF59FC4),
+)
+
+/** fila de una pestaña: interruptor (máx. 4) y subir/bajar si está activa */
+@Composable
+private fun TabRow(id: String, on: Boolean, canEnable: Boolean, canUp: Boolean, canDown: Boolean, onToggle: () -> Unit, onUp: () -> Unit, onDown: () -> Unit) {
+    val c = CaudalTheme.colors
+    val name = stringResource(tabName(id))
+    Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconTile(tabIcon(id), TAB_COLORS[id] ?: c.accent)
+        Spacer(Modifier.width(14.dp))
+        Text(name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = if (on || canEnable) c.text else c.textDim)
+        if (on) {
+            IconButton(onClick = onUp, enabled = canUp) { Icon(Icons.Filled.KeyboardArrowUp, stringResource(R.string.move_up)) }
+            IconButton(onClick = onDown, enabled = canDown) { Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.move_down)) }
+        }
+        Switch(
+            checked = on, onCheckedChange = { onToggle() }, enabled = canEnable,
+            modifier = Modifier.semantics { contentDescription = name },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White, checkedTrackColor = c.accent, checkedBorderColor = c.accent,
+                uncheckedThumbColor = Color.White, uncheckedTrackColor = c.cardAlt, uncheckedBorderColor = c.cardAlt,
+            ),
+        )
+    }
+}
+
+/** la barra de abajo en pequeño: Inicio, las elegidas y Más */
+@Composable
+private fun MiniTabBar(s: AppSettings) {
+    val c = CaudalTheme.colors
+    val ids = listOf("inicio") + s.tabs.take(4) + listOf("mas")
+    Row(
+        Modifier.fillMaxWidth().clip(CircleShape).background(c.cardAlt).border(1.dp, c.hairline, CircleShape).padding(5.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ids.forEachIndexed { i, id ->
+            val icon = when (id) { "inicio" -> Icons.Filled.Home; "mas" -> Icons.Filled.MoreHoriz; else -> tabIcon(id) }
+            val label = when (id) { "inicio" -> stringResource(R.string.tab_home); "mas" -> stringResource(R.string.tab_more); else -> stringResource(tabName(id)) }
+            Column(
+                Modifier.weight(1f).clip(CircleShape).background(if (i == 0) c.accent.copy(alpha = 0.22f) else Color.Transparent).padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(icon, label, tint = if (i == 0) c.accent else c.textDim, modifier = Modifier.size(20.dp))
+                if (s.tabLabels) Text(label, style = MaterialTheme.typography.labelSmall, color = if (i == 0) c.text else c.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+/** cajita de opción con previsualización arriba y nombre debajo */
+@Composable
+private fun OptionTile(
+    modifier: Modifier,
+    label: String,
+    on: Boolean,
+    height: androidx.compose.ui.unit.Dp = 84.dp,
+    onClick: () -> Unit,
+    preview: @Composable () -> Unit,
+) {
+    val c = CaudalTheme.colors
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        modifier.pressable(0.93f, role = Role.RadioButton, onClick = onClick).semantics(mergeDescendants = true) { selected = on },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(height).clip(shape).border(if (on) 3.dp else 1.dp, if (on) c.accent else c.hairline, shape),
+        ) { preview() }
+        Spacer(Modifier.height(6.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, color = if (on) c.text else c.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** tarjeta de una pareja de letras: «Aa» y un importe con la letra de títulos, el nombre con la del texto */
+@Composable
+private fun FontChoice(modifier: Modifier, p: FontPair, on: Boolean, onClick: () -> Unit) {
+    val c = CaudalTheme.colors
+    val f = LocalFmt.current
+    val shape = RoundedCornerShape(20.dp)
+    val name = stringResource(p.name)
+    Column(
+        modifier
+            .pressable(0.94f, role = Role.RadioButton, onClick = onClick)
+            .clip(shape)
+            .background(if (on) c.accent.copy(alpha = 0.16f) else c.cardAlt)
+            .border(if (on) 3.dp else 1.dp, if (on) c.accent else c.hairline, shape)
+            .padding(14.dp)
+            .semantics(mergeDescendants = true) { selected = on },
+    ) {
+        Text("Aa", fontFamily = p.display, fontWeight = FontWeight.Bold, fontSize = 30.sp, lineHeight = 34.sp, color = c.text)
+        Text(f.plain(1234.56), fontFamily = p.display, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = c.text, maxLines = 1)
+        Spacer(Modifier.height(4.dp))
+        Text(name, fontFamily = p.body, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (on) c.accent else c.textDim)
+    }
+}
+
+/**
+ * Vista previa en vivo: fondo, tarjeta (cristal/sólida/contorno, esquinas, densidad), letras, color y Gotita
+ * con su complemento, tal como se verá la app.
+ */
 @Composable
 private fun Preview(s: AppSettings) {
     val c = CaudalTheme.colors
     val f = LocalFmt.current
-    val shape = RoundedCornerShape(28.dp)
-    Column(
+    val st = LocalUiStyle.current
+    val shape = RoundedCornerShape(st.r(28.dp))
+    Box(
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(lerp(c.bg, c.accent, 0.22f), c.bg)))
-            .border(1.dp, c.hairline, shape)
-            .padding(18.dp),
+            .background(c.bg)
+            .border(1.dp, c.hairline, shape),
     ) {
-        Text(stringResource(R.string.pz_preview), style = MaterialTheme.typography.labelLarge, color = c.textDim)
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (s.mascot) {
-                Gotita(Mood.LOVE, 54.dp)
-                Spacer(Modifier.width(10.dp))
+        GlowBackground(c.accent, Modifier.matchParentSize())
+        Column(Modifier.padding(st.s(18.dp))) {
+            Text(stringResource(R.string.pz_preview), style = MaterialTheme.typography.labelLarge, color = c.textDim)
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (s.mascot) {
+                    Gotita(Mood.LOVE, 58.dp)
+                    Spacer(Modifier.width(10.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (s.name.isBlank()) stringResource(R.string.pz_preview_greeting_anon) else stringResource(R.string.pz_preview_greeting, s.name),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                    Text(stringResource(R.string.pz_preview_msg), style = MaterialTheme.typography.bodyMedium, color = c.textDim)
+                }
             }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    if (s.name.isBlank()) stringResource(R.string.pz_preview_greeting_anon) else stringResource(R.string.pz_preview_greeting, s.name),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Text(stringResource(R.string.pz_preview_msg), style = MaterialTheme.typography.bodyMedium, color = c.textDim)
+            Spacer(Modifier.height(st.s(14.dp)))
+            Card(padding = 16.dp) {
+                Text(stringResource(R.string.pz_preview_amount), style = MaterialTheme.typography.labelMedium, color = c.textDim)
+                Text(f.money(34.5), style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(8.dp))
+                ProgressBar(0.62, c.accent)
             }
-        }
-        Spacer(Modifier.height(14.dp))
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.card).border(1.dp, c.hairline, RoundedCornerShape(22.dp)).padding(16.dp)) {
-            Text(stringResource(R.string.pz_preview_amount), style = MaterialTheme.typography.labelMedium, color = c.textDim)
-            Text(f.money(34.5), style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(8.dp))
-            ProgressBar(0.62, c.accent)
-        }
-        Spacer(Modifier.height(12.dp))
-        // la barra de abajo en pequeño
-        Row(
-            Modifier.fillMaxWidth().clip(CircleShape).background(c.card).border(1.dp, c.hairline, CircleShape).padding(6.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            repeat(4) { i ->
-                Box(
-                    Modifier.size(width = 46.dp, height = 26.dp).clip(CircleShape).background(if (i == 0) c.accent.copy(alpha = 0.25f) else Color.Transparent),
-                    contentAlignment = Alignment.Center,
-                ) { Box(Modifier.size(10.dp).clip(CircleShape).background(if (i == 0) c.accent else c.textDim.copy(alpha = 0.5f))) }
-            }
-            Box(Modifier.size(34.dp).clip(CircleShape).background(c.accent), contentAlignment = Alignment.Center) {
-                Text("+", color = contentOn(c.accent), style = MaterialTheme.typography.titleLarge)
-            }
+            Spacer(Modifier.height(st.s(12.dp)))
+            MiniTabBar(s)
         }
     }
 }
