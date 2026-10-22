@@ -78,6 +78,7 @@ import es.david.caudal.ui.theme.LocalMotion
 fun CalendarScreen(month: String?, nav: NavController) {
     val vm: FinanceViewModel = hiltViewModel()
     val ledger by vm.ledger.collectAsStateWithLifecycle()
+    val sunday = vm.settings.collectAsStateWithLifecycle().value?.weekStart == 7
     val l = ledger ?: return
     val f = LocalFmt.current
     val h = rememberHaptics()
@@ -116,10 +117,11 @@ fun CalendarScreen(month: String?, nav: NavController) {
             }
             item(key = "calendario") {
                 Card(Modifier.appear(1), padding = 14.dp) {
-                    val labels = stringResource(R.string.weekdays_short).split(",")
+                    val labels = stringResource(R.string.weekdays_short).split(",").let { if (sunday) listOf(it.last()) + it.dropLast(1) else it }
                     Row(Modifier.fillMaxWidth()) { labels.forEach { Text(it, Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium, color = c.textDim) } }
                     Spacer(Modifier.height(8.dp))
-                    val firstDow = Day.date(start).dayOfWeek.value - 1
+                    // la semana empieza en lunes o domingo, según Personalizar
+                    val firstDow = if (sunday) Day.date(start).dayOfWeek.value % 7 else Day.date(start).dayOfWeek.value - 1
                     val cells = List(firstDow) { 0 } + (1..days).toList()
                     cells.chunked(7).forEach { week ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
