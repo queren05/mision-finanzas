@@ -24,11 +24,13 @@ class Fmt(
     val hidden: Boolean,
     private val todayLabel: String,
     private val yesterdayLabel: String,
+    /** sin céntimos en los importes (Personalizar) */
+    val hideCents: Boolean = false,
 ) {
     private val money = NumberFormat.getCurrencyInstance(locale).apply {
         runCatching { currency = Currency.getInstance(this@Fmt.currency) }
-        minimumFractionDigits = 2
-        maximumFractionDigits = 2
+        minimumFractionDigits = if (hideCents) 0 else 2
+        maximumFractionDigits = if (hideCents) 0 else 2
     }
     private val num2 = NumberFormat.getNumberInstance(locale).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
     private val numFree = NumberFormat.getNumberInstance(locale).apply { maximumFractionDigits = 6 }
@@ -76,8 +78,8 @@ class Fmt(
 val LocalFmt = staticCompositionLocalOf<Fmt> { error("Fmt sin preparar") }
 
 @Composable
-fun rememberFmt(currency: String, hidden: Boolean): Fmt {
+fun rememberFmt(currency: String, hidden: Boolean, hideCents: Boolean = false): Fmt {
     val ctx = LocalContext.current
     val tag = ctx.getString(R.string.locale_tag)
-    return Fmt(Locale.forLanguageTag(tag), currency, hidden, ctx.getString(R.string.today), ctx.getString(R.string.yesterday))
+    return Fmt(Locale.forLanguageTag(tag), currency, hidden, ctx.getString(R.string.today), ctx.getString(R.string.yesterday), hideCents)
 }

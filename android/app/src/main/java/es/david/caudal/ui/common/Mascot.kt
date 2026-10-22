@@ -29,6 +29,14 @@ import es.david.caudal.ui.theme.LocalMotion
 import kotlin.math.PI
 import kotlin.math.sin
 
+/** cómo va vestida Gotita (Personalizar): complemento y color propio ("" = el de la app) */
+data class MascotLook(val hat: String = "nada", val color: String = "")
+
+val LocalMascotLook = androidx.compose.runtime.staticCompositionLocalOf { MascotLook() }
+
+/** complementos que se pueden poner a Gotita */
+val MASCOT_HATS = listOf("nada", "gorro", "gafas", "lazo", "corona", "auriculares", "flor")
+
 /** cómo está Gotita */
 enum class Mood { HAPPY, WOW, SLEEPY, SAD, LOVE, WINK }
 
@@ -37,7 +45,10 @@ enum class Mood { HAPPY, WOW, SLEEPY, SAD, LOVE, WINK }
  * (contenta si ahorras, sorprendida al apuntar, triste si te pasas del presupuesto…).
  */
 @Composable
-fun Gotita(mood: Mood = Mood.HAPPY, size: Dp = 96.dp, color: Color = CaudalTheme.colors.accent, modifier: Modifier = Modifier, description: String = "") {
+fun Gotita(mood: Mood = Mood.HAPPY, size: Dp = 96.dp, color: Color = Color.Unspecified, modifier: Modifier = Modifier, description: String = "", hat: String? = null) {
+    val look = LocalMascotLook.current
+    val body = if (color != Color.Unspecified) color else if (look.color.isNotEmpty()) es.david.caudal.ui.theme.hexColor(look.color) else CaudalTheme.colors.accent
+    val wear = hat ?: look.hat
     val motion = LocalMotion.current
     var t by remember { mutableStateOf(0f) }
     var blinking by remember { mutableStateOf(false) }
@@ -63,8 +74,9 @@ fun Gotita(mood: Mood = Mood.HAPPY, size: Dp = 96.dp, color: Color = CaudalTheme
         // parpadeo: cerrado 0,12 s cada 3,6 s
         val blink = blinking || (motion && t > 0f && (t % 3.6f) > 3.48f)
         translate(top = bob) {
-            drop(w, h, color)
+            drop(w, h, body)
             face(w, h, mood, blink)
+            accessory(w, h, wear)
         }
         // sombra en el suelo
         val sh = 1f - (bob / (h * 0.025f + 0.001f)) * 0.08f
@@ -139,4 +151,60 @@ private fun DrawScope.face(w: Float, h: Float, mood: Mood, blink: Boolean) {
         drawLine(ink.copy(alpha = 0.6f), Offset(w * 0.76f, h * 0.38f), Offset(w * 0.84f, h * 0.38f), stroke.width * 0.7f, StrokeCap.Round)
     }
     @Suppress("UNUSED_VARIABLE") val unused = PI
+}
+
+/** el complemento, dibujado encima de la gota */
+private fun DrawScope.accessory(w: Float, h: Float, hat: String) {
+    val ink = Color(0xFF2A2030)
+    when (hat) {
+        "gorro" -> {
+            // gorro de lana con pompón
+            val p = Path().apply {
+                moveTo(w * 0.3f, h * 0.3f)
+                cubicTo(w * 0.32f, h * 0.02f, w * 0.68f, h * 0.02f, w * 0.7f, h * 0.3f)
+                close()
+            }
+            drawPath(p, Color(0xFFFF8FA3))
+            drawRoundRect(Color(0xFFFFD1DA), Offset(w * 0.27f, h * 0.27f), Size(w * 0.46f, h * 0.08f), androidx.compose.ui.geometry.CornerRadius(w * 0.04f))
+            drawCircle(Color.White, w * 0.06f, Offset(w * 0.5f, h * 0.06f))
+        }
+        "gafas" -> {
+            val st = Stroke(width = w * 0.022f)
+            drawCircle(ink, w * 0.085f, Offset(w * 0.4f, h * 0.6f), style = st)
+            drawCircle(ink, w * 0.085f, Offset(w * 0.6f, h * 0.6f), style = st)
+            drawLine(ink, Offset(w * 0.485f, h * 0.6f), Offset(w * 0.515f, h * 0.6f), st.width)
+            drawCircle(Color.White.copy(alpha = 0.25f), w * 0.07f, Offset(w * 0.4f, h * 0.6f))
+            drawCircle(Color.White.copy(alpha = 0.25f), w * 0.07f, Offset(w * 0.6f, h * 0.6f))
+        }
+        "lazo" -> {
+            val c = Color(0xFFFF6B9A)
+            val l = Path().apply { moveTo(w * 0.5f, h * 0.2f); lineTo(w * 0.36f, h * 0.12f); lineTo(w * 0.37f, h * 0.3f); close() }
+            val r = Path().apply { moveTo(w * 0.5f, h * 0.2f); lineTo(w * 0.64f, h * 0.12f); lineTo(w * 0.63f, h * 0.3f); close() }
+            drawPath(l, c); drawPath(r, c)
+            drawCircle(Color(0xFFFF3D7F), w * 0.035f, Offset(w * 0.5f, h * 0.2f))
+        }
+        "corona" -> {
+            val gold = Color(0xFFFFC94D)
+            val p = Path().apply {
+                moveTo(w * 0.34f, h * 0.24f); lineTo(w * 0.34f, h * 0.1f); lineTo(w * 0.42f, h * 0.17f)
+                lineTo(w * 0.5f, h * 0.05f); lineTo(w * 0.58f, h * 0.17f); lineTo(w * 0.66f, h * 0.1f); lineTo(w * 0.66f, h * 0.24f); close()
+            }
+            drawPath(p, gold)
+            drawCircle(Color(0xFFFF6B6B), w * 0.022f, Offset(w * 0.5f, h * 0.17f))
+        }
+        "auriculares" -> {
+            val c = Color(0xFF8FC8FF)
+            drawArc(c, 200f, 140f, false, Offset(w * 0.18f, h * 0.22f), Size(w * 0.64f, h * 0.6f), style = Stroke(width = w * 0.04f))
+            drawRoundRect(c, Offset(w * 0.11f, h * 0.48f), Size(w * 0.1f, h * 0.18f), androidx.compose.ui.geometry.CornerRadius(w * 0.05f))
+            drawRoundRect(c, Offset(w * 0.79f, h * 0.48f), Size(w * 0.1f, h * 0.18f), androidx.compose.ui.geometry.CornerRadius(w * 0.05f))
+        }
+        "flor" -> {
+            val center = Offset(w * 0.68f, h * 0.36f)
+            repeat(5) { i ->
+                val a = i * 72.0 * kotlin.math.PI / 180
+                drawCircle(Color(0xFFFFB3C7), w * 0.045f, Offset(center.x + (kotlin.math.cos(a) * w * 0.05f).toFloat(), center.y + (kotlin.math.sin(a) * w * 0.05f).toFloat()))
+            }
+            drawCircle(Color(0xFFFFD166), w * 0.03f, center)
+        }
+    }
 }

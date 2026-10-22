@@ -97,6 +97,7 @@ import es.david.caudal.ui.common.ProgressBar
 import es.david.caudal.ui.common.RowDivider
 import es.david.caudal.ui.common.SectionHeader
 import es.david.caudal.ui.common.TxRow
+import es.david.caudal.ui.common.WaterTank
 import es.david.caudal.ui.common.appear
 import es.david.caudal.ui.common.pressable
 import es.david.caudal.ui.common.rememberHaptics
@@ -343,8 +344,6 @@ private fun AllowanceCard(l: Ledger) {
     val c = CaudalTheme.colors
     val a = remember(l) { Insights.allowance(l) }
     val forecast = remember(l) { Insights.forecast(l) }
-    val r = l.periodRange(l.periodStart(Day.today))
-    val elapsed = (Day.daysBetween(r.start, Day.today) + 1).toDouble() / (Day.daysBetween(r.start, r.end) + 1)
     val ok = a.left > 0
     if (a.base <= 0) {
         // sin presupuesto ni ingresos todavía: invitación
@@ -359,32 +358,42 @@ private fun AllowanceCard(l: Ledger) {
         }
         return
     }
-    Card(padding = 20.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("☀️", fontSize = 22.sp)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.home_disponible), style = MaterialTheme.typography.titleMedium, color = c.textDim, modifier = Modifier.weight(1f))
+    val shape = RoundedCornerShape(es.david.caudal.ui.theme.LocalUiStyle.current.r(26.dp))
+    val level = if (a.base > 0) (a.left / a.base).toFloat().coerceIn(0f, 1f) else 0f
+    val waterColor = if (!ok) c.negative else if (level < 0.25f) c.warning else c.accent
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(c.card).border(1.dp, c.hairline, shape),
+    ) {
+        WaterTank(
+            level = level, color = waterColor,
+            modifier = Modifier.fillMaxWidth().height(232.dp),
+            mascot = if (!ok) Mood.SAD else if (level < 0.25f) Mood.WOW else Mood.HAPPY,
+            description = stringResource(R.string.home_disponible),
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text("💧 " + stringResource(R.string.home_disponible), style = MaterialTheme.typography.titleSmall, color = c.textDim)
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    AmountText(a.perDay, style = MaterialTheme.typography.displaySmall, color = if (ok) c.text else c.negative, rolling = true)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.per_day), style = MaterialTheme.typography.titleMedium, color = c.textDim, modifier = Modifier.padding(bottom = 6.dp))
+                }
+                Text(
+                    when {
+                        !ok -> stringResource(R.string.allowance_over, f.money(-a.left))
+                        a.daysLeft == 1 -> stringResource(R.string.allowance_left_one, f.money(a.left))
+                        else -> stringResource(R.string.allowance_left, f.money(a.left), a.daysLeft)
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            AmountText(a.perDay, style = MaterialTheme.typography.displaySmall, color = if (ok) c.text else c.negative, rolling = true)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.per_day), style = MaterialTheme.typography.titleMedium, color = c.textDim, modifier = Modifier.padding(bottom = 6.dp))
+        if (a.upcoming > 0 || (forecast != null && forecast > 0)) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                if (a.upcoming > 0) Text(stringResource(R.string.allowance_upcoming, f.money(a.upcoming)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
+                if (forecast != null && forecast > 0) Text(stringResource(R.string.forecast, f.money(forecast)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
+            }
         }
-        Text(
-            when {
-                !ok -> stringResource(R.string.allowance_over, f.money(-a.left))
-                a.daysLeft == 1 -> stringResource(R.string.allowance_left_one, f.money(a.left))
-                else -> stringResource(R.string.allowance_left, f.money(a.left), a.daysLeft)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(Modifier.height(12.dp))
-        // cuánto del mes ha pasado (barra) frente a lo gastado
-        ProgressBar(elapsed, if (ok) c.income else c.negative)
-        Spacer(Modifier.height(10.dp))
-        if (a.upcoming > 0) Text(stringResource(R.string.allowance_upcoming, f.money(a.upcoming)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
-        if (forecast != null && forecast > 0) Text(stringResource(R.string.forecast, f.money(forecast)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
     }
 }
 

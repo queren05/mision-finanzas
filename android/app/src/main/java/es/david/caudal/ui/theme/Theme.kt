@@ -84,30 +84,54 @@ val ACCENTS = listOf(
     AccentPreset("chicle", "#f59fe0", R.string.accent_chicle),
 )
 
-// Nunito: letra redondeada (licencia OFL), con todos los grosores en un solo archivo
-private fun nunito(w: Int) = Font(R.font.nunito, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
-val Nunito = FontFamily(nunito(400), nunito(500), nunito(600), nunito(700), nunito(800), nunito(900))
+// Letras (todas con licencia OFL, un archivo variable por familia)
+private fun variable(res: Int, w: Int) = Font(res, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
+private fun family(res: Int) = FontFamily(listOf(400, 500, 600, 700, 800, 900).map { variable(res, it) })
+val Nunito = family(R.font.nunito)
+val Fredoka = FontFamily(listOf(400, 500, 600, 700).map { variable(R.font.fredoka, it) })
+val Quicksand = FontFamily(listOf(400, 500, 600, 700).map { variable(R.font.quicksand, it) })
+val Fraunces = family(R.font.fraunces)
 
-private fun t(size: Int, weight: Int, line: Int = (size * 1.3f).toInt(), spacing: Float = 0f) =
-    TextStyle(fontFamily = Nunito, fontSize = size.sp, fontWeight = FontWeight(weight), lineHeight = line.sp, letterSpacing = spacing.sp)
+/** pareja de letras: la de títulos y cifras y la del texto */
+data class FontPair(val id: String, val display: FontFamily, val body: FontFamily, val name: Int)
 
-val CaudalTypography = Typography(
-    displayLarge = t(52, 900, 58, -1f),
-    displayMedium = t(44, 900, 50, -0.8f),
-    displaySmall = t(36, 800, 42, -0.5f),
-    headlineLarge = t(32, 900, 38, -0.4f),
-    headlineMedium = t(28, 800, 34, -0.3f),
-    headlineSmall = t(24, 800, 30),
-    titleLarge = t(21, 800, 26),
-    titleMedium = t(17, 700, 22),
-    titleSmall = t(15, 700, 20),
-    bodyLarge = t(16, 600, 22),
-    bodyMedium = t(14, 600, 19),
-    bodySmall = t(12, 600, 16),
-    labelLarge = t(14, 800, 18),
-    labelMedium = t(12, 700, 16),
-    labelSmall = t(11, 700, 14),
+val FONT_PAIRS = listOf(
+    FontPair("burbuja", Fredoka, Nunito, R.string.font_burbuja),
+    FontPair("suave", Quicksand, Quicksand, R.string.font_suave),
+    FontPair("elegante", Fraunces, Nunito, R.string.font_elegante),
+    FontPair("sencilla", FontFamily.Default, FontFamily.Default, R.string.font_sencilla),
 )
+
+fun fontPair(id: String) = FONT_PAIRS.firstOrNull { it.id == id } ?: FONT_PAIRS.first()
+
+private fun t(f: FontFamily, size: Int, weight: Int, line: Int = (size * 1.3f).toInt(), spacing: Float = 0f) =
+    TextStyle(fontFamily = f, fontSize = size.sp, fontWeight = FontWeight(weight), lineHeight = line.sp, letterSpacing = spacing.sp)
+
+/** títulos y cifras con la letra de títulos; el resto con la del texto. Fredoka no pasa de 700. */
+fun caudalTypography(p: FontPair): Typography {
+    val d = p.display
+    val heavy = if (d == Fredoka || d == Quicksand) 700 else 800
+    val black = if (d == Fredoka || d == Quicksand) 700 else 900
+    return Typography(
+        displayLarge = t(d, 54, black, 60, -1f),
+        displayMedium = t(d, 46, black, 52, -0.8f),
+        displaySmall = t(d, 38, heavy, 44, -0.5f),
+        headlineLarge = t(d, 33, black, 39, -0.4f),
+        headlineMedium = t(d, 28, heavy, 34, -0.3f),
+        headlineSmall = t(d, 24, heavy, 30),
+        titleLarge = t(d, 21, heavy, 26),
+        titleMedium = t(p.body, 17, 800, 22),
+        titleSmall = t(p.body, 15, 700, 20),
+        bodyLarge = t(p.body, 16, 600, 22),
+        bodyMedium = t(p.body, 14, 600, 19),
+        bodySmall = t(p.body, 12, 600, 16),
+        labelLarge = t(p.body, 14, 800, 18),
+        labelMedium = t(p.body, 12, 700, 16),
+        labelSmall = t(p.body, 11, 700, 14),
+    )
+}
+
+val CaudalTypography = caudalTypography(FONT_PAIRS.first())
 
 val CaudalShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
@@ -124,6 +148,7 @@ fun CaudalTheme(
     dynamicColor: Boolean,
     amoled: Boolean = false,
     motion: Boolean = true,
+    font: String = "burbuja",
     content: @Composable () -> Unit,
 ) {
     val dark = when (theme) {
@@ -163,6 +188,6 @@ fun CaudalTheme(
         inverseSurface = colors.text, inverseOnSurface = colors.bg,
     )
     CompositionLocalProvider(LocalCaudalColors provides colors, LocalMotion provides motion) {
-        MaterialTheme(colorScheme = scheme, typography = CaudalTypography, shapes = CaudalShapes, content = content)
+        MaterialTheme(colorScheme = scheme, typography = caudalTypography(fontPair(font)), shapes = CaudalShapes, content = content)
     }
 }

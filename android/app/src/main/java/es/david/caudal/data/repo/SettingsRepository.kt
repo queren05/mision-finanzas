@@ -53,6 +53,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val mascot = booleanPreferencesKey("mascot")
         val haptics = booleanPreferencesKey("haptics")
         val appIcon = stringPreferencesKey("appIcon")
+        val font = stringPreferencesKey("font")
+        val cardStyle = stringPreferencesKey("cardStyle")
+        val corners = stringPreferencesKey("corners")
+        val background = stringPreferencesKey("background")
+        val density = stringPreferencesKey("density")
+        val hideCents = booleanPreferencesKey("hideCents")
+        val weekStart = intPreferencesKey("weekStart")
+        val mascotHat = stringPreferencesKey("mascotHat")
+        val mascotColor = stringPreferencesKey("mascotColor")
+        val sounds = booleanPreferencesKey("sounds")
+        val tabs = stringPreferencesKey("tabs")
+        val reducedMotion = booleanPreferencesKey("reducedMotion")
         val onboarded = booleanPreferencesKey("onboarded")
         val seed = intPreferencesKey("seed")
         /** campos de la copia de seguridad que esta versión no conoce (nivel superior y ajustes) */
@@ -86,6 +98,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             p[K.mascot] = s.mascot
             p[K.haptics] = s.haptics
             p[K.appIcon] = s.appIcon
+            p[K.font] = s.font
+            p[K.cardStyle] = s.cardStyle
+            p[K.corners] = s.corners
+            p[K.background] = s.background
+            p[K.density] = s.density
+            p[K.hideCents] = s.hideCents
+            p[K.weekStart] = s.weekStart
+            p[K.mascotHat] = s.mascotHat
+            p[K.mascotColor] = s.mascotColor
+            p[K.sounds] = s.sounds
+            p[K.tabs] = s.tabs.joinToString(",")
+            p[K.reducedMotion] = s.reducedMotion
             p[K.onboarded] = s.onboarded
             p[K.seed] = s.seed
         }
@@ -94,11 +118,17 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private fun readNow(p: Preferences) = AppSettings(
         name = p[K.name] ?: "", accent = p[K.accent] ?: "#e4b3cb", hideAmountsOnLaunch = p[K.hideOnLaunch] ?: false,
         lock = p[K.lock] ?: false, monthStart = p[K.monthStart] ?: 1, currency = p[K.currency] ?: "EUR",
-        moduleWork = p[K.moduleWork] ?: false, moduleDebts = p[K.moduleDebts] ?: false, moduleInvest = p[K.moduleInvest] ?: false,
+        moduleWork = p[K.moduleWork] ?: false, moduleDebts = p[K.moduleDebts] ?: true, moduleInvest = p[K.moduleInvest] ?: true,
         home = HomeItem.normalized(p[K.home]?.let(::decodeHome)), accountsStyle = AccountsStyle.of(p[K.accountsStyle]),
         theme = ThemeMode.of(p[K.theme]), dynamicColor = p[K.dynamicColor] ?: false,
         amoled = p[K.amoled] ?: false, tabLabels = p[K.tabLabels] ?: true, mascot = p[K.mascot] ?: true,
         haptics = p[K.haptics] ?: true, appIcon = p[K.appIcon] ?: "default",
+        font = p[K.font] ?: "burbuja", cardStyle = p[K.cardStyle] ?: "cristal", corners = p[K.corners] ?: "redondas",
+        background = p[K.background] ?: "agua", density = p[K.density] ?: "comoda", hideCents = p[K.hideCents] ?: false,
+        weekStart = p[K.weekStart] ?: 1, mascotHat = p[K.mascotHat] ?: "nada", mascotColor = p[K.mascotColor] ?: "",
+        sounds = p[K.sounds] ?: true,
+        tabs = p[K.tabs]?.split(",")?.filter { it in es.david.caudal.domain.model.ALL_TABS }?.distinct() ?: es.david.caudal.domain.model.DEFAULT_TABS,
+        reducedMotion = p[K.reducedMotion] ?: false,
         onboarded = p[K.onboarded] ?: false, seed = p[K.seed] ?: 0,
     )
 

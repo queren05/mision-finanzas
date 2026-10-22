@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import es.david.caudal.ui.theme.LocalMotion
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -69,9 +68,9 @@ fun Modifier.pressable(
         .graphicsLayer { scaleX = s; scaleY = s }
         .then(
             if (onLongClick != null) {
-                Modifier.combinedClickable(source, ripple(), enabled = enabled, role = role, onLongClick = onLongClick, onClick = onClick)
+                Modifier.combinedClickable(source, androidx.compose.foundation.LocalIndication.current, enabled = enabled, role = role, onLongClick = onLongClick, onClick = onClick)
             } else {
-                Modifier.clickable(source, ripple(), enabled = enabled, role = role, onClick = onClick)
+                Modifier.clickable(source, androidx.compose.foundation.LocalIndication.current, enabled = enabled, role = role, onClick = onClick)
             },
         )
 }

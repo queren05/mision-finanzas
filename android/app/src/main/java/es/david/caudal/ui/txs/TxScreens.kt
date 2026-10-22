@@ -136,6 +136,7 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
 
     val f = LocalFmt.current
     val h = rememberHaptics()
+    val sounds = es.david.caudal.ui.common.rememberSounds()
     val colors = CaudalTheme.colors
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
@@ -199,6 +200,7 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
         focus.clearFocus()
         vm.run { save(t) }
         h.success()
+        sounds.plop()
         saved = true
         scope.launch { delay(900); onDone() }
     }

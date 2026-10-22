@@ -118,6 +118,8 @@ dependencies {
     implementation(libs.paging.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

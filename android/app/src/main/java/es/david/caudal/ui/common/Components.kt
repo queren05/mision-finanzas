@@ -121,20 +121,33 @@ fun contentOn(bg: Color): Color = if (bg.luminance() > 0.42f) Color(0xFF1A1320) 
 
 // MARK: tarjetas
 
-/** tarjeta redondeada (26 dp) sobre el fondo; en oscuro con un borde finísimo, en claro con sombra suave */
+/**
+ * Tarjeta: cristal (translúcida con brillo), sólida o con contorno, según Personalizar.
+ * En claro lleva una sombra suave del color de la app.
+ */
 @Composable
 fun Card(modifier: Modifier = Modifier, padding: Dp = 18.dp, onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     val c = CaudalTheme.colors
-    val shape = RoundedCornerShape(26.dp)
+    val st = es.david.caudal.ui.theme.LocalUiStyle.current
+    val shape = RoundedCornerShape(st.r(26.dp))
+    val glass = st.card == es.david.caudal.ui.theme.CardStyle.CRISTAL
+    val outline = st.card == es.david.caudal.ui.theme.CardStyle.CONTORNO
     Column(
         modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.pressable(0.98f, onClick = onClick) else Modifier)
-            .then(if (!c.dark) Modifier.shadow(12.dp, shape, ambientColor = c.accent.copy(alpha = 0.3f), spotColor = c.accent.copy(alpha = 0.22f)) else Modifier)
+            .then(if (!c.dark && !outline) Modifier.shadow(12.dp, shape, ambientColor = c.accent.copy(alpha = 0.3f), spotColor = c.accent.copy(alpha = 0.22f)) else Modifier)
             .clip(shape)
-            .background(c.card)
-            .then(if (c.dark) Modifier.border(1.dp, c.hairline, shape) else Modifier)
-            .padding(padding)
+            .then(
+                when {
+                    outline -> Modifier.border(1.5.dp, c.accent.copy(alpha = 0.45f), shape)
+                    glass -> Modifier
+                        .background(Brush.verticalGradient(listOf(lerp(c.card, Color.White, if (c.dark) 0.05f else 0.4f).copy(alpha = if (c.dark) 0.78f else 0.86f), c.card.copy(alpha = if (c.dark) 0.66f else 0.8f))))
+                        .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.dark) 0.16f else 0.7f), Color.White.copy(alpha = if (c.dark) 0.03f else 0.2f))), shape)
+                    else -> Modifier.background(c.card).then(if (c.dark) Modifier.border(1.dp, c.hairline, shape) else Modifier)
+                },
+            )
+            .padding(st.s(padding))
             .animateContentSize(spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)),
         content = content,
     )
@@ -593,14 +606,60 @@ fun EmptyText(text: String, modifier: Modifier = Modifier) {
     Text(text, modifier = modifier.fillMaxWidth().padding(16.dp), color = CaudalTheme.colors.textDim, textAlign = TextAlign.Center)
 }
 
-/** manchas de color difuminadas de fondo (la cabecera de las pantallas) */
+/**
+ * Fondo de la cabecera de las pantallas según Personalizar: agua (olas suaves y brillo),
+ * brillo, puntos o liso.
+ */
 @Composable
 fun GlowBackground(color: Color, modifier: Modifier = Modifier) {
+    val st = es.david.caudal.ui.theme.LocalUiStyle.current
+    val motion = es.david.caudal.ui.theme.LocalMotion.current
+    val phase = remember { androidx.compose.animation.core.Animatable(0f) }
+    if (st.backdrop == es.david.caudal.ui.theme.BackdropStyle.AGUA && motion) {
+        // las olas se mecen unos segundos al entrar y se quedan quietas
+        LaunchedEffect(Unit) { phase.animateTo(1f, androidx.compose.animation.core.tween(5000, easing = androidx.compose.animation.core.LinearOutSlowInEasing)) }
+    }
     Canvas(modifier) {
-        val r1 = size.width * 0.9f
-        drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.30f), Color.Transparent), center = Offset(size.width * 0.12f, 0f), radius = r1), r1, Offset(size.width * 0.12f, 0f))
-        val r2 = size.width * 0.7f
-        val c2 = Offset(size.width * 0.98f, size.height * 0.12f)
-        drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.16f), Color.Transparent), center = c2, radius = r2), r2, c2)
+        val w = size.width
+        val h = size.height
+        if (st.backdrop != es.david.caudal.ui.theme.BackdropStyle.LISO && st.backdrop != es.david.caudal.ui.theme.BackdropStyle.PUNTOS) {
+            val r1 = w * 0.9f
+            drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.30f), Color.Transparent), center = Offset(w * 0.12f, 0f), radius = r1), r1, Offset(w * 0.12f, 0f))
+            val r2 = w * 0.7f
+            val c2 = Offset(w * 0.98f, h * 0.12f)
+            drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.16f), Color.Transparent), center = c2, radius = r2), r2, c2)
+        }
+        when (st.backdrop) {
+            es.david.caudal.ui.theme.BackdropStyle.AGUA -> {
+                // dos capas de olas en la parte de arriba
+                listOf(Triple(0.42f, 0.10f, 1.0f), Triple(0.5f, 0.07f, 1.6f)).forEachIndexed { i, (yk, a, k) ->
+                    val path = androidx.compose.ui.graphics.Path()
+                    val base = h * yk
+                    val amp = h * 0.035f
+                    val shift = phase.value * 2f * kotlin.math.PI.toFloat() * (if (i == 0) 1 else -1)
+                    path.moveTo(0f, 0f)
+                    path.lineTo(0f, base)
+                    var x = 0f
+                    while (x <= w) {
+                        path.lineTo(x, base + amp * kotlin.math.sin(x / w * 2f * kotlin.math.PI.toFloat() * k + shift))
+                        x += 8f
+                    }
+                    path.lineTo(w, 0f)
+                    path.close()
+                    drawPath(path, Brush.verticalGradient(listOf(color.copy(alpha = a), color.copy(alpha = a * 0.4f)), startY = 0f, endY = base + amp))
+                }
+            }
+            es.david.caudal.ui.theme.BackdropStyle.PUNTOS -> {
+                val step = 22.dp.toPx()
+                var y = step / 2
+                while (y < h) {
+                    val fade = (1f - y / h).coerceIn(0f, 1f)
+                    var x = step / 2 + (if (((y / step).toInt()) % 2 == 0) 0f else step / 2)
+                    while (x < w) { drawCircle(color.copy(alpha = 0.22f * fade), 1.6.dp.toPx(), Offset(x, y)); x += step }
+                    y += step
+                }
+            }
+            else -> Unit
+        }
     }
 }

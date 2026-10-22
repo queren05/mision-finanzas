@@ -263,8 +263,8 @@ data class AppSettings(
     val monthStart: Int = 1,
     val currency: String = "EUR",
     val moduleWork: Boolean = false,
-    val moduleDebts: Boolean = false,
-    val moduleInvest: Boolean = false,
+    val moduleDebts: Boolean = true,
+    val moduleInvest: Boolean = true,
     val home: List<HomeItem> = HomeItem.DEFAULTS,
     val accountsStyle: AccountsStyle = AccountsStyle.CARRUSEL,
     val theme: ThemeMode = ThemeMode.DARK,
@@ -279,9 +279,35 @@ data class AppSettings(
     val haptics: Boolean = true,
     /** icono de la app elegido (alias de la actividad) */
     val appIcon: String = "default",
+    /** pareja de letras: burbuja, suave, elegante, sencilla */
+    val font: String = "burbuja",
+    /** tarjetas: cristal, solida, contorno */
+    val cardStyle: String = "cristal",
+    /** esquinas: redondas, muy, suaves */
+    val corners: String = "redondas",
+    /** fondo: agua, brillo, liso, puntos */
+    val background: String = "agua",
+    /** densidad: comoda, compacta */
+    val density: String = "comoda",
+    val hideCents: Boolean = false,
+    /** primer día de la semana: 1 lunes, 7 domingo */
+    val weekStart: Int = 1,
+    /** complemento de Gotita: nada, gorro, gafas, lazo, corona, auriculares, flor */
+    val mascotHat: String = "nada",
+    /** color de Gotita ("" = el de la app) */
+    val mascotColor: String = "",
+    val sounds: Boolean = true,
+    /** pestañas de la barra de abajo (entre Inicio y Más), en orden */
+    val tabs: List<String> = DEFAULT_TABS,
+    /** animaciones: completas o reducidas */
+    val reducedMotion: Boolean = false,
     val onboarded: Boolean = false,
     val seed: Int = 0,
 )
+
+/** pestañas que se pueden poner en la barra de abajo */
+val ALL_TABS = listOf("movimientos", "cuentas", "inversiones", "analisis", "calendario", "objetivos")
+val DEFAULT_TABS = listOf("movimientos", "cuentas", "inversiones")
 
 /** Todo lo guardado, de una vez (para los cálculos, que son los mismos que en iPhone). */
 data class FinanceData(

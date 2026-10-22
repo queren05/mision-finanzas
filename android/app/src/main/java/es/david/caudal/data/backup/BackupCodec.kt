@@ -197,6 +197,19 @@ object BackupCodec {
             tabLabels = s.bool("tabLabels") ?: fallback.tabLabels,
             mascot = s.bool("mascot") ?: fallback.mascot,
             haptics = s.bool("haptics") ?: fallback.haptics,
+            font = s.str("font") ?: fallback.font,
+            cardStyle = s.str("cardStyle") ?: fallback.cardStyle,
+            corners = s.str("corners") ?: fallback.corners,
+            background = s.str("background") ?: fallback.background,
+            density = s.str("density") ?: fallback.density,
+            hideCents = s.bool("hideCents") ?: fallback.hideCents,
+            weekStart = s.int("weekStart") ?: fallback.weekStart,
+            mascotHat = s.str("mascotHat") ?: fallback.mascotHat,
+            mascotColor = s.str("mascotColor") ?: fallback.mascotColor,
+            sounds = s.bool("sounds") ?: fallback.sounds,
+            tabs = (s["tabs"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }?.filter { it in es.david.caudal.domain.model.ALL_TABS } ?: fallback.tabs,
+            reducedMotion = s.bool("reducedMotion") ?: fallback.reducedMotion,
+            appIcon = s.str("appIcon") ?: fallback.appIcon,
             home = HomeItem.normalized((root["home"] as? JsonArray)?.mapNotNull { (it as? JsonObject)?.let { h -> h.str("id")?.let { id -> HomeItem(id, h.bool("on") ?: true) } } }),
             accountsStyle = AccountsStyle.of(root.str("accountsStyle")),
             seed = root.int("seed") ?: fallback.seed,
@@ -267,6 +280,10 @@ object BackupCodec {
             "faceID" to settings.lock, "monthStart" to settings.monthStart, "currency" to settings.currency,
             "theme" to settings.theme.raw, "dynamicColor" to settings.dynamicColor,
             "amoled" to settings.amoled, "tabLabels" to settings.tabLabels, "mascot" to settings.mascot, "haptics" to settings.haptics,
+            "font" to settings.font, "cardStyle" to settings.cardStyle, "corners" to settings.corners, "background" to settings.background,
+            "density" to settings.density, "hideCents" to settings.hideCents, "weekStart" to settings.weekStart, "mascotHat" to settings.mascotHat,
+            "mascotColor" to settings.mascotColor, "sounds" to settings.sounds, "tabs" to JsonArray(settings.tabs.map { JsonPrimitive(it) }),
+            "reducedMotion" to settings.reducedMotion, "appIcon" to settings.appIcon,
             "modules" to JsonObject(mapOf("work" to JsonPrimitive(settings.moduleWork), "debts" to JsonPrimitive(settings.moduleDebts), "invest" to JsonPrimitive(settings.moduleInvest))),
         )
         root["quotes"] = JsonObject(data.quotes.mapValues { (_, q) ->
@@ -301,7 +318,7 @@ object BackupCodec {
 
     private val TOP_KEYS = setOf("format", "formatVersion", "app", "version", "seed", "accounts", "categories", "txs", "recurring", "assets", "goals",
         "settings", "quotes", "snapshots", "people", "debts", "companies", "shifts", "home", "accountsStyle")
-    private val SETTINGS_KEYS = setOf("name", "accent", "hideAmountsOnLaunch", "faceID", "monthStart", "currency", "theme", "dynamicColor", "modules", "amoled", "tabLabels", "mascot", "haptics")
+    private val SETTINGS_KEYS = setOf("name", "accent", "hideAmountsOnLaunch", "faceID", "monthStart", "currency", "theme", "dynamicColor", "modules", "amoled", "tabLabels", "mascot", "haptics", "font", "cardStyle", "corners", "background", "density", "hideCents", "weekStart", "mascotHat", "mascotColor", "sounds", "tabs", "reducedMotion", "appIcon")
     private val ACCOUNT_KEYS = setOf("id", "name", "type", "currency", "initial", "color", "icon", "includeInTotal", "archived", "order", "note")
     private val CATEGORY_KEYS = setOf("id", "kind", "name", "icon", "color", "budget", "keywords", "hidden")
     private val TX_KEYS = setOf("id", "type", "amount", "currency", "accountId", "toAccountId", "categoryId", "date", "time", "title", "note", "excluded", "recurringId", "mood")

@@ -34,6 +34,9 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Icon
@@ -90,6 +93,8 @@ import es.david.caudal.ui.nav.TxsRoute
 import es.david.caudal.ui.onboarding.OnboardingScreen
 import es.david.caudal.ui.theme.CaudalTheme
 import es.david.caudal.ui.theme.LocalMotion
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.blur.hazeBlur
 
 /** acción del acceso directo «Apuntar gasto» */
 const val ACTION_NEW_EXPENSE = "es.david.caudal.NEW_EXPENSE"
@@ -105,18 +110,24 @@ fun RootScreen(app: AppViewModel, launchAction: String?, backupUri: android.net.
     // «Quitar animaciones» del sistema: también aquí
     val ctx = LocalContext.current
     val systemMotion = remember { runCatching { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }.getOrDefault(1f) > 0f }
-    CaudalTheme(s.theme, s.accent, s.dynamicColor, amoled = s.amoled, motion = systemMotion) {
+    val haze = dev.chrisbanes.haze.rememberHazeState()
+    val motion = systemMotion && !s.reducedMotion
+    CaudalTheme(s.theme, s.accent, s.dynamicColor, amoled = s.amoled, motion = motion, font = s.font) {
+        val c = CaudalTheme.colors
         CompositionLocalProvider(
-            LocalFmt provides rememberFmt(s.currency, hidden ?: false),
+            LocalFmt provides rememberFmt(s.currency, hidden ?: false, s.hideCents),
             LocalHapticsOn provides s.haptics,
             LocalMascot provides s.mascot,
+            es.david.caudal.ui.common.LocalMascotLook provides es.david.caudal.ui.common.MascotLook(s.mascotHat, s.mascotColor),
+            es.david.caudal.ui.theme.LocalUiStyle provides es.david.caudal.ui.theme.UiStyle.from(s.cardStyle, s.background, s.corners, s.density, s.hideCents, s.sounds, haze),
+            androidx.compose.foundation.LocalIndication provides remember(c.accent, motion) { es.david.caudal.ui.theme.WaterRipple(c.accent, motion) },
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 if (backupUri != null && !locked) ImportBackupDialog(app, backupUri, onBackupHandled)
                 when {
                     !s.onboarded -> OnboardingScreen()
                     locked -> LockScreen(onUnlocked = app::unlocked)
-                    else -> MainShell(app, launchAction, onActionHandled, s.moduleDebts, s.moduleInvest, s.tabLabels)
+                    else -> MainShell(app, launchAction, onActionHandled, s.tabs.filter { (it != "cuentas" || s.moduleDebts) && (it != "inversiones" || s.moduleInvest) }, s.tabLabels)
                 }
             }
         }
@@ -124,7 +135,7 @@ fun RootScreen(app: AppViewModel, launchAction: String?, backupUri: android.net.
 }
 
 @Composable
-private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled: () -> Unit, debts: Boolean, invest: Boolean, labels: Boolean) {
+private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled: () -> Unit, chosen: List<String>, labels: Boolean) {
     val nav = rememberNavController()
     val h = rememberHaptics()
     val snackbar = remember { SnackbarHostState() }
@@ -132,9 +143,17 @@ private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled:
     val dest = back?.destination
     val tabs = buildList {
         add(Tab(HomeRoute, R.string.tab_home, Icons.Filled.Home))
-        add(Tab(TxsRoute, R.string.tab_txs, Icons.AutoMirrored.Filled.ViewList))
-        if (debts) add(Tab(DebtsRoute, R.string.tab_debts, Icons.Filled.Group))
-        if (invest) add(Tab(InvestRoute, R.string.tab_invest, Icons.AutoMirrored.Filled.ShowChart))
+        // las pestañas elegidas en Personalizar, en su orden
+        chosen.take(4).forEach { id ->
+            when (id) {
+                "movimientos" -> add(Tab(TxsRoute, R.string.tab_txs, Icons.AutoMirrored.Filled.ViewList))
+                "cuentas" -> add(Tab(DebtsRoute, R.string.tab_debts, Icons.Filled.Group))
+                "inversiones" -> add(Tab(InvestRoute, R.string.tab_invest, Icons.AutoMirrored.Filled.ShowChart))
+                "analisis" -> add(Tab(es.david.caudal.ui.nav.StatsRoute, R.string.analysis, Icons.Filled.PieChart))
+                "calendario" -> add(Tab(es.david.caudal.ui.nav.CalendarRoute(), R.string.tab_calendar, Icons.Filled.CalendarMonth))
+                "objetivos" -> add(Tab(es.david.caudal.ui.nav.GoalsRoute, R.string.tab_goals, Icons.Filled.Savings))
+            }
+        }
         add(Tab(MoreRoute, R.string.tab_more, Icons.Filled.MoreHoriz))
     }
     val current = tabs.indexOfFirst { t -> dest?.hasRoute(t.route::class) == true }
@@ -155,8 +174,11 @@ private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled:
         }
     }
 
+    val haze = es.david.caudal.ui.theme.LocalUiStyle.current.haze
     Box(Modifier.fillMaxSize()) {
-        CaudalNavHost(nav, onToggleHidden = app::toggleHidden)
+        Box(Modifier.fillMaxSize().then(if (haze != null) Modifier.hazeSource(haze) else Modifier)) {
+            CaudalNavHost(nav, onToggleHidden = app::toggleHidden)
+        }
 
         // botón + redondo, siempre a mano (gira al pulsarlo)
         var spins by remember { mutableIntStateOf(0) }
@@ -212,8 +234,8 @@ private fun FloatingTabBar(tabs: List<Tab>, selected: Int, labels: Boolean, onSe
             .height(if (labels) 68.dp else 60.dp)
             .shadow(24.dp, CircleShape, ambientColor = c.accent.copy(alpha = 0.4f), spotColor = c.accent.copy(alpha = 0.3f))
             .clip(CircleShape)
-            .background(c.card.copy(alpha = 0.97f))
-            .border(1.dp, c.hairline, CircleShape)
+            .then(glass())
+            .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.White.copy(alpha = if (c.dark) 0.18f else 0.8f), c.hairline)), CircleShape)
             .padding(5.dp),
     ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -268,4 +290,21 @@ private fun ImportBackupDialog(app: AppViewModel, uri: android.net.Uri, onDone: 
             onDismiss = { if (asked) { asked = false; onDone() } },
         )
     }
+}
+
+/** cristal esmerilado de verdad (Android 12+) o un velo translúcido en móviles más antiguos */
+@OptIn(dev.chrisbanes.haze.ExperimentalHazeApi::class)
+@Composable
+private fun glass(): Modifier {
+    val c = CaudalTheme.colors
+    val haze = es.david.caudal.ui.theme.LocalUiStyle.current.haze ?: return Modifier.background(c.card.copy(alpha = 0.97f))
+    val style = remember(c.card, c.dark) {
+        dev.chrisbanes.haze.blur.HazeBlurStyle {
+            blurRadius(28.dp)
+            backgroundColor(c.bg)
+            noiseFactor(0.06f)
+            colorEffects(listOf(dev.chrisbanes.haze.blur.HazeColorEffect.tint(c.card.copy(alpha = if (c.dark) 0.62f else 0.7f))))
+        }
+    }
+    return Modifier.hazeBlur(dev.chrisbanes.haze.HazeInput.Sources(haze), style)
 }

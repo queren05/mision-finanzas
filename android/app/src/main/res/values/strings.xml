@@ -47,12 +47,20 @@
     <string name="accent_lavanda">Lavanda</string>
     <string name="accent_chicle">Chicle</string>
 
+    <!-- letras -->
+    <string name="font_burbuja">Burbuja</string>
+    <string name="font_suave">Suave</string>
+    <string name="font_elegante">Elegante</string>
+    <string name="font_sencilla">Sencilla</string>
+
     <!-- pestañas -->
     <string name="tab_home">Inicio</string>
     <string name="tab_txs">Movimientos</string>
     <string name="tab_debts">Cuentas</string>
     <string name="tab_invest">Inversiones</string>
     <string name="tab_more">Más</string>
+    <string name="tab_calendar">Calendario</string>
+    <string name="tab_goals">Objetivos</string>
     <string name="new_tx">Apuntar</string>
 
     <!-- tipos de movimiento -->
