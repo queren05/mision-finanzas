@@ -1,11 +1,14 @@
 package es.david.caudal.ui.txs
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -24,13 +28,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SpeakerNotes
@@ -38,7 +42,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -63,13 +66,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -81,22 +87,32 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.david.caudal.R
 import es.david.caudal.core.Day
 import es.david.caudal.core.Money
+import es.david.caudal.domain.calc.Insights
 import es.david.caudal.domain.calc.Ledger
 import es.david.caudal.domain.model.CatKind
+import es.david.caudal.domain.model.Category
 import es.david.caudal.domain.model.Tx
 import es.david.caudal.domain.model.TxType
 import es.david.caudal.ui.common.BigAmountField
 import es.david.caudal.ui.common.Card
 import es.david.caudal.ui.common.ConfirmDialog
+import es.david.caudal.ui.common.Confetti
 import es.david.caudal.ui.common.EditorScaffold
 import es.david.caudal.ui.common.FinanceViewModel
+import es.david.caudal.ui.common.GroupLabel
+import es.david.caudal.ui.common.Gotita
 import es.david.caudal.ui.common.LocalFmt
+import es.david.caudal.ui.common.LocalMascot
+import es.david.caudal.ui.common.Mood
 import es.david.caudal.ui.common.Pill
+import es.david.caudal.ui.common.RowDivider
 import es.david.caudal.ui.common.SegmentedPills
+import es.david.caudal.ui.common.pressable
 import es.david.caudal.ui.common.rememberHaptics
 import es.david.caudal.ui.common.txTypeLabel
 import es.david.caudal.ui.nav.TxEditorRoute
 import es.david.caudal.ui.theme.CaudalTheme
+import es.david.caudal.ui.theme.LocalMotion
 import es.david.caudal.ui.theme.hexColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,6 +120,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
+
+/** emojis de «¿valió la pena?» y su texto para lectores de pantalla */
+private val MOODS = listOf("😍" to R.string.tx_mood_love, "🙂" to R.string.tx_mood_ok, "😐" to R.string.tx_mood_meh, "😩" to R.string.tx_mood_bad)
 
 /** Apuntar o editar un movimiento: importe grande, tipo, categoría, cuenta, concepto, nota, fecha y hora */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -133,6 +152,7 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
     var date by rememberSaveable { mutableStateOf(original?.date ?: Day.today) }
     var time by rememberSaveable { mutableStateOf(original?.time ?: Day.nowTime()) }
     var excluded by rememberSaveable { mutableStateOf(original?.excluded ?: false) }
+    var mood by rememberSaveable { mutableStateOf(original?.mood ?: "") }
     var titleFocused by remember { mutableStateOf(false) }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
@@ -144,7 +164,7 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
         TxType.EXPENSE -> colors.expenseAccent
         TxType.INCOME -> colors.income
         TxType.TRANSFER -> colors.transfer
-        TxType.ADJUST -> Color.Gray
+        TxType.ADJUST -> colors.textDim
     }
     fun autoCategory() {
         if (type == TxType.TRANSFER || userPicked) return
@@ -174,11 +194,13 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
             date = date,
             time = time,
             excluded = excluded,
+            mood = if (type == TxType.EXPENSE) mood else "",
         )
+        focus.clearFocus()
         vm.run { save(t) }
         h.success()
         saved = true
-        scope.launch { delay(550); onDone() }
+        scope.launch { delay(900); onDone() }
     }
 
     EditorScaffold(
@@ -187,10 +209,10 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
         onSave = ::save,
         bottomBar = {
             if (original != null) {
-                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp)) {
-                    Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error)
+                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp).heightIn(min = 48.dp)) {
+                    Icon(Icons.Filled.Delete, null, tint = colors.negative)
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.delete_movement), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete_movement), color = colors.negative, style = MaterialTheme.typography.labelLarge)
                 }
             }
         },
@@ -198,56 +220,103 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
         Box(Modifier.fillMaxSize().padding(pad)) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 SegmentedPills(
                     types.map { stringResource(txTypeLabel(it)) }, types.indexOf(type).coerceAtLeast(0),
-                    { i -> h.select(); type = types[i]; if (!userPicked) { categoryId = null; autoCategory() } },
+                    { i -> type = types[i]; if (!userPicked) { categoryId = null; autoCategory() } },
                     colors = types.map(::typeColor),
                 )
-                BigAmountField(
-                    digits, { digits = it }, typeColor(type),
-                    prefix = when (type) { TxType.EXPENSE -> "−"; TxType.INCOME -> "+"; else -> "" },
-                    autoFocus = original == null,
-                )
-                if (type == TxType.TRANSFER) {
-                    Card(padding = 12.dp) {
-                        AccountChips(stringResource(R.string.from), l, accountId) { accountId = it }
-                        Spacer(Modifier.heightIn(min = 8.dp))
-                        AccountChips(stringResource(R.string.to), l, toAccountId) { toAccountId = it }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    BigAmountField(
+                        digits, { digits = it }, typeColor(type),
+                        prefix = when (type) { TxType.EXPENSE -> "−"; TxType.INCOME -> "+"; else -> "" },
+                        autoFocus = original == null,
+                    )
+                    l.account(accountId)?.let { a ->
+                        Text(
+                            stringResource(R.string.tx_balance_of, a.name, f.money(l.balance(a))),
+                            style = MaterialTheme.typography.labelMedium, color = colors.textDim,
+                        )
                     }
-                } else {
-                    val cats = l.categories(if (type == TxType.INCOME) CatKind.INCOME else CatKind.EXPENSE)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 4) {
-                        cats.forEach { c ->
-                            val on = c.id == categoryId
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (on) hexColor(c.color).copy(alpha = 0.3f) else CaudalTheme.colors.card)
-                                    .clickable(role = Role.RadioButton) { h.select(); categoryId = if (on) null else c.id; userPicked = !on }
-                                    .semantics { selected = on }
-                                    .heightIn(min = 76.dp)
-                                    .padding(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                Text(c.icon, fontSize = 24.sp)
-                                Text(c.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, fontWeight = if (on) FontWeight.Bold else null)
+                }
+
+                // frecuentes: a un toque
+                val frequent = remember(l) { if (original == null) Insights.frequent(l.data.txs) else emptyList() }
+                if (frequent.isNotEmpty() && type == TxType.EXPENSE) {
+                    Column {
+                        GroupLabel(stringResource(R.string.tx_frequent))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(frequent) { fr ->
+                                val cat = l.category(fr.categoryId)
+                                val desc = stringResource(R.string.tx_frequent_desc, fr.title, f.money(fr.amount))
+                                Row(
+                                    Modifier
+                                        .pressable(0.92f) {
+                                            h.select()
+                                            digits = Money.editText(fr.amount); title = fr.title; categoryId = fr.categoryId; userPicked = fr.categoryId != null
+                                            if (l.account(fr.accountId) != null) accountId = fr.accountId
+                                        }
+                                        .clip(CircleShape)
+                                        .background(colors.card)
+                                        .border(1.dp, colors.hairline, CircleShape)
+                                        .heightIn(min = 44.dp)
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                        .semantics(mergeDescendants = true) { contentDescription = desc },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(cat?.icon ?: "⭐", fontSize = 18.sp)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(fr.title, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(f.money(fr.amount), style = MaterialTheme.typography.labelMedium, color = colors.textDim)
+                                }
                             }
                         }
                     }
-                    if (type != TxType.ADJUST || l.accounts.size > 1) {
-                        Card(padding = 12.dp) { AccountChips(stringResource(R.string.account), l, accountId) { accountId = it } }
+                }
+
+                if (type == TxType.TRANSFER) {
+                    Card(padding = 14.dp) {
+                        AccountChips(stringResource(R.string.from), l, accountId) { accountId = it }
+                        Spacer(Modifier.height(10.dp))
+                        AccountChips(stringResource(R.string.to), l, toAccountId) { toAccountId = it }
+                    }
+                } else if (type != TxType.ADJUST) {
+                    val cats = l.categories(if (type == TxType.INCOME) CatKind.INCOME else CatKind.EXPENSE)
+                    Column {
+                        GroupLabel(stringResource(R.string.tx_category_title))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 4) {
+                            cats.forEach { c ->
+                                CategoryTile(c, c.id == categoryId, Modifier.weight(1f)) {
+                                    h.select(); val on = c.id == categoryId
+                                    categoryId = if (on) null else c.id; userPicked = !on
+                                }
+                            }
+                            repeat((4 - cats.size % 4) % 4) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                    if (l.accounts.size > 1) Card(padding = 14.dp) { AccountChips(stringResource(R.string.account), l, accountId) { accountId = it } }
+                }
+
+                if (type == TxType.EXPENSE) {
+                    Column {
+                        GroupLabel(stringResource(R.string.tx_worth_it))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MOODS.forEach { (e, label) ->
+                                MoodButton(e, stringResource(label), e == mood, Modifier.weight(1f)) { h.select(); mood = if (mood == e) "" else e }
+                            }
+                        }
                     }
                 }
-                Card(padding = 14.dp) {
+
+                Card(padding = 6.dp) {
                     TextField(
                         value = title,
                         onValueChange = { title = it; if (!userPicked) autoCategory() },
                         placeholder = { Text(stringResource(R.string.concept)) },
                         singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyLarge,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
                         colors = plainField(),
@@ -258,46 +327,52 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
                         l.knownTitles.filter { q.isEmpty() || (it.lowercase().startsWith(q) && it.lowercase() != q) }.take(8)
                     }
                     AnimatedVisibility(titleFocused && suggestions.isNotEmpty()) {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 4.dp)) {
-                            items(suggestions) { s ->
-                                Pill(s, false, { h.tap(); title = s; autoCategory(); focus.clearFocus() })
-                            }
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                            items(suggestions) { s -> Pill(s, false, { h.tap(); title = s; autoCategory(); focus.clearFocus() }) }
                         }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    RowDivider(16.dp)
                     TextField(
                         value = note, onValueChange = { note = it }, placeholder = { Text(stringResource(R.string.note)) },
-                        leadingIcon = { Icon(Icons.Filled.SpeakerNotes, null) }, singleLine = true, colors = plainField(), modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Filled.SpeakerNotes, null, tint = colors.textDim) }, singleLine = true, colors = plainField(),
+                        textStyle = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        TextButton(onClick = { pickDate = true }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                            Icon(Icons.Filled.CalendarMonth, null); Spacer(Modifier.width(6.dp)); Text(f.header(date))
-                        }
-                        TextButton(onClick = { pickTime = true }, modifier = Modifier.heightIn(min = 48.dp)) {
-                            Icon(Icons.Filled.Schedule, null); Spacer(Modifier.width(6.dp)); Text(time)
-                        }
+                    RowDivider(16.dp)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ChipButton(Icons.Filled.CalendarMonth, f.header(date), Modifier.weight(1f)) { pickDate = true }
+                        ChipButton(Icons.Filled.Schedule, time) { pickTime = true }
                     }
                     if (type == TxType.EXPENSE || type == TxType.INCOME) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(role = Role.Switch) { excluded = !excluded }, verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.VisibilityOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        RowDivider(16.dp)
+                        Row(
+                            Modifier.fillMaxWidth().pressable(0.98f, role = Role.Switch) { excluded = !excluded }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Filled.VisibilityOff, null, tint = colors.textDim)
                             Spacer(Modifier.width(12.dp))
-                            Text(stringResource(R.string.exclude_stats), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Text(stringResource(R.string.exclude_stats), color = colors.textDim, modifier = Modifier.weight(1f))
                             Switch(checked = excluded, onCheckedChange = null)
                         }
                     }
                 }
-                Spacer(Modifier.heightIn(min = 24.dp))
+                Spacer(Modifier.height(24.dp))
             }
-            AnimatedVisibility(saved, Modifier.align(Alignment.Center), enter = scaleIn() + fadeIn(), exit = fadeOut()) {
-                Column(
-                    Modifier.clip(RoundedCornerShape(26.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(Icons.Filled.CheckCircle, null, tint = colors.income, modifier = Modifier.size(56.dp))
-                    Text(stringResource(R.string.saved), fontWeight = FontWeight.Bold)
+
+            // guardado: Gotita contenta y un poco de confeti
+            AnimatedVisibility(saved, Modifier.fillMaxSize(), enter = fadeIn(), exit = fadeOut()) {
+                Box(Modifier.fillMaxSize().background(colors.bg.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
+                    Confetti(saved, listOf(colors.accent, colors.income, colors.warning, colors.transfer), count = 50)
+                    AnimatedVisibility(saved, enter = scaleIn(spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow))) {
+                        Column(
+                            Modifier.clip(RoundedCornerShape(32.dp)).background(colors.card).border(1.dp, colors.hairline, RoundedCornerShape(32.dp)).padding(horizontal = 36.dp, vertical = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            if (LocalMascot.current) Gotita(if (type == TxType.INCOME) Mood.LOVE else Mood.HAPPY, 96.dp) else Text("✅", fontSize = 56.sp)
+                            Spacer(Modifier.height(6.dp))
+                            Text(stringResource(R.string.tx_saved_great), style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
                 }
             }
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
@@ -322,6 +397,8 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
         val st = rememberTimePickerState(t0.hour, t0.minute, is24Hour = true)
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { pickTime = false },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = colors.card,
             confirmButton = { TextButton(onClick = { time = Day.time(LocalTime.of(st.hour, st.minute)); pickTime = false }) { Text(stringResource(R.string.ok)) } },
             dismissButton = { TextButton(onClick = { pickTime = false }) { Text(stringResource(R.string.cancel)) } },
             text = { TimePicker(st) },
@@ -344,13 +421,76 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
     LaunchedEffect(Unit) { if (original == null && title.isNotEmpty()) autoCategory() }
 }
 
+/** tarjetita de categoría: emoji grande; la elegida con su color y un rebote */
+@Composable
+private fun CategoryTile(c: Category, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val colors = CaudalTheme.colors
+    val col = hexColor(c.color)
+    val motion = LocalMotion.current
+    val scale by animateFloatAsState(if (on && motion) 1.06f else 1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium), label = "categoría")
+    Column(
+        modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .pressable(0.9f, role = Role.RadioButton, onClick = onClick)
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (on) Brush.verticalGradient(listOf(col.copy(alpha = 0.55f), col.copy(alpha = 0.3f))) else Brush.verticalGradient(listOf(colors.card, colors.card)))
+            .border(if (on) 2.dp else 1.dp, if (on) col else colors.hairline, RoundedCornerShape(20.dp))
+            .semantics { selected = on }
+            .heightIn(min = 82.dp)
+            .padding(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(c.icon, fontSize = 28.sp)
+        Spacer(Modifier.height(2.dp))
+        Text(c.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, color = colors.text)
+    }
+}
+
+@Composable
+private fun MoodButton(emoji: String, label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val colors = CaudalTheme.colors
+    val motion = LocalMotion.current
+    val scale by animateFloatAsState(if (on && motion) 1.18f else 1f, spring(dampingRatio = 0.35f, stiffness = Spring.StiffnessMedium), label = "emoji")
+    Box(
+        modifier
+            .heightIn(min = 56.dp)
+            .pressable(0.85f, role = Role.RadioButton, onClick = onClick)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (on) colors.accent.copy(alpha = 0.28f) else colors.card)
+            .border(if (on) 2.dp else 1.dp, if (on) colors.accent else colors.hairline, RoundedCornerShape(18.dp))
+            .semantics { selected = on; contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { Text(emoji, fontSize = 26.sp, modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale; alpha = if (on) 1f else 0.75f }) }
+}
+
+@Composable
+private fun ChipButton(icon: ImageVector, text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val colors = CaudalTheme.colors
+    Row(
+        modifier
+            .pressable(0.94f, onClick = onClick)
+            .clip(CircleShape)
+            .background(colors.cardAlt)
+            .heightIn(min = 46.dp)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, null, tint = colors.accent, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+    }
+}
+
 @Composable
 private fun AccountChips(label: String, l: Ledger, selected: String, onSelect: (String) -> Unit) {
     Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = CaudalTheme.colors.textDim, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(l.accounts, key = { it.id }) { a ->
-                Pill("${a.icon} ${a.name}", a.id == selected, { onSelect(a.id) })
+                val on = a.id == selected
+                Pill("${a.icon} ${a.name}", on, { onSelect(a.id) }, selectedColor = hexColor(a.color))
             }
         }
     }
