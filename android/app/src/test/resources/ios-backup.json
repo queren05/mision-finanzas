@@ -1,0 +1,43 @@
+{
+  "accounts" : [
+    { "archived" : false, "color" : "#8fb4ff", "currency" : "EUR", "icon" : "🏦", "id" : "a_main", "includeInTotal" : true, "initial" : 100.5, "name" : "Principal", "note" : "", "order" : 0, "type" : "corriente" },
+    { "archived" : false, "color" : "#e4b3cb", "currency" : "EUR", "icon" : "🐷", "id" : "a_save", "includeInTotal" : true, "initial" : 500, "name" : "Ahorro", "note" : "", "order" : 1, "type" : "ahorro" },
+    { "archived" : false, "color" : "#6fd49b", "currency" : "EUR", "icon" : "📊", "id" : "a_broker", "includeInTotal" : true, "initial" : 0, "name" : "Bróker", "note" : "", "order" : 2, "type" : "broker" },
+    { "archived" : true, "color" : "#a9b3c2", "currency" : "EUR", "icon" : "💶", "id" : "a_old", "includeInTotal" : true, "initial" : 20, "name" : "Vieja", "note" : "", "order" : 3, "type" : "efectivo" }
+  ],
+  "accountsStyle" : "lista",
+  "assets" : [
+    { "accountId" : "a_broker", "archived" : false, "color" : "#62cfd0", "id" : "s_etf", "isin" : "IE00B6R52259", "kind" : "stock", "manualPrice" : 110, "name" : "ETF mundial", "symbol" : "ACWI", "ySymbol" : "IUSQ.DE",
+      "ops" : [ { "date" : "2026-09-30", "fee" : 0, "id" : "op1", "price" : 100, "qty" : 2, "side" : "buy" },
+                { "cashAccountId" : "a_save", "date" : "2026-10-02", "fee" : 1, "id" : "op2", "price" : 105, "qty" : 1, "side" : "buy" },
+                { "date" : "2026-10-10", "fee" : 0, "id" : "op3", "price" : 120, "qty" : 1, "side" : "sell" } ] }
+  ],
+  "categories" : [
+    { "budget" : 200, "color" : "#e4b3cb", "hidden" : false, "icon" : "🛒", "id" : "c_super", "keywords" : "mercadona, lidl, alimentacion", "kind" : "expense", "name" : "Supermercado" },
+    { "budget" : 0, "color" : "#8fb4ff", "hidden" : false, "icon" : "🍽️", "id" : "c_rest", "keywords" : "restaurante, bar", "kind" : "expense", "name" : "Restaurantes" },
+    { "budget" : 0, "color" : "#6fd49b", "hidden" : false, "icon" : "💼", "id" : "i_nomina", "keywords" : "nomina", "kind" : "income", "name" : "Nómina" }
+  ],
+  "companies" : [ { "accountId" : "a_main", "color" : "#7ac8ff", "id" : "e_ett", "irpfPct" : 2, "name" : "Mi ETT", "nightEnd" : 360, "nightRate" : 16.07, "nightStart" : 1320, "normalRate" : 13.59, "ssPct" : 6.5 } ],
+  "debts" : [
+    { "amount" : 12.5, "concept" : "Cena", "created" : 782000000, "date" : "2026-10-15", "group" : "G1", "id" : "d1", "kind" : "split", "personId" : "p1", "total" : 37.5 },
+    { "amount" : -5, "concept" : "", "created" : 782100000, "date" : "2026-10-16", "id" : "d2", "kind" : "pay", "personId" : "p1" }
+  ],
+  "goals" : [ { "accountId" : "a_save", "color" : "#ff8686", "deadline" : "2027-09-01", "icon" : "🇳🇴", "id" : "g1", "name" : "Viaje", "saved" : 0, "target" : 5000 } ],
+  "home" : [ { "id" : "mes", "on" : true }, { "id" : "patrimonio", "on" : false }, { "id" : "desconocida", "on" : true } ],
+  "people" : [ { "color" : "#5fe0a0", "emoji" : "🥸", "id" : "p1", "name" : "Jorge", "nick" : "", "phone" : "600000000", "photo" : "AAECAw==" } ],
+  "quotes" : { "IUSQ.DE" : { "currency" : "EUR", "previousClose" : 108, "price" : 109.5, "updated" : 782000000 } },
+  "recurring" : [ { "accountId" : "a_main", "active" : true, "amount" : 29.9, "categoryId" : "c_rest", "day" : 31, "freq" : "monthly", "id" : "r1", "name" : "Gimnasio", "next" : "2026-11-30", "type" : "expense" } ],
+  "seed" : 7,
+  "settings" : { "accent" : "#e4b3cb", "faceID" : true, "hideAmountsOnLaunch" : false, "monthStart" : 25, "name" : "Ana" },
+  "shifts" : [ { "breakMin" : 30, "companyId" : "e_ett", "date" : "2026-10-16", "end" : 1380, "id" : "t1", "note" : "", "paidDate" : "", "start" : 960, "status" : "pendiente" } ],
+  "snapshots" : [ { "d" : "2026-10-01", "v" : 1000 } ],
+  "txs" : [
+    { "accountId" : "a_main", "amount" : 17.29, "categoryId" : "c_super", "date" : "2026-10-03", "excluded" : false, "id" : "t1", "note" : "", "time" : "14:28", "title" : "Mercadona", "type" : "expense" },
+    { "accountId" : "a_main", "amount" : 1200, "categoryId" : "i_nomina", "date" : "2026-10-01", "excluded" : false, "id" : "t2", "note" : "", "time" : "09:00", "title" : "Nómina", "type" : "income" },
+    { "accountId" : "a_save", "amount" : 100, "date" : "2026-10-04", "excluded" : false, "id" : "t3", "note" : "", "time" : "21:00", "title" : "Traspaso", "toAccountId" : "a_main", "type" : "transfer" },
+    { "accountId" : "a_main", "amount" : -3.21, "date" : "2026-10-05", "excluded" : false, "id" : "t4", "note" : "", "time" : "10:00", "title" : "Ajuste de saldo", "type" : "adjust" },
+    { "accountId" : "a_main", "amount" : 50, "date" : "2026-10-06", "excluded" : true, "id" : "t5", "note" : "", "time" : "10:00", "title" : "Regalo devuelto", "type" : "expense", "futuroCampo" : "se conserva" }
+  ],
+  "version" : 3,
+  "campoNuevoDeIphone" : { "algo" : 1 }
+}
