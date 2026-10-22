@@ -40,17 +40,28 @@ enum class Mood { HAPPY, WOW, SLEEPY, SAD, LOVE, WINK }
 fun Gotita(mood: Mood = Mood.HAPPY, size: Dp = 96.dp, color: Color = CaudalTheme.colors.accent, modifier: Modifier = Modifier, description: String = "") {
     val motion = LocalMotion.current
     var t by remember { mutableStateOf(0f) }
+    var blinking by remember { mutableStateOf(false) }
+    // flota unos segundos al aparecer y luego se queda quieta (para no gastar batería);
+    // después solo parpadea de vez en cuando
     LaunchedEffect(motion) {
         if (!motion) return@LaunchedEffect
         val start = withFrameNanos { it }
-        while (true) withFrameNanos { now -> t = (now - start) / 1_000_000_000f }
+        var now = start
+        while ((now - start) < 6_000_000_000L) withFrameNanos { n -> now = n; t = (n - start) / 1_000_000_000f }
+        t = 0f
+        while (true) {
+            kotlinx.coroutines.delay(3600)
+            blinking = true
+            kotlinx.coroutines.delay(130)
+            blinking = false
+        }
     }
     Canvas(modifier.size(size).semantics { if (description.isNotEmpty()) contentDescription = description }) {
         val w = this.size.width
         val h = this.size.height
         val bob = if (motion) sin(t * 2.2f) * h * 0.025f else 0f
         // parpadeo: cerrado 0,12 s cada 3,6 s
-        val blink = motion && (t % 3.6f) > 3.48f
+        val blink = blinking || (motion && t > 0f && (t % 3.6f) > 3.48f)
         translate(top = bob) {
             drop(w, h, color)
             face(w, h, mood, blink)

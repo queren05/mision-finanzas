@@ -104,8 +104,11 @@ fun Modifier.breathe(amount: Float = 0.04f, periodMs: Int = 2400): Modifier = co
     var t by remember { mutableStateOf(0f) }
     LaunchedEffect(motion) {
         if (!motion) return@LaunchedEffect
+        // late unos ciclos y se para (sin animaciones infinitas que gasten batería)
         val start = withFrameNanos { it }
-        while (true) withFrameNanos { now -> t = ((now - start) / 1_000_000f) / periodMs }
+        var now = start
+        while ((now - start) / 1_000_000L < periodMs * 3L) withFrameNanos { n -> now = n; t = ((n - start) / 1_000_000f) / periodMs }
+        t = 0f
     }
     graphicsLayer {
         val k = 1f + amount * sin(t * 2 * PI.toFloat())

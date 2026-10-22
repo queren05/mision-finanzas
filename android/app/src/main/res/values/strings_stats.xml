@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="st_wrapped_title">Tu mes en historias ✨</string>
-    <string name="st_wrapped_sub">Lo mejor de %1$s, como en Spotify</string>
+    <string name="st_wrapped_sub">Lo mejor de %1$s</string>
     <string name="st_forecast_title">Previsión del mes</string>
     <string name="st_forecast_line">A este ritmo acabarás en %1$s</string>
     <string name="st_forecast_budget">de un presupuesto de %1$s</string>

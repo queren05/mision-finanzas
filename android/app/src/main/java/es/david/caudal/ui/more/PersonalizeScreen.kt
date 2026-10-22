@@ -156,12 +156,12 @@ fun PersonalizeScreen(nav: NavController) {
                         ThemeChoice(Modifier.weight(1f), ThemeMode.DARK, stringResource(R.string.pz_theme_dark), s) { vm.updateSettings { st -> st.copy(theme = it) } }
                     }
                     RowDivider()
-                    SwitchRow(stringResource(R.string.pz_amoled), s.amoled, enabled = s.theme != ThemeMode.LIGHT, icon = Icons.Filled.Contrast, iconColor = Color(0xFF3A3842), subtitle = stringResource(R.string.pz_amoled_sub)) { on ->
+                    SwitchRow(stringResource(R.string.pz_amoled), s.amoled, enabled = s.theme != ThemeMode.LIGHT, icon = Icons.Filled.Contrast, iconColor = Color(0xFF3A3842)) { on ->
                         vm.updateSettings { it.copy(amoled = on) }
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         RowDivider()
-                        SwitchRow(stringResource(R.string.pz_dynamic), s.dynamicColor, icon = Icons.Filled.Palette, iconColor = Color(0xFF62CFD0), subtitle = stringResource(R.string.pz_dynamic_sub)) { on ->
+                        SwitchRow(stringResource(R.string.pz_dynamic), s.dynamicColor, icon = Icons.Filled.Palette, iconColor = Color(0xFF62CFD0)) { on ->
                             vm.updateSettings { it.copy(dynamicColor = on) }
                         }
                     }
@@ -185,7 +185,7 @@ fun PersonalizeScreen(nav: NavController) {
 
             item {
                 FormSection(stringResource(R.string.pz_details), Modifier.appear(4)) {
-                    SwitchRow(stringResource(R.string.pz_mascot), s.mascot, icon = Icons.Filled.Face, iconColor = Color(0xFFF59FC4), subtitle = stringResource(R.string.pz_mascot_sub)) { on ->
+                    SwitchRow(stringResource(R.string.pz_mascot), s.mascot, icon = Icons.Filled.Face, iconColor = Color(0xFFF59FC4)) { on ->
                         vm.updateSettings { it.copy(mascot = on) }
                     }
                     RowDivider()

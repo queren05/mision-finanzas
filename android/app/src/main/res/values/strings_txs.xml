@@ -3,7 +3,7 @@
     <!-- movimientos -->
     <string name="txs_calendar">Calendario de gastos</string>
     <string name="txs_wrapped_cta">Tu mes en historias ✨</string>
-    <string name="txs_wrapped_cta_sub">%1$s en un vistazo, con Gotita</string>
+    <string name="txs_wrapped_cta_sub">%1$s en un vistazo</string>
     <string name="txs_empty_title">Nada por aquí todavía</string>
     <string name="txs_empty_text">Toca el + y apunta tu primer gasto 💧</string>
     <string name="txs_empty_search">No hay movimientos con «%1$s»</string>

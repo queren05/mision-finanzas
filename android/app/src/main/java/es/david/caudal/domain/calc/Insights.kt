@@ -96,7 +96,9 @@ object Insights {
     fun mood(l: Ledger, today: String = Day.today): MonthMood {
         val r = l.periodRange(l.periodStart(today))
         val budget = l.totalBudget
-        val spent = l.spent(r)
+        val budgeted = l.data.categories.filter { it.budget > 0 }.map { it.id }.toSet()
+        // igual que «Disponible hoy»: con presupuestos, solo cuentan sus categorías
+        val spent = l.txs(r).filter { it.type == TxType.EXPENSE && !it.excluded && (budget <= 0 || it.categoryId in budgeted) }.sumOf { Money.fromCents(it.amount) }
         if (l.data.txs.isEmpty()) return MonthMood.EMPTY
         if (budget > 0) {
             val elapsedPart = (Day.daysBetween(r.start, today) + 1).toDouble() / (Day.daysBetween(r.start, r.end) + 1)

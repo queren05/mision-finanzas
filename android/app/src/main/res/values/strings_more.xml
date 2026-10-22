@@ -153,7 +153,6 @@
 
     <!-- Más (nuevo) -->
     <string name="more_personalize">Personalizar</string>
-    <string name="more_personalize_sub">Colores, tema, icono, Gotita…</string>
     <string name="more_analysis_sub">Tu mes en gráficos</string>
     <string name="more_app">App</string>
     <string name="more_avatar_desc">Tu inicial</string>
@@ -173,9 +172,7 @@
     <string name="pz_theme_light">Claro</string>
     <string name="pz_theme_dark">Oscuro</string>
     <string name="pz_amoled">Negro puro (AMOLED)</string>
-    <string name="pz_amoled_sub">Ahorra batería en pantallas OLED</string>
     <string name="pz_dynamic">Colores del fondo de pantalla</string>
-    <string name="pz_dynamic_sub">Usa los colores de tu móvil</string>
     <string name="pz_icon">Icono de la app</string>
     <string name="pz_icon_default">Original</string>
     <string name="pz_icon_algodon">Algodón</string>
@@ -188,7 +185,6 @@
     <string name="pz_details">Detalles</string>
     <string name="pz_tab_labels">Textos en la barra de abajo</string>
     <string name="pz_mascot">Gotita, la mascota</string>
-    <string name="pz_mascot_sub">Te saluda y celebra contigo</string>
     <string name="pz_haptics">Vibración al tocar</string>
     <string name="pz_home">Tarjetas del inicio</string>
     <string name="pz_accounts_style">Estilo de las cuentas</string>

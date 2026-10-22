@@ -384,7 +384,6 @@ private fun AllowanceCard(l: Ledger) {
         ProgressBar(elapsed, if (ok) c.income else c.negative)
         Spacer(Modifier.height(10.dp))
         if (a.upcoming > 0) Text(stringResource(R.string.allowance_upcoming, f.money(a.upcoming)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
-        if (!a.fromBudget) Text(stringResource(R.string.allowance_from_income), style = MaterialTheme.typography.bodySmall, color = c.textDim)
         if (forecast != null && forecast > 0) Text(stringResource(R.string.forecast, f.money(forecast)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
     }
 }

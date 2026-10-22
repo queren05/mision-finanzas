@@ -165,7 +165,6 @@ fun MoreScreen(nav: NavController) {
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.more_personalize), style = MaterialTheme.typography.titleMedium, color = Color(0xFF1A1320))
-                        Text(stringResource(R.string.more_personalize_sub), style = MaterialTheme.typography.bodySmall, color = Color(0xFF1A1320).copy(alpha = 0.75f))
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFF1A1320))
                 }
