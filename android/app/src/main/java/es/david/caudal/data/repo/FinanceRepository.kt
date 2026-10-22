@@ -241,8 +241,11 @@ class FinanceRepository @Inject constructor(
 
     // MARK: inversiones
 
+    /** guarda el activo con sus operaciones (las que ya no están se borran) */
     suspend fun save(a: Asset) = write {
         dao.upsertAssets(listOf(a.toEntity()))
+        val keep = a.ops.map { it.id }.toSet()
+        dao.assetOpsNow().filter { it.assetId == a.id && it.id !in keep }.forEach { dao.deleteAssetOp(it.id) }
         dao.upsertAssetOps(a.ops.map { it.toEntity(a.id) })
     }
 

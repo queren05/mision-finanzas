@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -267,27 +268,32 @@ fun BigAmountField(
     }
     val desc = stringResource(R.string.amount)
     LaunchedEffect(autoFocus) { if (autoFocus) runCatching { focusRequester.requestFocus() } }
-    BasicTextField(
-        value = digits,
-        onValueChange = { onChange(Money.cleanInput(it)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        keyboardActions = KeyboardActions.Default,
-        cursorBrush = SolidColor(color),
-        textStyle = TextStyle(fontSize = size, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, fontFeatureSettings = "tnum"),
-        modifier = modifier.fillMaxWidth().focusRequester(focusRequester).semantics { contentDescription = desc },
-        decorationBox = { inner ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                if (prefix.isNotEmpty()) Text(prefix, fontSize = size, fontWeight = FontWeight.Bold, color = color)
-                Box(contentAlignment = Alignment.Center) {
-                    if (digits.isEmpty()) Text("0", fontSize = size, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val style = TextStyle(fontSize = size, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontFeatureSettings = "tnum")
+    Row(
+        modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { runCatching { focusRequester.requestFocus() } }.padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (prefix.isNotEmpty()) Text(prefix, style = style.copy(color = color))
+        BasicTextField(
+            value = digits,
+            onValueChange = { onChange(Money.cleanInput(it)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            keyboardActions = KeyboardActions.Default,
+            cursorBrush = SolidColor(color),
+            textStyle = style,
+            modifier = Modifier.width(IntrinsicSize.Min).focusRequester(focusRequester).semantics { contentDescription = desc },
+            decorationBox = { inner ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (digits.isEmpty()) Text("0", style = style.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                     inner()
                 }
-                Spacer(Modifier.width(6.dp))
-                Text(f.symbol, fontSize = size, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-    )
+            },
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(f.symbol, style = style.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+    }
 }
 
 // MARK: elegir color y emoji

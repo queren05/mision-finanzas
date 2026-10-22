@@ -1,0 +1,80 @@
+# Caudal para Android: pruebas, APK y AAB de release. Si están los secretos de firma, el AAB sale firmado
+# listo para subir a Google Play. Se lanza al cambiar android/ en la rama caudal (o a mano).
+name: Caudal Android (AAB)
+
+on:
+  push:
+    branches: [caudal]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: SDK de Android (API 37 para compilar)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.1.0" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Clave de firma (secretos de GitHub)
+        env:
+          KEYSTORE_B64: ${{ secrets.CAUDAL_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/caudal.jks"
+            echo "CAUDAL_KEYSTORE_PATH=$RUNNER_TEMP/caudal.jks" >> "$GITHUB_ENV"
+            echo "firmado: sí"
+          else
+            echo "firmado: no (faltan los secretos; el AAB sale sin firmar)"
+          fi
+
+      - name: Pruebas
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Compilar APK y AAB de release
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          CAUDAL_KEYSTORE_PASSWORD: ${{ secrets.CAUDAL_KEYSTORE_PASSWORD }}
+          CAUDAL_KEY_ALIAS: ${{ secrets.CAUDAL_KEY_ALIAS }}
+          CAUDAL_KEY_PASSWORD: ${{ secrets.CAUDAL_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease :app:bundleRelease :app:assembleDebug
+
+      - name: Reunir los archivos
+        run: |
+          mkdir -p out
+          cp app/build/outputs/bundle/release/*.aab out/
+          cp app/build/outputs/apk/release/*.apk out/
+          cp app/build/outputs/apk/debug/app-debug.apk out/Caudal-prueba.apk
+          [ -f app/build/outputs/mapping/release/mapping.txt ] && cp app/build/outputs/mapping/release/mapping.txt out/ || true
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caudal-android-${{ github.run_number }}
+          path: android/out/
+
+      - name: Publicar el APK de prueba
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete caudal-android-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create caudal-android-latest out/Caudal-prueba.apk --target "$GITHUB_SHA" --title "Caudal Android · APK de prueba" \
+            --notes "Build ${{ github.run_number }} · el AAB para Play está en los artefactos de la ejecución"

@@ -69,11 +69,13 @@ fun LineChart(
         if (values.size < 2) return@Canvas
         val lo = values.min()
         val hi = values.max()
-        val span = if (hi - lo < 1e-9) 1.0 else hi - lo
+        val flat = hi - lo < 1e-9
+        val span = if (flat) 1.0 else hi - lo
         val pad = 6.dp.toPx()
+        // si no cambia, la línea va por el medio
         fun pt(i: Int) = Offset(
             i * size.width / (values.size - 1),
-            (pad + (1 - (values[i] - lo) / span) * (size.height - 2 * pad)).toFloat(),
+            if (flat) size.height / 2 else (pad + (1 - (values[i] - lo) / span) * (size.height - 2 * pad)).toFloat(),
         )
         val shownCount = max(2, (values.size * progress.value).roundToInt())
         val line = Path().apply {
