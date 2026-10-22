@@ -37,6 +37,16 @@
     <string name="hide_amounts">Ocultar importes</string>
     <string name="show_amounts">Enseñar importes</string>
 
+    <!-- colores de acento -->
+    <string name="accent_algodon">Algodón</string>
+    <string name="accent_cereza">Cereza</string>
+    <string name="accent_melocoton">Melocotón</string>
+    <string name="accent_limon">Limón</string>
+    <string name="accent_menta">Menta</string>
+    <string name="accent_cielo">Cielo</string>
+    <string name="accent_lavanda">Lavanda</string>
+    <string name="accent_chicle">Chicle</string>
+
     <!-- pestañas -->
     <string name="tab_home">Inicio</string>
     <string name="tab_txs">Movimientos</string>

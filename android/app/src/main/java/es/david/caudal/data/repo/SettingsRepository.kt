@@ -48,6 +48,11 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val accountsStyle = stringPreferencesKey("accountsStyle")
         val theme = stringPreferencesKey("theme")
         val dynamicColor = booleanPreferencesKey("dynamicColor")
+        val amoled = booleanPreferencesKey("amoled")
+        val tabLabels = booleanPreferencesKey("tabLabels")
+        val mascot = booleanPreferencesKey("mascot")
+        val haptics = booleanPreferencesKey("haptics")
+        val appIcon = stringPreferencesKey("appIcon")
         val onboarded = booleanPreferencesKey("onboarded")
         val seed = intPreferencesKey("seed")
         /** campos de la copia de seguridad que esta versión no conoce (nivel superior y ajustes) */
@@ -56,25 +61,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val snapshots = stringPreferencesKey("snapshots")
     }
 
-    val settings: Flow<AppSettings> = store.data.map { p ->
-        AppSettings(
-            name = p[K.name] ?: "",
-            accent = p[K.accent] ?: "#e4b3cb",
-            hideAmountsOnLaunch = p[K.hideOnLaunch] ?: false,
-            lock = p[K.lock] ?: false,
-            monthStart = p[K.monthStart] ?: 1,
-            currency = p[K.currency] ?: "EUR",
-            moduleWork = p[K.moduleWork] ?: false,
-            moduleDebts = p[K.moduleDebts] ?: false,
-            moduleInvest = p[K.moduleInvest] ?: false,
-            home = HomeItem.normalized(p[K.home]?.let(::decodeHome)),
-            accountsStyle = AccountsStyle.of(p[K.accountsStyle]),
-            theme = ThemeMode.of(p[K.theme]),
-            dynamicColor = p[K.dynamicColor] ?: false,
-            onboarded = p[K.onboarded] ?: false,
-            seed = p[K.seed] ?: 0,
-        )
-    }
+    val settings: Flow<AppSettings> = store.data.map { readNow(it) }
 
     suspend fun current(): AppSettings = settings.first()
 
@@ -94,6 +81,11 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             p[K.accountsStyle] = s.accountsStyle.raw
             p[K.theme] = s.theme.raw
             p[K.dynamicColor] = s.dynamicColor
+            p[K.amoled] = s.amoled
+            p[K.tabLabels] = s.tabLabels
+            p[K.mascot] = s.mascot
+            p[K.haptics] = s.haptics
+            p[K.appIcon] = s.appIcon
             p[K.onboarded] = s.onboarded
             p[K.seed] = s.seed
         }
@@ -104,7 +96,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         lock = p[K.lock] ?: false, monthStart = p[K.monthStart] ?: 1, currency = p[K.currency] ?: "EUR",
         moduleWork = p[K.moduleWork] ?: false, moduleDebts = p[K.moduleDebts] ?: false, moduleInvest = p[K.moduleInvest] ?: false,
         home = HomeItem.normalized(p[K.home]?.let(::decodeHome)), accountsStyle = AccountsStyle.of(p[K.accountsStyle]),
-        theme = ThemeMode.of(p[K.theme]), dynamicColor = p[K.dynamicColor] ?: false, onboarded = p[K.onboarded] ?: false, seed = p[K.seed] ?: 0,
+        theme = ThemeMode.of(p[K.theme]), dynamicColor = p[K.dynamicColor] ?: false,
+        amoled = p[K.amoled] ?: false, tabLabels = p[K.tabLabels] ?: true, mascot = p[K.mascot] ?: true,
+        haptics = p[K.haptics] ?: true, appIcon = p[K.appIcon] ?: "default",
+        onboarded = p[K.onboarded] ?: false, seed = p[K.seed] ?: 0,
     )
 
     // campos desconocidos de la copia de seguridad

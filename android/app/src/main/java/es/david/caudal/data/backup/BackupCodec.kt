@@ -193,6 +193,10 @@ object BackupCodec {
             moduleInvest = modules?.bool("invest") ?: (assets.isNotEmpty() || fallback.moduleInvest),
             theme = s.str("theme")?.let { ThemeMode.of(it) } ?: fallback.theme,
             dynamicColor = s.bool("dynamicColor") ?: fallback.dynamicColor,
+            amoled = s.bool("amoled") ?: fallback.amoled,
+            tabLabels = s.bool("tabLabels") ?: fallback.tabLabels,
+            mascot = s.bool("mascot") ?: fallback.mascot,
+            haptics = s.bool("haptics") ?: fallback.haptics,
             home = HomeItem.normalized((root["home"] as? JsonArray)?.mapNotNull { (it as? JsonObject)?.let { h -> h.str("id")?.let { id -> HomeItem(id, h.bool("on") ?: true) } } }),
             accountsStyle = AccountsStyle.of(root.str("accountsStyle")),
             seed = root.int("seed") ?: fallback.seed,
@@ -262,6 +266,7 @@ object BackupCodec {
             "name" to settings.name, "accent" to settings.accent, "hideAmountsOnLaunch" to settings.hideAmountsOnLaunch,
             "faceID" to settings.lock, "monthStart" to settings.monthStart, "currency" to settings.currency,
             "theme" to settings.theme.raw, "dynamicColor" to settings.dynamicColor,
+            "amoled" to settings.amoled, "tabLabels" to settings.tabLabels, "mascot" to settings.mascot, "haptics" to settings.haptics,
             "modules" to JsonObject(mapOf("work" to JsonPrimitive(settings.moduleWork), "debts" to JsonPrimitive(settings.moduleDebts), "invest" to JsonPrimitive(settings.moduleInvest))),
         )
         root["quotes"] = JsonObject(data.quotes.mapValues { (_, q) ->
@@ -296,7 +301,7 @@ object BackupCodec {
 
     private val TOP_KEYS = setOf("format", "formatVersion", "app", "version", "seed", "accounts", "categories", "txs", "recurring", "assets", "goals",
         "settings", "quotes", "snapshots", "people", "debts", "companies", "shifts", "home", "accountsStyle")
-    private val SETTINGS_KEYS = setOf("name", "accent", "hideAmountsOnLaunch", "faceID", "monthStart", "currency", "theme", "dynamicColor", "modules")
+    private val SETTINGS_KEYS = setOf("name", "accent", "hideAmountsOnLaunch", "faceID", "monthStart", "currency", "theme", "dynamicColor", "modules", "amoled", "tabLabels", "mascot", "haptics")
     private val ACCOUNT_KEYS = setOf("id", "name", "type", "currency", "initial", "color", "icon", "includeInTotal", "archived", "order", "note")
     private val CATEGORY_KEYS = setOf("id", "kind", "name", "icon", "color", "budget", "keywords", "hidden")
     private val TX_KEYS = setOf("id", "type", "amount", "currency", "accountId", "toAccountId", "categoryId", "date", "time", "title", "note", "excluded", "recurringId")

@@ -258,6 +258,16 @@ data class AppSettings(
     val accountsStyle: AccountsStyle = AccountsStyle.CARRUSEL,
     val theme: ThemeMode = ThemeMode.DARK,
     val dynamicColor: Boolean = false,
+    /** negro puro en el tema oscuro (pantallas OLED) */
+    val amoled: Boolean = false,
+    /** textos debajo de los iconos de la barra de abajo */
+    val tabLabels: Boolean = true,
+    /** Gotita, la mascota, en los mensajes y celebraciones */
+    val mascot: Boolean = true,
+    /** vibración al tocar */
+    val haptics: Boolean = true,
+    /** icono de la app elegido (alias de la actividad) */
+    val appIcon: String = "default",
     val onboarded: Boolean = false,
     val seed: Int = 0,
 )
