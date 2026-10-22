@@ -204,6 +204,9 @@
     <string name="welcome_title">Tu dinero, claro</string>
     <string name="welcome_text">Apunta tus gastos en segundos y mira en qué se va el dinero. Todo se queda en tu móvil.</string>
     <string name="welcome_start">Empezar</string>
+    <string name="welcome_hello">¡Hola! Soy Gotita 💧</string>
+    <string name="welcome_next">Siguiente</string>
+    <string name="welcome_color">Elige tu color</string>
     <string name="welcome_import">Tengo una copia de Caudal</string>
     <string name="welcome_name">¿Cómo te llamas?</string>
     <string name="welcome_currency">Moneda</string>
@@ -282,6 +285,8 @@
     <string name="widget_invest_name">Inversiones</string>
     <string name="widget_invest_desc">El valor de tu cartera.</string>
     <string name="widget_open">Abre Caudal</string>
+    <string name="widget_allowance_desc">Cuánto puedes gastar hoy.</string>
+    <string name="widget_quickadd_desc">Apunta un gasto a un toque.</string>
     <string name="shortcut_new_expense">Apuntar gasto</string>
     <string name="shortcut_new_expense_long">Apuntar un gasto</string>
     <string name="widget_budget_left">Quedan %1$s</string>

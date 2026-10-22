@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -41,6 +42,7 @@ import es.david.caudal.ui.common.ScreenScaffold
 import es.david.caudal.ui.common.rememberHaptics
 import es.david.caudal.ui.theme.CaudalTheme
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 /** elige qué tarjetas salen en Inicio y en qué orden, el estilo de las cuentas y su orden */
 @Composable
 fun HomeCustomizeScreen(nav: NavController) {
@@ -96,9 +98,9 @@ fun HomeCustomizeScreen(nav: NavController) {
             item {
                 Card(padding = 12.dp) {
                     Header(stringResource(R.string.accounts_style))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         AccountsStyle.entries.forEach { st ->
-                            Pill(stringResource(styleName(st)), st == s.accountsStyle, { vm.updateSettings { it.copy(accountsStyle = st) } }, Modifier.weight(1f))
+                            Pill(stringResource(styleName(st)), st == s.accountsStyle, { vm.updateSettings { it.copy(accountsStyle = st) } })
                         }
                     }
                 }
@@ -146,7 +148,9 @@ private fun HomeRow(item: HomeItem, onToggle: () -> Unit, onUp: (() -> Unit)? = 
                 tint = if (item.on) colors.negative else colors.income,
             )
         }
-        Text(stringResource(homeName(item.id)), modifier = Modifier.weight(1f))
+        Text(homeEmoji(item.id), fontSize = 20.sp)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(homeName(item.id)), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         if (item.on) {
             IconButton(onClick = { onUp?.invoke() }, enabled = onUp != null) { Icon(Icons.Filled.KeyboardArrowUp, stringResource(R.string.move_up)) }
             IconButton(onClick = { onDown?.invoke() }, enabled = onDown != null) { Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.move_down)) }
@@ -175,4 +179,19 @@ private fun styleName(s: AccountsStyle) = when (s) {
     AccountsStyle.LISTA -> R.string.style_lista
     AccountsStyle.PEQUENO -> R.string.style_pequeno
     AccountsStyle.GRANDE -> R.string.style_grande
+}
+
+private fun homeEmoji(id: String) = when (id) {
+    "patrimonio" -> "💎"
+    "disponible" -> "☀️"
+    "cuentas" -> "🏦"
+    "consejos" -> "💡"
+    "horas" -> "⏱️"
+    "mes" -> "📅"
+    "calendario" -> "🗓️"
+    "categorias" -> "🍩"
+    "proximos" -> "⏰"
+    "recientes" -> "🧾"
+    "inversiones" -> "📈"
+    else -> "🤝"
 }

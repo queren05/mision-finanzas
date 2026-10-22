@@ -52,6 +52,15 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_invest" />
         </receiver>
 
+        <receiver android:name=".widget.AllowanceWidgetReceiver" android:exported="true" android:label="@string/home_disponible">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_allowance" />
+        </receiver>
+        <receiver android:name=".widget.QuickAddWidgetReceiver" android:exported="true" android:label="@string/shortcut_new_expense">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_quickadd" />
+        </receiver>
+
         <!-- WorkManager con Hilt: se quita el arranque automático -->
         <provider
             android:name="androidx.startup.InitializationProvider"

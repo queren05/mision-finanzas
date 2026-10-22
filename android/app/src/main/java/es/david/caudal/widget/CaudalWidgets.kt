@@ -210,11 +210,67 @@ class InvestWidget : GlanceAppWidget() {
 
 class InvestWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = InvestWidget() }
 
+// MARK: disponible hoy
+
+class AllowanceWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Single
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val m = load(context)
+        val a = es.david.caudal.domain.calc.Insights.allowance(m.ledger)
+        val title = "☀️ " + context.getString(R.string.home_disponible)
+        val per = context.getString(R.string.per_day)
+        val left = if (a.left > 0) context.getString(R.string.allowance_left, m.fmt(a.left), a.daysLeft) else context.getString(R.string.allowance_over, m.fmt(-a.left))
+        provideContent {
+            GlanceTheme {
+                Frame {
+                    Text(title, style = TextStyle(color = DIM, fontSize = 12.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+                    Text(m.fmt(a.perDay), style = TextStyle(color = if (a.left > 0) FG else androidx.glance.unit.ColorProvider(Color(0xFFFF6B6B)), fontSize = 24.sp, fontWeight = FontWeight.Bold), maxLines = 1)
+                    Text(per, style = TextStyle(color = DIM, fontSize = 12.sp))
+                    Spacer(GlanceModifier.height(6.dp))
+                    Text(left, style = TextStyle(color = FG, fontSize = 12.sp), maxLines = 2)
+                }
+            }
+        }
+    }
+}
+
+class AllowanceWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = AllowanceWidget() }
+
+// MARK: apuntar un gasto a un toque
+
+class QuickAddWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Single
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val s = EntryPointAccessors.fromApplication(context.applicationContext, WidgetEntryPoint::class.java).settings().current()
+        val label = context.getString(R.string.shortcut_new_expense)
+        val intent = android.content.Intent(context, MainActivity::class.java).setAction(es.david.caudal.ui.ACTION_NEW_EXPENSE)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val acc = hexColor(s.accent)
+        provideContent {
+            GlanceTheme {
+                Column(
+                    GlanceModifier.fillMaxSize().background(androidx.glance.unit.ColorProvider(acc)).cornerRadius(26.dp).padding(14.dp).clickable(androidx.glance.appwidget.action.actionStartActivity(intent)),
+                    verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("💧", style = TextStyle(fontSize = 30.sp))
+                    Text("+ $label", style = TextStyle(color = androidx.glance.unit.ColorProvider(Color(0xFF1A1320)), fontSize = 15.sp, fontWeight = FontWeight.Bold), maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+class QuickAddWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = QuickAddWidget() }
+
 /** refresca todos los widgets (después de cada cambio) */
 suspend fun updateAllWidgets(context: Context) {
     runCatching {
         BalanceWidget().updateAll(context)
         SpentWidget().updateAll(context)
         InvestWidget().updateAll(context)
+        AllowanceWidget().updateAll(context)
+        QuickAddWidget().updateAll(context)
     }
 }
