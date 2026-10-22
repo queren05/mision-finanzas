@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="nuevo_gasto"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_new_expense"
+        android:shortcutLongLabel="@string/shortcut_new_expense_long">
+        <intent
+            android:action="es.david.caudal.NEW_EXPENSE"
+            android:targetPackage="es.david.caudal"
+            android:targetClass="es.david.caudal.MainActivity" />
+    </shortcut>
+</shortcuts>

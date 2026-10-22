@@ -62,7 +62,7 @@ const val ACTION_NEW_EXPENSE = "es.david.caudal.NEW_EXPENSE"
 private data class Tab(val route: Any, val label: Int, val icon: ImageVector)
 
 @Composable
-fun RootScreen(app: AppViewModel, launchAction: String?) {
+fun RootScreen(app: AppViewModel, launchAction: String?, onActionHandled: () -> Unit = {}) {
     val settings by app.settings.collectAsStateWithLifecycle()
     val s = settings ?: return
     val hidden by app.hidden.collectAsStateWithLifecycle()
@@ -73,7 +73,7 @@ fun RootScreen(app: AppViewModel, launchAction: String?) {
                 when {
                     !s.onboarded -> OnboardingScreen()
                     locked -> LockScreen(onUnlocked = app::unlocked)
-                    else -> MainShell(app, launchAction, s.moduleDebts, s.moduleInvest)
+                    else -> MainShell(app, launchAction, onActionHandled, s.moduleDebts, s.moduleInvest)
                 }
             }
         }
@@ -81,7 +81,7 @@ fun RootScreen(app: AppViewModel, launchAction: String?) {
 }
 
 @Composable
-private fun MainShell(app: AppViewModel, launchAction: String?, debts: Boolean, invest: Boolean) {
+private fun MainShell(app: AppViewModel, launchAction: String?, onActionHandled: () -> Unit, debts: Boolean, invest: Boolean) {
     val nav = rememberNavController()
     val h = rememberHaptics()
     val snackbar = remember { SnackbarHostState() }
@@ -98,7 +98,7 @@ private fun MainShell(app: AppViewModel, launchAction: String?, debts: Boolean, 
     val fab = dest?.hasRoute(HomeRoute::class) == true || dest?.hasRoute(TxsRoute::class) == true
 
     // acceso directo «Apuntar gasto»
-    LaunchedEffect(launchAction) { if (launchAction == ACTION_NEW_EXPENSE) nav.navigate(TxEditorRoute(type = "expense")) }
+    LaunchedEffect(launchAction) { if (launchAction == ACTION_NEW_EXPENSE) { nav.navigate(TxEditorRoute(type = "expense")); onActionHandled() } }
 
     // «Deshacer» del último borrado
     val lastDeleted by app.lastDeleted.collectAsStateWithLifecycle()

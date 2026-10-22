@@ -1,6 +1,10 @@
 package es.david.caudal
 
+import android.content.Intent
 import android.os.Bundle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -17,6 +21,8 @@ import es.david.caudal.ui.RootScreen
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     private val app: AppViewModel by viewModels()
+    /** acción con la que se abrió (acceso directo «Apuntar gasto», mosaico…) */
+    private var action by mutableStateOf<String?>(null)
 
     private val processObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) { app.onForeground() }
@@ -29,7 +35,13 @@ class MainActivity : FragmentActivity() {
         splash.setKeepOnScreenCondition { app.settings.value == null }
         enableEdgeToEdge()
         ProcessLifecycleOwner.get().lifecycle.addObserver(processObserver)
-        setContent { RootScreen(app, intent?.action) }
+        action = intent?.action
+        setContent { RootScreen(app, action) { action = null } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        action = intent.action
     }
 
     override fun onDestroy() {

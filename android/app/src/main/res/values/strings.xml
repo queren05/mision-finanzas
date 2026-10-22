@@ -3,6 +3,7 @@
     <string name="app_name">Caudal</string>
     <!-- idioma de fechas e importes (cambiarlo en cada traducción) -->
     <string name="locale_tag" translatable="false">es-ES</string>
+    <string name="package_name" translatable="false">es.david.caudal</string>
 
     <!-- generales -->
     <string name="today">Hoy</string>
@@ -100,6 +101,19 @@
     <string name="pending_to_collect">Pendiente de cobrar</string>
     <string name="portfolio">Cartera</string>
     <string name="owed_to_me">Te deben</string>
+    <string name="work_of_month">Trabajo de %1$s</string>
+    <string name="hours_h">%1$s h</string>
+    <string name="worked">trabajadas</string>
+    <string name="net_estimated">neto estimado</string>
+    <string name="pending_short">pendiente</string>
+    <string name="no_investments">Sin inversiones</string>
+    <string name="cash">Efectivo</string>
+    <string name="investments">Inversiones</string>
+    <string name="reset">Restablecer</string>
+    <string name="all_on_home">Ya está todo en inicio</string>
+    <string name="sort_accounts">Ordenar cuentas</string>
+    <string name="percent_int">%1$d %%</string>
+    <string name="account_value_desc">%1$s: %2$s</string>
     <string name="i_owe">Debes</string>
 
     <!-- movimientos -->
@@ -132,6 +146,20 @@
     <string name="no_accounts_yet">Primero crea una cuenta</string>
     <string name="pick_date">Elegir fecha</string>
     <string name="pick_time">Elegir hora</string>
+
+    <!-- análisis -->
+    <string name="saving">Ahorro</string>
+    <string name="daily_avg">Media al día</string>
+    <string name="prev_month">Mes anterior</string>
+    <string name="next_month">Mes siguiente</string>
+    <string name="nothing_in_period">Nada en este periodo</string>
+    <string name="total">Total</string>
+    <string name="last_6_months">Últimos 6 meses</string>
+    <string name="budgets">Presupuestos</string>
+    <string name="where_most">Dónde más gastas</string>
+    <string name="no_concept">Sin concepto</string>
+    <string name="months_chart_desc">Ingresos y gastos de los últimos 6 meses</string>
+    <string name="category_share">%1$s: %2$s, %3$s %%</string>
 
     <!-- bloqueo -->
     <string name="lock_title">Caudal está bloqueada</string>
@@ -217,5 +245,7 @@
     <string name="widget_invest_name">Inversiones</string>
     <string name="widget_invest_desc">El valor de tu cartera.</string>
     <string name="widget_open">Abre Caudal</string>
+    <string name="shortcut_new_expense">Apuntar gasto</string>
+    <string name="shortcut_new_expense_long">Apuntar un gasto</string>
     <string name="widget_budget_left">Quedan %1$s</string>
 </resources>
