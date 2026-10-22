@@ -20,6 +20,7 @@ import javax.inject.Inject
 class CaudalApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var repo: FinanceRepository
+    @Inject lateinit var settings: es.david.caudal.data.repo.SettingsRepository
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -31,5 +32,14 @@ class CaudalApp : Application(), Configuration.Provider {
         RecurringWorker.schedule(this)
         // los widgets se refrescan un momento después de cada cambio
         scope.launch { repo.changes.debounce(800).collect { updateAllWidgets(this@CaudalApp) } }
+        // el icono elegido (por ejemplo, al restaurar una copia): se aplica si no es el que está activo
+        scope.launch {
+            val id = settings.current().appIcon
+            val icon = es.david.caudal.ui.more.APP_ICONS.firstOrNull { it.id == id } ?: return@launch
+            val state = packageManager.getComponentEnabledSetting(android.content.ComponentName(packageName, "es.david.caudal" + icon.alias))
+            val enabled = state == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
+                (state == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT && id == "default")
+            if (!enabled) es.david.caudal.ui.more.applyAppIcon(this@CaudalApp, id)
+        }
     }
 }
