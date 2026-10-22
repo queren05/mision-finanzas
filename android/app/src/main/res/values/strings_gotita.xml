@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gt_title">Viste a Gotita</string>
+    <string name="gt_accessories">Complementos</string>
+    <string name="gt_color">Color de Gotita</string>
+    <string name="gt_color_app">El de la app</string>
+    <string name="gt_show">Mostrar a Gotita</string>
+    <string name="gt_locked_by">Con «%1$s»</string>
+    <string name="gt_tap_desc">Gotita. Tócala para cambiarle la cara</string>
+    <string name="gt_locked_desc">%1$s, bloqueado</string>
+    <string name="gt_selected_desc">%1$s, puesto</string>
+    <string name="gt_achievements_row">Logros</string>
+    <string name="gt_achievements_count">%1$d de %2$d</string>
+
+    <string name="hat_nada">Sin nada</string>
+    <string name="hat_gorro">Gorro</string>
+    <string name="hat_gafas">Gafas</string>
+    <string name="hat_lazo">Lazo</string>
+    <string name="hat_corona">Corona</string>
+    <string name="hat_auriculares">Auriculares</string>
+    <string name="hat_flor">Flor</string>
+
+    <string name="ach_title">Logros</string>
+    <string name="ach_done_of">%1$d de %2$d conseguidos</string>
+    <string name="ach_progress">%1$d / %2$d</string>
+    <string name="ach_got_on">Conseguido el %1$s</string>
+    <string name="ach_got">Conseguido</string>
+    <string name="ach_unlocks">Desbloquea: %1$s</string>
+    <string name="ach_unlocked">Desbloqueado: %1$s</string>
+    <string name="ach_new">¡Nuevo logro!</string>
+    <string name="ach_nice">¡Bien!</string>
+    <string name="ach_dress">Vestir a Gotita</string>
+    <string name="ach_medal_desc">%1$s, %2$s</string>
+    <string name="ach_state_done">conseguido</string>
+    <string name="ach_state_progress">%1$d de %2$d</string>
+
+    <string name="ach_primer_gasto_name">Primera gota</string>
+    <string name="ach_primer_gasto_desc">Apunta tu primer gasto</string>
+    <string name="ach_diez_name">Buen comienzo</string>
+    <string name="ach_diez_desc">Apunta 10 movimientos</string>
+    <string name="ach_cincuenta_name">Cogiendo ritmo</string>
+    <string name="ach_cincuenta_desc">Apunta 50 movimientos</string>
+    <string name="ach_cien_name">Centenario</string>
+    <string name="ach_cien_desc">Apunta 100 movimientos</string>
+    <string name="ach_quinientos_name">Leyenda</string>
+    <string name="ach_quinientos_desc">Apunta 500 movimientos</string>
+    <string name="ach_racha3_name">Tres en raya</string>
+    <string name="ach_racha3_desc">Apunta algo 3 días seguidos</string>
+    <string name="ach_racha7_name">Semana redonda</string>
+    <string name="ach_racha7_desc">Apunta algo 7 días seguidos</string>
+    <string name="ach_racha30_name">Mes de oro</string>
+    <string name="ach_racha30_desc">Apunta algo 30 días seguidos</string>
+    <string name="ach_presupuesto_name">Con plan</string>
+    <string name="ach_presupuesto_desc">Pon tu primer presupuesto</string>
+    <string name="ach_mes_presupuesto_name">Dentro del cauce</string>
+    <string name="ach_mes_presupuesto_desc">Acaba un mes sin pasarte del presupuesto</string>
+    <string name="ach_objetivo_creado_name">Soñadora</string>
+    <string name="ach_objetivo_creado_desc">Crea tu primer objetivo</string>
+    <string name="ach_objetivo_cumplido_name">¡Lo conseguiste!</string>
+    <string name="ach_objetivo_cumplido_desc">Completa un objetivo</string>
+    <string name="ach_cuenta_extra_name">Todo en su sitio</string>
+    <string name="ach_cuenta_extra_desc">Ten al menos 2 cuentas</string>
+    <string name="ach_mes_ahorro_name">Hucha feliz</string>
+    <string name="ach_mes_ahorro_desc">Ingresa más de lo que gastas en un mes</string>
+    <string name="ach_tres_meses_ahorro_name">Arcoíris</string>
+    <string name="ach_tres_meses_ahorro_desc">Ahorra 3 meses seguidos</string>
+    <string name="ach_deuda_saldada_name">Cuentas claras</string>
+    <string name="ach_deuda_saldada_desc">Deja a cero una deuda con alguien</string>
+    <string name="ach_valio_pena_name">¿Valió la pena?</string>
+    <string name="ach_valio_pena_desc">Dile a Gotita qué tal un gasto</string>
+    <string name="ach_categoria_propia_name">A mi manera</string>
+    <string name="ach_categoria_propia_desc">Crea una categoría tuya</string>
+</resources>
