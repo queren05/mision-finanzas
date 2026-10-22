@@ -3,7 +3,7 @@ package es.david.caudal.ui.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,7 +53,8 @@ fun LineChart(
             .semantics { contentDescription = description }
             .pointerInput(values.size) {
                 fun idx(x: Float) = if (values.size < 2) 0 else ((x / size.width) * (values.size - 1)).roundToInt().coerceIn(0, values.size - 1)
-                detectDragGestures(
+                // solo arrastres horizontales: así deslizar en vertical sigue moviendo la pantalla
+                detectHorizontalDragGestures(
                     onDragStart = { onSelect(idx(it.x)) },
                     onDragEnd = { onSelect(null) },
                     onDragCancel = { onSelect(null) },

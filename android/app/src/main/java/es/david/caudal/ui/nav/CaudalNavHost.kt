@@ -38,8 +38,16 @@ import es.david.caudal.ui.work.CompanyEditorScreen
 import es.david.caudal.ui.work.ShiftEditorScreen
 import es.david.caudal.ui.work.WorkScreen
 
+/** pantalla con su ámbito de animación disponible (para las transiciones compartidas) */
+inline fun <reified T : Any> androidx.navigation.NavGraphBuilder.screen(noinline content: @Composable (androidx.navigation.NavBackStackEntry) -> Unit) {
+    composable<T> { e -> androidx.compose.runtime.CompositionLocalProvider(es.david.caudal.ui.common.LocalNavScope provides this) { content(e) } }
+}
+
+@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun CaudalNavHost(nav: NavHostController, onToggleHidden: () -> Unit) {
+    androidx.compose.animation.SharedTransitionLayout {
+    androidx.compose.runtime.CompositionLocalProvider(es.david.caudal.ui.common.LocalSharedScope provides this) {
     NavHost(
         navController = nav,
         startDestination = HomeRoute,
@@ -49,48 +57,50 @@ fun CaudalNavHost(nav: NavHostController, onToggleHidden: () -> Unit) {
         popExitTransition = { slideOutHorizontally { it / 4 } + fadeOut() },
     ) {
         // pestañas
-        composable<HomeRoute> { HomeScreen(nav, onToggleHidden) }
-        composable<TxsRoute> { TransactionsScreen(nav) }
-        composable<DebtsRoute> { DebtsScreen(nav) }
-        composable<InvestRoute> { InvestScreen(nav) }
-        composable<MoreRoute> { MoreScreen(nav) }
+        screen<HomeRoute> { HomeScreen(nav, onToggleHidden) }
+        screen<TxsRoute> { TransactionsScreen(nav) }
+        screen<DebtsRoute> { DebtsScreen(nav) }
+        screen<InvestRoute> { InvestScreen(nav) }
+        screen<MoreRoute> { MoreScreen(nav) }
 
         // movimientos
-        composable<TxEditorRoute> { TxEditorScreen(it.toRoute<TxEditorRoute>(), onDone = { nav.popBackStack() }) }
-        composable<StatsRoute> { StatsScreen(nav) }
-        composable<HomeCustomizeRoute> { HomeCustomizeScreen(nav) }
-        composable<CalendarRoute> { es.david.caudal.ui.txs.CalendarScreen(it.toRoute<CalendarRoute>().month, nav) }
-        composable<WrappedRoute> { es.david.caudal.ui.stats.WrappedScreen(it.toRoute<WrappedRoute>().month, nav) }
-        composable<PersonalizeRoute> { es.david.caudal.ui.more.PersonalizeScreen(nav) }
-        composable<GotitaRoute> { es.david.caudal.ui.gotita.GotitaScreen(nav) }
-        composable<AchievementsRoute> { es.david.caudal.ui.gotita.AchievementsScreen(nav) }
+        screen<TxEditorRoute> { TxEditorScreen(it.toRoute<TxEditorRoute>(), onDone = { nav.popBackStack() }) }
+        screen<StatsRoute> { StatsScreen(nav) }
+        screen<HomeCustomizeRoute> { HomeCustomizeScreen(nav) }
+        screen<CalendarRoute> { es.david.caudal.ui.txs.CalendarScreen(it.toRoute<CalendarRoute>().month, nav) }
+        screen<WrappedRoute> { es.david.caudal.ui.stats.WrappedScreen(it.toRoute<WrappedRoute>().month, nav) }
+        screen<PersonalizeRoute> { es.david.caudal.ui.more.PersonalizeScreen(nav) }
+        screen<GotitaRoute> { es.david.caudal.ui.gotita.GotitaScreen(nav) }
+        screen<AchievementsRoute> { es.david.caudal.ui.gotita.AchievementsScreen(nav) }
 
         // gestión
-        composable<AccountsRoute> { AccountsScreen(nav) }
-        composable<AccountDetailRoute> { AccountDetailScreen(it.toRoute<AccountDetailRoute>().id, nav) }
-        composable<AccountEditorRoute> { AccountEditorScreen(it.toRoute<AccountEditorRoute>().id, nav) }
-        composable<CategoriesRoute> { CategoriesScreen(nav) }
-        composable<CategoryEditorRoute> { val r = it.toRoute<CategoryEditorRoute>(); CategoryEditorScreen(r.id, r.kind, nav) }
-        composable<RecurringRoute> { RecurringScreen(nav) }
-        composable<RecurringEditorRoute> { RecurringEditorScreen(it.toRoute<RecurringEditorRoute>().id, nav) }
-        composable<GoalsRoute> { GoalsScreen(nav) }
-        composable<GoalEditorRoute> { GoalEditorScreen(it.toRoute<GoalEditorRoute>().id, nav) }
-        composable<SettingsRoute> { SettingsScreen(nav) }
-        composable<DataRoute> { DataScreen(nav) }
+        screen<AccountsRoute> { AccountsScreen(nav) }
+        screen<AccountDetailRoute> { AccountDetailScreen(it.toRoute<AccountDetailRoute>().id, nav) }
+        screen<AccountEditorRoute> { AccountEditorScreen(it.toRoute<AccountEditorRoute>().id, nav) }
+        screen<CategoriesRoute> { CategoriesScreen(nav) }
+        screen<CategoryEditorRoute> { val r = it.toRoute<CategoryEditorRoute>(); CategoryEditorScreen(r.id, r.kind, nav) }
+        screen<RecurringRoute> { RecurringScreen(nav) }
+        screen<RecurringEditorRoute> { RecurringEditorScreen(it.toRoute<RecurringEditorRoute>().id, nav) }
+        screen<GoalsRoute> { GoalsScreen(nav) }
+        screen<GoalEditorRoute> { GoalEditorScreen(it.toRoute<GoalEditorRoute>().id, nav) }
+        screen<SettingsRoute> { SettingsScreen(nav) }
+        screen<DataRoute> { DataScreen(nav) }
 
         // horas trabajadas
-        composable<WorkRoute> { WorkScreen(nav) }
-        composable<ShiftEditorRoute> { val r = it.toRoute<ShiftEditorRoute>(); ShiftEditorScreen(r.id, r.companyId, nav) }
-        composable<CompanyEditorRoute> { CompanyEditorScreen(it.toRoute<CompanyEditorRoute>().id, nav) }
+        screen<WorkRoute> { WorkScreen(nav) }
+        screen<ShiftEditorRoute> { val r = it.toRoute<ShiftEditorRoute>(); ShiftEditorScreen(r.id, r.companyId, nav) }
+        screen<CompanyEditorRoute> { CompanyEditorScreen(it.toRoute<CompanyEditorRoute>().id, nav) }
 
         // cuentas claras
-        composable<PersonDetailRoute> { PersonDetailScreen(it.toRoute<PersonDetailRoute>().id, nav) }
-        composable<PersonEditorRoute> { PersonEditorScreen(it.toRoute<PersonEditorRoute>().id, nav) }
-        composable<DebtEditorRoute> { val r = it.toRoute<DebtEditorRoute>(); DebtEditorScreen(r.kind, r.personId, nav) }
+        screen<PersonDetailRoute> { PersonDetailScreen(it.toRoute<PersonDetailRoute>().id, nav) }
+        screen<PersonEditorRoute> { PersonEditorScreen(it.toRoute<PersonEditorRoute>().id, nav) }
+        screen<DebtEditorRoute> { val r = it.toRoute<DebtEditorRoute>(); DebtEditorScreen(r.kind, r.personId, nav) }
 
         // inversiones
-        composable<AssetDetailRoute> { AssetDetailScreen(it.toRoute<AssetDetailRoute>().id, nav) }
-        composable<AssetEditorRoute> { AssetEditorScreen(it.toRoute<AssetEditorRoute>().id, nav) }
-        composable<OpEditorRoute> { val r = it.toRoute<OpEditorRoute>(); OpEditorScreen(r.assetId, r.opId, nav) }
+        screen<AssetDetailRoute> { AssetDetailScreen(it.toRoute<AssetDetailRoute>().id, nav) }
+        screen<AssetEditorRoute> { AssetEditorScreen(it.toRoute<AssetEditorRoute>().id, nav) }
+        screen<OpEditorRoute> { val r = it.toRoute<OpEditorRoute>(); OpEditorScreen(r.assetId, r.opId, nav) }
+    }
+    }
     }
 }

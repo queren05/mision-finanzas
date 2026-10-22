@@ -1,5 +1,7 @@
 package es.david.caudal.ui.more
 
+import es.david.caudal.ui.common.sharedCard
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import es.david.caudal.ui.common.appear
@@ -215,7 +217,7 @@ fun AccountDetailScreen(id: String, nav: NavController) {
             item {
                 val c = hexColor(a.color)
                 Column(
-                    Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(30.dp))
+                    Modifier.fillMaxWidth().sharedCard("cuenta-$id").clip(RoundedCornerShape(30.dp))
                         .background(Brush.linearGradient(listOf(androidx.compose.ui.graphics.lerp(c, Color.White, 0.15f), androidx.compose.ui.graphics.lerp(c, Color.Black, 0.3f))))
                         .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(30.dp))
                         .padding(22.dp).semantics(mergeDescendants = true) {},

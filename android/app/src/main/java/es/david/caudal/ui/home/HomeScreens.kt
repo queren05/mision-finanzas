@@ -99,6 +99,7 @@ import es.david.caudal.ui.common.SectionHeader
 import es.david.caudal.ui.common.TxRow
 import es.david.caudal.ui.common.WaterTank
 import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.common.sharedCard
 import es.david.caudal.ui.common.pressable
 import es.david.caudal.ui.common.rememberHaptics
 import es.david.caudal.ui.nav.AccountDetailRoute
@@ -565,6 +566,7 @@ private fun AccountTile(a: Account, value: Double, height: Int, open: (Account) 
             .fillMaxWidth()
             .height(height.dp)
             .pressable(0.95f) { open(a) }
+            .sharedCard("cuenta-${a.id}")
             .clip(RoundedCornerShape(26.dp))
             .background(gradient(a))
             .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(26.dp))
