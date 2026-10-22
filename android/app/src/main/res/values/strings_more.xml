@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Más -->
+    <string name="more_title">Más</string>
+    <string name="more_management">Gestión</string>
+    <string name="more_work">Horas trabajadas</string>
+    <string name="more_accounts">Cuentas</string>
+    <string name="more_categories">Categorías y presupuestos</string>
+    <string name="more_recurring">Recurrentes</string>
+    <string name="more_goals">Objetivos</string>
+    <string name="more_settings">Ajustes</string>
+    <string name="more_data">Datos y copias</string>
+    <string name="more_version">Versión</string>
+    <string name="more_hours_value">%1$s h</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_profile">Perfil</string>
+    <string name="settings_your_name">Tu nombre</string>
+    <string name="settings_security">Privacidad</string>
+    <string name="settings_lock">Bloquear con huella o código</string>
+    <string name="settings_lock_unavailable">Este móvil no tiene huella, cara ni código de bloqueo</string>
+    <string name="settings_hide_on_launch">Abrir con los importes ocultos</string>
+    <string name="settings_month">Mes</string>
+    <string name="settings_month_start">El mes empieza el día %1$d</string>
+    <string name="settings_month_minus">Un día antes</string>
+    <string name="settings_month_plus">Un día después</string>
+    <string name="settings_currency">Moneda</string>
+    <string name="settings_look">Aspecto</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_dynamic">Colores del fondo de pantalla</string>
+    <string name="settings_accent">Color de la app</string>
+    <string name="settings_modules">Módulos</string>
+    <string name="settings_module_work">Horas trabajadas</string>
+    <string name="settings_module_debts">Cuentas claras</string>
+    <string name="settings_module_invest">Inversiones</string>
+    <string name="currency_EUR">Euro (€)</string>
+    <string name="currency_USD">Dólar estadounidense ($)</string>
+    <string name="currency_GBP">Libra esterlina (£)</string>
+    <string name="currency_MXN">Peso mexicano</string>
+    <string name="currency_ARS">Peso argentino</string>
+    <string name="currency_COP">Peso colombiano</string>
+    <string name="currency_CLP">Peso chileno</string>
+    <string name="currency_CHF">Franco suizo</string>
+
+    <!-- Datos -->
+    <string name="data_title">Datos y copias</string>
+    <string name="data_backup">Copia de seguridad</string>
+    <string name="data_export">Exportar copia de seguridad</string>
+    <string name="data_import">Importar copia (también de iPhone o de la web)</string>
+    <string name="data_erase">Borrar todo</string>
+    <string name="data_import_confirm_title">¿Seguro que quieres importar esta copia?</string>
+    <string name="data_import_confirm_msg">Sustituye todo lo que hay ahora en Caudal.</string>
+    <string name="data_import_confirm">Importar</string>
+    <string name="data_erase_confirm_title">¿Seguro que quieres borrar todo?</string>
+    <string name="data_erase_confirm_msg">Se borran cuentas, movimientos y todo lo demás. Las categorías vuelven a las de partida.</string>
+    <string name="data_erase_confirm">Borrar todo</string>
+    <string name="data_exported">Copia guardada</string>
+    <string name="data_erased">Todo borrado</string>
+    <string name="data_file_name">caudal-%1$s.json</string>
+
+    <!-- Cuentas -->
+    <string name="accounts_title">Cuentas</string>
+    <string name="accounts_archived">Archivadas</string>
+    <string name="accounts_new">Nueva cuenta</string>
+    <string name="accounts_edit">Editar cuenta</string>
+    <string name="accounts_sort">Ordenar</string>
+    <string name="accounts_sort_done">Hecho</string>
+    <string name="accounts_in_invest">+ %1$s en inversiones</string>
+    <string name="accounts_movements">Movimientos</string>
+    <string name="accounts_no_movements">Sin movimientos</string>
+    <string name="accounts_adjust">Ajustar saldo</string>
+    <string name="accounts_adjust_field">Saldo real</string>
+    <string name="accounts_adjust_do">Ajustar</string>
+    <string name="accounts_deleted">Cuenta eliminada</string>
+    <string name="accounts_type">Tipo</string>
+    <string name="accounts_icon">Emoji</string>
+    <string name="accounts_balance_now">Saldo actual</string>
+    <string name="accounts_initial">Saldo inicial</string>
+    <string name="accounts_in_total">Suma al patrimonio</string>
+    <string name="accounts_archived_toggle">Archivada</string>
+    <string name="accounts_delete">Eliminar cuenta</string>
+    <string name="accounts_delete_title">¿Seguro que quieres eliminar la cuenta «%1$s»?</string>
+    <string name="accounts_delete_msg">Se borran también sus movimientos. Si solo quieres quitarla de la vista, archívala.</string>
+    <string name="accounts_delete_confirm">Eliminar cuenta y movimientos</string>
+    <string name="confirm_delete_movement">¿Seguro que quieres eliminar este movimiento?</string>
+
+    <!-- Categorías -->
+    <string name="categories_title">Categorías</string>
+    <string name="categories_expenses">Gastos</string>
+    <string name="categories_incomes">Ingresos</string>
+    <string name="categories_new">Nueva categoría</string>
+    <string name="categories_edit">Editar categoría</string>
+    <string name="categories_budget_line">Presupuesto: %1$s al mes</string>
+    <string name="categories_hidden">Oculta al apuntar</string>
+    <string name="categories_budget">Presupuesto al mes</string>
+    <string name="categories_no_limit">Sin límite</string>
+    <string name="categories_hide">Ocultar al apuntar</string>
+    <string name="categories_keywords">Palabras clave</string>
+    <string name="categories_keywords_hint">mercadona, lidl, …</string>
+    <string name="categories_emoji">Emoji</string>
+    <string name="categories_all_emojis">Más emojis</string>
+    <string name="categories_delete">Eliminar categoría</string>
+    <string name="categories_delete_title">¿Seguro que quieres eliminar «%1$s»?</string>
+    <string name="categories_delete_msg">Sus movimientos se quedarán sin categoría.</string>
+
+    <!-- Recurrentes -->
+    <string name="recurring_title">Recurrentes</string>
+    <string name="recurring_monthly">Fijo al mes</string>
+    <string name="recurring_line">%1$s · próximo %2$s</string>
+    <string name="recurring_new">Nuevo recurrente</string>
+    <string name="recurring_edit">Editar recurrente</string>
+    <string name="recurring_name">Nombre (p. ej. Netflix)</string>
+    <string name="recurring_type">Tipo</string>
+    <string name="recurring_invest">Inversión</string>
+    <string name="recurring_asset">Activo</string>
+    <string name="recurring_pick">Elige</string>
+    <string name="recurring_freq">Frecuencia</string>
+    <string name="recurring_next">Próximo cargo</string>
+    <string name="recurring_active">Activo</string>
+    <string name="recurring_pause">Pausar</string>
+    <string name="recurring_resume">Reanudar</string>
+    <string name="recurring_paused">Pausado</string>
+    <string name="recurring_delete_title">¿Seguro que quieres eliminar este recurrente?</string>
+    <string name="recurring_delete_msg">«%1$s» dejará de apuntarse solo. Lo ya apuntado se queda.</string>
+    <string name="recurring_delete">Eliminar recurrente</string>
+    <string name="freq_weekly">Cada semana</string>
+    <string name="freq_monthly">Cada mes</string>
+    <string name="freq_yearly">Cada año</string>
+
+    <!-- Objetivos -->
+    <string name="goals_title">Objetivos</string>
+    <string name="goals_empty">Sin objetivos</string>
+    <string name="goals_for">Para el %1$s</string>
+    <string name="goals_of">de %1$s</string>
+    <string name="goals_measured_with">Se mide con el saldo de %1$s</string>
+    <string name="goals_per_month">Aparta %1$s al mes</string>
+    <string name="goals_pct">%1$d %%</string>
+    <string name="goals_new">Nuevo objetivo</string>
+    <string name="goals_edit">Objetivo</string>
+    <string name="goals_target">Meta</string>
+    <string name="goals_deadline">Con fecha límite</string>
+    <string name="goals_measured">Se mide con</string>
+    <string name="goals_manual">Aportaciones a mano</string>
+    <string name="goals_saved">Ahorrado: %1$s</string>
+    <string name="goals_add">Añadir</string>
+    <string name="goals_remove">Quitar</string>
+    <string name="goals_delete">Eliminar objetivo</string>
+    <string name="goals_delete_title">¿Seguro que quieres eliminar este objetivo?</string>
+</resources>
