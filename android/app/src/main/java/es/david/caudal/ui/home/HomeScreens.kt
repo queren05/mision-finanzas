@@ -346,6 +346,19 @@ private fun AllowanceCard(l: Ledger) {
     val r = l.periodRange(l.periodStart(Day.today))
     val elapsed = (Day.daysBetween(r.start, Day.today) + 1).toDouble() / (Day.daysBetween(r.start, r.end) + 1)
     val ok = a.left > 0
+    if (a.base <= 0) {
+        // sin presupuesto ni ingresos todavía: invitación
+        Card(padding = 20.dp) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("☀️", fontSize = 22.sp)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.home_disponible), style = MaterialTheme.typography.titleMedium, color = c.textDim)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.allowance_empty), style = MaterialTheme.typography.bodyMedium)
+        }
+        return
+    }
     Card(padding = 20.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("☀️", fontSize = 22.sp)
@@ -372,7 +385,7 @@ private fun AllowanceCard(l: Ledger) {
         Spacer(Modifier.height(10.dp))
         if (a.upcoming > 0) Text(stringResource(R.string.allowance_upcoming, f.money(a.upcoming)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
         if (!a.fromBudget) Text(stringResource(R.string.allowance_from_income), style = MaterialTheme.typography.bodySmall, color = c.textDim)
-        if (forecast != null) Text(stringResource(R.string.forecast, f.money(forecast)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
+        if (forecast != null && forecast > 0) Text(stringResource(R.string.forecast, f.money(forecast)), style = MaterialTheme.typography.bodySmall, color = c.textDim)
     }
 }
 

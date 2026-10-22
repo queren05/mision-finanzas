@@ -19,6 +19,8 @@ data class Allowance(
     val upcoming: Double,
     /** sale del presupuesto (true) o de lo ingresado (false) */
     val fromBudget: Boolean,
+    /** presupuesto o ingresos del mes de los que sale (0: aún no se puede calcular) */
+    val base: Double = 0.0,
 )
 
 /** un aviso amable: «gastas un 23 % menos en Restaurantes» */
@@ -45,7 +47,7 @@ object Insights {
         val base = if (budget > 0) budget else l.earned(r)
         val left = base - spent - upcoming
         val daysLeft = (Day.daysBetween(today, r.end) + 1).toInt().coerceAtLeast(1)
-        return Allowance(left, if (left > 0) left / daysLeft else 0.0, daysLeft, upcoming, budget > 0)
+        return Allowance(left, if (left > 0) left / daysLeft else 0.0, daysLeft, upcoming, budget > 0, base)
     }
 
     /** previsión del gasto a fin de mes al ritmo de ahora (null al principio, con pocos datos) */

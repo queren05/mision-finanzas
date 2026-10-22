@@ -120,6 +120,7 @@
     <string name="allowance_over">Te has pasado %1$s este mes</string>
     <string name="allowance_upcoming">Ya descontados %1$s de cargos que faltan</string>
     <string name="allowance_from_income">Calculado con lo ingresado (pon presupuestos para afinar)</string>
+    <string name="allowance_empty">Pon presupuestos a tus categorías o apunta tus ingresos y te digo cuánto puedes gastar cada día 🌱</string>
     <string name="forecast">A este ritmo acabarás el mes en %1$s</string>
     <string name="insight_less">Gastas un %1$s %% menos en %2$s que el mes pasado</string>
     <string name="insight_more">Gastas un %1$s %% más en %2$s que el mes pasado</string>
