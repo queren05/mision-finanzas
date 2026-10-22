@@ -13,6 +13,7 @@
         android:supportsRtl="true"
         android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.Caudal"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="36">
 
         <activity
