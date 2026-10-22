@@ -224,13 +224,11 @@ fun ShiftEditorScreen(id: String?, companyId: String?, nav: NavController) {
                 Spacer(Modifier.size(8.dp))
                 SegmentedPills(listOf(stringResource(R.string.work_pending), stringResource(R.string.work_paid)), if (status == PayStatus.PAGADO) 1 else 0, { status = if (it == 1) PayStatus.PAGADO else PayStatus.PENDIENTE })
                 Spacer(Modifier.size(8.dp))
-                HorizontalDivider()
+                HorizontalDivider(color = es.david.caudal.ui.theme.CaudalTheme.colors.hairline)
                 OutlinedTextField(note, { note = it }, label = { Text(stringResource(R.string.shift_note)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
             }
             if (original != null) {
-                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.shift_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+                es.david.caudal.ui.debts.PillButton(stringResource(R.string.shift_delete), null, es.david.caudal.ui.theme.CaudalTheme.colors.negative, Modifier.fillMaxWidth(), filled = false) { h.warning(); askDelete = true }
             }
             Spacer(Modifier.width(1.dp))
         }

@@ -60,6 +60,17 @@ import es.david.caudal.domain.model.OpSide
 import es.david.caudal.domain.model.PALETTE
 import es.david.caudal.ui.charts.LineChart
 import es.david.caudal.ui.common.AmountText
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.EmptyState
+import es.david.caudal.ui.common.GroupCard
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.RollingText
+import es.david.caudal.ui.common.SectionHeader
+import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.common.pressable
+import es.david.caudal.ui.debts.PillButton
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.border
 import es.david.caudal.ui.common.Card
 import es.david.caudal.ui.common.ColorRow
 import es.david.caudal.ui.common.ConfirmDialog
@@ -111,40 +122,51 @@ fun InvestScreen(nav: NavController) {
     val assets = l.data.assets.filter { !it.archived }.sortedByDescending { l.assetValue(it) }
     ScreenScaffold(
         stringResource(R.string.invest_title),
-        actions = { IconButton(onClick = { nav.navigate(AssetEditorRoute()) }) { Icon(Icons.Filled.Add, stringResource(R.string.invest_new)) } },
+        actions = { CircleIconButton(Icons.Filled.Add, stringResource(R.string.invest_new), tint = colors.accent) { nav.navigate(AssetEditorRoute()) } },
     ) { pad ->
-        LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding() + 8.dp, bottom = 150.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 val value = l.investValue
                 val cost = l.investCost
                 val gain = value - cost
                 val pct = if (cost > 0) gain / cost * 100 else 0.0
                 val today = l.investToday
-                Card(Modifier.semantics(mergeDescendants = true) {}, padding = 20.dp) {
-                    Text(stringResource(R.string.invest_portfolio), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    AmountText(value, style = MaterialTheme.typography.displaySmall, weight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Row {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.invest_return), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AmountText(gain, signed = true, style = MaterialTheme.typography.titleMedium, color = if (gain >= 0) colors.income else colors.negative)
-                                Spacer(Modifier.width(6.dp))
-                                Text(f.pct(pct), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = if (gain >= 0) colors.income else colors.negative)
-                            }
+                Card(Modifier.appear(0).semantics(mergeDescendants = true) {}, padding = 20.dp) {
+                    Text(stringResource(R.string.invest_portfolio), style = MaterialTheme.typography.titleSmall, color = colors.textDim)
+                    AmountText(value, style = MaterialTheme.typography.displayMedium, rolling = true)
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        val gc = if (gain >= 0) colors.income else colors.negative
+                        Column(Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(gc.copy(alpha = 0.12f)).padding(12.dp)) {
+                            Text(stringResource(R.string.invest_return), style = MaterialTheme.typography.labelMedium, color = colors.textDim)
+                            AmountText(gain, signed = true, style = MaterialTheme.typography.titleMedium, color = gc)
+                            Text(f.pct(pct), style = MaterialTheme.typography.labelMedium, color = gc,
+                                modifier = Modifier.clip(CircleShape).background(gc.copy(alpha = 0.18f)).padding(horizontal = 8.dp, vertical = 2.dp))
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(stringResource(R.string.invest_today), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            AmountText(today, signed = true, style = MaterialTheme.typography.titleMedium, color = if (today >= 0) colors.income else colors.negative)
+                        val tc = if (today >= 0) colors.income else colors.negative
+                        Column(Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(colors.cardAlt).padding(12.dp)) {
+                            Text(stringResource(R.string.invest_today), style = MaterialTheme.typography.labelMedium, color = colors.textDim)
+                            AmountText(today, signed = true, style = MaterialTheme.typography.titleMedium, color = tc)
+                            Text(stringResource(R.string.invest_invested, f.money(cost)), style = MaterialTheme.typography.labelSmall, color = colors.textDim)
                         }
                     }
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.invest_invested, f.money(cost)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (assets.isNotEmpty()) item { Allocation(assets, l) }
-            items(assets, key = { it.id }) { a -> AssetRow(a, l) { nav.navigate(AssetDetailRoute(a.id)) } }
-            if (assets.isEmpty()) item { EmptyText(stringResource(R.string.invest_empty)) }
+            if (assets.isNotEmpty()) item { Box(Modifier.appear(1)) { Allocation(assets, l) } }
+            if (assets.isNotEmpty()) item {
+                GroupCard(Modifier.appear(2)) {
+                    assets.forEachIndexed { i, a ->
+                        AssetRow(a, l) { nav.navigate(AssetDetailRoute(a.id)) }
+                        if (i < assets.lastIndex) es.david.caudal.ui.common.RowDivider(78.dp)
+                    }
+                }
+            }
+            if (assets.isEmpty()) item {
+                EmptyState(stringResource(R.string.invest_empty), stringResource(R.string.invest_empty_text), mood = Mood.WINK) {
+                    Spacer(Modifier.height(8.dp))
+                    PillButton(stringResource(R.string.invest_add_first), Icons.Filled.Add, colors.accent, Modifier.fillMaxWidth()) { nav.navigate(AssetEditorRoute()) }
+                }
+            }
         }
     }
 }
@@ -153,13 +175,17 @@ fun InvestScreen(nav: NavController) {
 private fun Allocation(assets: List<Asset>, l: Ledger) {
     val f = LocalFmt.current
     val total = max(l.investValue, 0.01)
+    val motion = es.david.caudal.ui.theme.LocalMotion.current
+    var grown by remember { mutableStateOf(!motion) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { grown = true }
+    val g by androidx.compose.animation.core.animateFloatAsState(if (grown) 1f else 0f, androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = androidx.compose.animation.core.Spring.StiffnessVeryLow), label = "reparto")
     Card {
-        Text(stringResource(R.string.invest_allocation), style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth().height(14.dp).clip(CircleShape), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        SectionHeader(stringResource(R.string.invest_allocation), emoji = "🥧")
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(g.coerceAtLeast(0.02f)).height(16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             assets.forEach { a ->
                 val w = (l.assetValue(a) / total).toFloat()
-                if (w > 0f) Box(Modifier.weight(w).height(14.dp).background(hexColor(a.color)))
+                if (w > 0f) Box(Modifier.weight(w).height(16.dp).clip(CircleShape).background(Brush.verticalGradient(listOf(hexColor(a.color), hexColor(a.color).copy(alpha = 0.75f)))))
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -167,8 +193,8 @@ private fun Allocation(assets: List<Asset>, l: Ledger) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).clip(CircleShape).background(hexColor(a.color)))
                 Spacer(Modifier.width(8.dp))
-                Text(a.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${f.num(l.assetValue(a) / total * 100)} %", fontWeight = FontWeight.SemiBold)
+                Text(a.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${f.num(l.assetValue(a) / total * 100)} %", style = MaterialTheme.typography.labelLarge, color = CaudalTheme.colors.textDim)
             }
         }
     }
@@ -183,16 +209,15 @@ private fun AssetRow(a: Asset, l: Ledger, onClick: () -> Unit) {
     val gain = value - pos.cost
     val c = hexColor(a.color)
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.card)
-            .clickable(role = Role.Button, onClick = onClick).padding(14.dp).semantics(mergeDescendants = true) {},
+        Modifier.fillMaxWidth().pressable(0.985f, onClick = onClick).heightIn(min = 72.dp).padding(horizontal = 16.dp, vertical = 12.dp).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(c.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
-            Text(a.symbol.take(4), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black, color = c)
+        Box(Modifier.size(48.dp).clip(RoundedCornerShape(17.dp)).background(Brush.linearGradient(listOf(c.copy(alpha = 0.45f), c.copy(alpha = 0.18f)))), contentAlignment = Alignment.Center) {
+            Text(a.symbol.take(4).uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black, color = c)
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(a.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(a.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row {
                 Text(f.money(l.price(a)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 l.dayChange(a)?.let { ch ->
@@ -202,8 +227,8 @@ private fun AssetRow(a: Asset, l: Ledger, onClick: () -> Unit) {
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            AmountText(value, weight = FontWeight.Bold)
-            AmountText(gain, signed = true, style = MaterialTheme.typography.bodySmall, color = if (gain >= 0) colors.income else colors.negative, weight = FontWeight.SemiBold)
+            AmountText(value, weight = FontWeight.ExtraBold)
+            AmountText(gain, signed = true, style = MaterialTheme.typography.labelMedium, color = if (gain >= 0) colors.income else colors.negative)
         }
     }
 }
@@ -227,7 +252,7 @@ fun AssetDetailScreen(id: String, nav: NavController) {
         a?.symbol ?: stringResource(R.string.invest_deleted),
         onBack = { nav.popBackStack() },
         large = false,
-        actions = { if (a != null) IconButton(onClick = { nav.navigate(AssetEditorRoute(a.id)) }) { Icon(Icons.Filled.Edit, stringResource(R.string.invest_edit)) } },
+        actions = { if (a != null) CircleIconButton(Icons.Filled.Edit, stringResource(R.string.invest_edit)) { nav.navigate(AssetEditorRoute(a.id)) } },
     ) { pad ->
         if (a == null) { EmptyText(stringResource(R.string.invest_deleted), Modifier.padding(pad)); return@ScreenScaffold }
         val pos = l.position(a)
@@ -241,21 +266,25 @@ fun AssetDetailScreen(id: String, nav: NavController) {
         val c = hexColor(a.color)
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
-                Card {
-                    Text(a.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(f.money(last), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Column(
+                    Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(28.dp))
+                        .background(Brush.verticalGradient(listOf(c.copy(alpha = 0.28f), colors.card)))
+                        .border(1.dp, colors.hairline, RoundedCornerShape(28.dp)).padding(20.dp),
+                ) {
+                    Text(a.name, style = MaterialTheme.typography.titleMedium, color = colors.textDim)
+                    RollingText(f.money(last), MaterialTheme.typography.displaySmall.copy(fontFeatureSettings = "tnum"))
+                    val cc = if (ch >= 0) colors.income else colors.negative
                     Text(
                         (shown?.let { f.header(it.first) + " · " } ?: "") + f.pct(ch),
-                        fontWeight = FontWeight.SemiBold, color = if (ch >= 0) colors.income else colors.negative,
+                        style = MaterialTheme.typography.labelLarge, color = cc,
+                        modifier = Modifier.clip(CircleShape).background(cc.copy(alpha = 0.16f)).padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                     Spacer(Modifier.height(10.dp))
                     if (points.size >= 2) {
                         LineChart(points.map { it.second }, c, selected = selected, description = stringResource(R.string.invest_chart, a.name)) { selected = it }
                     }
                     Spacer(Modifier.height(10.dp))
-                    FilledTonalButton(onClick = { newPrice = Money.editText(Money.toCents(l.price(a))); updating = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.invest_update_price))
-                    }
+                    PillButton(stringResource(R.string.invest_update_price), Icons.Filled.Edit, c, Modifier.fillMaxWidth()) { newPrice = Money.editText(Money.toCents(l.price(a))); updating = true }
                 }
             }
             item {
@@ -276,24 +305,33 @@ fun AssetDetailScreen(id: String, nav: NavController) {
                 }
             }
             item {
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.invest_ops), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { nav.navigate(OpEditorRoute(a.id)) }) { Icon(Icons.Filled.Add, stringResource(R.string.invest_new_op)) }
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { SectionHeader(stringResource(R.string.invest_ops), emoji = "🧾") }
+                    CircleIconButton(Icons.Filled.Add, stringResource(R.string.invest_new_op), tint = colors.accent) { nav.navigate(OpEditorRoute(a.id)) }
                 }
             }
-            items(a.ops.sortedByDescending { it.date }, key = { it.id }) { op ->
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(colors.card)
-                        .clickable(role = Role.Button) { nav.navigate(OpEditorRoute(a.id, op.id)) }
-                        .heightIn(min = 60.dp).padding(start = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                        Text(stringResource(R.string.invest_op_line, stringResource(opSideLabel(op.side)), f.numFree(op.qty)), fontWeight = FontWeight.SemiBold)
-                        Text(stringResource(R.string.invest_op_sub, f.header(op.date), f.money(op.price)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { h.warning(); pendingDelete = op }) {
-                        Icon(Icons.Filled.Delete, stringResource(R.string.invest_op_delete), tint = MaterialTheme.colorScheme.error)
+            item {
+                val ops = a.ops.sortedByDescending { it.date }
+                if (ops.isNotEmpty()) GroupCard {
+                    ops.forEachIndexed { i, op ->
+                        Row(
+                            Modifier.fillMaxWidth().pressable(0.985f) { nav.navigate(OpEditorRoute(a.id, op.id)) }.heightIn(min = 64.dp).padding(start = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val sc = when (op.side) { OpSide.BUY -> colors.income; OpSide.SELL -> colors.negative; OpSide.REWARD -> colors.warning }
+                            Box(Modifier.size(38.dp).clip(RoundedCornerShape(13.dp)).background(sc.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                                Text(when (op.side) { OpSide.BUY -> "🛒"; OpSide.SELL -> "💰"; OpSide.REWARD -> "🎁" })
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                                Text(stringResource(R.string.invest_op_line, stringResource(opSideLabel(op.side)), f.numFree(op.qty)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold)
+                                Text(stringResource(R.string.invest_op_sub, f.header(op.date), f.money(op.price)), style = MaterialTheme.typography.bodySmall, color = colors.textDim)
+                            }
+                            IconButton(onClick = { h.warning(); pendingDelete = op }) {
+                                Icon(Icons.Filled.Delete, stringResource(R.string.invest_op_delete), tint = colors.negative)
+                            }
+                        }
+                        if (i < ops.lastIndex) es.david.caudal.ui.common.RowDivider(66.dp)
                     }
                 }
             }
@@ -302,7 +340,9 @@ fun AssetDetailScreen(id: String, nav: NavController) {
     if (updating && a != null) {
         AlertDialog(
             onDismissRequest = { updating = false },
-            title = { Text(stringResource(R.string.invest_update_price)) },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = colors.card,
+            title = { Text(stringResource(R.string.invest_update_price), style = MaterialTheme.typography.titleLarge) },
             text = {
                 OutlinedTextField(newPrice, { newPrice = it.filter { c -> c.isDigit() || c == ',' || c == '.' } }, label = { Text(stringResource(R.string.invest_price_now)) },
                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
@@ -410,9 +450,7 @@ fun AssetEditorScreen(id: String?, nav: NavController) {
             }
             item { FormSection(stringResource(R.string.color)) { Box(Modifier.padding(vertical = 12.dp)) { ColorRow(color) { color = it } } } }
             if (original != null) item {
-                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.invest_delete), color = MaterialTheme.colorScheme.error)
-                }
+                PillButton(stringResource(R.string.invest_delete), null, CaudalTheme.colors.negative, Modifier.fillMaxWidth(), filled = false) { h.warning(); askDelete = true }
             }
         }
     }
@@ -502,9 +540,7 @@ fun OpEditorScreen(assetId: String, opId: String?, nav: NavController) {
                 }
             }
             if (original != null) item {
-                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.invest_op_delete), color = MaterialTheme.colorScheme.error)
-                }
+                PillButton(stringResource(R.string.invest_op_delete), null, CaudalTheme.colors.negative, Modifier.fillMaxWidth(), filled = false) { h.warning(); askDelete = true }
             }
         }
     }

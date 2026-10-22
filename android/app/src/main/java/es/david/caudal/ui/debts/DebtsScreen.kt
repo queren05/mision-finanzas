@@ -69,6 +69,14 @@ import es.david.caudal.domain.model.DebtMove
 import es.david.caudal.domain.model.Person
 import es.david.caudal.ui.common.AmountText
 import es.david.caudal.ui.common.Card
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.EmptyState
+import es.david.caudal.ui.common.GroupCard
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.RowDivider
+import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.common.pressable
+import androidx.compose.foundation.layout.fillMaxSize
 import es.david.caudal.ui.common.ConfirmDialog
 import es.david.caudal.ui.common.FinanceViewModel
 import es.david.caudal.ui.common.LocalFmt
@@ -100,13 +108,16 @@ fun DebtsScreen(nav: NavController) {
     var importing by remember { mutableStateOf(false) }
     var settling by remember { mutableStateOf<Person?>(null) }
     var deleting by remember { mutableStateOf<DebtMove?>(null) }
+    var celebrate by remember { mutableStateOf<Long?>(null) }
+    var celebrateText by remember { mutableStateOf("") }
 
+    Box(Modifier.fillMaxSize()) {
     ScreenScaffold(
         title = stringResource(R.string.debts_title),
         actions = {
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.PersonAdd, stringResource(R.string.debts_add_person)) }
-                DropdownMenu(menu, { menu = false }) {
+                CircleIconButton(Icons.Filled.PersonAdd, stringResource(R.string.debts_more_menu)) { menu = true }
+                DropdownMenu(menu, { menu = false }, shape = RoundedCornerShape(20.dp), containerColor = CaudalTheme.colors.card) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.debts_add_person)) }, leadingIcon = { Icon(Icons.Filled.PersonAdd, null) },
                         onClick = { menu = false; nav.navigate(PersonEditorRoute()) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.debts_import)) }, leadingIcon = { Icon(Icons.Filled.Download, null) },
@@ -117,43 +128,56 @@ fun DebtsScreen(nav: NavController) {
     ) { pad ->
         if (data == null) return@ScreenScaffold
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding() + 4.dp, bottom = pad.calculateBottomPadding() + 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding() + 4.dp, bottom = 150.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (people.isEmpty()) {
                 item { EmptyDebts(onAdd = { nav.navigate(PersonEditorRoute()) }, onImport = { importing = true }) }
                 return@LazyColumn
             }
-            item { DebtsHero(Debts.owedToMe(people, debts), Debts.iOwe(people, debts)) }
+            item { Box(Modifier.appear(0)) { DebtsHero(Debts.owedToMe(people, debts), Debts.iOwe(people, debts)) } }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.appear(1), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     KindButton(R.string.debt_action_owe, Icons.AutoMirrored.Filled.CallReceived, CaudalTheme.colors.income, Modifier.weight(1f)) { h.tap(); nav.navigate(DebtEditorRoute(DebtKind.OWE.raw)) }
                     KindButton(R.string.debt_action_debt, Icons.AutoMirrored.Filled.CallMade, CaudalTheme.colors.negative, Modifier.weight(1f)) { h.tap(); nav.navigate(DebtEditorRoute(DebtKind.DEBT.raw)) }
-                    KindButton(R.string.debt_action_split, Icons.Filled.Group, MaterialTheme.colorScheme.primary, Modifier.weight(1f)) { h.tap(); nav.navigate(DebtEditorRoute(DebtKind.SPLIT.raw)) }
+                    KindButton(R.string.debt_action_split, Icons.Filled.Group, CaudalTheme.colors.accent, Modifier.weight(1f)) { h.tap(); nav.navigate(DebtEditorRoute(DebtKind.SPLIT.raw)) }
                     KindButton(R.string.debt_action_theypaid, Icons.Filled.CreditCard, CaudalTheme.colors.warning, Modifier.weight(1f)) { h.tap(); nav.navigate(DebtEditorRoute(DebtKind.THEYPAID.raw)) }
                 }
             }
-            item { SectionHeader(stringResource(R.string.debts_people)) }
-            items(Debts.sorted(people, debts), key = { "p" + it.id }) { p ->
-                val b = Debts.balance(debts, p.id)
-                SwipeRow(
-                    start = if (b != 0L) SwipeAction(stringResource(if (b > 0) R.string.debts_paid_me else R.string.debts_i_paid), Icons.Filled.CheckCircle,
-                        if (b > 0) CaudalTheme.colors.income else CaudalTheme.colors.warning) { settling = p } else null,
-                    end = if (b > 0) SwipeAction(stringResource(R.string.debts_remind), Icons.AutoMirrored.Filled.Message, Color(0xFF25B562)) { h.tap(); remind(ctx, f, p, debts) } else null,
-                ) {
-                    PersonRow(p, b, Debts.last(debts, p.id), vm.repo) { nav.navigate(PersonDetailRoute(p.id)) }
+            item { Box(Modifier.appear(2).padding(start = 4.dp, top = 6.dp)) { SectionHeader(stringResource(R.string.debts_people), emoji = "👥") } }
+            item {
+                val sorted = Debts.sorted(people, debts)
+                GroupCard(Modifier.appear(3)) {
+                    sorted.forEachIndexed { i, p ->
+                        val b = Debts.balance(debts, p.id)
+                        SwipeRow(
+                            start = if (b != 0L) SwipeAction(stringResource(if (b > 0) R.string.debts_paid_me else R.string.debts_i_paid), Icons.Filled.CheckCircle,
+                                if (b > 0) CaudalTheme.colors.income else CaudalTheme.colors.warning) { settling = p } else null,
+                            end = if (b > 0) SwipeAction(stringResource(R.string.debts_remind), Icons.AutoMirrored.Filled.Message, Color(0xFF25B562)) { h.tap(); remind(ctx, f, p, debts) } else null,
+                        ) {
+                            PersonRow(p, b, Debts.last(debts, p.id), vm.repo) { nav.navigate(PersonDetailRoute(p.id)) }
+                        }
+                        if (i < sorted.lastIndex) RowDivider(74.dp)
+                    }
                 }
             }
             val recent = debts.sortedWith(compareByDescending<DebtMove> { it.date }.thenByDescending { it.createdMillis }).take(8)
             if (recent.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.debts_recent)) }
-                items(recent, key = { "m" + it.id }) { m ->
-                    SwipeRow(start = null, end = SwipeAction(stringResource(R.string.debts_delete_move), Icons.Filled.Delete, MaterialTheme.colorScheme.error) { h.warning(); deleting = m }) {
-                        Box(Modifier.padding(horizontal = 12.dp)) { DebtRow(m, people.firstOrNull { it.id == m.personId }, vm.repo) }
+                item { Box(Modifier.appear(4).padding(start = 4.dp, top = 6.dp)) { SectionHeader(stringResource(R.string.debts_recent), emoji = "🧾") } }
+                item {
+                    GroupCard(Modifier.appear(5)) {
+                        recent.forEachIndexed { i, m ->
+                            SwipeRow(start = null, end = SwipeAction(stringResource(R.string.debts_delete_move), Icons.Filled.Delete, CaudalTheme.colors.negative) { h.warning(); deleting = m }) {
+                                DebtRow(m, people.firstOrNull { it.id == m.personId }, vm.repo)
+                            }
+                            if (i < recent.lastIndex) RowDivider(70.dp)
+                        }
                     }
                 }
             }
         }
+    }
+    Celebration(celebrate, celebrateText)
     }
 
     settling?.let { p ->
@@ -165,7 +189,8 @@ fun DebtsScreen(nav: NavController) {
             destructive = false,
             onConfirm = {
                 h.success(); vm.run { settle(p.id) }
-                toast(ctx, ctx.getString(R.string.debts_settled, p.name))
+                celebrateText = ctx.getString(R.string.debts_settled, p.name)
+                celebrate = System.nanoTime()
             },
             onDismiss = { settling = null },
         )
@@ -195,13 +220,10 @@ fun DebtsScreen(nav: NavController) {
 
 @Composable
 private fun EmptyDebts(onAdd: () -> Unit, onImport: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("🤝", fontSize = 64.sp)
-        Text(stringResource(R.string.debts_empty_title), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-        Button(onClick = onAdd, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Icon(Icons.Filled.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.debts_empty_add))
-        }
-        TextButton(onClick = onImport) { Text(stringResource(R.string.debts_import)) }
+    EmptyState(stringResource(R.string.debts_empty_title), stringResource(R.string.debts_empty_text), mood = Mood.WINK) {
+        Spacer(Modifier.height(8.dp))
+        PillButton(stringResource(R.string.debts_empty_add), Icons.Filled.PersonAdd, CaudalTheme.colors.accent, Modifier.fillMaxWidth(), onClick = onAdd)
+        PillButton(stringResource(R.string.debts_import), Icons.Filled.Download, CaudalTheme.colors.accent, Modifier.fillMaxWidth(), filled = false, onClick = onImport)
     }
 }
 
@@ -210,19 +232,19 @@ private fun DebtsHero(them: Long, me: Long) {
     val net = them - me
     val colors = CaudalTheme.colors
     Card(padding = 20.dp) {
-        Text(stringResource(R.string.debts_total_balance), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.debts_total_balance), style = MaterialTheme.typography.titleSmall, color = colors.textDim)
         AmountText(
-            Money.fromCents(net), signed = net != 0L, style = MaterialTheme.typography.displaySmall, weight = FontWeight.Bold,
-            color = if (net > 0) colors.income else if (net < 0) colors.negative else MaterialTheme.colorScheme.onSurface,
+            Money.fromCents(net), signed = net != 0L, style = MaterialTheme.typography.displayMedium, rolling = true,
+            color = if (net > 0) colors.income else if (net < 0) colors.negative else colors.text,
         )
         Text(
             stringResource(if (net > 0) R.string.debts_in_favor else if (net < 0) R.string.debts_against else R.string.debts_all_square),
-            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium, color = colors.textDim,
         )
         if (them + me > 0) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
             SplitBar(them.toDouble(), me.toDouble(), colors.income, colors.negative)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Legend(colors.income, stringResource(R.string.debts_owed_to_me), Money.fromCents(them))
                 Spacer(Modifier.weight(1f))
@@ -232,51 +254,16 @@ private fun DebtsHero(them: Long, me: Long) {
     }
 }
 
-/** barra repartida en dos colores (te deben / debes, pagado / pendiente) */
 @Composable
-fun SplitBar(a: Double, b: Double, ca: Color, cb: Color) {
-    val frac = if (a + b <= 0) 0f else (a / (a + b)).toFloat()
-    Row(Modifier.fillMaxWidth().height(10.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        if (frac > 0f) Box(Modifier.weight(max(frac, 0.02f)).height(10.dp).clip(CircleShape).background(ca))
-        if (frac < 1f) Box(Modifier.weight(max(1f - frac, 0.02f)).height(10.dp).clip(CircleShape).background(cb))
-    }
-}
-
-@Composable
-fun Legend(color: Color, label: String, value: Double) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.semantics(mergeDescendants = true) {}) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.width(4.dp))
-        AmountText(value, style = MaterialTheme.typography.bodySmall, weight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
-private fun KindButton(label: Int, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(CaudalTheme.colors.card)
-            .clickable(role = Role.Button, onClick = onClick)
-            .heightIn(min = 72.dp)
-            .padding(vertical = 14.dp, horizontal = 4.dp)
-            .semantics(mergeDescendants = true) {},
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
-        Text(stringResource(label), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1)
-    }
-}
+private fun KindButton(label: Int, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) =
+    ActionTile(stringResource(label), icon, color, modifier, onClick)
 
 @Composable
 private fun PersonRow(p: Person, b: Long, last: DebtMove?, repo: FinanceRepository, onClick: () -> Unit) {
     val f = LocalFmt.current
     val colors = CaudalTheme.colors
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 8.dp)
+        Modifier.fillMaxWidth().background(CaudalTheme.colors.card).pressable(0.985f, onClick = onClick).heightIn(min = 70.dp).padding(horizontal = 14.dp, vertical = 10.dp)
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -284,20 +271,22 @@ private fun PersonRow(p: Person, b: Long, last: DebtMove?, repo: FinanceReposito
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row {
-                Text(p.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                if (p.nick.isNotEmpty()) Text(" · ${p.nick}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                Text(p.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                if (p.nick.isNotEmpty()) Text(" · ${p.nick}", style = MaterialTheme.typography.bodyLarge, color = colors.textDim, maxLines = 1)
             }
             Text(
                 last?.let { stringResource(R.string.debts_last_move, f.header(it.date).lowercase(f.locale)) } ?: stringResource(R.string.debts_no_moves),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                style = MaterialTheme.typography.bodySmall, color = colors.textDim, maxLines = 1,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
             if (b == 0L) {
-                Text(stringResource(R.string.debts_at_peace), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.debts_at_peace), style = MaterialTheme.typography.labelLarge, color = colors.textDim,
+                    modifier = Modifier.clip(CircleShape).background(colors.cardAlt).padding(horizontal = 10.dp, vertical = 5.dp))
             } else {
-                AmountText(abs(Money.fromCents(b)), weight = FontWeight.Bold, color = if (b > 0) colors.income else colors.negative)
-                Text(stringResource(if (b > 0) R.string.debts_owes_you else R.string.debts_you_owe), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                AmountText(abs(Money.fromCents(b)), weight = FontWeight.ExtraBold, color = if (b > 0) colors.income else colors.negative)
+                Text(stringResource(if (b > 0) R.string.debts_owes_you else R.string.debts_you_owe), style = MaterialTheme.typography.labelSmall,
+                    color = if (b > 0) colors.income else colors.negative)
             }
         }
     }
@@ -308,11 +297,13 @@ private fun ImportDialog(onImport: (String) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.debts_import_title)) },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = CaudalTheme.colors.card,
+        title = { Text(stringResource(R.string.debts_import_title), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.debts_import_msg), style = MaterialTheme.typography.bodyMedium)
-                OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.debts_import_hint)) }, minLines = 3, maxLines = 6, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.debts_import_hint)) }, minLines = 3, maxLines = 6, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = { TextButton(onClick = { onImport(text); onDismiss() }, enabled = text.isNotBlank()) { Text(stringResource(R.string.debts_import_action), fontWeight = FontWeight.Bold) } },

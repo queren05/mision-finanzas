@@ -64,6 +64,9 @@ import es.david.caudal.domain.model.Tx
 import es.david.caudal.domain.model.TxType
 import es.david.caudal.ui.common.BigAmountField
 import es.david.caudal.ui.common.Card
+import es.david.caudal.ui.common.pressable
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.graphicsLayer
 import es.david.caudal.ui.common.EditorScaffold
 import es.david.caudal.ui.common.FinanceViewModel
 import es.david.caudal.ui.common.LocalFmt
@@ -114,7 +117,7 @@ fun DebtEditorScreen(kind: String, personId: String?, nav: NavController) {
     val color = when (k) {
         DebtKind.OWE -> colors.income
         DebtKind.DEBT -> colors.negative
-        DebtKind.SPLIT -> MaterialTheme.colorScheme.primary
+        DebtKind.SPLIT -> colors.accent
         else -> colors.warning
     }
     val valid = amount > 0 && selected.isNotEmpty()
@@ -168,50 +171,55 @@ fun DebtEditorScreen(kind: String, personId: String?, nav: NavController) {
                 options = listOf(R.string.debt_action_owe, R.string.debt_action_debt, R.string.debt_action_split, R.string.debt_action_theypaid).map { stringResource(it) },
                 selected = kinds.indexOf(k),
                 onSelect = { i -> k = kinds[i]; if (k != DebtKind.SPLIT && selected.size > 1) selected = listOf(selected.first()) },
-                colors = listOf(colors.income, colors.negative, MaterialTheme.colorScheme.primary, colors.warning),
+                colors = listOf(colors.income, colors.negative, colors.accent, colors.warning),
             )
             BigAmountField(digits, { digits = it }, color, autoFocus = true)
-            if (shareText.isNotEmpty()) Text(shareText, color = color, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            androidx.compose.animation.AnimatedVisibility(shareText.isNotEmpty()) {
+                Text(shareText, style = MaterialTheme.typography.labelLarge, color = color, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(CircleShape).background(color.copy(alpha = 0.14f)).padding(horizontal = 14.dp, vertical = 9.dp))
+            }
 
             Card(padding = 14.dp) {
                 Text(
                     stringResource(when (k) { DebtKind.SPLIT -> R.string.debt_between_whom; DebtKind.THEYPAID -> R.string.debt_who_paid; else -> R.string.debt_with_whom }),
-                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleSmall, color = colors.textDim,
                 )
-                Spacer(Modifier.size(10.dp))
+                Spacer(Modifier.size(12.dp))
                 val people = data?.let { Debts.sorted(it.people, it.debts) }.orEmpty()
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(people, key = { it.id }) { p ->
                         val on = p.id in selected
                         val selDesc = stringResource(R.string.debt_selected)
+                        val sc by androidx.compose.animation.core.animateFloatAsState(if (on) 1.1f else 1f, androidx.compose.animation.core.spring(dampingRatio = 0.45f), label = "elegida")
                         Column(
                             Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable(role = Role.Checkbox) {
+                                .clip(RoundedCornerShape(18.dp))
+                                .pressable(0.88f, role = Role.Checkbox) {
                                     h.select()
                                     selected = if (k == DebtKind.SPLIT) { if (on) selected - p.id else selected + p.id } else listOf(p.id)
                                 }
+                                .background(if (on) color.copy(alpha = 0.14f) else Color.Transparent)
                                 .alpha(if (selected.isEmpty() || on) 1f else 0.55f)
                                 .padding(4.dp)
                                 .semantics(mergeDescendants = true) { this.selected = on; if (on) contentDescription = "${p.name}, $selDesc" },
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Box(contentAlignment = Alignment.BottomEnd) {
-                                Avatar(p, vm.repo, 52.dp)
+                            Box(Modifier.graphicsLayer { scaleX = sc; scaleY = sc }, contentAlignment = Alignment.BottomEnd) {
+                                Avatar(p, vm.repo, 54.dp)
                                 if (on) Icon(Icons.Filled.CheckCircle, null, tint = color, modifier = Modifier.size(20.dp).clip(CircleShape).background(Color.White))
                             }
                             Spacer(Modifier.size(6.dp))
-                            Text(p.name, style = MaterialTheme.typography.labelMedium, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                            Text(p.name, style = MaterialTheme.typography.labelMedium, fontWeight = if (on) FontWeight.Black else FontWeight.SemiBold,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(64.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
                     item {
                         Column(
-                            Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { nav.navigate(PersonEditorRoute()) }.padding(4.dp),
+                            Modifier.clip(RoundedCornerShape(18.dp)).pressable(0.88f) { nav.navigate(PersonEditorRoute()) }.padding(4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Box(Modifier.size(52.dp).clip(CircleShape).background(CaudalTheme.colors.cardAlt.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.Add, null)
+                            Box(Modifier.size(54.dp).clip(CircleShape).background(colors.accent.copy(alpha = 0.16f)).border(2.dp, colors.accent.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Add, null, tint = colors.accent)
                             }
                             Spacer(Modifier.size(6.dp))
                             Text(stringResource(R.string.debt_new_person), style = MaterialTheme.typography.labelMedium)
@@ -234,26 +242,18 @@ fun DebtEditorScreen(kind: String, personId: String?, nav: NavController) {
                     concept, { concept = it },
                     label = { Text(stringResource(R.string.concept)) },
                     placeholder = { Text(stringResource(when (k) { DebtKind.OWE -> R.string.debt_ph_owe; DebtKind.DEBT -> R.string.debt_ph_debt; DebtKind.SPLIT -> R.string.debt_ph_split; else -> R.string.debt_ph_theypaid })) },
-                    singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.size(6.dp))
                 ValueRow(stringResource(R.string.date), f.header(date), { pickDate = true }, Icons.Filled.CalendarMonth)
                 if (k == DebtKind.SPLIT || k == DebtKind.OWE) {
-                    HorizontalDivider()
+                    HorizontalDivider(color = colors.hairline)
                     SwitchRow(stringResource(R.string.debt_also_tx), alsoTx) { alsoTx = it }
                     if (alsoTx) AccountPicker(stringResource(R.string.account), accounts, accountId, { accountId = it })
                 }
             }
 
-            Button(
-                onClick = ::save,
-                enabled = valid,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = Color.Black),
-            ) {
-                Icon(Icons.Filled.Check, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
-            }
+            PillButton(stringResource(R.string.save), Icons.Filled.Check, if (valid) color else colors.textDim, Modifier.fillMaxWidth()) { save() }
         }
     }
     if (pickDate) DateDialog(date, { date = it }, { pickDate = false })
@@ -265,7 +265,7 @@ fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Switch) { onChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        Switch(checked, null)
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        Switch(checked, null, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = CaudalTheme.colors.accent, checkedThumbColor = es.david.caudal.ui.common.contentOn(CaudalTheme.colors.accent)))
     }
 }

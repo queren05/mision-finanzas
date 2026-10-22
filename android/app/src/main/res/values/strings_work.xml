@@ -86,4 +86,7 @@
     <string name="company_delete">Borrar empresa y sus turnos</string>
     <string name="company_confirm_delete">¿Seguro que quieres borrar %1$s?</string>
     <string name="company_confirm_delete_msg">Se borrarán también todas sus horas apuntadas.</string>
+    <string name="work_celebrate_paid">¡A cobrar, %1$s! 💸</string>
+    <string name="work_more_menu">Empresas</string>
+    <string name="work_empty_text">Apunta tu primer turno con el botón +</string>
 </resources>

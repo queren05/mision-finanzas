@@ -65,6 +65,10 @@ import es.david.caudal.R
 import es.david.caudal.domain.model.PALETTE
 import es.david.caudal.domain.model.Person
 import es.david.caudal.ui.common.Card
+import es.david.caudal.ui.common.breathe
+import es.david.caudal.ui.common.pressable
+import es.david.caudal.ui.theme.CaudalTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import es.david.caudal.ui.common.ColorRow
 import es.david.caudal.ui.common.ConfirmDialog
 import es.david.caudal.ui.common.EditorScaffold
@@ -147,41 +151,39 @@ fun PersonEditorScreen(id: String?, nav: NavController) {
         Column(Modifier.padding(pad).imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 val shown = if (removePhoto && newPhoto == null) person.copy(photo = null) else person
-                Avatar(shown, vm.repo, 96.dp, photoOverride = newPhotoImg)
+                Box(Modifier.breathe(0.03f)) { Avatar(shown, vm.repo, 112.dp, photoOverride = newPhotoImg) }
+                if (person.name.isNotBlank()) Text(person.name, style = MaterialTheme.typography.headlineSmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                        Icon(Icons.Filled.Photo, null); Spacer(Modifier.width(6.dp))
-                        Text(stringResource(if (hasPhoto) R.string.person_photo_change else R.string.person_photo_set))
+                    PillButton(stringResource(if (hasPhoto) R.string.person_photo_change else R.string.person_photo_set), Icons.Filled.Photo, CaudalTheme.colors.accent, filled = false) {
+                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     }
-                    if (hasPhoto) TextButton(onClick = { newPhoto = null; newPhotoImg = null; removePhoto = true }) {
-                        Text(stringResource(R.string.person_photo_remove), color = MaterialTheme.colorScheme.error)
-                    }
+                    if (hasPhoto) PillButton(stringResource(R.string.person_photo_remove), null, CaudalTheme.colors.negative, filled = false) { newPhoto = null; newPhotoImg = null; removePhoto = true }
                 }
             }
             Card(padding = 14.dp) {
-                OutlinedTextField(person.name, { p = person.copy(name = it) }, label = { Text(stringResource(R.string.person_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(person.name, { p = person.copy(name = it) }, label = { Text(stringResource(R.string.person_name)) }, singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.size(8.dp))
-                OutlinedTextField(person.nick, { p = person.copy(nick = it) }, label = { Text(stringResource(R.string.person_nick)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(person.nick, { p = person.copy(nick = it) }, label = { Text(stringResource(R.string.person_nick)) }, singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.size(8.dp))
                 OutlinedTextField(person.phone, { p = person.copy(phone = it) }, label = { Text(stringResource(R.string.person_phone)) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
             }
             Card(padding = 14.dp) {
-                Text(stringResource(R.string.color), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.color), style = MaterialTheme.typography.titleSmall, color = CaudalTheme.colors.textDim)
                 Spacer(Modifier.size(10.dp))
                 ColorRow(person.color) { p = person.copy(color = it) }
             }
             personEmojis.forEach { (label, list) ->
                 Card(padding = 14.dp) {
-                    Text(stringResource(label), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(label), style = MaterialTheme.typography.titleSmall, color = CaudalTheme.colors.textDim)
                     Spacer(Modifier.size(8.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         list.forEach { e ->
                             val on = person.emoji == e && !hasPhoto
                             Box(
-                                Modifier.size(44.dp).clip(CircleShape)
-                                    .background(if (on) hexColor(person.color).copy(alpha = 0.35f) else androidx.compose.ui.graphics.Color.Transparent)
-                                    .clickable(role = Role.RadioButton) {
+                                Modifier.size(46.dp).clip(RoundedCornerShape(15.dp))
+                                    .background(if (on) hexColor(person.color).copy(alpha = 0.4f) else androidx.compose.ui.graphics.Color.Transparent)
+                                    .pressable(0.8f, role = Role.RadioButton) {
                                         h.select()
                                         p = person.copy(emoji = e)
                                         // como en iPhone: elegir emoji quita la foto
@@ -195,9 +197,7 @@ fun PersonEditorScreen(id: String?, nav: NavController) {
                 }
             }
             if (original != null) {
-                TextButton(onClick = { askDelete = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.person_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+                PillButton(stringResource(R.string.person_delete), null, CaudalTheme.colors.negative, Modifier.fillMaxWidth(), filled = false) { askDelete = true }
             }
         }
     }

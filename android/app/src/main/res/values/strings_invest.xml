@@ -49,4 +49,6 @@
     <string name="invest_op_money">Dinero</string>
     <string name="invest_op_no_cash">Sin mover dinero</string>
     <string name="invest_deleted">Inversión eliminada</string>
+    <string name="invest_empty_text">Apunta tus fondos, acciones o cripto y mira cómo crecen.</string>
+    <string name="invest_add_first">Añadir inversión</string>
 </resources>

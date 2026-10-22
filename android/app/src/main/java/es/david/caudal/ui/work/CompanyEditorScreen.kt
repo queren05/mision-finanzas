@@ -129,9 +129,7 @@ fun CompanyEditorScreen(id: String?, nav: NavController) {
                 ColorRow(co.color) { c = co.copy(color = it) }
             }
             if (original != null) {
-                TextButton(onClick = { h.warning(); askDelete = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.company_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+                es.david.caudal.ui.debts.PillButton(stringResource(R.string.company_delete), null, es.david.caudal.ui.theme.CaudalTheme.colors.negative, Modifier.fillMaxWidth(), filled = false) { h.warning(); askDelete = true }
             }
         }
     }
