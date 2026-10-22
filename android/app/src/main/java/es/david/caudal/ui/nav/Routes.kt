@@ -15,6 +15,10 @@ import kotlinx.serialization.Serializable
 @Serializable data class TxEditorRoute(val id: String? = null, val type: String? = null, val accountId: String? = null)
 @Serializable data object StatsRoute
 @Serializable data object HomeCustomizeRoute
+@Serializable data class CalendarRoute(val month: String? = null)
+/** resumen del mes en historias (tipo Wrapped); month = yyyy-MM */
+@Serializable data class WrappedRoute(val month: String? = null)
+@Serializable data object PersonalizeRoute
 
 // gestión (Más)
 @Serializable data object AccountsRoute

@@ -75,6 +75,7 @@ data class TxEntity(
     val note: String,
     val excluded: Boolean,
     val recurringId: String?,
+    @androidx.room.ColumnInfo(defaultValue = "") val mood: String,
     val extra: String,
 )
 
@@ -215,8 +216,8 @@ fun Account.toEntity() = AccountEntity(id, name, type.raw, currency, initial, co
 fun CategoryEntity.toModel() = Category(id, CatKind.of(kind), name, icon, color, budget, keywords, hidden, position, extra)
 fun Category.toEntity() = CategoryEntity(id, kind.raw, name, icon, color, budget, keywords, hidden, position, extra)
 
-fun TxEntity.toModel() = Tx(id, TxType.of(type) ?: TxType.EXPENSE, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, extra)
-fun Tx.toEntity() = TxEntity(id, type.raw, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, extra)
+fun TxEntity.toModel() = Tx(id, TxType.of(type) ?: TxType.EXPENSE, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, extra)
+fun Tx.toEntity() = TxEntity(id, type.raw, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, extra)
 
 fun RecurringEntity.toModel() = Recurring(id, name, type, amount, accountId, toAccountId, categoryId, assetId, Freq.of(freq), day, next, active, extra)
 fun Recurring.toEntity(currency: String = "EUR") = RecurringEntity(id, name, type, amount, currency, accountId, toAccountId, categoryId, assetId, freq.raw, day, next, active, extra)

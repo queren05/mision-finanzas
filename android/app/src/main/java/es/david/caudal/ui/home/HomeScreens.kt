@@ -153,7 +153,7 @@ fun HomeScreen(nav: NavController, onToggleHidden: () -> Unit) {
                             "consejos" -> InsightsCard(l)
                             "horas" -> WorkCard(l) { nav.navigate(WorkRoute) }
                             "mes" -> MonthCard(l)
-                            "calendario" -> CalendarCard(l) { nav.navigateTab(TxsRoute) }
+                            "calendario" -> CalendarCard(l) { nav.navigate(es.david.caudal.ui.nav.CalendarRoute()) }
                             "categorias" -> CategoriesCard(l) { nav.navigate(StatsRoute) }
                             "proximos" -> UpcomingCard(l)
                             "recientes" -> RecentCard(l, onTx = { nav.navigate(TxEditorRoute(id = it)) }, onAll = { nav.navigateTab(TxsRoute) })

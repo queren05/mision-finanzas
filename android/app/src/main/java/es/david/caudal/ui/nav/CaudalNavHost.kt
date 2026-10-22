@@ -59,6 +59,9 @@ fun CaudalNavHost(nav: NavHostController, onToggleHidden: () -> Unit) {
         composable<TxEditorRoute> { TxEditorScreen(it.toRoute<TxEditorRoute>(), onDone = { nav.popBackStack() }) }
         composable<StatsRoute> { StatsScreen(nav) }
         composable<HomeCustomizeRoute> { HomeCustomizeScreen(nav) }
+        composable<CalendarRoute> { es.david.caudal.ui.txs.CalendarScreen(it.toRoute<CalendarRoute>().month, nav) }
+        composable<WrappedRoute> { es.david.caudal.ui.stats.WrappedScreen(it.toRoute<WrappedRoute>().month, nav) }
+        composable<PersonalizeRoute> { es.david.caudal.ui.more.PersonalizeScreen(nav) }
 
         // gestión
         composable<AccountsRoute> { AccountsScreen(nav) }

@@ -110,7 +110,7 @@ object BackupCodec {
                 id = o.str("id") ?: newId(), type = type, amount = o.cents("amount"), currency = o.str("currency") ?: "EUR",
                 accountId = o.str("accountId") ?: "", toAccountId = o.str("toAccountId"), categoryId = o.str("categoryId"),
                 date = o.str("date") ?: "", time = o.str("time") ?: "12:00", title = o.str("title") ?: "", note = o.str("note") ?: "",
-                excluded = o.bool("excluded") ?: false, recurringId = o.str("recurringId"), extra = o.extra(TX_KEYS),
+                excluded = o.bool("excluded") ?: false, recurringId = o.str("recurringId"), mood = o.str("mood") ?: "", extra = o.extra(TX_KEYS),
             )
         }
         val recurring = root.arr("recurring").map { o ->
@@ -242,7 +242,7 @@ object BackupCodec {
         root["txs"] = JsonArray(data.txs.sortedBy { it.sortKey }.map { t ->
             obj(t.extra, "id" to t.id, "type" to t.type.raw, "amount" to Money.fromCents(t.amount), "currency" to t.currency,
                 "accountId" to t.accountId, "toAccountId" to t.toAccountId, "categoryId" to t.categoryId, "date" to t.date, "time" to t.time,
-                "title" to t.title, "note" to t.note, "excluded" to t.excluded, "recurringId" to t.recurringId)
+                "title" to t.title, "note" to t.note, "excluded" to t.excluded, "recurringId" to t.recurringId, "mood" to t.mood.ifEmpty { null })
         })
         root["recurring"] = JsonArray(data.recurring.map { r ->
             obj(r.extra, "id" to r.id, "name" to r.name, "type" to r.type, "amount" to Money.fromCents(r.amount), "accountId" to r.accountId,
@@ -304,7 +304,7 @@ object BackupCodec {
     private val SETTINGS_KEYS = setOf("name", "accent", "hideAmountsOnLaunch", "faceID", "monthStart", "currency", "theme", "dynamicColor", "modules", "amoled", "tabLabels", "mascot", "haptics")
     private val ACCOUNT_KEYS = setOf("id", "name", "type", "currency", "initial", "color", "icon", "includeInTotal", "archived", "order", "note")
     private val CATEGORY_KEYS = setOf("id", "kind", "name", "icon", "color", "budget", "keywords", "hidden")
-    private val TX_KEYS = setOf("id", "type", "amount", "currency", "accountId", "toAccountId", "categoryId", "date", "time", "title", "note", "excluded", "recurringId")
+    private val TX_KEYS = setOf("id", "type", "amount", "currency", "accountId", "toAccountId", "categoryId", "date", "time", "title", "note", "excluded", "recurringId", "mood")
     private val RECURRING_KEYS = setOf("id", "name", "type", "amount", "accountId", "toAccountId", "categoryId", "assetId", "freq", "day", "next", "active")
     private val ASSET_KEYS = setOf("id", "kind", "symbol", "ySymbol", "name", "isin", "accountId", "manualPrice", "color", "archived", "ops")
     private val OP_KEYS = setOf("id", "side", "qty", "price", "fee", "date", "cashAccountId")

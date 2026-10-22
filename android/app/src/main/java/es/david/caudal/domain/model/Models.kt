@@ -73,6 +73,8 @@ data class Tx(
     val note: String = "",
     val excluded: Boolean = false,
     val recurringId: String? = null,
+    /** «¿valió la pena?»: un emoji (😍 🙂 😐 😩) o vacío */
+    val mood: String = "",
     val extra: String = "",
 ) {
     val sortKey: String get() = "$date $time"

@@ -9,9 +9,18 @@ import androidx.room.RoomDatabase
         AssetEntity::class, AssetOpEntity::class, GoalEntity::class, QuoteEntity::class,
         PersonEntity::class, DebtEntity::class, CompanyEntity::class, ShiftEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class CaudalDatabase : RoomDatabase() {
     abstract fun finance(): FinanceDao
+
+    companion object {
+        /** 1 → 2: «¿valió la pena?» en los movimientos */
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE txs ADD COLUMN mood TEXT NOT NULL DEFAULT ''")
+            }
+        }
+    }
 }
