@@ -154,6 +154,8 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
     var time by rememberSaveable { mutableStateOf(original?.time ?: Day.nowTime()) }
     var excluded by rememberSaveable { mutableStateOf(original?.excluded ?: false) }
     var mood by rememberSaveable { mutableStateOf(original?.mood ?: "") }
+    var tags by rememberSaveable { mutableStateOf(original?.tags ?: emptyList()) }
+    var tagText by rememberSaveable { mutableStateOf("") }
     var titleFocused by remember { mutableStateOf(false) }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
@@ -192,6 +194,7 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
             categoryId = if (type == TxType.TRANSFER) null else categoryId,
             title = title.trim(),
             note = note,
+            tags = (tags + listOfNotNull(tagText.trim().removePrefix("#").takeIf { it.isNotEmpty() })).distinct(),
             date = date,
             time = time,
             excluded = excluded,
@@ -340,6 +343,25 @@ fun TxEditorScreen(route: TxEditorRoute, onDone: () -> Unit) {
                         textStyle = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     )
+                    RowDivider(16.dp)
+                    // etiquetas: las puestas (tocar para quitar), un campo para añadir y las ya usadas
+                    val known = remember(l) { l.data.txs.flatMap { it.tags }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.map { it.key } }
+                    fun addTag(t: String) { val v = t.trim().removePrefix("#"); if (v.isNotEmpty() && v !in tags) { h.select(); tags = tags + v }; tagText = "" }
+                    TextField(
+                        value = tagText, onValueChange = { v -> if (v.endsWith(" ") || v.endsWith(",")) addTag(v.dropLast(1)) else tagText = v },
+                        placeholder = { Text(stringResource(R.string.tags_add)) },
+                        leadingIcon = { Text("#", style = MaterialTheme.typography.titleMedium, color = colors.textDim) }, singleLine = true, colors = plainField(),
+                        textStyle = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { addTag(tagText) }),
+                    )
+                    val sugg = known.filter { it !in tags && (tagText.isEmpty() || it.startsWith(tagText.removePrefix("#"), ignoreCase = true)) }.take(8)
+                    if (tags.isNotEmpty() || sugg.isNotEmpty()) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                            items(tags) { t -> Pill("#$t ✕", true, { h.tap(); tags = tags - t }) }
+                            items(sugg) { t -> Pill("#$t", false, { addTag(t) }) }
+                        }
+                    }
                     RowDivider(16.dp)
                     Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChipButton(Icons.Filled.CalendarMonth, f.header(date), Modifier.weight(1f)) { pickDate = true }

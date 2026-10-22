@@ -76,6 +76,8 @@ data class TxEntity(
     val excluded: Boolean,
     val recurringId: String?,
     @androidx.room.ColumnInfo(defaultValue = "") val mood: String,
+    /** etiquetas separadas por comas */
+    @androidx.room.ColumnInfo(defaultValue = "") val tags: String,
     val extra: String,
 )
 
@@ -216,8 +218,8 @@ fun Account.toEntity() = AccountEntity(id, name, type.raw, currency, initial, co
 fun CategoryEntity.toModel() = Category(id, CatKind.of(kind), name, icon, color, budget, keywords, hidden, position, extra)
 fun Category.toEntity() = CategoryEntity(id, kind.raw, name, icon, color, budget, keywords, hidden, position, extra)
 
-fun TxEntity.toModel() = Tx(id, TxType.of(type) ?: TxType.EXPENSE, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, extra)
-fun Tx.toEntity() = TxEntity(id, type.raw, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, extra)
+fun TxEntity.toModel() = Tx(id, TxType.of(type) ?: TxType.EXPENSE, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, Tags.split(tags), extra)
+fun Tx.toEntity() = TxEntity(id, type.raw, amount, currency, accountId, toAccountId, categoryId, date, time, title, note, excluded, recurringId, mood, Tags.join(tags), extra)
 
 fun RecurringEntity.toModel() = Recurring(id, name, type, amount, accountId, toAccountId, categoryId, assetId, Freq.of(freq), day, next, active, extra)
 fun Recurring.toEntity(currency: String = "EUR") = RecurringEntity(id, name, type, amount, currency, accountId, toAccountId, categoryId, assetId, freq.raw, day, next, active, extra)
@@ -244,3 +246,11 @@ fun Company.toEntity() = CompanyEntity(id, name, color, normalRate, nightRate, n
 
 fun ShiftEntity.toModel() = Shift(id, companyId, date, start, end, breakMin, note, PayStatus.of(status), paidDate, normalRate, nightRate, extra)
 fun Shift.toEntity() = ShiftEntity(id, companyId, date, start, end, breakMin, note, status.raw, paidDate, normalRate, nightRate, extra)
+
+/** etiquetas: limpias (sin «#», sin espacios sobrantes, sin repetir) y guardadas separadas por comas */
+object Tags {
+    fun clean(raw: List<String>): List<String> =
+        raw.map { it.trim().removePrefix("#").trim().replace(",", " ") }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+    fun join(tags: List<String>): String = clean(tags).joinToString(",")
+    fun split(s: String): List<String> = if (s.isBlank()) emptyList() else clean(s.split(","))
+}

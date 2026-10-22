@@ -70,6 +70,8 @@ fun CaudalNavHost(nav: NavHostController, onToggleHidden: () -> Unit) {
         screen<CalendarRoute> { es.david.caudal.ui.txs.CalendarScreen(it.toRoute<CalendarRoute>().month, nav) }
         screen<WrappedRoute> { es.david.caudal.ui.stats.WrappedScreen(it.toRoute<WrappedRoute>().month, nav) }
         screen<PersonalizeRoute> { es.david.caudal.ui.more.PersonalizeScreen(nav) }
+        screen<PinSetupRoute> { es.david.caudal.ui.lock.PinSetupScreen(nav) }
+        screen<SubscriptionsRoute> { es.david.caudal.ui.subs.SubscriptionsScreen(nav) }
         screen<GotitaRoute> { es.david.caudal.ui.gotita.GotitaScreen(nav) }
         screen<AchievementsRoute> { es.david.caudal.ui.gotita.AchievementsScreen(nav) }
 

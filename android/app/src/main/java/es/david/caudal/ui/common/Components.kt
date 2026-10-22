@@ -322,6 +322,7 @@ fun TxRow(tx: Tx, ledger: Ledger, modifier: Modifier = Modifier, showDate: Boole
             tx.type == TxType.TRANSFER -> add(stringResource(R.string.tx_transfer))
             else -> ledger.account(tx.accountId)?.let { add(it.name) }
         }
+        if (tx.tags.isNotEmpty()) add(tx.tags.joinToString(" ") { "#$it" })
     }
     val amount = Money.fromCents(tx.amount)
     val shown = when (tx.type) {

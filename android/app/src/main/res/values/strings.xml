@@ -227,6 +227,9 @@
     <string name="import_confirm_title">¿Seguro que quieres importar esta copia?</string>
     <string name="import_confirm_text">Sustituye todo lo que hay ahora en Caudal.</string>
     <string name="import_confirm">Importar</string>
+    <string name="import_password_title">Copia cifrada</string>
+    <string name="import_password">Contraseña</string>
+    <string name="import_password_wrong">La contraseña no es correcta</string>
     <string name="import_failed">El archivo no es una copia de seguridad de Caudal.</string>
     <string name="import_done">Copia restaurada: %1$d movimientos</string>
     <string name="import_done_web">Importado de la versión web: %1$d cuentas y %2$d movimientos</string>

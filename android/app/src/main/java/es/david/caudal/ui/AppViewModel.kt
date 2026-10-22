@@ -52,12 +52,19 @@ class AppViewModel @Inject constructor(
 
     fun unlocked() = session.setLocked(false)
 
-    /** resultado de importar una copia abierta con Caudal: nº de movimientos, -1 si no vale, null mientras no hay */
+    /**
+     * resultado de importar una copia abierta con Caudal: nº de movimientos, -1 si no vale,
+     * -2 si está cifrada y hace falta la contraseña, -3 si la contraseña no es correcta; null mientras no hay
+     */
     val importResult = kotlinx.coroutines.flow.MutableStateFlow<Int?>(null)
 
-    fun importFrom(context: android.content.Context, uri: android.net.Uri) = viewModelScope.launch {
+    fun importFrom(context: android.content.Context, uri: android.net.Uri, password: String? = null) = viewModelScope.launch {
         importResult.value = runCatching {
-            val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }
+            var text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }
+            if (es.david.caudal.data.export.EncryptedBackup.isEncrypted(text)) {
+                if (password == null) return@runCatching -2
+                text = runCatching { es.david.caudal.data.export.EncryptedBackup.decrypt(text, password) }.getOrNull() ?: return@runCatching -3
+            }
             repo.importBackup(text).data.txs.size
         }.getOrDefault(-1)
     }

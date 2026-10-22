@@ -62,4 +62,5 @@
     <string name="wr_progress_desc">Historia %1$d de %2$d</string>
     <string name="wr_prev">Anterior</string>
     <string name="wr_next">Siguiente</string>
+    <string name="tags_add">Etiquetas</string>
 </resources>

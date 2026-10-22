@@ -275,7 +275,26 @@ private fun ImportBackupDialog(app: AppViewModel, uri: android.net.Uri, onDone: 
     var asked by remember(uri) { androidx.compose.runtime.mutableStateOf(true) }
     val result by app.importResult.collectAsStateWithLifecycle()
     val finish = { app.importResult.value = null; onDone() }
-    if (result != null) {
+    if (result == -2 || result == -3) {
+        // copia cifrada: contraseña
+        var pass by remember { androidx.compose.runtime.mutableStateOf("") }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = finish,
+            title = { Text(stringResource(R.string.import_password_title)) },
+            text = {
+                androidx.compose.foundation.layout.Column {
+                    androidx.compose.material3.OutlinedTextField(
+                        pass, { pass = it }, singleLine = true, label = { Text(stringResource(R.string.import_password)) },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
+                    )
+                    if (result == -3) Text(stringResource(R.string.import_password_wrong), color = CaudalTheme.colors.negative)
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { app.importResult.value = null; app.importFrom(ctx, uri, pass) }, enabled = pass.isNotEmpty()) { Text(stringResource(R.string.import_confirm)) } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = finish) { Text(stringResource(R.string.cancel)) } },
+        )
+    } else if (result != null) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = finish,
             confirmButton = { androidx.compose.material3.TextButton(onClick = finish) { Text(stringResource(R.string.ok)) } },

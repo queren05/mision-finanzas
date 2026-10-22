@@ -21,6 +21,7 @@ class CaudalApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var repo: FinanceRepository
     @Inject lateinit var settings: es.david.caudal.data.repo.SettingsRepository
+    @Inject lateinit var notifier: es.david.caudal.notify.Notifier
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -32,6 +33,10 @@ class CaudalApp : Application(), Configuration.Provider {
         RecurringWorker.schedule(this)
         // los widgets se refrescan un momento después de cada cambio
         scope.launch { repo.changes.debounce(800).collect { updateAllWidgets(this@CaudalApp) } }
+        // avisos: presupuestos al cambiar los datos y cada mañana; cargos de mañana
+        notifier.ensureChannels()
+        es.david.caudal.notify.AlertsWorker.schedule(this)
+        scope.launch { repo.changes.debounce(1500).collect { runCatching { notifier.checkBudgets() } } }
         // el icono elegido (por ejemplo, al restaurar una copia): se aplica si no es el que está activo
         scope.launch {
             val id = settings.current().appIcon
