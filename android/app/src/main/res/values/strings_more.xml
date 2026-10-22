@@ -150,4 +150,50 @@
     <string name="goals_remove">Quitar</string>
     <string name="goals_delete">Eliminar objetivo</string>
     <string name="goals_delete_title">¿Seguro que quieres eliminar este objetivo?</string>
+
+    <!-- Más (nuevo) -->
+    <string name="more_personalize">Personalizar</string>
+    <string name="more_personalize_sub">Colores, tema, icono, Gotita…</string>
+    <string name="more_analysis_sub">Tu mes en gráficos</string>
+    <string name="more_app">App</string>
+    <string name="more_avatar_desc">Tu inicial</string>
+    <string name="more_net_worth">Patrimonio</string>
+
+    <!-- Personalizar -->
+    <string name="pz_title">Personalizar</string>
+    <string name="pz_preview">Vista previa</string>
+    <string name="pz_preview_greeting">¡Hola, %1$s!</string>
+    <string name="pz_preview_greeting_anon">¡Hola!</string>
+    <string name="pz_preview_msg">Así se verá Caudal ✨</string>
+    <string name="pz_preview_amount">Disponible hoy</string>
+    <string name="pz_accent">Color de la app</string>
+    <string name="pz_more_colors">Más colores</string>
+    <string name="pz_theme">Tema</string>
+    <string name="pz_theme_system">Automático</string>
+    <string name="pz_theme_light">Claro</string>
+    <string name="pz_theme_dark">Oscuro</string>
+    <string name="pz_amoled">Negro puro (AMOLED)</string>
+    <string name="pz_amoled_sub">Ahorra batería en pantallas OLED</string>
+    <string name="pz_dynamic">Colores del fondo de pantalla</string>
+    <string name="pz_dynamic_sub">Usa los colores de tu móvil</string>
+    <string name="pz_icon">Icono de la app</string>
+    <string name="pz_icon_default">Original</string>
+    <string name="pz_icon_algodon">Algodón</string>
+    <string name="pz_icon_menta">Menta</string>
+    <string name="pz_icon_lavanda">Lavanda</string>
+    <string name="pz_icon_melocoton">Melocotón</string>
+    <string name="pz_icon_cielo">Cielo</string>
+    <string name="pz_icon_noche">Noche</string>
+    <string name="pz_icon_desc">Icono %1$s</string>
+    <string name="pz_details">Detalles</string>
+    <string name="pz_tab_labels">Textos en la barra de abajo</string>
+    <string name="pz_mascot">Gotita, la mascota</string>
+    <string name="pz_mascot_sub">Te saluda y celebra contigo</string>
+    <string name="pz_haptics">Vibración al tocar</string>
+    <string name="pz_home">Tarjetas del inicio</string>
+    <string name="pz_accounts_style">Estilo de las cuentas</string>
+    <string name="pz_selected">seleccionado</string>
+    <string name="goals_reached">¡Conseguido! 🎉</string>
+    <string name="goals_jar_desc">Hucha llena al %1$d %%</string>
+    <string name="goals_left">Faltan %1$s</string>
 </resources>

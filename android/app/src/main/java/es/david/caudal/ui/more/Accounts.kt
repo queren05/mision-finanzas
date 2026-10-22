@@ -2,6 +2,13 @@ package es.david.caudal.ui.more
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import es.david.caudal.ui.common.appear
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -119,7 +126,7 @@ fun AccountsScreen(nav: NavController) {
             TextButton(onClick = { h.tap(); sorting = !sorting }) {
                 Text(stringResource(if (sorting) R.string.accounts_sort_done else R.string.accounts_sort), fontWeight = if (sorting) FontWeight.Bold else null)
             }
-            IconButton(onClick = { nav.navigate(AccountEditorRoute()) }) { Icon(Icons.Filled.Add, stringResource(R.string.accounts_new)) }
+            CircleIconButton(Icons.Filled.Add, stringResource(R.string.accounts_new)) { nav.navigate(AccountEditorRoute()) }
         },
     ) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -127,8 +134,8 @@ fun AccountsScreen(nav: NavController) {
                 val a = byId[id] ?: return@items
                 val i = order.indexOf(id)
                 Row(
-                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CaudalTheme.colors.card)
-                        .clickable(enabled = !sorting, role = Role.Button) { nav.navigate(AccountDetailRoute(a.id)) }
+                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CaudalTheme.colors.card).border(1.dp, CaudalTheme.colors.hairline, RoundedCornerShape(22.dp))
+                        .pressable(0.98f, enabled = !sorting) { nav.navigate(AccountDetailRoute(a.id)) }
                         .heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 10.dp)
                         .semantics(mergeDescendants = !sorting) {},
                     verticalAlignment = Alignment.CenterVertically,
@@ -136,7 +143,7 @@ fun AccountsScreen(nav: NavController) {
                     IconBubble(a.icon, a.color, 40.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(a.name, fontWeight = FontWeight.SemiBold)
+                        Text(a.name, fontWeight = FontWeight.Bold)
                         Text(stringResource(accountTypeLabel(a.type)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (sorting) {
@@ -152,8 +159,8 @@ fun AccountsScreen(nav: NavController) {
                 item { Text(stringResource(R.string.accounts_archived), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 12.dp)) }
                 items(archived, key = { "arch_" + it.id }) { a ->
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CaudalTheme.colors.card)
-                            .clickable(role = Role.Button) { nav.navigate(AccountEditorRoute(a.id)) }
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CaudalTheme.colors.card).border(1.dp, CaudalTheme.colors.hairline, RoundedCornerShape(22.dp))
+                            .pressable(0.98f) { nav.navigate(AccountEditorRoute(a.id)) }
                             .heightIn(min = 56.dp).padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) { Text("${a.icon} ${a.name}", color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -204,27 +211,39 @@ fun AccountDetailScreen(id: String, nav: NavController) {
         },
     ) { pad ->
         if (a == null) { EmptyText(stringResource(R.string.accounts_deleted), Modifier.padding(pad)); return@ScreenScaffold }
-        LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyColumn(contentPadding = listPadding(pad)) {
             item {
                 val c = hexColor(a.color)
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp))
-                        .background(Brush.linearGradient(listOf(c, c.copy(alpha = 0.45f))))
-                        .padding(20.dp).semantics(mergeDescendants = true) {},
+                    Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(30.dp))
+                        .background(Brush.linearGradient(listOf(androidx.compose.ui.graphics.lerp(c, Color.White, 0.15f), androidx.compose.ui.graphics.lerp(c, Color.Black, 0.3f))))
+                        .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(30.dp))
+                        .padding(22.dp).semantics(mergeDescendants = true) {},
                 ) {
-                    Text("${a.icon} ${a.name}", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.85f))
-                    AmountText(l.balance(a), style = MaterialTheme.typography.displaySmall, color = Color.White, weight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(a.icon, fontSize = 34.sp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(a.name, style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
+                        Text(
+                            stringResource(accountTypeLabel(a.type)), color = Color.White, style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.2f)).padding(horizontal = 10.dp, vertical = 5.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    AmountText(l.balance(a), style = MaterialTheme.typography.displayMedium, color = Color.White, rolling = true)
                     val inv = l.value(a) - l.balance(a)
-                    if (inv > 0) Text(stringResource(R.string.accounts_in_invest, f.money(inv)), color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.SemiBold)
+                    if (inv > 0) Text(stringResource(R.string.accounts_in_invest, f.money(inv)), color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
                 }
-                Spacer(Modifier.padding(6.dp))
-                Text(stringResource(R.string.accounts_movements), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp))
+                Spacer(Modifier.height(18.dp))
+                Text(stringResource(R.string.accounts_movements), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
             }
-            if (txs.itemCount == 0) item { EmptyText(stringResource(R.string.accounts_no_movements)) }
+            if (txs.itemCount == 0) item { es.david.caudal.ui.common.EmptyState(stringResource(R.string.accounts_no_movements)) }
             items(txs.itemCount, key = txs.itemKey { it.id }) { i ->
                 val t = txs[i] ?: return@items
+                val top = if (i == 0) 24.dp else 0.dp
+                val bottom = if (i == txs.itemCount - 1) 24.dp else 0.dp
                 SwipeToDelete(onDelete = { h.warning(); pendingDelete = t }) {
-                    Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(top, top, bottom, bottom)).background(CaudalTheme.colors.card)) {
                         TxRow(t, l, showDate = true, onClick = { nav.navigate(TxEditorRoute(id = t.id)) })
                     }
                 }

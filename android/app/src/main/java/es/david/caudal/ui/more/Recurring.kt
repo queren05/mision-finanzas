@@ -2,6 +2,11 @@ package es.david.caudal.ui.more
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.border
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,7 +90,7 @@ fun RecurringScreen(nav: NavController) {
     ScreenScaffold(
         stringResource(R.string.recurring_title),
         onBack = { nav.popBackStack() },
-        actions = { IconButton(onClick = { nav.navigate(RecurringEditorRoute()) }) { Icon(Icons.Filled.Add, stringResource(R.string.recurring_new)) } },
+        actions = { CircleIconButton(Icons.Filled.Add, stringResource(R.string.recurring_new)) { nav.navigate(RecurringEditorRoute()) } },
     ) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
@@ -98,16 +103,19 @@ fun RecurringScreen(nav: NavController) {
             }
             items(l.data.recurring.sortedBy { it.next }, key = { it.id }) { r ->
                 Row(
-                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CaudalTheme.colors.card)
-                        .clickable(role = Role.Button) { nav.navigate(RecurringEditorRoute(r.id)) }
+                    Modifier.animateItem().fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CaudalTheme.colors.card).border(1.dp, CaudalTheme.colors.hairline, RoundedCornerShape(22.dp))
+                        .pressable(0.98f) { nav.navigate(RecurringEditorRoute(r.id)) }
                         .heightIn(min = 64.dp).padding(start = 14.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val cat = l.category(r.categoryId)
+                    es.david.caudal.ui.common.IconBubble(if (r.type == "invest") "📈" else cat?.icon ?: "🔁", cat?.color ?: "#b39cff", 42.dp)
+                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                        Text(r.name, fontWeight = FontWeight.SemiBold, color = if (r.active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(r.name, fontWeight = FontWeight.Bold, color = if (r.active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
                         val line = stringResource(R.string.recurring_line, stringResource(freqLabel(r.freq)), f.header(r.next))
                         Text(if (r.active) line else stringResource(R.string.recurring_paused), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        AmountText(Money.fromCents(r.amount), style = MaterialTheme.typography.bodyMedium)
+                        AmountText(Money.fromCents(r.amount), style = MaterialTheme.typography.bodyLarge, weight = FontWeight.ExtraBold)
                     }
                     IconButton(onClick = { h.select(); vm.run { save(r.copy(active = !r.active)) } }) {
                         Icon(if (r.active) Icons.Filled.Pause else Icons.Filled.PlayArrow, stringResource(if (r.active) R.string.recurring_pause else R.string.recurring_resume))

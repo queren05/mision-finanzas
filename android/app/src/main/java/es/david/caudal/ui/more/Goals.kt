@@ -1,6 +1,41 @@
 package es.david.caudal.ui.more
 
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.contentDescription
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.Confetti
+import es.david.caudal.ui.common.EmptyState
+import es.david.caudal.ui.common.Gotita
+import es.david.caudal.ui.common.LocalMascot
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.theme.ACCENTS
+import es.david.caudal.ui.theme.CaudalTheme
+import es.david.caudal.ui.theme.LocalMotion
+import kotlin.math.PI
+import kotlin.math.sin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,44 +108,89 @@ fun GoalsScreen(nav: NavController) {
     ScreenScaffold(
         stringResource(R.string.goals_title),
         onBack = { nav.popBackStack() },
-        actions = { IconButton(onClick = { nav.navigate(GoalEditorRoute()) }) { Icon(Icons.Filled.Add, stringResource(R.string.goals_new)) } },
+        actions = { CircleIconButton(Icons.Filled.Add, stringResource(R.string.goals_new)) { nav.navigate(GoalEditorRoute()) } },
     ) { pad ->
         LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            if (l.data.goals.isEmpty()) item { EmptyText(stringResource(R.string.goals_empty)) }
-            items(l.data.goals, key = { it.id }) { g ->
+            if (l.data.goals.isEmpty()) item { EmptyState(stringResource(R.string.goals_empty), mood = Mood.HAPPY) }
+            itemsIndexed(l.data.goals, key = { _, g -> g.id }) { i, g ->
                 val saved = l.saved(g)
                 val target = max(Money.fromCents(g.target), 0.01)
-                val c = hexColor(g.color)
-                Card(Modifier.animateItem().clickable(role = Role.Button) { h.tap(); nav.navigate(GoalEditorRoute(g.id)) }.semantics(mergeDescendants = true) {}) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(g.icon, fontSize = 34.sp)
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(g.name, style = MaterialTheme.typography.titleMedium)
-                            if (g.deadline.isNotEmpty()) Text(stringResource(R.string.goals_for, f.header(g.deadline)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val pct = saved / target
+                val col = hexColor(g.color)
+                val reached = pct >= 1
+                Box(Modifier.animateItem().appear(i)) {
+                    Card(onClick = { h.tap(); nav.navigate(GoalEditorRoute(g.id)) }, modifier = Modifier.semantics(mergeDescendants = true) {}) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Jar(pct, col, g.icon, Modifier.size(width = 92.dp, height = 112.dp))
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(g.name, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                                if (g.deadline.isNotEmpty()) Text(stringResource(R.string.goals_for, f.header(g.deadline)), style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim)
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.goals_pct, (pct * 100).roundToInt()), style = MaterialTheme.typography.headlineSmall, color = col)
+                                AmountText(saved, style = MaterialTheme.typography.bodyMedium, weight = FontWeight.Bold)
+                                Text(stringResource(R.string.goals_of, f.money(Money.fromCents(g.target))), style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim)
+                            }
+                            if (reached && LocalMascot.current) Gotita(Mood.LOVE, 52.dp)
                         }
-                        Text(stringResource(R.string.goals_pct, (saved / target * 100).roundToInt()), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = c)
+                        Spacer(Modifier.height(10.dp))
+                        when {
+                            reached -> Text(stringResource(R.string.goals_reached), style = MaterialTheme.typography.titleSmall, color = CaudalTheme.colors.income)
+                            g.deadline.isNotEmpty() -> {
+                                val months = max(1L, ChronoUnit.MONTHS.between(Day.date(Day.today), Day.date(g.deadline)))
+                                Text(stringResource(R.string.goals_per_month, f.money((Money.fromCents(g.target) - saved) / months)), style = MaterialTheme.typography.labelLarge, color = col)
+                            }
+                            else -> Text(stringResource(R.string.goals_left, f.money(Money.fromCents(g.target) - saved)), style = MaterialTheme.typography.labelLarge, color = col)
+                        }
+                        l.account(g.accountId)?.let { a ->
+                            Text(stringResource(R.string.goals_measured_with, a.name), style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim)
+                        }
                     }
-                    Spacer(Modifier.padding(5.dp))
-                    ProgressBar(saved / target, c, height = 12.dp)
-                    Spacer(Modifier.padding(5.dp))
-                    Row {
-                        AmountText(saved, style = MaterialTheme.typography.bodyMedium, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.goals_of, f.money(Money.fromCents(g.target))), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    l.account(g.accountId)?.let { a ->
-                        Text(stringResource(R.string.goals_measured_with, a.name), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (g.deadline.isNotEmpty() && saved < Money.fromCents(g.target)) {
-                        val months = max(1L, ChronoUnit.MONTHS.between(Day.date(Day.today), Day.date(g.deadline)))
-                        Text(
-                            stringResource(R.string.goals_per_month, f.money((Money.fromCents(g.target) - saved) / months)),
-                            style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = c,
-                        )
-                    }
+                    if (reached) Confetti(g.id, ACCENTS.map { hexColor(it.hex) }, Modifier.matchParentSize())
                 }
             }
         }
+    }
+}
+
+/** hucha de cristal que se llena con agua ondulada según el % (con el emoji del objetivo dentro) */
+@Composable
+fun Jar(pct: Double, color: Color, emoji: String, modifier: Modifier = Modifier) {
+    val motion = LocalMotion.current
+    val level by animateFloatAsState(pct.coerceIn(0.0, 1.0).toFloat(), spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessVeryLow), label = "nivel")
+    val phase = if (motion) rememberInfiniteTransition(label = "ola").animateFloat(0f, (2 * PI).toFloat(), infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "fase").value else 0f
+    val glass = CaudalTheme.colors.text
+    val desc = stringResource(R.string.goals_jar_desc, (pct * 100).roundToInt())
+    Box(modifier.semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val lidH = h * 0.12f
+            val body = Path().apply { addRoundRect(RoundRect(w * 0.06f, lidH * 0.9f, w * 0.94f, h, CornerRadius(w * 0.24f))) }
+            // cristal
+            drawPath(body, glass.copy(alpha = 0.06f))
+            clipPath(body) {
+                val top = lidH + (h - lidH) * (1 - level)
+                val amp = if (level in 0.01f..0.99f) h * 0.025f else 0f
+                val wave = Path().apply {
+                    moveTo(0f, h)
+                    lineTo(0f, top)
+                    var x = 0f
+                    while (x <= w) { lineTo(x, top + amp * sin(x / w * 2 * PI.toFloat() * 1.5f + phase)); x += 4f }
+                    lineTo(w, h)
+                    close()
+                }
+                drawPath(wave, Brush.verticalGradient(listOf(lerp(color, Color.White, 0.3f), color), startY = top, endY = h))
+                // burbujas
+                drawCircle(Color.White.copy(alpha = 0.35f), w * 0.04f, Offset(w * 0.3f, h * 0.85f - (phase * 8 % (h * 0.3f))))
+            }
+            drawPath(body, glass.copy(alpha = 0.35f), style = Stroke(width = 2.5f))
+            // brillo del cristal
+            drawRoundRect(Color.White.copy(alpha = 0.25f), Offset(w * 0.16f, h * 0.24f), Size(w * 0.07f, h * 0.45f), CornerRadius(w * 0.04f))
+            // tapa
+            drawRoundRect(lerp(color, Color.Black, 0.15f), Offset(w * 0.18f, 0f), Size(w * 0.64f, lidH), CornerRadius(lidH / 2))
+        }
+        Text(emoji, fontSize = 30.sp, modifier = Modifier.padding(top = 10.dp))
     }
 }
 

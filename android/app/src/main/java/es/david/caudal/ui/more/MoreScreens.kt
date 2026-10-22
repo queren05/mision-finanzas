@@ -7,6 +7,28 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import es.david.caudal.ui.common.Gotita
+import es.david.caudal.ui.common.IconTile
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.common.contentOn
+import es.david.caudal.ui.common.pressable
+import es.david.caudal.ui.nav.PersonalizeRoute
+import es.david.caudal.ui.theme.ACCENTS
+import es.david.caudal.ui.theme.CaudalTheme
+import es.david.caudal.ui.theme.hexColor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,52 +120,85 @@ fun MoreScreen(nav: NavController) {
     val l = ledger ?: return
     val s = settings ?: return
     val f = LocalFmt.current
+    val c = CaudalTheme.colors
+    val h = rememberHaptics()
     ScreenScaffold(stringResource(R.string.more_title)) { pad ->
-        LazyColumn(contentPadding = listPadding(pad), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        LazyColumn(contentPadding = listPadding(pad).let { PaddingValues(start = 16.dp, end = 16.dp, top = it.calculateTopPadding(), bottom = 140.dp) }, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            // cabecera con la inicial y el patrimonio
             item {
-                Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(58.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                        Text(s.name.take(1).uppercase(), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimary)
+                Row(
+                    Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(26.dp))
+                        .background(Brush.linearGradient(listOf(c.accent.copy(alpha = 0.32f), c.card)))
+                        .border(1.dp, c.hairline, RoundedCornerShape(26.dp))
+                        .padding(18.dp).semantics(mergeDescendants = true) {},
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val initial = s.name.take(1).uppercase()
+                    Box(
+                        Modifier.size(62.dp).clip(CircleShape).background(Brush.linearGradient(listOf(lerp(c.accent, Color.White, 0.3f), c.accent))),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (initial.isNotEmpty()) Text(initial, style = MaterialTheme.typography.headlineMedium, color = contentOn(c.accent))
+                        else Gotita(Mood.HAPPY, 48.dp)
                     }
                     Spacer(Modifier.width(14.dp))
-                    Column {
+                    Column(Modifier.weight(1f)) {
                         if (s.name.isNotEmpty()) Text(s.name, style = MaterialTheme.typography.titleLarge)
-                        AmountText(l.netWorth, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.more_net_worth), style = MaterialTheme.typography.labelMedium, color = c.textDim)
+                        AmountText(l.netWorth, style = MaterialTheme.typography.titleMedium, rolling = true)
                     }
+                    if (s.mascot && initial.isNotEmpty()) Gotita(Mood.WINK, 52.dp)
+                }
+            }
+            // Personalizar, destacado
+            item {
+                Row(
+                    Modifier.fillMaxWidth().appear(1).clip(RoundedCornerShape(24.dp))
+                        .pressable(0.97f) { h.tap(); nav.navigate(PersonalizeRoute) }
+                        .background(Brush.horizontalGradient(ACCENTS.take(5).map { hexColor(it.hex).copy(alpha = 0.55f) }))
+                        .padding(horizontal = 18.dp, vertical = 16.dp).semantics(mergeDescendants = true) {},
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Palette, null, tint = Color(0xFF7457E6))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.more_personalize), style = MaterialTheme.typography.titleMedium, color = Color(0xFF1A1320))
+                        Text(stringResource(R.string.more_personalize_sub), style = MaterialTheme.typography.bodySmall, color = Color(0xFF1A1320).copy(alpha = 0.75f))
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFF1A1320))
                 }
             }
             item {
-                FormSection(stringResource(R.string.more_management)) {
+                FormSection(stringResource(R.string.more_management), Modifier.appear(2)) {
                     NavRow(Icons.Filled.PieChart, Color(0xFF4AD68F), stringResource(R.string.analysis)) { nav.navigate(StatsRoute) }
                     if (s.moduleWork) {
                         val month = Day.monthKey(Day.today)
                         val sum = Hours.summary(Hours.shifts(l.data.shifts, month), l.data.companies)
                         RowDivider()
-                        NavRow(Icons.Filled.Work, Color(0xFF62CFD0), stringResource(R.string.more_work), stringResource(R.string.more_hours_value, f.hoursDec(sum.totalMin))) { nav.navigate(WorkRoute) }
+                        NavRow(Icons.Filled.Work, Color(0xFF3FBFD0), stringResource(R.string.more_work), stringResource(R.string.more_hours_value, f.hoursDec(sum.totalMin))) { nav.navigate(WorkRoute) }
                     }
                     RowDivider()
-                    NavRow(Icons.Filled.AccountBalance, Color(0xFF8FB4FF), stringResource(R.string.more_accounts), "${l.accounts.size}") { nav.navigate(AccountsRoute) }
+                    NavRow(Icons.Filled.AccountBalance, Color(0xFF5B8DEF), stringResource(R.string.more_accounts), "${l.accounts.size}") { nav.navigate(AccountsRoute) }
                     RowDivider()
-                    NavRow(Icons.Filled.Category, Color(0xFFFF9F7A), stringResource(R.string.more_categories), "${l.data.categories.size}") { nav.navigate(CategoriesRoute) }
+                    NavRow(Icons.Filled.Category, Color(0xFFFF8A4C), stringResource(R.string.more_categories), "${l.data.categories.size}") { nav.navigate(CategoriesRoute) }
                     RowDivider()
-                    NavRow(Icons.Filled.Repeat, Color(0xFFB39CFF), stringResource(R.string.more_recurring), "${l.data.recurring.count { it.active }}") { nav.navigate(RecurringRoute) }
+                    NavRow(Icons.Filled.Repeat, Color(0xFFA07CF0), stringResource(R.string.more_recurring), "${l.data.recurring.count { it.active }}") { nav.navigate(RecurringRoute) }
                     RowDivider()
-                    NavRow(Icons.Filled.Flag, Color(0xFFF59FC4), stringResource(R.string.more_goals), "${l.data.goals.size}") { nav.navigate(GoalsRoute) }
+                    NavRow(Icons.Filled.Savings, Color(0xFFF06BA8), stringResource(R.string.more_goals), "${l.data.goals.size}") { nav.navigate(GoalsRoute) }
                 }
             }
             item {
-                FormSection {
-                    NavRow(Icons.Filled.Settings, Color(0xFFA9B3C2), stringResource(R.string.more_settings)) { nav.navigate(SettingsRoute) }
+                FormSection(stringResource(R.string.more_app), Modifier.appear(3)) {
+                    NavRow(Icons.Filled.Settings, Color(0xFF8E8E98), stringResource(R.string.more_settings)) { nav.navigate(SettingsRoute) }
                     RowDivider()
-                    NavRow(Icons.Filled.Backup, Color(0xFFF0C46A), stringResource(R.string.more_data)) { nav.navigate(DataRoute) }
+                    NavRow(Icons.Filled.Backup, Color(0xFFF2B33D), stringResource(R.string.more_data)) { nav.navigate(DataRoute) }
                 }
             }
             item {
-                FormSection {
-                    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.more_version), Modifier.weight(1f))
-                        Text(BuildConfig.VERSION_NAME, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                Row(Modifier.fillMaxWidth().appear(4).padding(horizontal = 16.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Text("💧 Caudal · " + stringResource(R.string.more_version) + " " + BuildConfig.VERSION_NAME, style = MaterialTheme.typography.labelMedium, color = c.textDim)
                 }
             }
         }
@@ -173,23 +228,26 @@ fun SettingsScreen(nav: NavController) {
                         onValueChange = { v -> name = v; vm.updateSettings { it.copy(name = v.trim()) } },
                         label = { Text(stringResource(R.string.settings_your_name)) },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     )
                 }
             }
             item {
                 FormSection(stringResource(R.string.settings_security)) {
-                    SwitchRow(stringResource(R.string.settings_lock), s.lock) { on ->
+                    SwitchRow(stringResource(R.string.settings_lock), s.lock, icon = Icons.Filled.Fingerprint, iconColor = Color(0xFF4AD68F)) { on ->
                         if (on && !canLock(ctx)) { noLock = true; h.warning() } else vm.updateSettings { it.copy(lock = on) }
                     }
                     RowDivider()
-                    SwitchRow(stringResource(R.string.settings_hide_on_launch), s.hideAmountsOnLaunch) { on -> vm.updateSettings { it.copy(hideAmountsOnLaunch = on) } }
+                    SwitchRow(stringResource(R.string.settings_hide_on_launch), s.hideAmountsOnLaunch, icon = Icons.Filled.VisibilityOff, iconColor = Color(0xFF8E8E98)) { on -> vm.updateSettings { it.copy(hideAmountsOnLaunch = on) } }
                 }
             }
             item {
                 FormSection(stringResource(R.string.settings_month)) {
                     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_month_start, s.monthStart), Modifier.weight(1f))
+                        IconTile(Icons.Filled.CalendarMonth, Color(0xFFF06BA8))
+                        Spacer(Modifier.width(14.dp))
+                        Text(stringResource(R.string.settings_month_start, s.monthStart), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         IconButton(onClick = { h.select(); vm.updateSettings { it.copy(monthStart = (it.monthStart - 1).coerceIn(1, 28)) } }, enabled = s.monthStart > 1) {
                             Icon(Icons.Filled.Remove, stringResource(R.string.settings_month_minus))
                         }
@@ -202,34 +260,12 @@ fun SettingsScreen(nav: NavController) {
                 }
             }
             item {
-                FormSection(stringResource(R.string.settings_look)) {
-                    PickerRow(
-                        stringResource(R.string.settings_theme),
-                        listOf(
-                            ThemeMode.SYSTEM to stringResource(R.string.settings_theme_system),
-                            ThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
-                            ThemeMode.DARK to stringResource(R.string.settings_theme_dark),
-                        ),
-                        s.theme,
-                    ) { t -> vm.updateSettings { it.copy(theme = t) } }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        RowDivider()
-                        SwitchRow(stringResource(R.string.settings_dynamic), s.dynamicColor) { on -> vm.updateSettings { it.copy(dynamicColor = on) } }
-                    }
-                    if (!s.dynamicColor) {
-                        RowDivider()
-                        Text(stringResource(R.string.settings_accent), Modifier.padding(top = 12.dp, bottom = 10.dp), style = MaterialTheme.typography.bodyLarge)
-                        Box(Modifier.padding(bottom = 12.dp)) { ColorRow(s.accent) { c -> vm.updateSettings { it.copy(accent = c) } } }
-                    }
-                }
-            }
-            item {
                 FormSection(stringResource(R.string.settings_modules)) {
-                    SwitchRow(stringResource(R.string.settings_module_work), s.moduleWork) { on -> vm.updateSettings { it.copy(moduleWork = on) } }
+                    SwitchRow(stringResource(R.string.settings_module_work), s.moduleWork, icon = Icons.Filled.Work, iconColor = Color(0xFF3FBFD0)) { on -> vm.updateSettings { it.copy(moduleWork = on) } }
                     RowDivider()
-                    SwitchRow(stringResource(R.string.settings_module_debts), s.moduleDebts) { on -> vm.updateSettings { it.copy(moduleDebts = on) } }
+                    SwitchRow(stringResource(R.string.settings_module_debts), s.moduleDebts, icon = Icons.Filled.Group, iconColor = Color(0xFFFF8A4C)) { on -> vm.updateSettings { it.copy(moduleDebts = on) } }
                     RowDivider()
-                    SwitchRow(stringResource(R.string.settings_module_invest), s.moduleInvest) { on -> vm.updateSettings { it.copy(moduleInvest = on) } }
+                    SwitchRow(stringResource(R.string.settings_module_invest), s.moduleInvest, icon = Icons.AutoMirrored.Filled.ShowChart, iconColor = Color(0xFF5B8DEF)) { on -> vm.updateSettings { it.copy(moduleInvest = on) } }
                 }
             }
         }
