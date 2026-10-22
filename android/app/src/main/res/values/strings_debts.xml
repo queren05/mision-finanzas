@@ -105,4 +105,6 @@
     <string name="person_emoji_food">Comida</string>
     <string name="person_emoji_hobbies">Aficiones</string>
     <string name="person_emoji_symbols">Símbolos</string>
+    <string name="debts_empty_text">Apunta lo que te deben y lo que debes, y no vuelvas a perder la cuenta.</string>
+    <string name="debts_more_menu">Más opciones</string>
 </resources>

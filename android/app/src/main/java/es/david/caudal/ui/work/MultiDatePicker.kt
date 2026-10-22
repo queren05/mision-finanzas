@@ -20,6 +20,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -72,18 +75,19 @@ fun MultiDatePicker(selected: Set<String>, onChange: (Set<String>) -> Unit) {
                             val s = Day.str(d)
                             val on = s in selected
                             val desc = if (on) stringResource(R.string.shift_day_selected, f.header(s)) else f.header(s)
+                            val sc by androidx.compose.animation.core.animateFloatAsState(if (on) 1f else 0.86f, androidx.compose.animation.core.spring(dampingRatio = 0.45f), label = "día")
                             Box(
-                                Modifier.fillMaxWidth().aspectRatio(1f).clip(CircleShape)
-                                    .background(if (on) accent else Color.Transparent)
-                                    .then(if (s == today && !on) Modifier.border(1.5.dp, accent, CircleShape) else Modifier)
+                                Modifier.fillMaxWidth().aspectRatio(1f).graphicsLayer { scaleX = sc; scaleY = sc }.clip(RoundedCornerShape(12.dp))
+                                    .background(if (on) accent else es.david.caudal.ui.theme.CaudalTheme.colors.cardAlt)
+                                    .then(if (s == today && !on) Modifier.border(2.dp, accent, RoundedCornerShape(12.dp)) else Modifier)
                                     .clickable(role = Role.Checkbox) { h.select(); onChange(if (on) selected - s else selected + s) }
                                     .semantics { this.selected = on; contentDescription = desc },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     "${d.dayOfMonth}",
-                                    color = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (on || s == today) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (on) es.david.caudal.ui.common.contentOn(accent) else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (on || s == today) FontWeight.Black else FontWeight.SemiBold,
                                 )
                             }
                         }

@@ -91,6 +91,18 @@ import es.david.caudal.ui.common.SectionHeader
 import es.david.caudal.ui.common.rememberHaptics
 import es.david.caudal.ui.debts.AccountPicker
 import es.david.caudal.ui.debts.Legend
+import es.david.caudal.ui.debts.Celebration
+import es.david.caudal.ui.common.CircleIconButton
+import es.david.caudal.ui.common.EmptyState
+import es.david.caudal.ui.common.GroupCard
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.RowDivider
+import es.david.caudal.ui.common.appear
+import es.david.caudal.ui.common.contentOn
+import es.david.caudal.ui.common.pressable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.Add
 import es.david.caudal.ui.debts.SplitBar
 import es.david.caudal.ui.debts.SwipeAction
 import es.david.caudal.ui.debts.SwipeRow
@@ -118,18 +130,21 @@ fun WorkScreen(nav: NavController) {
     var menu by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<Shift?>(null) }
     var paying by remember { mutableStateOf<Company?>(null) }
+    var celebrate by remember { mutableStateOf<Long?>(null) }
+    var celebrateText by remember { mutableStateOf("") }
 
     val companies = data?.companies.orEmpty()
     // si la empresa filtrada ya no existe, se quita el filtro
     LaunchedEffect(companies.map { it.id }) { if (company != null && companies.none { it.id == company }) company = null }
 
+    Box(Modifier.fillMaxSize()) {
     ScreenScaffold(
         title = stringResource(R.string.work_title),
         onBack = { nav.popBackStack() },
         actions = {
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.Business, stringResource(R.string.work_companies)) }
-                DropdownMenu(menu, { menu = false }) {
+                CircleIconButton(Icons.Filled.Business, stringResource(R.string.work_more_menu)) { menu = true }
+                DropdownMenu(menu, { menu = false }, shape = RoundedCornerShape(20.dp), containerColor = CaudalTheme.colors.card) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.work_new_company)) }, leadingIcon = { Icon(Icons.Filled.Business, null) },
                         onClick = { menu = false; nav.navigate(CompanyEditorRoute()) })
                     companies.forEach { c ->
@@ -137,8 +152,8 @@ fun WorkScreen(nav: NavController) {
                     }
                 }
             }
-            IconButton(onClick = { h.tap(); nav.navigate(ShiftEditorRoute(null, company ?: companies.firstOrNull()?.id)) }) {
-                Icon(Icons.Filled.AddCircle, stringResource(R.string.work_add_shift), tint = MaterialTheme.colorScheme.primary)
+            CircleIconButton(Icons.Filled.Add, stringResource(R.string.work_add_shift), tint = CaudalTheme.colors.accent) {
+                h.tap(); nav.navigate(ShiftEditorRoute(null, company ?: companies.firstOrNull()?.id))
             }
         },
     ) { pad ->
@@ -146,8 +161,8 @@ fun WorkScreen(nav: NavController) {
         val list = Hours.shifts(data.shifts, month, company)
         val sum = Hours.summary(list, companies)
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding() + 4.dp, bottom = pad.calculateBottomPadding() + 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding() + 4.dp, bottom = 60.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
                 MonthBar(f.monthYear("$month-01"), { h.select(); month = Day.monthKey(Day.addMonths("$month-01", -1)) }, { h.select(); month = Day.monthKey(Day.addMonths("$month-01", 1)) })
@@ -160,41 +175,47 @@ fun WorkScreen(nav: NavController) {
                     }
                 }
             }
-            item { WorkHero(sum) }
-            item { SectionHeader(stringResource(R.string.work_companies)) }
+            item { Box(Modifier.appear(0)) { WorkHero(sum) } }
+            item { Box(Modifier.appear(1).padding(start = 4.dp, top = 4.dp)) { SectionHeader(stringResource(R.string.work_companies), emoji = "🏢") } }
             item {
-                Card(padding = 6.dp) {
-                    companies.filter { company == null || it.id == company }.forEachIndexed { i, c ->
-                        if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 10.dp))
+                GroupCard(Modifier.appear(2)) {
+                    companies.filter { company == null || it.id == company }.forEach { c ->
                         CompanyRow(c, Hours.summary(Hours.shifts(data.shifts, month, c.id), companies), onClick = { h.tap(); nav.navigate(CompanyEditorRoute(c.id)) }, onPay = { h.tap(); paying = c })
+                        RowDivider(16.dp)
                     }
-                    if (companies.isNotEmpty()) HorizontalDivider(Modifier.padding(horizontal = 10.dp))
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(role = Role.Button) { h.tap(); nav.navigate(CompanyEditorRoute()) }.padding(horizontal = 10.dp),
+                        Modifier.fillMaxWidth().pressable(0.985f) { h.tap(); nav.navigate(CompanyEditorRoute()) }.heightIn(min = 56.dp).padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.AddCircle, null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.AddCircle, null, tint = CaudalTheme.colors.accent)
                         Spacer(Modifier.width(10.dp))
-                        Text(stringResource(R.string.work_add_company), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.work_add_company), color = CaudalTheme.colors.accent, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
-            item { SectionHeader(stringResource(R.string.work_shifts)) }
-            if (list.isEmpty()) item { Card { Text(stringResource(R.string.work_no_shifts), color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-            items(list, key = { it.id }) { s ->
-                val c = companies.firstOrNull { it.id == s.companyId }
-                val paid = s.status == PayStatus.PAGADO
-                val toggle = { h.success(); vm.run { setPaid(listOf(s.id), !paid) }; Unit }
-                val duplicate = { h.tap(); vm.run { save(s.copy(id = newId(), date = Day.addDays(s.date, 1), status = PayStatus.PENDIENTE, paidDate = "")) }; Unit }
-                SwipeRow(
-                    start = SwipeAction(stringResource(if (paid) R.string.work_mark_pending else R.string.work_mark_paid), if (paid) Icons.Filled.Schedule else Icons.Filled.CheckCircle,
-                        if (paid) CaudalTheme.colors.warning else CaudalTheme.colors.income, toggle),
-                    end = SwipeAction(stringResource(R.string.work_delete_shift), Icons.Filled.Delete, MaterialTheme.colorScheme.error) { h.warning(); deleting = s },
-                ) {
-                    ShiftRow(s, c, onClick = { nav.navigate(ShiftEditorRoute(s.id, s.companyId)) }, onToggle = toggle, onDuplicate = duplicate, onDelete = { h.warning(); deleting = s })
+            item { Box(Modifier.appear(3).padding(start = 4.dp, top = 4.dp)) { SectionHeader(stringResource(R.string.work_shifts), emoji = "⏱️") } }
+            item {
+                if (list.isEmpty()) EmptyState(stringResource(R.string.work_no_shifts), stringResource(R.string.work_empty_text), mood = Mood.SLEEPY)
+                else GroupCard(Modifier.appear(4)) {
+                    list.forEachIndexed { i, s ->
+                        val c = companies.firstOrNull { it.id == s.companyId }
+                        val paid = s.status == PayStatus.PAGADO
+                        val toggle = { h.success(); vm.run { setPaid(listOf(s.id), !paid) }; Unit }
+                        val duplicate = { h.tap(); vm.run { save(s.copy(id = newId(), date = Day.addDays(s.date, 1), status = PayStatus.PENDIENTE, paidDate = "")) }; Unit }
+                        SwipeRow(
+                            start = SwipeAction(stringResource(if (paid) R.string.work_mark_pending else R.string.work_mark_paid), if (paid) Icons.Filled.Schedule else Icons.Filled.CheckCircle,
+                                if (paid) CaudalTheme.colors.warning else CaudalTheme.colors.income, toggle),
+                            end = SwipeAction(stringResource(R.string.work_delete_shift), Icons.Filled.Delete, CaudalTheme.colors.negative) { h.warning(); deleting = s },
+                        ) {
+                            ShiftRow(s, c, onClick = { nav.navigate(ShiftEditorRoute(s.id, s.companyId)) }, onToggle = toggle, onDuplicate = duplicate, onDelete = { h.warning(); deleting = s })
+                        }
+                        if (i < list.lastIndex) RowDivider(72.dp)
+                    }
                 }
             }
         }
+    }
+    Celebration(celebrate, celebrateText)
     }
 
     deleting?.let { s ->
@@ -207,20 +228,20 @@ fun WorkScreen(nav: NavController) {
         )
     }
     paying?.let { c ->
-        if (data != null) PayMonthDialog(vm, c, month, data.shifts, companies, ledger?.accounts.orEmpty(), onDismiss = { paying = null })
+        if (data != null) PayMonthDialog(vm, c, month, data.shifts, companies, ledger?.accounts.orEmpty(), onDismiss = { paying = null }, onPaid = { name ->
+            celebrateText = name; celebrate = System.nanoTime()
+        })
     }
 }
 
 @Composable
 fun MonthBar(label: String, onPrev: () -> Unit, onNext: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        FilledIconButton(onClick = onPrev, colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), contentColor = MaterialTheme.colorScheme.primary)) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.work_prev_month))
+        CircleIconButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.work_prev_month), onClick = onPrev)
+        androidx.compose.animation.AnimatedContent(label, Modifier.weight(1f), label = "mes") { t ->
+            Text(t, Modifier.fillMaxWidth().semantics { heading() }, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         }
-        Text(label, Modifier.weight(1f).semantics { heading() }, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-        FilledIconButton(onClick = onNext, colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), contentColor = MaterialTheme.colorScheme.primary)) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.work_next_month))
-        }
+        CircleIconButton(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.work_next_month), onClick = onNext)
     }
 }
 
@@ -231,13 +252,16 @@ private fun WorkHero(w: WorkSummary) {
     Card(padding = 20.dp) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.work_net_estimated), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                AmountText(w.net, style = MaterialTheme.typography.displaySmall, weight = FontWeight.Bold)
-                Text(stringResource(R.string.work_gross_value, f.money(w.gross)), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.work_net_estimated), style = MaterialTheme.typography.titleSmall, color = colors.textDim)
+                AmountText(w.net, style = MaterialTheme.typography.displayMedium, rolling = true)
+                Text(stringResource(R.string.work_gross_value, f.money(w.gross)), style = MaterialTheme.typography.bodyMedium, color = colors.textDim)
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(stringResource(R.string.work_hours_value, f.hoursDec(w.totalMin)), style = MaterialTheme.typography.headlineMedium)
-                Text(pluralStringResource(R.plurals.work_days, w.days, w.days), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                Modifier.clip(RoundedCornerShape(18.dp)).background(colors.accent.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(stringResource(R.string.work_hours_value, f.hoursDec(w.totalMin)), style = MaterialTheme.typography.headlineSmall, color = colors.accent)
+                Text(pluralStringResource(R.plurals.work_days, w.days, w.days), style = MaterialTheme.typography.labelMedium, color = colors.textDim)
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -261,14 +285,14 @@ private fun WorkHero(w: WorkSummary) {
 @Composable
 private fun HourPill(icon: ImageVector, label: String, value: String, c: Color, modifier: Modifier) {
     Row(
-        modifier.clip(RoundedCornerShape(14.dp)).background(c.copy(alpha = 0.12f)).padding(12.dp).semantics(mergeDescendants = true) {},
+        modifier.clip(RoundedCornerShape(20.dp)).background(c.copy(alpha = 0.14f)).padding(12.dp).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = c)
-        Spacer(Modifier.width(8.dp))
+        Box(Modifier.size(38.dp).clip(CircleShape).background(c.copy(alpha = 0.28f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = c) }
+        Spacer(Modifier.width(10.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = CaudalTheme.colors.textDim)
+            Text(value, style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -278,21 +302,23 @@ private fun CompanyRow(c: Company, w: WorkSummary, onClick: () -> Unit, onPay: (
     val f = LocalFmt.current
     val colors = CaudalTheme.colors
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).heightIn(min = 64.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().pressable(0.985f, onClick = onClick).heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(12.dp).clip(CircleShape).background(hexColor(c.color)))
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(hexColor(c.color).copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Business, null, tint = hexColor(c.color))
+        }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-            Text(c.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text(stringResource(R.string.work_company_rates, f.money(c.normalRate), f.money(c.nightRate)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.work_company_summary, f.hoursDec(w.totalMin), f.money(w.gross), f.money(w.net)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(c.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(R.string.work_company_rates, f.money(c.normalRate), f.money(c.nightRate)), style = MaterialTheme.typography.bodySmall, color = colors.textDim)
+            Text(stringResource(R.string.work_company_summary, f.hoursDec(w.totalMin), f.money(w.gross), f.money(w.net)), style = MaterialTheme.typography.bodySmall, color = colors.textDim)
         }
         if (w.pendingNet > 0) {
             Box(
-                Modifier.clip(CircleShape).background(colors.income).clickable(role = Role.Button, onClick = onPay).heightIn(min = 40.dp).padding(horizontal = 14.dp, vertical = 8.dp),
+                Modifier.pressable(0.9f, onClick = onPay).clip(CircleShape).background(Brush.horizontalGradient(listOf(colors.income.copy(alpha = 0.8f), colors.income))).heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 9.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.work_collect), color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge) }
+            ) { Text(stringResource(R.string.work_collect), color = contentOn(colors.income), style = MaterialTheme.typography.labelLarge) }
         } else if (w.totalMin > 0) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Verified, null, tint = colors.income, modifier = Modifier.size(18.dp))
@@ -312,30 +338,31 @@ private fun ShiftRow(s: Shift, c: Company?, onClick: () -> Unit, onToggle: () ->
     var menu by remember { mutableStateOf(false) }
     val paid = s.status == PayStatus.PAGADO
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).heightIn(min = 64.dp).padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+        Modifier.fillMaxWidth().background(colors.card).pressable(0.985f, onClick = onClick).heightIn(min = 70.dp).padding(start = 14.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
             Column(
-                Modifier.size(width = 44.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).background(hexColor(c?.color ?: "#7ac8ff").copy(alpha = 0.18f)),
+                Modifier.size(width = 46.dp, height = 52.dp).clip(RoundedCornerShape(15.dp))
+                    .background(Brush.verticalGradient(listOf(hexColor(c?.color ?: "#7ac8ff").copy(alpha = 0.35f), hexColor(c?.color ?: "#7ac8ff").copy(alpha = 0.15f)))),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
-                Text("${d.dayOfMonth}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(d.dayOfWeek.getDisplayName(TextStyle.SHORT, f.locale).uppercase(f.locale).trimEnd('.'), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${d.dayOfMonth}", style = MaterialTheme.typography.titleLarge)
+                Text(d.dayOfWeek.getDisplayName(TextStyle.SHORT, f.locale).uppercase(f.locale).trimEnd('.'), style = MaterialTheme.typography.labelSmall, color = colors.textDim)
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.work_shift_times, Hours.hm(s.start), Hours.hm(s.end), f.duration(r?.totalMin ?: 0)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(stringResource(R.string.work_shift_times, Hours.hm(s.start), Hours.hm(s.end), f.duration(r?.totalMin ?: 0)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if ((r?.nightMin ?: 0) > 0) {
                         Icon(Icons.Filled.NightsStay, null, tint = MOON, modifier = Modifier.size(14.dp))
                         Text(" " + stringResource(R.string.work_night_hours, f.duration(r!!.nightMin)) + "  ", style = MaterialTheme.typography.bodySmall, color = MOON)
                     }
-                    Text(c?.name ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    Text(c?.name ?: "", style = MaterialTheme.typography.bodySmall, color = colors.textDim, maxLines = 1)
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
-                AmountText(r?.gross ?: 0.0, weight = FontWeight.Bold)
+                AmountText(r?.gross ?: 0.0, weight = FontWeight.ExtraBold)
                 val sc = if (paid) colors.income else colors.warning
                 Text(
                     stringResource(if (paid) R.string.work_paid else R.string.work_pending),
@@ -346,7 +373,7 @@ private fun ShiftRow(s: Shift, c: Company?, onClick: () -> Unit, onToggle: () ->
         }
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.more_options)) }
-            DropdownMenu(menu, { menu = false }) {
+            DropdownMenu(menu, { menu = false }, shape = RoundedCornerShape(20.dp), containerColor = colors.card) {
                 DropdownMenuItem(text = { Text(stringResource(if (paid) R.string.work_mark_pending else R.string.work_mark_paid)) },
                     leadingIcon = { Icon(if (paid) Icons.Filled.Schedule else Icons.Filled.CheckCircle, null) }, onClick = { menu = false; onToggle() })
                 DropdownMenuItem(text = { Text(stringResource(R.string.duplicate)) }, leadingIcon = { Icon(Icons.Filled.ContentCopy, null) }, onClick = { menu = false; onDuplicate() })
@@ -359,7 +386,7 @@ private fun ShiftRow(s: Shift, c: Company?, onClick: () -> Unit, onToggle: () ->
 
 /** cobrar lo pendiente del mes de una empresa */
 @Composable
-private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shifts: List<Shift>, companies: List<Company>, accounts: List<es.david.caudal.domain.model.Account>, onDismiss: () -> Unit) {
+private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shifts: List<Shift>, companies: List<Company>, accounts: List<es.david.caudal.domain.model.Account>, onDismiss: () -> Unit, onPaid: (String) -> Unit = {}) {
     val f = LocalFmt.current
     val h = rememberHaptics()
     val ctx = LocalContext.current
@@ -370,7 +397,9 @@ private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shif
     val monthName = f.month("$month-01").lowercase(f.locale)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.work_pay_title, monthName)) },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = CaudalTheme.colors.card,
+        title = { Text(stringResource(R.string.work_pay_title, monthName), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 LabelValue(stringResource(R.string.work_pending_hours), f.duration(w.totalMin))
@@ -378,7 +407,7 @@ private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shif
                 LabelValue(stringResource(R.string.work_net_estimated), f.money(w.net))
                 Spacer(Modifier.height(6.dp))
                 OutlinedTextField(amount, { amount = Money.cleanInput(it) }, label = { Text(stringResource(R.string.work_what_paid)) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
                 SwitchRow(stringResource(R.string.work_add_income), addIncome) { addIncome = it }
                 if (addIncome) AccountPicker(stringResource(R.string.account), accounts, accountId, { accountId = it })
             }
@@ -389,8 +418,8 @@ private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shif
                 val title = ctx.getString(R.string.work_payroll_title, c.name)
                 val note = ctx.getString(R.string.work_payroll_note, f.monthYear("$month-01").lowercase(f.locale))
                 vm.run { payMonth(c, month, cents, if (addIncome) accountId else null, title, note) }
-                h.success(); onDismiss()
-            }) { Text(stringResource(R.string.work_mark_paid_action), fontWeight = FontWeight.Bold) }
+                h.success(); onPaid(ctx.getString(R.string.work_celebrate_paid, c.name)); onDismiss()
+            }) { Text(stringResource(R.string.work_mark_paid_action), fontWeight = FontWeight.ExtraBold, color = CaudalTheme.colors.income) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
@@ -399,7 +428,7 @@ private fun PayMonthDialog(vm: FinanceViewModel, c: Company, month: String, shif
 @Composable
 fun LabelValue(label: String, value: String) {
     Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
-        Text(label, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontWeight = FontWeight.SemiBold)
+        Text(label, Modifier.weight(1f), color = CaudalTheme.colors.textDim)
+        Text(value, fontWeight = FontWeight.ExtraBold)
     }
 }

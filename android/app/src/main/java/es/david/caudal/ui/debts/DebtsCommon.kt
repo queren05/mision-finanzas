@@ -83,6 +83,16 @@ import es.david.caudal.domain.model.Person
 import es.david.caudal.ui.common.AmountText
 import es.david.caudal.ui.common.Fmt
 import es.david.caudal.ui.common.LocalFmt
+import es.david.caudal.ui.common.LocalMascot
+import es.david.caudal.ui.common.Confetti
+import es.david.caudal.ui.common.Gotita
+import es.david.caudal.ui.common.Mood
+import es.david.caudal.ui.common.contentOn
+import es.david.caudal.ui.common.pressable
+import es.david.caudal.ui.theme.LocalMotion
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.semantics.contentDescription
 import es.david.caudal.ui.theme.CaudalTheme
 import es.david.caudal.ui.theme.hexColor
 import kotlinx.coroutines.Dispatchers
@@ -119,8 +129,8 @@ fun Avatar(person: Person, repo: FinanceRepository, size: Dp = 44.dp, photoOverr
         Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.radialGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0.15f))))
-            .border(2.dp, c, CircleShape),
+            .background(Brush.linearGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0.2f))))
+            .border(2.dp, c.copy(alpha = 0.8f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (img != null) {
@@ -144,21 +154,26 @@ fun DebtRow(move: DebtMove, person: Person?, repo: FinanceRepository, showName: 
         else -> move.concept.ifEmpty { stringResource(debtKindLabel(move.kind)) }
     }
     val sub = listOfNotNull(if (showName && !isPay) name else null, stringResource(debtKindLabel(move.kind)), f.shortLabel(move.date)).joinToString(" · ")
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 6.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
-        if (person != null) { Avatar(person, repo, 40.dp); Spacer(Modifier.width(12.dp)) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 8.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+        if (person != null) { Avatar(person, repo, 42.dp); Spacer(Modifier.width(12.dp)) }
+        else {
+            Box(Modifier.size(42.dp).clip(RoundedCornerShape(15.dp)).background(CaudalTheme.colors.cardAlt), contentAlignment = Alignment.Center) { Text(debtKindEmoji(move.kind), fontSize = 20.sp) }
+            Spacer(Modifier.width(12.dp))
+        }
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Spacer(Modifier.width(8.dp))
         if (isPay) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                AmountText(abs(Money.fromCents(move.amount)), color = MaterialTheme.colorScheme.onSurfaceVariant, weight = FontWeight.SemiBold)
+                Icon(Icons.Filled.Check, null, tint = CaudalTheme.colors.income, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(2.dp))
+                AmountText(abs(Money.fromCents(move.amount)), color = CaudalTheme.colors.textDim, weight = FontWeight.ExtraBold)
             }
         } else {
             AmountText(
-                Money.fromCents(move.amount), signed = true, weight = FontWeight.Bold,
+                Money.fromCents(move.amount), signed = true, weight = FontWeight.ExtraBold,
                 color = if (move.amount > 0) CaudalTheme.colors.income else CaudalTheme.colors.negative,
             )
         }
@@ -224,7 +239,7 @@ fun SwipeRow(start: SwipeAction?, end: SwipeAction?, content: @Composable () -> 
             }
             if (a != null) {
                 Row(
-                    Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(a.color).padding(horizontal = 20.dp),
+                    Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(a.color).padding(horizontal = 22.dp),
                     horizontalArrangement = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Arrangement.Start else Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -245,9 +260,10 @@ fun SwipeRow(start: SwipeAction?, end: SwipeAction?, content: @Composable () -> 
 @Composable
 fun StepperRow(text: String, onMinus: () -> Unit, onPlus: () -> Unit, minusDesc: String, plusDesc: String, minusEnabled: Boolean = true, plusEnabled: Boolean = true) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        IconButton(onClick = onMinus, enabled = minusEnabled) { Icon(Icons.Filled.Remove, minusDesc) }
-        IconButton(onClick = onPlus, enabled = plusEnabled) { Icon(Icons.Filled.Add, plusDesc) }
+        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        RoundStep(Icons.Filled.Remove, minusDesc, minusEnabled, onMinus)
+        Spacer(Modifier.width(8.dp))
+        RoundStep(Icons.Filled.Add, plusDesc, plusEnabled, onPlus)
     }
 }
 
@@ -259,8 +275,9 @@ fun ValueRow(label: String, value: String, onClick: () -> Unit, icon: ImageVecto
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(12.dp)) }
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = if (icon != null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = if (icon != null) CaudalTheme.colors.textDim else CaudalTheme.colors.text)
+        Text(value, style = MaterialTheme.typography.labelLarge, color = CaudalTheme.colors.accent,
+            modifier = Modifier.clip(CircleShape).background(CaudalTheme.colors.accent.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 7.dp))
     }
 }
 
@@ -271,7 +288,7 @@ fun AccountPicker(label: String, accounts: List<Account>, selected: String?, onS
     val current = accounts.firstOrNull { it.id == selected }
     Box {
         ValueRow(label, current?.let { "${it.icon} ${it.name}" } ?: stringResource(R.string.none), { open = true })
-        DropdownMenu(open, { open = false }) {
+        DropdownMenu(open, { open = false }, shape = RoundedCornerShape(20.dp), containerColor = CaudalTheme.colors.card) {
             if (allowNone) DropdownMenuItem(text = { Text(stringResource(R.string.none)) }, onClick = { onSelect(null); open = false })
             accounts.forEach { a ->
                 DropdownMenuItem(text = { Text("${a.icon} ${a.name}") }, onClick = { onSelect(a.id); open = false },
@@ -290,11 +307,11 @@ fun <T> OptionPicker(label: String, options: List<T>, selected: T?, text: (T) ->
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.DropdownList) { open = true },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            Text(selected?.let(text) ?: "", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-            Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary)
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(selected?.let(text) ?: "", style = MaterialTheme.typography.labelLarge, color = CaudalTheme.colors.accent)
+            Icon(Icons.Filled.ArrowDropDown, null, tint = CaudalTheme.colors.accent)
         }
-        DropdownMenu(open, { open = false }) {
+        DropdownMenu(open, { open = false }, shape = RoundedCornerShape(20.dp), containerColor = CaudalTheme.colors.card) {
             options.forEach { o -> DropdownMenuItem(text = { Text(text(o)) }, onClick = { onSelect(o); open = false }) }
         }
     }
@@ -331,3 +348,121 @@ fun TimeDialog(title: String, minutes: Int, onPick: (Int) -> Unit, onDismiss: ()
     )
 }
 
+
+
+fun debtKindEmoji(k: DebtKind): String = when (k) {
+    DebtKind.OWE -> "🫴"
+    DebtKind.DEBT -> "🙈"
+    DebtKind.SPLIT -> "🍕"
+    DebtKind.THEYPAID -> "💳"
+    DebtKind.PAY -> "✅"
+    DebtKind.IPAY -> "💸"
+}
+
+@Composable
+private fun RoundStep(icon: ImageVector, desc: String, enabled: Boolean, onClick: () -> Unit) {
+    val c = CaudalTheme.colors
+    Box(
+        Modifier.size(44.dp).clip(CircleShape).background(if (enabled) c.accent.copy(alpha = 0.18f) else c.cardAlt)
+            .pressable(0.85f, enabled = enabled, onClick = onClick).semantics { contentDescription = desc },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, null, tint = if (enabled) c.accent else c.textDim) }
+}
+
+/** tarjetita de acción con icono en un círculo de color (Me debe, Le debo…) que rebota al pulsar */
+@Composable
+fun ActionTile(label: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val c = CaudalTheme.colors
+    Column(
+        modifier
+            .pressable(0.9f, onClick = onClick)
+            .clip(RoundedCornerShape(22.dp))
+            .background(c.card)
+            .border(1.dp, c.hairline, RoundedCornerShape(22.dp))
+            .heightIn(min = 86.dp)
+            .padding(vertical = 12.dp, horizontal = 4.dp)
+            .semantics(mergeDescendants = true) {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Box(Modifier.size(40.dp).clip(CircleShape).background(Brush.linearGradient(listOf(color.copy(alpha = 0.95f), color.copy(alpha = 0.65f)))), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = Color.White, modifier = Modifier.size(22.dp))
+        }
+        Text(label, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** botón grande en cápsula con degradado */
+@Composable
+fun PillButton(text: String, icon: ImageVector?, color: Color, modifier: Modifier = Modifier, filled: Boolean = true, onClick: () -> Unit) {
+    val fg = if (filled) contentOn(color) else color
+    Row(
+        modifier
+            .heightIn(min = 54.dp)
+            .pressable(0.95f, onClick = onClick)
+            .clip(CircleShape)
+            .then(if (filled) Modifier.background(Brush.horizontalGradient(listOf(color.copy(alpha = 0.85f), color))) else Modifier.background(color.copy(alpha = 0.14f)))
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) { Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }
+        Text(text, style = MaterialTheme.typography.labelLarge, color = fg, maxLines = 1)
+    }
+}
+
+/**
+ * Celebración: confeti y Gotita enamorada un par de segundos (al saldar una deuda, cobrar el mes…).
+ * Se lanza cambiando `key` a algo distinto de null.
+ */
+@Composable
+fun Celebration(key: Any?, message: String = "") {
+    if (key == null) return
+    val c = CaudalTheme.colors
+    var visible by remember(key) { mutableStateOf(true) }
+    LaunchedEffect(key) { kotlinx.coroutines.delay(2400); visible = false }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Confetti(key, listOf(c.accent, c.income, c.warning, c.transfer, Color(0xFFFF8FA3), Color(0xFFB9A4FF)))
+        androidx.compose.animation.AnimatedVisibility(
+            visible,
+            enter = androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(dampingRatio = 0.45f)) + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut(),
+        ) {
+            Column(
+                Modifier.clip(RoundedCornerShape(30.dp)).background(c.card).border(1.dp, c.hairline, RoundedCornerShape(30.dp)).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (LocalMascot.current) Gotita(Mood.LOVE, 96.dp) else Text("🎉", fontSize = 56.sp)
+                if (message.isNotEmpty()) {
+                    Spacer(Modifier.size(8.dp))
+                    Text(message, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+/** barra repartida en dos colores que crece al aparecer (te deben / debes, pagado / pendiente) */
+@Composable
+fun SplitBar(a: Double, b: Double, ca: Color, cb: Color, height: Dp = 12.dp) {
+    val target = if (a + b <= 0) 0f else (a / (a + b)).toFloat()
+    val motion = LocalMotion.current
+    var started by remember { mutableStateOf(!motion) }
+    LaunchedEffect(Unit) { started = true }
+    val frac by androidx.compose.animation.core.animateFloatAsState(if (started) target else 0.5f, androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = androidx.compose.animation.core.Spring.StiffnessVeryLow), label = "reparto")
+    Row(Modifier.fillMaxWidth().height(height), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (target > 0f) Box(Modifier.weight(frac.coerceAtLeast(0.03f)).height(height).clip(CircleShape).background(Brush.horizontalGradient(listOf(ca.copy(alpha = 0.75f), ca))))
+        if (target < 1f) Box(Modifier.weight((1f - frac).coerceAtLeast(0.03f)).height(height).clip(CircleShape).background(Brush.horizontalGradient(listOf(cb, cb.copy(alpha = 0.75f)))))
+    }
+}
+
+@Composable
+fun Legend(color: Color, label: String, value: Double) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.semantics(mergeDescendants = true) {}) {
+        Box(Modifier.size(9.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(5.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = CaudalTheme.colors.textDim)
+        Spacer(Modifier.width(4.dp))
+        AmountText(value, style = MaterialTheme.typography.labelLarge)
+    }
+}
