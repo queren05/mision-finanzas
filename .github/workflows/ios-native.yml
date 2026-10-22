@@ -82,6 +82,8 @@ jobs:
           shot -tab home -accstyle cuadricula; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/12-cuadricula.png"
           shot -tab home -accstyle lista; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/13-lista.png"
           shot -tab home -accstyle carrusel; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/1-inicio.png"
+          shot -tab more -personalize; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/14-personalizar.png"
+          shot -tab home -lookdemo; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/15-estilo-agua.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

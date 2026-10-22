@@ -22,7 +22,7 @@ struct WidgetsGallery: View {
             }
             .padding(16)
         }
-        .background(Color(.systemGroupedBackground))
+        .appBackground()
         .navigationTitle("Widgets")
         .onAppear { store.updateWidgets() }
     }

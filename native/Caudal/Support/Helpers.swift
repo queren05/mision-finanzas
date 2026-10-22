@@ -97,7 +97,15 @@ enum Money {
         n.maximumFractionDigits = 2
         return n
     }()
-    static func eur(_ v: Double) -> String { f.string(from: NSNumber(value: v)) ?? "\(v) €" }
+    private static let f0: NumberFormatter = {
+        let n = NumberFormatter()
+        n.locale = Locale(identifier: "es_ES")
+        n.numberStyle = .currency
+        n.currencyCode = "EUR"
+        n.maximumFractionDigits = 0
+        return n
+    }()
+    static func eur(_ v: Double) -> String { (Look.shared.s.hideCents ? f0 : f).string(from: NSNumber(value: v)) ?? "\(v) €" }
     static func signed(_ v: Double) -> String { (v > 0 ? "+" : "") + eur(v) }
     static func num(_ v: Double) -> String { n2.string(from: NSNumber(value: v)) ?? "\(v)" }
     static func pct(_ v: Double) -> String { (v >= 0 ? "+" : "") + num(v) + " %" }
@@ -127,7 +135,10 @@ extension Color {
     static let income = Color(red: 0.29, green: 0.84, blue: 0.56)
     static let expense = Color.primary
     static let negative = Color(red: 1.0, green: 0.42, blue: 0.42)
-    static let cardBG = Color(.secondarySystemGroupedBackground)
+    static var cardBG: Color {
+        guard Look.shared.s.amoled else { return Color(.secondarySystemGroupedBackground) }
+        return Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.08, alpha: 1) : .secondarySystemGroupedBackground })
+    }
 }
 
 let palette = ["#e4b3cb", "#8fb4ff", "#6fd49b", "#f0c46a", "#ff9f7a", "#b39cff", "#62cfd0", "#ff8686", "#c3d36a", "#d9a0f5", "#7ac8ff", "#f59fc4", "#a9b3c2"]
@@ -135,12 +146,13 @@ let palette = ["#e4b3cb", "#8fb4ff", "#6fd49b", "#f0c46a", "#ff9f7a", "#b39cff",
 // MARK: - Vibraciones
 
 enum Haptic {
-    static func tap() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
-    static func soft() { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
-    static func heavy() { UIImpactFeedbackGenerator(style: .heavy).impactOccurred() }
-    static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
-    static func warning() { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
-    static func select() { UISelectionFeedbackGenerator().selectionChanged() }
+    private static var on: Bool { Look.shared.s.haptics }
+    static func tap() { if on { UIImpactFeedbackGenerator(style: .light).impactOccurred() } }
+    static func soft() { if on { UIImpactFeedbackGenerator(style: .soft).impactOccurred() } }
+    static func heavy() { if on { UIImpactFeedbackGenerator(style: .heavy).impactOccurred() } }
+    static func success() { if on { UINotificationFeedbackGenerator().notificationOccurred(.success) } }
+    static func warning() { if on { UINotificationFeedbackGenerator().notificationOccurred(.warning) } }
+    static func select() { if on { UISelectionFeedbackGenerator().selectionChanged() } }
 }
 
 // MARK: - Botones que se hunden al pulsarlos
@@ -151,17 +163,14 @@ struct PressableStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? scale : 1)
             .brightness(configuration.isPressed ? -0.04 : 0)
+            .overlay { if Look.shared.s.ripple { RippleRing(pressed: configuration.isPressed).mask(configuration.label) } }
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
 extension View {
     /// tarjeta redondeada sobre el fondo agrupado
-    func card(_ padding: CGFloat = 16) -> some View {
-        self.padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.cardBG, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
+    func card(_ padding: CGFloat = 16) -> some View { modifier(CardBackground(padding: padding)) }
 }
 
 /// círculo con el emoji de la categoría o la cuenta

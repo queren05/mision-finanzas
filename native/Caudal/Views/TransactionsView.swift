@@ -67,6 +67,7 @@ struct TransactionsView: View {
                 Color.clear.frame(height: 70).listRowBackground(Color.clear)
             }
             .listStyle(.insetGrouped)
+            .appList()
             .navigationTitle("Movimientos")
             .searchable(text: $search, prompt: "Buscar concepto, nota o importe")
             .toolbar {
@@ -162,7 +163,7 @@ struct TransactionsView: View {
                                 .foregroundStyle(month == m ? Color.black : Color.primary)
                                 .background {
                                     if month == m { Capsule().fill(Color.accentColor) }
-                                    else { Capsule().fill(Color.white.opacity(0.07)) }
+                                    else { Capsule().fill(Color.primary.opacity(0.07)) }
                                 }
                         }
                         .buttonStyle(PressableStyle())

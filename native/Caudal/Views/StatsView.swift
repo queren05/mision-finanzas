@@ -27,7 +27,7 @@ struct StatsView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .background(Color(.systemGroupedBackground))
+            .appBackground()
             .navigationTitle("Análisis")
             .onAppear { if start.isEmpty { start = store.periodStart(for: Day.today) } }
     }
@@ -193,7 +193,7 @@ struct StatsView: View {
             if top.isEmpty { Text("Sin gastos").foregroundStyle(.secondary) }
             ForEach(Array(top.enumerated()), id: \.element.key) { i, e in
                 HStack {
-                    Text("\(i + 1)").font(.caption.weight(.heavy)).frame(width: 24, height: 24).background(Color.white.opacity(0.08), in: Circle())
+                    Text("\(i + 1)").font(.caption.weight(.heavy)).frame(width: 24, height: 24).background(Color.primary.opacity(0.08), in: Circle())
                     Text(e.key).font(.subheadline).lineLimit(1)
                     Spacer()
                     AmountText(value: e.value, font: .subheadline.weight(.semibold))

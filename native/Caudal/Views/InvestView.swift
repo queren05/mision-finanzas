@@ -26,7 +26,7 @@ struct InvestView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .background(Color(.systemGroupedBackground))
+            .appBackground()
             .navigationTitle("Inversiones")
             .refreshable { await Prices.refresh(store) }
             .toolbar {
@@ -191,8 +191,8 @@ struct AssetDetail: View {
                             .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
                             .interpolationMethod(.monotone)
                         if let point, point.date == p.date {
-                            RuleMark(x: .value("Fecha", p.date)).foregroundStyle(.white.opacity(0.35))
-                            PointMark(x: .value("Fecha", p.date), y: .value("Precio", p.close)).foregroundStyle(.white)
+                            RuleMark(x: .value("Fecha", p.date)).foregroundStyle(Color.primary.opacity(0.35))
+                            PointMark(x: .value("Fecha", p.date), y: .value("Precio", p.close)).foregroundStyle(Color.primary)
                         }
                     }
                     .chartYScale(domain: .automatic(includesZero: false))
@@ -249,7 +249,7 @@ struct AssetDetail: View {
             }
             .padding(16)
         }
-        .background(Color(.systemGroupedBackground))
+        .appBackground()
         .navigationTitle(a.symbol)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Editar") { editing = true } } }
         .sheet(isPresented: $addOp) { OpEditor(assetId: a.id) }

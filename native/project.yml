@@ -22,20 +22,22 @@ targets:
       properties:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.caudal
         PRODUCT_NAME: Caudal
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-Menta AppIcon-Cielo AppIcon-Lavanda AppIcon-Melocoton AppIcon-Oro AppIcon-Claro AppIcon-Gotita"
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Caudal
         INFOPLIST_KEY_CFBundleDevelopmentRegion: es
         DEVELOPMENT_LANGUAGE: es
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Para que solo tú puedas abrir Caudal."
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES

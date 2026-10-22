@@ -40,7 +40,7 @@ struct TxEditor: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.82), value: type)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Color(.systemGroupedBackground))
+            .appBackground()
             .navigationTitle(original == nil ? "Nuevo movimiento" : "Editar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -235,7 +235,7 @@ struct TxEditor: View {
                             Button(s) { title = s; titleFocused = false; Haptic.tap() }
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 12).padding(.vertical, 7)
-                                .background(Color.white.opacity(0.08), in: Capsule())
+                                .background(Color.primary.opacity(0.08), in: Capsule())
                                 .buttonStyle(.plain)
                         }
                     }
@@ -323,6 +323,7 @@ struct TxEditor: View {
         t.time = Day.time(date)
         t.excluded = excluded
         store.save(t)
+        Sound.play("plop")
         Haptic.success()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { saved = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) { dismiss() }

@@ -9,11 +9,13 @@ struct HomeView: View {
     @State private var showStats = false
     @State private var showWork = false
     @State private var customizing = false
+    @State private var sheetTab: MainTab? = nil
+    @State private var wink = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 22) {
+                VStack(spacing: 22 * Look.shared.space) {
                     ForEach(Array(store.state.home.filter(\.on).enumerated()), id: \.element.id) { i, item in
                         card(item.id).appear(Double(min(i, 6)) * 0.04)
                     }
@@ -29,10 +31,20 @@ struct HomeView: View {
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.state.home)
                 .padding(.horizontal, 16)
             }
-            .background(Color(.systemGroupedBackground))
+            .appBackground()
             .refreshable { await Prices.refresh(store) }
             .navigationTitle(greeting)
             .toolbar {
+                if store.state.settings.mascot {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Gotita(mood: wink ? .wink : store.mood, size: 38)
+                            .onTapGesture {
+                                Haptic.soft()
+                                wink = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { wink = false }
+                            }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Haptic.tap()
@@ -49,6 +61,7 @@ struct HomeView: View {
             .task { if ProcessInfo.processInfo.arguments.contains("-work") { showWork = true } }
             .sheet(item: $editing) { TxEditor(original: $0) }
             .sheet(isPresented: $customizing) { HomeCustomizer() }
+            .sheet(item: $sheetTab) { TabScreen(tab: $0) }
             .task {
                 let args = ProcessInfo.processInfo.arguments
                 if args.contains("-customize") { customizing = true }
@@ -68,8 +81,40 @@ struct HomeView: View {
         case "recientes": recentCard
         case "inversiones": investCard
         case "deudas": debtsCard
+        case "disponible": allowanceCard
         default: EmptyView()
         }
+    }
+
+    /// a la pestaña si está en la barra; si no, en una hoja
+    private func go(_ t: MainTab) {
+        if store.state.settings.tabs.compactMap(MainTab.of).contains(t) { tab = t } else { sheetTab = t }
+    }
+
+    // MARK: disponible hoy
+
+    private var allowanceCard: some View {
+        let a = store.allowance()
+        let L = Look.shared
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Disponible hoy")
+            WaterTank(level: a.base > 0 ? a.left / a.base : 0, color: L.accent, mood: store.state.settings.mascot ? store.mood : nil) {
+                VStack(alignment: .leading, spacing: 4) {
+                    if a.base <= 0 {
+                        Text("Sin presupuesto").font(.title3.weight(.bold))
+                    } else {
+                        AmountText(value: a.perDay, font: .system(size: 40, weight: .bold, design: .rounded))
+                        Text(store.hideAmounts ? "•••• €" : a.left >= 0 ? "\(Money.eur(a.left)) para \(a.daysLeft) días" : "Te has pasado \(Money.eur(-a.left))")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(18)
+            }
+            .frame(height: 170)
+            .background(Color.primary.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 18 * L.cornerScale, style: .continuous))
+        }
+        .card()
     }
 
     // MARK: inversiones
@@ -77,7 +122,7 @@ struct HomeView: View {
     @ViewBuilder private var investCard: some View {
         let assets = store.state.assets.filter { !$0.archived }.sorted { store.assetValue($0) > store.assetValue($1) }
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Inversiones", action: "Ver") { tab = .invest }
+            SectionHeader(title: "Inversiones", action: "Ver") { go(.invest) }
             HStack {
                 AmountText(value: store.investValue, font: .title2.weight(.bold))
                 Spacer()
@@ -102,7 +147,7 @@ struct HomeView: View {
     @ViewBuilder private var debtsCard: some View {
         let people = store.peopleSorted.filter { abs(store.debtBalance($0.id)) > 0.004 }
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Cuentas claras", action: "Ver") { tab = .debts }
+            SectionHeader(title: "Cuentas claras", action: "Ver") { go(.debts) }
             HStack(spacing: 12) {
                 tile("Te deben", store.owedToMe, "arrow.down.left.circle.fill", .income)
                 tile("Debes", store.iOwe, "arrow.up.right.circle.fill", .negative)
@@ -152,8 +197,8 @@ struct HomeView: View {
                     .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                     .interpolationMethod(.monotone)
                 if let point, point.date == p.date {
-                    RuleMark(x: .value("Día", p.date)).foregroundStyle(.white.opacity(0.35))
-                    PointMark(x: .value("Día", p.date), y: .value("€", p.value)).symbolSize(90).foregroundStyle(.white)
+                    RuleMark(x: .value("Día", p.date)).foregroundStyle(Color.primary.opacity(0.35))
+                    PointMark(x: .value("Día", p.date), y: .value("€", p.value)).symbolSize(90).foregroundStyle(Color.primary)
                 }
             }
             .chartXAxis(.hidden)
@@ -354,7 +399,7 @@ struct HomeView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     // MARK: en qué se va el dinero
@@ -420,7 +465,7 @@ struct HomeView: View {
     private var recentCard: some View {
         let recent = Array(store.state.txs.sorted { $0.sortKey > $1.sortKey }.prefix(6))
         return VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(title: "Últimos movimientos", action: "Ver todos") { tab = .txs }
+            SectionHeader(title: "Últimos movimientos", action: "Ver todos") { go(.txs) }
             ForEach(recent) { t in
                 Button { editing = t } label: { TxRow(tx: t, showDate: true) }
                     .buttonStyle(.plain)

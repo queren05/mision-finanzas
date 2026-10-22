@@ -10,7 +10,10 @@ struct Upcoming: Identifiable { var r: Recurring; var date: String; var id: Stri
 @Observable
 final class Store {
     var state: AppState {
-        didSet { scheduleSave() }
+        didSet {
+            scheduleSave()
+            if Look.shared.s != state.settings { Look.shared.s = state.settings }
+        }
     }
     var hideAmounts = false
     /// último movimiento borrado (para deshacer)
@@ -39,6 +42,7 @@ final class Store {
         }
         if state.seed < Seed.version && state.seed >= 3 { Seed.migrate(&state) }
         hideAmounts = state.settings.hideAmountsOnLaunch
+        Look.shared.s = state.settings
         runRecurring()
         mergeInbox()
         Store.live = self
@@ -202,6 +206,7 @@ final class Store {
             state.txs.removeAll { $0.id == t.id }
             lastDeleted = t
         }
+        Sound.play("pop")
     }
     func undoDelete() {
         guard let t = lastDeleted else { return }

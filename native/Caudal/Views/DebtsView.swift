@@ -40,6 +40,7 @@ struct DebtsView: View {
                 }
                 Color.clear.frame(height: 60).listRowBackground(Color.clear)
             }
+            .appList()
             .navigationTitle("Cuentas")
             .navigationDestination(for: Person.self) { PersonDetail(personId: $0.id) }
             .toolbar {
@@ -390,7 +391,7 @@ struct DebtEditor: View {
                                 ForEach(store.peopleSorted) { p in chip(p) }
                                 Button { newPerson = true } label: {
                                     VStack(spacing: 6) {
-                                        Image(systemName: "plus").font(.title2.weight(.semibold)).frame(width: 52, height: 52).background(Color.white.opacity(0.08), in: Circle())
+                                        Image(systemName: "plus").font(.title2.weight(.semibold)).frame(width: 52, height: 52).background(Color.primary.opacity(0.08), in: Circle())
                                         Text("Nuevo").font(.caption)
                                     }
                                 }
@@ -435,7 +436,7 @@ struct DebtEditor: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.82), value: kind)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Color(.systemGroupedBackground))
+            .appBackground()
             .navigationTitle("Apuntar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

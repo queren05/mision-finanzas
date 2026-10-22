@@ -7,6 +7,7 @@ struct MoreView: View {
     @State private var message: String? = nil
     @State private var askReset = false
     @State private var askErase = false
+    @State private var personalize = false
 
     var body: some View {
         @Bindable var store = store
@@ -37,6 +38,7 @@ struct MoreView: View {
                     NavigationLink { AutoExpensesView() } label: { row("Gastos automáticos", "wave.3.right.circle.fill", .mint, "") }
                 }
                 Section("Ajustes") {
+                    NavigationLink { PersonalizeView() } label: { row("Personalizar", "paintbrush.pointed.fill", .pink, "") }
                     TextField("Tu nombre", text: $store.state.settings.name)
                     Toggle(isOn: $store.state.settings.faceID) { Label("Bloquear con Face ID", systemImage: "faceid") }
                     Toggle(isOn: $store.state.settings.hideAmountsOnLaunch) { Label("Abrir con los importes ocultos", systemImage: "eye.slash") }
@@ -62,7 +64,10 @@ struct MoreView: View {
                 }
                 Color.clear.frame(height: 40).listRowBackground(Color.clear)
             }
+            .appList()
             .navigationTitle("Más")
+            .navigationDestination(isPresented: $personalize) { PersonalizeView() }
+            .task { if ProcessInfo.processInfo.arguments.contains("-personalize") { personalize = true } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
                 guard case .success(let url) = result else { return }
                 let ok = url.startAccessingSecurityScopedResource()
@@ -533,7 +538,7 @@ struct GoalsList: View {
             }
             .padding(16)
         }
-        .background(Color(.systemGroupedBackground))
+        .appBackground()
         .navigationTitle("Objetivos")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus") } } }
         .sheet(item: $editing) { GoalEditor(original: $0) }
@@ -667,7 +672,7 @@ struct EmojiSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView { EmojiGrid(selected: Binding(get: { selected }, set: { selected = $0; dismiss() }), compact: false).padding(16) }
-                .background(Color(.systemGroupedBackground))
+                .appBackground()
                 .navigationTitle("Elige un emoji").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cerrar") { dismiss() } } }
         }

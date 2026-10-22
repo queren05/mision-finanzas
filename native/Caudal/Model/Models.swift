@@ -184,6 +184,57 @@ struct Settings: Codable, Hashable {
     var hideAmountsOnLaunch: Bool = false
     var faceID: Bool = false
     var monthStart: Int = 1
+
+    // Personalizar (los valores por defecto son como ha sido siempre la app)
+    /// dark, light o system
+    var theme: String = "dark"
+    var amoled: Bool = false
+    /// sencilla, burbuja, elegante o maquina
+    var font: String = "sencilla"
+    /// pequena, normal o grande
+    var textSize: String = "normal"
+    /// solida, cristal o contorno
+    var cardStyle: String = "solida"
+    /// suaves, redondas o muy
+    var corners: String = "redondas"
+    /// comoda o compacta
+    var density: String = "comoda"
+    /// liso, agua, brillo o puntos
+    var background: String = "liso"
+    var hideCents: Bool = false
+    var haptics: Bool = true
+    var sounds: Bool = false
+    var ripple: Bool = false
+    var reducedMotion: Bool = false
+    /// pestañas entre Inicio y Más, en orden
+    var tabs: [String] = Settings.defaultTabs
+    var mascot: Bool = false
+    var mascotHat: String = "nada"
+    /// "" = el color de la app
+    var mascotColor: String = ""
+    /// "" = el icono de siempre
+    var appIcon: String = ""
+
+    static let defaultTabs = ["movimientos", "cuentas", "inversiones"]
+    static let allTabs = ["movimientos", "cuentas", "inversiones", "analisis", "horas", "objetivos"]
+}
+
+extension Settings {
+    // lee copias antiguas (sin los campos nuevos) y las de Android
+    init(from d: Decoder) throws {
+        self.init()
+        let c = try d.container(keyedBy: CodingKeys.self)
+        func v<T: Decodable>(_ k: CodingKeys, _ def: T) -> T { ((try? c.decodeIfPresent(T.self, forKey: k)) ?? nil) ?? def }
+        name = v(.name, name); accent = v(.accent, accent); hideAmountsOnLaunch = v(.hideAmountsOnLaunch, hideAmountsOnLaunch)
+        faceID = v(.faceID, faceID); monthStart = v(.monthStart, monthStart)
+        theme = v(.theme, theme); amoled = v(.amoled, amoled); font = v(.font, font); textSize = v(.textSize, textSize)
+        cardStyle = v(.cardStyle, cardStyle); corners = v(.corners, corners); density = v(.density, density)
+        background = v(.background, background); hideCents = v(.hideCents, hideCents); haptics = v(.haptics, haptics)
+        sounds = v(.sounds, sounds); ripple = v(.ripple, ripple); reducedMotion = v(.reducedMotion, reducedMotion)
+        tabs = v(.tabs, tabs).filter { Settings.allTabs.contains($0) }
+        mascot = v(.mascot, mascot); mascotHat = v(.mascotHat, mascotHat); mascotColor = v(.mascotColor, mascotColor)
+        appIcon = v(.appIcon, appIcon)
+    }
 }
 
 struct Quote: Codable, Hashable {
@@ -302,8 +353,9 @@ struct HomeItem: Codable, Hashable, Identifiable {
         ("recientes", "Últimos movimientos", "list.bullet"),
         ("inversiones", "Inversiones", "chart.line.uptrend.xyaxis"),
         ("deudas", "Cuentas claras", "person.2.fill"),
+        ("disponible", "Disponible hoy", "drop.fill"),
     ]
-    static let defaults: [HomeItem] = all.map { HomeItem(id: $0.id, on: !["inversiones", "deudas"].contains($0.id)) }
+    static let defaults: [HomeItem] = all.map { HomeItem(id: $0.id, on: !["inversiones", "deudas", "disponible"].contains($0.id)) }
     static func info(_ id: String) -> (name: String, icon: String) {
         all.first { $0.id == id }.map { ($0.name, $0.icon) } ?? (id, "square")
     }

@@ -20,7 +20,9 @@ struct CaudalApp: App {
             .environment(store)
             .environment(\.locale, Locale(identifier: "es_ES"))
             .tint(Color(hex: store.state.settings.accent))
-            .preferredColorScheme(.dark)
+            .fontDesign(Look.shared.fontDesign)
+            .transformEnvironment(\.dynamicTypeSize) { [size = Look.shared.typeSize] in if let size { $0 = size } }
+            .preferredColorScheme(Look.shared.scheme)
             .onAppear { if store.state.settings.faceID { locked = true; unlock() }; store.updateWidgets(now: true) }
             .onChange(of: phase) { _, p in
                 switch p {

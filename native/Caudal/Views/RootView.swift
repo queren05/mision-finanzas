@@ -1,6 +1,46 @@
 import SwiftUI
 
-enum MainTab: Hashable { case home, txs, debts, invest, more }
+enum MainTab: String, Hashable, Identifiable {
+    case home, txs, debts, invest, stats, work, goals, more
+    var id: String { rawValue }
+
+    /// la pestaña de un id de Ajustes (settings.tabs)
+    static func of(_ s: String) -> MainTab? {
+        switch s {
+        case "movimientos": .txs
+        case "cuentas": .debts
+        case "inversiones": .invest
+        case "analisis": .stats
+        case "horas": .work
+        case "objetivos": .goals
+        default: nil
+        }
+    }
+    static let names: [String: (name: String, icon: String)] = [
+        "movimientos": ("Movimientos", "list.bullet.rectangle.portrait.fill"),
+        "cuentas": ("Cuentas", "person.2.fill"),
+        "inversiones": ("Inversiones", "chart.line.uptrend.xyaxis"),
+        "analisis": ("Análisis", "chart.pie.fill"),
+        "horas": ("Horas", "briefcase.fill"),
+        "objetivos": ("Objetivos", "target"),
+    ]
+}
+
+/// la pantalla de una pestaña (también se abre en hoja si no está en la barra)
+struct TabScreen: View {
+    var tab: MainTab
+    var body: some View {
+        switch tab {
+        case .txs: TransactionsView()
+        case .debts: DebtsView()
+        case .invest: InvestView()
+        case .stats: StatsView()
+        case .work: NavigationStack { WorkView() }
+        case .goals: NavigationStack { GoalsList() }
+        default: EmptyView()
+        }
+    }
+}
 
 struct RootView: View {
     @Environment(Store.self) private var store
@@ -13,16 +53,19 @@ struct RootView: View {
             TabView(selection: $tab) {
                 HomeView(tab: $tab).tag(MainTab.home)
                     .tabItem { Label("Inicio", systemImage: "house.fill") }
-                TransactionsView().tag(MainTab.txs)
-                    .tabItem { Label("Movimientos", systemImage: "list.bullet.rectangle.portrait.fill") }
-                DebtsView().tag(MainTab.debts)
-                    .tabItem { Label("Cuentas", systemImage: "person.2.fill") }
-                InvestView().tag(MainTab.invest)
-                    .tabItem { Label("Inversiones", systemImage: "chart.line.uptrend.xyaxis") }
+                ForEach(store.state.settings.tabs, id: \.self) { id in
+                    if let t = MainTab.of(id), let info = MainTab.names[id] {
+                        TabScreen(tab: t).tag(t)
+                            .tabItem { Label(info.name, systemImage: info.icon) }
+                    }
+                }
                 MoreView().tag(MainTab.more)
                     .tabItem { Label("Más", systemImage: "ellipsis.circle.fill") }
             }
             .onChange(of: tab) { _, _ in Haptic.select() }
+            .onChange(of: store.state.settings.tabs) { _, tabs in
+                if tab != .home && tab != .more && !tabs.compactMap(MainTab.of).contains(tab) { tab = .home }
+            }
 
             // botón de apuntar, siempre a mano
             if (tab == .home || tab == .txs) && !store.hideFAB {
@@ -75,6 +118,18 @@ struct RootView: View {
                 }
             }
             if args.contains("-new") { newTx = true }
+            if args.contains("-lookdemo") {   // (solo para las capturas del simulador)
+                store.state.settings.background = "agua"
+                store.state.settings.cardStyle = "cristal"
+                store.state.settings.mascot = true
+                store.state.settings.mascotHat = "corona"
+                if let i = store.state.home.firstIndex(where: { $0.id == "disponible" }) {
+                    var h = store.state.home
+                    var it = h.remove(at: i); it.on = true
+                    h.insert(it, at: 1)
+                    store.state.home = h
+                }
+            }
             if args.contains("-demodebts"), store.state.people.isEmpty {   // (solo para las capturas del simulador)
                 let a = Person(name: "Jorlo", emoji: "🥸", color: "#5fe0a0", phone: "600000000")
                 let b = Person(name: "Álvaro", emoji: "🦊", color: "#ffa94d")

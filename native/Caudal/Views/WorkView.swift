@@ -48,6 +48,7 @@ struct WorkView: View {
             } header: { Text("Turnos") }
             Color.clear.frame(height: 40).listRowBackground(Color.clear)
         }
+        .appList()
         .navigationTitle("Horas trabajadas")
         .onAppear { withAnimation { store.hideFAB = true }; if ProcessInfo.processInfo.arguments.contains("-newshift") { adding = true } }
         .onDisappear { withAnimation { store.hideFAB = false } }
@@ -109,7 +110,7 @@ struct WorkView: View {
         Button { Haptic.select(); company = id } label: {
             Text(label).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                 .foregroundStyle(company == id ? Color.black : Color.primary)
-                .background(company == id ? Color(hex: id == nil ? "#e4b3cb" : color) : Color.white.opacity(0.07), in: Capsule())
+                .background(company == id ? Color(hex: id == nil ? "#e4b3cb" : color) : Color.primary.opacity(0.07), in: Capsule())
         }
         .buttonStyle(PressableStyle())
     }

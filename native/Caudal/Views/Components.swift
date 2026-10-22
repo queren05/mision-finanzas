@@ -93,7 +93,7 @@ struct ProgressBar: View {
     var body: some View {
         GeometryReader { g in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.08))
+                Capsule().fill(Color.primary.opacity(0.08))
                 Capsule().fill(color.gradient).frame(width: max(height, g.size.width * min(1, max(0, shown))))
             }
         }
@@ -126,8 +126,8 @@ struct Appear: ViewModifier {
     @State private var on = false
     func body(content: Content) -> some View {
         content
-            .opacity(on ? 1 : 0)
-            .offset(y: on ? 0 : 24)
+            .opacity(on || !Look.shared.motion ? 1 : 0)
+            .offset(y: on || !Look.shared.motion ? 0 : 24)
             .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(delay)) { on = true } }
     }
 }
