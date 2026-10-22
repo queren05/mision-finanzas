@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- movimientos -->
+    <string name="txs_calendar">Calendario de gastos</string>
+    <string name="txs_wrapped_cta">Tu mes en historias ✨</string>
+    <string name="txs_wrapped_cta_sub">%1$s en un vistazo, con Gotita</string>
+    <string name="txs_empty_title">Nada por aquí todavía</string>
+    <string name="txs_empty_text">Toca el + y apunta tu primer gasto 💧</string>
+    <string name="txs_empty_search">No hay movimientos con «%1$s»</string>
+    <string name="txs_more_actions">Más acciones</string>
+
+    <!-- apuntar -->
+    <string name="tx_frequent">Frecuentes</string>
+    <string name="tx_worth_it">¿Valió la pena?</string>
+    <string name="tx_mood_love">Me encantó</string>
+    <string name="tx_mood_ok">Bien</string>
+    <string name="tx_mood_meh">Regular</string>
+    <string name="tx_mood_bad">No valió la pena</string>
+    <string name="tx_balance_of">Saldo de %1$s: %2$s</string>
+    <string name="tx_saved_great">¡Apuntado!</string>
+    <string name="tx_category_title">Categoría</string>
+    <string name="tx_details">Detalles</string>
+    <string name="tx_frequent_desc">%1$s, %2$s</string>
+
+    <!-- calendario -->
+    <string name="cal_title">Calendario</string>
+    <string name="cal_month_total">Total del mes</string>
+    <string name="cal_top_day">Día de más gasto</string>
+    <string name="cal_no_spending_day">Sin gastos este día 🌿</string>
+    <string name="cal_day_total">Gastado ese día</string>
+    <string name="cal_less">Menos</string>
+    <string name="cal_more">Más</string>
+
+    <!-- historias -->
+    <string name="wr_title">Tu mes en Caudal</string>
+    <string name="wr_intro_kicker">✨ Tu resumen de</string>
+    <string name="wr_intro_text">Gotita ha repasado tu mes. ¿Vemos qué tal ha ido?</string>
+    <string name="wr_spent_kicker">Este mes has gastado</string>
+    <string name="wr_spent_less">Un %1$s %% menos que el mes anterior. ¡Así se hace! 🎉</string>
+    <string name="wr_spent_more">Un %1$s %% más que el mes anterior. El que viene, más tranqui 🌱</string>
+    <string name="wr_spent_same">Casi lo mismo que el mes anterior 👌</string>
+    <string name="wr_spent_first">Es tu primer mes con Caudal 💧</string>
+    <string name="wr_top_kicker">Donde más se fue tu dinero</string>
+    <string name="wr_top_share">El %1$s %% de todo lo que gastaste</string>
+    <string name="wr_day_kicker">Tu día más gastón</string>
+    <string name="wr_day_text">Ese día se fueron %1$s</string>
+    <string name="wr_shop_kicker">Tu sitio favorito</string>
+    <string name="wr_shop_text">Fuiste %1$d veces y dejaste %2$s</string>
+    <string name="wr_streak_kicker">Tu racha apuntando</string>
+    <string name="wr_streak_days">%1$d días seguidos 🔥</string>
+    <string name="wr_streak_zero">Hoy es buen día para empezar una racha 🔥</string>
+    <string name="wr_saved_kicker">Lo que entró y lo que salió</string>
+    <string name="wr_saved_good">Te quedaron %1$s. ¡Gotita está orgullosa! 💖</string>
+    <string name="wr_saved_bad">Saliste %1$s por encima. Sin dramas, se ajusta 💪</string>
+    <string name="wr_in">Ingresado</string>
+    <string name="wr_out">Gastado</string>
+    <string name="wr_mood_kicker">¿Valió la pena?</string>
+    <string name="wr_mood_text">%1$d gastos te encantaron y %2$d no valieron la pena</string>
+    <string name="wr_bye_kicker">¡Hasta el mes que viene!</string>
+    <string name="wr_bye_text">Sigue apuntando y Gotita te contará más cosas 💧</string>
+    <string name="wr_empty">Este mes aún no hay gastos que contar</string>
+    <string name="wr_progress_desc">Historia %1$d de %2$d</string>
+    <string name="wr_prev">Anterior</string>
+    <string name="wr_next">Siguiente</string>
+</resources>
