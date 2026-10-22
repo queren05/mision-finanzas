@@ -163,6 +163,9 @@ private fun homeName(id: String) = when (id) {
     "proximos" -> R.string.home_proximos
     "recientes" -> R.string.home_recientes
     "inversiones" -> R.string.home_inversiones
+    "disponible" -> R.string.home_disponible
+    "consejos" -> R.string.home_consejos
+    "calendario" -> R.string.home_calendario
     else -> R.string.home_deudas
 }
 

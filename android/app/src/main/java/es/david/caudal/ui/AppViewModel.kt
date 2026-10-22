@@ -51,4 +51,14 @@ class AppViewModel @Inject constructor(
     }
 
     fun unlocked() = session.setLocked(false)
+
+    /** resultado de importar una copia abierta con Caudal: nº de movimientos, -1 si no vale, null mientras no hay */
+    val importResult = kotlinx.coroutines.flow.MutableStateFlow<Int?>(null)
+
+    fun importFrom(context: android.content.Context, uri: android.net.Uri) = viewModelScope.launch {
+        importResult.value = runCatching {
+            val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }
+            repo.importBackup(text).data.txs.size
+        }.getOrDefault(-1)
+    }
 }

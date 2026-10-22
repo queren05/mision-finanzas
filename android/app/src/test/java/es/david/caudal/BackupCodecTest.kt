@@ -31,8 +31,9 @@ class BackupCodecTest {
         // módulos: se encienden los que traen datos
         assertTrue(b.settings.moduleWork && b.settings.moduleDebts && b.settings.moduleInvest)
         // inicio: quita lo desconocido y añade al final lo que falta
-        assertEquals(listOf("mes", "patrimonio"), b.settings.home.take(2).map { it.id })
-        assertEquals(9, b.settings.home.size)
+        // las tarjetas que solo tiene Android se añaden encendidas, detrás de su vecina
+        assertEquals(listOf("mes", "calendario", "patrimonio", "disponible"), b.settings.home.take(4).map { it.id })
+        assertEquals(12, b.settings.home.size)
         // fechas de Swift (segundos desde 2001)
         assertEquals((782000000L + 978307200L) * 1000, b.data.debts.first().createdMillis)
         assertEquals(DebtKind.SPLIT, b.data.debts.first().kind)

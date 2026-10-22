@@ -220,14 +220,23 @@ data class Shift(
 /** tarjetas de la pantalla de inicio (orden y si se ven) */
 data class HomeItem(val id: String, val on: Boolean = true) {
     companion object {
-        val ALL = listOf("patrimonio", "cuentas", "horas", "mes", "categorias", "proximos", "recientes", "inversiones", "deudas")
+        val ALL = listOf("patrimonio", "disponible", "cuentas", "consejos", "horas", "mes", "calendario", "categorias", "proximos", "recientes", "inversiones", "deudas")
         val DEFAULTS = ALL.map { HomeItem(it, it !in setOf("inversiones", "deudas")) }
+        /** tarjetas que solo existen en Android: si una copia de iPhone no las trae, se añaden encendidas */
+        private val ANDROID_ONLY = setOf("disponible", "consejos", "calendario")
 
         /** quita lo desconocido y añade al final (apagado) lo que falte */
         fun normalized(list: List<HomeItem>?): List<HomeItem> {
             if (list.isNullOrEmpty()) return DEFAULTS
             val out = list.filter { it.id in ALL }.distinctBy { it.id }.toMutableList()
-            for (d in DEFAULTS) if (out.none { it.id == d.id }) out += HomeItem(d.id, false)
+            for (d in DEFAULTS) if (out.none { it.id == d.id }) {
+                if (d.id in ANDROID_ONLY) {
+                    // detrás de su vecina de la lista por defecto
+                    val prev = ALL.getOrNull(ALL.indexOf(d.id) - 1)
+                    val at = out.indexOfFirst { it.id == prev }.let { if (it < 0) out.size else it + 1 }
+                    out.add(at, HomeItem(d.id, true))
+                } else out += HomeItem(d.id, false)
+            }
             return out
         }
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,8 @@ fun LockScreen(onUnlocked: () -> Unit) {
 
 private fun prompt(ctx: Context, title: String, onUnlocked: () -> Unit) {
     val activity = ctx.findActivity() ?: return
+    // si el móvil no tiene huella ni código, no hay con qué bloquear: se abre directamente
+    if (BiometricManager.from(activity).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) != BiometricManager.BIOMETRIC_SUCCESS) { onUnlocked(); return }
     val prompt = BiometricPrompt(
         activity, ContextCompat.getMainExecutor(activity),
         object : BiometricPrompt.AuthenticationCallback() {
@@ -55,7 +58,7 @@ private fun prompt(ctx: Context, title: String, onUnlocked: () -> Unit) {
 
             // si el móvil no tiene ni huella ni código, no se puede bloquear: se abre
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                if (errorCode in setOf(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL, BiometricPrompt.ERROR_HW_NOT_PRESENT, BiometricPrompt.ERROR_HW_UNAVAILABLE)) onUnlocked()
+                if (errorCode in setOf(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL, BiometricPrompt.ERROR_NO_BIOMETRICS, BiometricPrompt.ERROR_HW_NOT_PRESENT, BiometricPrompt.ERROR_HW_UNAVAILABLE)) onUnlocked()
             }
         },
     )

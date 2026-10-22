@@ -29,6 +29,13 @@
                 <action android:name="es.david.caudal.NEW_EXPENSE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <!-- abrir una copia de seguridad con Caudal (Archivos, WhatsApp, correo…) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
