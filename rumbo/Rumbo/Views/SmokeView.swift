@@ -338,7 +338,7 @@ struct SmokeView: View {
                 Image(systemName: "hand.raised.fill").font(.title2)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tengo ganas de fumar").font(.headline)
-                    if n > 0 { Text("Has superado \(n) vez\(n == 1 ? "" : "es")").font(.caption.weight(.semibold)).opacity(0.75) }
+                    if n > 0 { Text(n == 1 ? "Has superado 1 vez" : "Has superado \(n) veces").font(.caption.weight(.semibold)).opacity(0.75) }
                 }
                 Spacer()
                 Image(systemName: "chevron.right").font(.subheadline.weight(.bold))
