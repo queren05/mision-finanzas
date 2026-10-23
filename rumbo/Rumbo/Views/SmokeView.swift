@@ -178,9 +178,7 @@ extension Store {
     /// avisa cuando llegues a cada cambio de tu cuerpo y a cada logro de tiempo
     func scheduleSmoke() {
         let c = UNUserNotificationCenter.current()
-        c.getPendingNotificationRequests { reqs in
-            c.removePendingNotificationRequests(withIdentifiers: reqs.map(\.identifier).filter { $0.hasPrefix("smoke-") })
-        }
+        c.removePendingNotificationRequests(withIdentifiers: (0..<20).map { "smoke-\($0)" })
         guard s.settings.notifySmoke, let start = s.smoke.start else { return }
         var items: [(Date, String, String)] = []
         for h in healthSteps { items.append((start.addingTimeInterval(h.seconds), "\(h.when) sin fumar 💪", h.text)) }
