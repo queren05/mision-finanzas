@@ -10,8 +10,11 @@ struct AIButton: View {
     @State private var spin = false
 
     var body: some View {
+        if store.s.settings.ai { button }
+    }
+    private var button: some View {
         let busy = store.busy.contains(key)
-        Button {
+        return Button {
             guard !busy else { return }
             Haptic.tap()
             Task { await action() }

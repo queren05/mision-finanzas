@@ -48,12 +48,16 @@ struct Film: Codable, Identifiable, Hashable {
     /// días en que la has visto (yyyy-MM-dd), el más reciente primero
     var watched: [String] = []
     var created: Date = Date()
+    /// identificador de IMDb (tt…) y de Jellyfin
+    var imdb: String = ""
+    var jellyfin: String = ""
+    var ratings: FilmRatings? = nil
 
     var lastWatched: String { watched.max() ?? "" }
 }
 
 extension Film {
-    enum CodingKeys: String, CodingKey { case id, kind, title, year, director, genre, synopsis, runtime, season, poster, posterURL, status, rating, liked, review, watched, created }
+    enum CodingKeys: String, CodingKey { case id, kind, title, year, director, genre, synopsis, runtime, season, poster, posterURL, status, rating, liked, review, watched, created, imdb, jellyfin, ratings }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
@@ -73,6 +77,9 @@ extension Film {
         review = try c.decodeIfPresent(String.self, forKey: .review) ?? ""
         watched = try c.decodeIfPresent([String].self, forKey: .watched) ?? []
         created = try c.decodeIfPresent(Date.self, forKey: .created) ?? Date()
+        imdb = (try? c.decodeIfPresent(String.self, forKey: .imdb)) ?? ""
+        jellyfin = (try? c.decodeIfPresent(String.self, forKey: .jellyfin)) ?? ""
+        ratings = (try? c.decodeIfPresent(FilmRatings.self, forKey: .ratings)) ?? nil
     }
 }
 
@@ -98,6 +105,7 @@ enum FilmSearch {
             let isFilm = ["feature", "tv movie", "video", "short"].contains(q)
             guard kind == .serie ? isSeries : isFilm else { return nil }
             var f = Film(kind: kind, title: title)
+            f.imdb = id
             f.year = (r["y"] as? Int).map(String.init) ?? ""
             f.director = r["s"] as? String ?? ""
             if let img = (r["i"] as? [String: Any])?["imageUrl"] as? String {

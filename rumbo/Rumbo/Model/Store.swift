@@ -14,6 +14,7 @@ struct AgendaEvent: Identifiable, Hashable {
 
 @Observable
 final class Store {
+    static let shared = Store()
     var s: RState { didSet { scheduleSave() } }
     var agenda: [AgendaEvent] = []
     var calendarDenied = false
@@ -27,6 +28,8 @@ final class Store {
     init() {
         if let d = try? Data(contentsOf: url), let st = try? JSONDecoder().decode(RState.self, from: d) { s = st } else { s = Store.starter() }
         UNUserNotificationCenter.current().delegate = NotiDelegate.shared
+        // quita las tarjetas y pestañas que ya no existen
+        s.settings.tabs = s.settings.tabs.filter { Page(rawValue: $0) != nil && $0 != "hoy" }
     }
 
     static func starter() -> RState {
@@ -52,6 +55,7 @@ final class Store {
     /// ejecuta una petición a Claude marcando la tarea como ocupada y guardando el error para enseñarlo
     @MainActor
     func run(_ key: String, _ work: @escaping () async throws -> Void) async {
+        guard s.settings.ai else { return }
         busy.insert(key)
         defer { busy.remove(key) }
         do { try await work(); Haptic.success() } catch {
@@ -104,6 +108,7 @@ final class Store {
         if st.notifyCheckIn { add("checkin", "Chequeo nocturno 🌙", "¿Cómo ha ido hoy? Apunta tus logros y qué mejorar.", DateComponents(hour: st.checkInHour, minute: 0)) }
         if st.notifyWeekly { add("weekly", "Revisión semanal 📅", "Tu semana en un resumen y el plan para la siguiente.", DateComponents(hour: 19, minute: 0, weekday: 1)) }
         syncReminders()
+        scheduleSmoke()
     }
 
     // MARK: - 1. Panel de vida
@@ -163,7 +168,7 @@ final class Store {
     /// Si es una foto o un PDF sin texto, Claude lee el propio archivo.
     @MainActor
     func organize(_ docId: String) async {
-        guard Claude.hasKey, let d = s.docs.first(where: { $0.id == docId }) else { return }
+        guard s.settings.ai, Claude.hasKey, let d = s.docs.first(where: { $0.id == docId }) else { return }
         var parts: [Claude.Part] = []
         let hasText = d.text.trimmingCharacters(in: .whitespacesAndNewlines).count > 20
         if let f = d.file, let data = try? Data(contentsOf: Extract.url(f)) {

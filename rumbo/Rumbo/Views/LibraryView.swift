@@ -19,6 +19,7 @@ struct LibraryView: View {
                 .padding(.horizontal, 16)
             }
             .background(Color(.systemGroupedBackground))
+            .refreshable { try? await store.syncJellyfin() }
             .navigationTitle("Mi cine")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button { if cine { searchQuery = ""; searching = true } else { adding = true } } label: { Image(systemName: "plus.circle.fill").font(.title3) } }

@@ -249,6 +249,52 @@ struct Settings: Codable, Hashable {
     var checkInHour: Int = 22
     var notifyWeekly: Bool = true
     var faceID: Bool = false
+    /// usar Claude (si está apagado no sale nada de IA)
+    var ai: Bool = true
+    /// tarjetas de Hoy, en orden, y las que están quitadas
+    var todayOrder: [String] = Settings.allModules
+    var todayHidden: [String] = ["cine"]
+    /// pestañas entre Hoy y el final de la barra (máximo 4)
+    var tabs: [String] = Settings.defaultTabs
+    /// Jellyfin (la contraseña no se guarda; la sesión va en el Llavero)
+    var jellyfinURL: String = "http://100.99.241.98:8097"
+    var jellyfinUser: String = ""
+    var jellyfinUserId: String = ""
+    var jellyfinLastSync: Date? = nil
+    var askRating: Bool = true
+    var notifySmoke: Bool = true
+
+    static let allModules = ["resumen", "semana", "briefing", "agenda", "recordatorios", "prioridades", "tareas", "humo", "cine"]
+    static let defaultTabs = ["cerebro", "revision", "cine", "marca"]
+    static let maxTabs = 4
+
+    init() {}
+    enum CodingKeys: String, CodingKey {
+        case name, accent, notifyBriefing, briefingHour, notifyCheckIn, checkInHour, notifyWeekly, faceID
+        case ai, todayOrder, todayHidden, tabs, jellyfinURL, jellyfinUser, jellyfinUserId, jellyfinLastSync, askRating, notifySmoke
+    }
+    // tolera ajustes guardados por versiones anteriores
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        let def = Settings()
+        func v<T: Decodable>(_ k: CodingKeys, _ x: T) -> T { (try? c.decodeIfPresent(T.self, forKey: k)) ?? x }
+        name = v(.name, def.name); accent = v(.accent, def.accent)
+        notifyBriefing = v(.notifyBriefing, def.notifyBriefing); briefingHour = v(.briefingHour, def.briefingHour)
+        notifyCheckIn = v(.notifyCheckIn, def.notifyCheckIn); checkInHour = v(.checkInHour, def.checkInHour)
+        notifyWeekly = v(.notifyWeekly, def.notifyWeekly); faceID = v(.faceID, def.faceID)
+        ai = v(.ai, def.ai); todayOrder = v(.todayOrder, def.todayOrder); todayHidden = v(.todayHidden, def.todayHidden)
+        tabs = v(.tabs, def.tabs)
+        jellyfinURL = v(.jellyfinURL, def.jellyfinURL); jellyfinUser = v(.jellyfinUser, def.jellyfinUser)
+        jellyfinUserId = v(.jellyfinUserId, def.jellyfinUserId)
+        jellyfinLastSync = (try? c.decodeIfPresent(Date.self, forKey: .jellyfinLastSync)) ?? nil
+        askRating = v(.askRating, def.askRating); notifySmoke = v(.notifySmoke, def.notifySmoke)
+        // tarjetas nuevas de versiones futuras: al final
+        for m in Settings.allModules where !todayOrder.contains(m) { todayOrder.append(m) }
+        todayOrder = todayOrder.filter { Settings.allModules.contains($0) }
+    }
+
+    /// tarjetas de Hoy que se ven, en orden
+    var todayModules: [String] { todayOrder.filter { !todayHidden.contains($0) } }
 }
 
 struct RState: Codable {
@@ -266,10 +312,11 @@ struct RState: Codable {
     var libraryQA: [QA] = []
     var films: [Film] = []
     var filmQA: [QA] = []
+    var smoke = Smoke()
     var settings = Settings()
 
     init() {}
-    enum CodingKeys: String, CodingKey { case tasks, reminders, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, settings }
+    enum CodingKeys: String, CodingKey { case tasks, reminders, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, smoke, settings }
     // tolera datos guardados por versiones anteriores
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -287,6 +334,7 @@ struct RState: Codable {
         libraryQA = try c.decodeIfPresent([QA].self, forKey: .libraryQA) ?? []
         films = (try? c.decodeIfPresent([Film].self, forKey: .films)) ?? []
         filmQA = (try? c.decodeIfPresent([QA].self, forKey: .filmQA)) ?? []
-        settings = try c.decodeIfPresent(Settings.self, forKey: .settings) ?? Settings()
+        smoke = (try? c.decodeIfPresent(Smoke.self, forKey: .smoke)) ?? Smoke()
+        settings = (try? c.decodeIfPresent(Settings.self, forKey: .settings)) ?? Settings()
     }
 }

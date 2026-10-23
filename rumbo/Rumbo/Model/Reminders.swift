@@ -7,6 +7,13 @@ final class NotiDelegate: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         [.banner, .sound, .list]
     }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        let info = response.notification.request.content.userInfo
+        await MainActor.run {
+            if let id = info["film"] as? String { Router.shared.rateFilm = id }
+            if info["smoke"] != nil { Router.shared.open("humo") }
+        }
+    }
 }
 
 enum RemRepeat: String, CaseIterable, Identifiable {

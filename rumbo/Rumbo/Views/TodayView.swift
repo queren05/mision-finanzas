@@ -10,18 +10,15 @@ struct TodayView: View {
     @FocusState private var adding: Bool
     @State private var path = NavigationPath()
     @State private var weekEvents: [AgendaEvent] = []
+    @State private var expanded: Set<String> = []
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: 18) {
-                    header.appear(0)
-                    WeekStrip(events: weekEvents).appear(0.03)
-                    briefing.appear(0.05)
-                    agenda.appear(0.1)
-                    RemindersCard().appear(0.12)
-                    priorities.appear(0.15)
-                    tasks.appear(0.2)
+                    ForEach(Array(store.s.settings.todayModules.enumerated()), id: \.element) { i, m in
+                        module(m).appear(Double(i) * 0.03)
+                    }
                     Color.clear.frame(height: 30)
                 }
                 .padding(.horizontal, 16)
@@ -31,6 +28,15 @@ struct TodayView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { path.append(CalDay(day: Day.today)) } label: { Image(systemName: "calendar") }
+                }
+                if !hiddenPages.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            ForEach(hiddenPages) { p in
+                                Button { Router.shared.open(p.rawValue) } label: { Label(p.label, systemImage: p.icon) }
+                            }
+                        } label: { Image(systemName: "square.grid.2x2.fill") }
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
@@ -46,6 +52,44 @@ struct TodayView: View {
                 Button("Eliminar", role: .destructive) { Haptic.heavy(); store.delete(t) }
                 Button("Cancelar", role: .cancel) {}
             } message: { t in Text(t.title) }
+        }
+    }
+
+    private var hiddenPages: [Page] {
+        Page.allCases.filter { $0 != .hoy && !store.s.settings.tabs.contains($0.rawValue) }
+    }
+
+    @ViewBuilder private func module(_ m: String) -> some View {
+        switch m {
+        case "resumen": header
+        case "semana": WeekStrip(events: weekEvents)
+        case "briefing": if store.s.settings.ai { briefing }
+        case "agenda": agenda
+        case "recordatorios": RemindersCard()
+        case "prioridades": priorities
+        case "tareas": tasks
+        case "humo": SmokeMini()
+        case "cine": watching
+        default: EmptyView()
+        }
+    }
+
+    /// lo último que estás viendo o has visto
+    @ViewBuilder private var watching: some View {
+        let list = store.s.films.filter { $0.status == .viendo } + store.s.films.filter { $0.status == .vista }.sorted { $0.lastWatched > $1.lastWatched }.prefix(6)
+        if !list.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                CardTitle(title: "Viendo ahora", icon: "film.fill", color: Color(hex: "#ff8000"))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(list.prefix(10)) { f in
+                            Button { Router.shared.open("cine") } label: { Poster(film: f, width: 70) }.buttonStyle(PressableStyle())
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .card()
         }
     }
 
@@ -155,6 +199,8 @@ struct TodayView: View {
             .buttonStyle(PressableStyle(scale: 0.8))
             VStack(alignment: .leading, spacing: 2) {
                 Text(t.title).strikethrough(t.done).foregroundStyle(t.done ? .secondary : .primary)
+                    .lineLimit(expanded.contains(t.id) ? nil : 3)
+                    .onTapGesture { withAnimation(.snappy) { if expanded.contains(t.id) { expanded.remove(t.id) } else { expanded.insert(t.id) } } }
                 if !t.due.isEmpty { Text("Para \(Day.header(t.due).lowercased())").font(.caption).foregroundStyle(t.due < Day.today && !t.done ? Color.negative : .secondary) }
             }
             Spacer()
@@ -185,7 +231,7 @@ struct TaskEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Tarea", text: $t.title, axis: .vertical)
+                TextField("Tarea", text: $t.title, axis: .vertical).lineLimit(1...12)
                 Toggle(isOn: $t.priority) { Label("Prioridad", systemImage: "flag.fill") }
                 Toggle("Con fecha", isOn: $hasDue.animation())
                 if hasDue { DatePicker("Para el", selection: $due, displayedComponents: .date) }

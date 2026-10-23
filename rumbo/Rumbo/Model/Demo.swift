@@ -51,6 +51,15 @@ enum Demo {
             Film(kind: .serie, title: "Breaking Bad", year: "2008", status: .quiero),
             Film(kind: .pelicula, title: "La La Land", year: "2016", director: "Damien Chazelle", status: .quiero),
         ]
+        st.films[0].imdb = "tt15239678"
+        var sm = Smoke()
+        sm.start = Date().addingTimeInterval(-(9 * 86400 + 5 * 3600 + 23 * 60))
+        sm.perDay = 18; sm.packPrice = 5.6
+        sm.reasons = ["Respirar mejor cuando corro", "Ahorrar para el viaje a Japón"]
+        sm.wish = "Viaje a Japón"; sm.wishPrice = 1200
+        sm.cravings = [Date().addingTimeInterval(-86400), Date().addingTimeInterval(-3 * 86400)]
+        st.smoke = sm
+        st.settings.todayHidden = []
         store.s = st
         // pósteres de verdad para las capturas
         Task { @MainActor in

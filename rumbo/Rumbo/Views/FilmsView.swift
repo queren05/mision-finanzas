@@ -86,7 +86,7 @@ struct CineSection: View {
     var body: some View {
         VStack(spacing: 18) {
             stats.appear(0)
-            ask.appear(0.05)
+            if store.s.settings.ai { ask.appear(0.05) }
             diary.appear(0.08)
             watchlist.appear(0.1)
             filters.appear(0.12)
@@ -364,6 +364,7 @@ struct FilmDetail: View {
                         ForEach(FilmStatus.allCases) { Text($0.label(f.kind)).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    RatingsCard(film: f)
                     VStack(spacing: 12) {
                         StarPicker(value: Binding(get: { f.rating }, set: { var n = f; n.rating = $0; set(n) }))
                         HStack {
@@ -428,12 +429,117 @@ struct FilmDetail: View {
                 }
             }
             .sheet(isPresented: $editing) { FilmEditor(original: f) }
+            .task(id: f.id) { await store.loadRatings(f.id) }
             .confirmationDialog("¿Seguro que quieres eliminar «\(f.title)»?", isPresented: $askDelete, titleVisibility: .visible) {
                 Button("Eliminar", role: .destructive) { store.delete(f); Haptic.heavy(); dismiss() }
             } message: { Text("Se borrarán tu nota, tu reseña y tu diario.") }
             .confirmationDialog("¿Quitar este visionado?", isPresented: Binding(get: { removeDay != nil }, set: { if !$0 { removeDay = nil } }), titleVisibility: .visible) {
                 Button("Quitar", role: .destructive) { if let d = removeDay, let i = f.watched.firstIndex(of: d) { var n = f; n.watched.remove(at: i); set(n) }; removeDay = nil }
             } message: { Text(removeDay.map { Day.header($0) } ?? "") }
+        } else {
+            ContentUnavailableView("Eliminada", systemImage: "trash")
+        }
+    }
+}
+
+/// notas de las webs de cine
+struct RatingsCard: View {
+    @Environment(Store.self) private var store
+    var film: Film
+
+    var body: some View {
+        let r = film.ratings
+        let busy = store.busy.contains("rate-" + film.id)
+        HStack(spacing: 8) {
+            tile("IMDb", r?.imdb.map { String(format: "%.1f", $0).replacingOccurrences(of: ".", with: ",") }, r?.imdbVotes.map { votes($0) }, Color(hex: "#f5c518"),
+                 film.imdb.isEmpty ? nil : "https://www.imdb.com/title/\(film.imdb)/")
+            tile("Letterboxd", r?.letterboxd.map { "★ " + String(format: "%.1f", $0).replacingOccurrences(of: ".", with: ",") }, nil, lbGreen,
+                 r.map { $0.letterboxdPath.isEmpty ? "" : "https://letterboxd.com/\($0.letterboxdPath)/" } ?? nil)
+            tile("Tomatómetro", r?.rtCritics.map { "\($0) %" }, r?.rtAudience.map { "público \($0) %" }, Color(hex: "#fa320a"),
+                 r.map { $0.rtPath.isEmpty ? "" : "https://www.rottentomatoes.com/\($0.rtPath)" } ?? nil)
+        }
+        .overlay(alignment: .topTrailing) {
+            if busy { ProgressView().controlSize(.small).padding(6) }
+        }
+        .contextMenu {
+            Button { Task { await store.loadRatings(film.id, force: true) } } label: { Label("Actualizar notas", systemImage: "arrow.clockwise") }
+        }
+    }
+
+    private func votes(_ n: Int) -> String {
+        n >= 1_000_000 ? String(format: "%.1f M votos", Double(n) / 1_000_000).replacingOccurrences(of: ".", with: ",") : n >= 1000 ? "\(n / 1000) mil votos" : "\(n) votos"
+    }
+
+    @ViewBuilder private func tile(_ name: String, _ value: String?, _ sub: String?, _ c: Color, _ link: String?) -> some View {
+        let content = VStack(spacing: 4) {
+            Text(name).font(.system(size: 10, weight: .heavy)).foregroundStyle(c).lineLimit(1)
+            Text(value ?? "—").font(.system(size: 19, weight: .bold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.7)
+                .foregroundStyle(value == nil ? .secondary : .primary)
+            Text(sub ?? " ").font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
+        .background(Color.cardBG, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(c.opacity(0.25)))
+        if let link, !link.isEmpty, let u = URL(string: link) {
+            Link(destination: u) { content }.buttonStyle(PressableStyle()).foregroundStyle(.primary)
+        } else {
+            content
+        }
+    }
+}
+
+/// «¿Qué te ha parecido…?» al terminar algo en Jellyfin
+struct RateSheet: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    let filmId: String
+    @State private var rating: Double = 0
+    @State private var liked = false
+    @State private var review = ""
+
+    var body: some View {
+        if let f = store.s.films.first(where: { $0.id == filmId }) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 18) {
+                        Poster(film: f, width: 130).padding(.top, 10)
+                        VStack(spacing: 4) {
+                            Text("¿Qué te ha parecido?").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                            Text(f.title).font(.title2.weight(.bold)).multilineTextAlignment(.center)
+                            if !f.year.isEmpty { Text(f.year).foregroundStyle(.secondary) }
+                        }
+                        StarPicker(value: $rating, size: 40).padding(.horizontal, 20)
+                        Button { Haptic.tap(); liked.toggle() } label: {
+                            Label("Me ha encantado", systemImage: liked ? "heart.fill" : "heart").font(.headline)
+                                .foregroundStyle(liked ? lbOrange : .secondary).symbolEffect(.bounce, value: liked)
+                        }
+                        TextField("Cuéntame qué tal…", text: $review, axis: .vertical).lineLimit(3...8)
+                            .padding(12).background(Color.cardBG, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        RatingsCard(film: f)
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .background {
+                    ZStack {
+                        Color(.systemGroupedBackground)
+                        Poster(film: f).scaleEffect(1.6).blur(radius: 50).opacity(0.3).frame(maxHeight: .infinity, alignment: .top)
+                    }
+                    .ignoresSafeArea()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Luego") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Guardar") {
+                            var n = f
+                            n.rating = rating; n.liked = liked
+                            if !review.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { n.review = review }
+                            store.save(n); Haptic.success(); dismiss()
+                        }.bold().disabled(rating == 0 && !liked && review.isEmpty)
+                    }
+                }
+                .onAppear { rating = f.rating; liked = f.liked; review = f.review }
+                .task { await store.loadRatings(f.id) }
+            }
         } else {
             ContentUnavailableView("Eliminada", systemImage: "trash")
         }

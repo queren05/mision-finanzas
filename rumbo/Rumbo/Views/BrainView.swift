@@ -23,7 +23,7 @@ struct BrainView: View {
                 VStack(spacing: 18) {
                     hero.appear(0)
                     addBar.appear(0.03)
-                    ask.appear(0.05)
+                    if store.s.settings.ai { ask.appear(0.05) }
                     folders.appear(0.1)
                     docsList.appear(0.15)
                     Color.clear.frame(height: 30)
@@ -300,6 +300,7 @@ struct DocDetail: View {
     @State private var askDelete = false
     @State private var amountText = ""
     @FocusState private var amountFocus: Bool
+    @State private var editText = false
 
     var body: some View {
         if let d = store.s.docs.first(where: { $0.id == docId }) {
@@ -343,13 +344,25 @@ struct DocDetail: View {
                 }
                 .listRowBackground(Color.clear)
                 Section(d.kind == "note" ? "Nota" : "Texto") {
-                    TextEditor(text: Binding(get: { d.text }, set: { var n = d; n.text = $0; set(n) })).frame(minHeight: 180)
+                    Button { editText = true } label: {
+                        Text(d.text.isEmpty ? "Escribir…" : d.text).foregroundStyle(d.text.isEmpty ? .secondary : .primary)
+                            .lineLimit(12).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    if d.text.count > 400 {
+                        Button { editText = true } label: { Label("Ver entera", systemImage: "arrow.up.left.and.arrow.down.right") }
+                    }
                 }
                 Section { Button("Eliminar documento", role: .destructive) { Haptic.warning(); askDelete = true } }
             }
             .navigationTitle(d.folder.label).navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .quickLookPreview($preview)
+            .fullScreenCover(isPresented: $editText) {
+                LongTextEditor(title: d.title, text: Binding(get: { store.s.docs.first { $0.id == docId }?.text ?? "" }, set: { v in
+                    if var n = store.s.docs.first(where: { $0.id == docId }) { n.text = v; set(n) }
+                }))
+            }
             .onAppear { amountText = d.amount.map(Money.num) ?? "" }
             .onChange(of: d.amount) { _, a in if !amountFocus { amountText = a.map(Money.num) ?? "" } }
             .confirmationDialog("¿Seguro que quieres eliminar este documento?", isPresented: $askDelete, titleVisibility: .visible) {
@@ -375,13 +388,25 @@ struct NoteEditor: View {
     @State private var title = ""
     @State private var text = ""
     @State var folder: BrainFolder = .notas
+    @FocusState private var focus: Bool
     var body: some View {
         NavigationStack {
-            Form {
-                TextField("Título", text: $title)
-                Picker("Carpeta", selection: $folder) { ForEach(BrainFolder.allCases) { Text($0.label).tag($0) } }
-                Section("Nota") { TextEditor(text: $text).frame(minHeight: 240) }
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Título", text: $title).font(.title2.weight(.bold)).padding(.horizontal, 20)
+                Menu {
+                    Picker("Carpeta", selection: $folder) { ForEach(BrainFolder.allCases) { Label($0.label, systemImage: $0.icon).tag($0) } }
+                } label: {
+                    Label(folder.label, systemImage: folder.icon).font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color(hex: folder.color).opacity(0.18), in: Capsule())
+                        .foregroundStyle(Color(hex: folder.color))
+                }
+                .padding(.horizontal, 20)
+                TextEditor(text: $text).focused($focus).scrollContentBackground(.hidden)
+                    .font(.body).lineSpacing(3).padding(.horizontal, 15)
             }
+            .padding(.top, 8)
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Nueva nota").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
@@ -392,7 +417,29 @@ struct NoteEditor: View {
                         Task { await store.organize(d.id) }
                     }.bold().disabled(text.isEmpty && title.isEmpty)
                 }
+                ToolbarItemGroup(placement: .keyboard) { Spacer(); Button { focus = false } label: { Image(systemName: "keyboard.chevron.compact.down") } }
             }
+            .onAppear { focus = true }
+        }
+    }
+}
+
+/// texto largo a pantalla completa: se lee con scroll y se edita sin que el teclado lo tape
+struct LongTextEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    var title: String
+    @Binding var text: String
+    @FocusState private var focus: Bool
+    var body: some View {
+        NavigationStack {
+            TextEditor(text: $text).focused($focus).scrollContentBackground(.hidden)
+                .font(.body).lineSpacing(3).padding(.horizontal, 15)
+                .background(Color(.systemGroupedBackground))
+                .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Listo") { Haptic.success(); dismiss() }.bold() }
+                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button { focus = false } label: { Image(systemName: "keyboard.chevron.compact.down") } }
+                }
         }
     }
 }

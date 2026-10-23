@@ -4,27 +4,33 @@ import Security
 /// Clave de la API de Claude guardada en el Llavero del iPhone (nunca en el JSON de datos)
 enum Keychain {
     private static let service = "es.david.rumbo"
-    private static let account = "anthropic-api-key"
 
     static var apiKey: String {
-        get {
-            var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-                                    kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
-            var out: AnyObject?
-            guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data else { return "" }
-            q.removeAll()
-            return String(data: d, encoding: .utf8) ?? ""
-        }
-        set {
-            let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account]
-            SecItemDelete(q as CFDictionary)
-            let v = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !v.isEmpty else { return }
-            var add = q
-            add[kSecValueData as String] = Data(v.utf8)
-            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-            SecItemAdd(add as CFDictionary, nil)
-        }
+        get { read("anthropic-api-key") }
+        set { write("anthropic-api-key", newValue) }
+    }
+    /// sesión de Jellyfin
+    static var jellyfinToken: String {
+        get { read("jellyfin-token") }
+        set { write("jellyfin-token", newValue) }
+    }
+
+    private static func read(_ account: String) -> String {
+        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
+        var out: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data else { return "" }
+        return String(data: d, encoding: .utf8) ?? ""
+    }
+    private static func write(_ account: String, _ value: String) {
+        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account]
+        SecItemDelete(q as CFDictionary)
+        let v = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !v.isEmpty else { return }
+        var add = q
+        add[kSecValueData as String] = Data(v.utf8)
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(add as CFDictionary, nil)
     }
 }
 

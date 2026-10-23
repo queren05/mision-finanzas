@@ -15,6 +15,13 @@ targets:
     type: application
     platform: iOS
     sources: [Rumbo]
+    info:
+      path: Rumbo/Info.plist
+      properties:
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [es.david.rumbo.cine]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.rumbo
