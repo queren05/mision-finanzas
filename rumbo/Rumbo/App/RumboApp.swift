@@ -32,8 +32,20 @@ struct RumboApp: App {
                 if store.s.settings.faceID { locked = true; unlock() }
             }
             .onChange(of: phase) { _, p in
-                if p == .background { store.saveNow(); if store.s.settings.faceID { locked = true }; if store.jellyfinLinked { Jellyfin.scheduleRefresh() } }
-                if p == .active { Task { await store.loadAgenda(); try? await store.syncJellyfin() }; if locked { unlock() } }
+                if p == .background {
+                    store.saveNow()
+                    if !ProcessInfo.processInfo.arguments.contains("-demo") {
+                        let id = UIApplication.shared.beginBackgroundTask()
+                        Task { await store.backup(); UIApplication.shared.endBackgroundTask(id) }
+                    }
+                    if store.s.settings.faceID { locked = true }
+                    if store.jellyfinLinked { Jellyfin.scheduleRefresh() }
+                }
+                if p == .active {
+                    Task { await store.loadAgenda(); try? await store.syncJellyfin() }
+                    if !ProcessInfo.processInfo.arguments.contains("-demo") { Task { await store.checkBackup() } }
+                    if locked { unlock() }
+                }
             }
         }
         .backgroundTask(.appRefresh(Jellyfin.refreshTask)) {
@@ -114,6 +126,12 @@ struct RootView: View {
         }
         .sheet(item: Binding(get: { router.rateFilm.map { RateID(id: $0) } }, set: { router.rateFilm = $0?.id })) { r in
             RateSheet(filmId: r.id)
+        }
+        .alert("Hay una copia de seguridad", isPresented: Binding(get: { store.pendingRestore != nil }, set: { if !$0 { store.pendingRestore = nil } })) {
+            Button("Recuperarla") { if let st = store.pendingRestore { store.restore(st) } }
+            Button("No", role: .cancel) { store.pendingRestore = nil; Backup.ready = true }
+        } message: {
+            Text("En tu servidor hay \(store.pendingRestore?.backupSummary ?? ""). Si la recuperas, sustituye lo que hay ahora en Rumbo.")
         }
         .alert("Algo ha fallado", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
             Button("Vale") { store.error = nil }
@@ -218,6 +236,7 @@ struct SettingsView: View {
                     Toggle("Revisión semanal (domingo)", isOn: $store.s.settings.notifyWeekly)
                     Toggle("Logros sin fumar", isOn: $store.s.settings.notifySmoke)
                 }
+                BackupSettings()
                 Section { LabeledContent("Versión", value: "1.0") }
             }
             .navigationTitle("Ajustes")

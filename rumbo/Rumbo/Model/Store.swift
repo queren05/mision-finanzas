@@ -22,6 +22,9 @@ final class Store {
         }
     }
     var agenda: [AgendaEvent] = []
+    /// copia del servidor esperando a que digas si la recuperas
+    var pendingRestore: RState? = nil
+    var lastBackup: Date? = UserDefaults.standard.object(forKey: "copia-ultima") as? Date
     var calendarDenied = false
     var busy: Set<String> = []          // qué se está pidiendo a Claude ahora mismo
     var error: String? = nil
@@ -35,6 +38,50 @@ final class Store {
         UNUserNotificationCenter.current().delegate = NotiDelegate.shared
         // quita las tarjetas y pestañas que ya no existen
         s.settings.tabs = s.settings.tabs.filter { Page(rawValue: $0) != nil && $0 != "hoy" }
+        if !UserDefaults.standard.bool(forKey: "restaurado-24oct") && !ProcessInfo.processInfo.arguments.contains("-demo") {
+            Store.restoreLost(&s)
+            saveNow()
+            UserDefaults.standard.set(true, forKey: "restaurado-24oct")
+        }
+    }
+
+    /// vuelve a meter lo que había antes de que se borrara la app (24-oct-2026), sin duplicar nada
+    static func restoreLost(_ st: inout RState) {
+        // fuera las tareas de ejemplo que se crean al instalar
+        let samples = Store.starter().tasks.map(\.title)
+        st.tasks.removeAll { samples.contains($0.title) && !$0.done }
+        let have = Set(st.tasks.map(\.title))
+        let old = Date().addingTimeInterval(-2 * 86400)
+        let tasks = [
+            TaskItem(title: "Actualizar LinkedIn", priority: true),
+            TaskItem(title: "Terminar web de experiencia", priority: true),
+            TaskItem(title: "Cambiar las conversiones de la web", priority: true),
+            TaskItem(title: "Descargar las fotos del Google Fotos"),
+            TaskItem(title: "Mirar el nuevo capítulo de Hytale"),
+            TaskItem(title: "Mirar el juego de hora de aventuras"),
+            TaskItem(title: "Mirar el juego de zombies"),
+            TaskItem(title: "Hacer un plan de futuro para Shrimp Zombies"),
+            TaskItem(title: "Conseguir testers para Shrimp Zombies"),
+            TaskItem(title: "Cambiar un poco la interfaz de Rumbo, añadiendo opciones de personalización como desactivar y añadir módulos", done: true, doneAt: old),
+            TaskItem(title: "Verificar que Torrenteros está seedeando bien", done: true, doneAt: old),
+        ]
+        st.tasks += tasks.filter { !have.contains($0.title) }
+
+        func at(_ y: Int, _ m: Int, _ d: Int, _ h: Int) -> Date {
+            Calendar.current.date(from: DateComponents(year: y, month: m, day: d, hour: h)) ?? Date()
+        }
+        let today = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        let rems = [
+            Reminder(title: "Gominolas de vinagre de manzana", date: at(today.year ?? 2026, today.month ?? 10, today.day ?? 24, 14), repeats: "dia"),
+            Reminder(title: "The Legend of Zelda: Ocarina of Time", date: at(2026, 11, 5, 10)),
+            Reminder(title: "Rayman Legends Retold", date: at(2026, 12, 3, 10)),
+        ]
+        let haveR = Set(st.reminders.map(\.title))
+        st.reminders += rems.filter { !haveR.contains($0.title) }
+
+        // la barra de abajo y las tarjetas de Hoy como las tenías
+        st.settings.tabs = ["cerebro", "revision", "cine", "humo"]
+        st.settings.todayHidden = ["briefing", "agenda", "cine"]
     }
 
     static func starter() -> RState {
