@@ -130,6 +130,32 @@ struct RootView: View {
                     store.state.home = h
                 }
             }
+            if args.contains("-portfolio") {   // (solo para las capturas del simulador: datos inventados, nada real)
+                var st = store.state
+                let main = Account(name: "Cuenta nómina", type: .corriente, initial: 1450, color: "#8fb4ff", icon: "🏦", order: 0)
+                let save = Account(name: "Ahorro", type: .ahorro, initial: 3200, color: "#c9a0dc", icon: "🐷", order: 1)
+                let broker = Account(name: "Bróker", type: .broker, initial: 0, color: "#6fd49b", icon: "📈", order: 2)
+                st.accounts = [main, save, broker]
+                var txs: [Tx] = []
+                let spend: [(String, String, Double)] = [("c_super", "Mercadona", 42.3), ("c_snack", "Café", 1.8), ("c_transp", "Metro", 12.2), ("c_rest", "Cena con amigos", 28.5),
+                    ("c_subs", "Spotify", 10.99), ("c_super", "Lidl", 31.7), ("c_ocio", "Cine", 9), ("c_coche", "Gasolina", 45), ("c_compras", "Decathlon", 24.99),
+                    ("c_snack", "Café", 1.8), ("c_super", "Mercadona", 38.9), ("c_fact", "Movil", 15), ("c_rest", "Menú del día", 13.5), ("c_salud", "Farmacia", 8.4)]
+                for (k, s) in spend.enumerated() {
+                    txs.append(Tx(type: .expense, amount: s.2, accountId: main.id, categoryId: s.0, date: Day.add(Day.today, days: -(k * 2)), time: "1\(k % 9):30", title: s.1))
+                }
+                txs.append(Tx(type: .income, amount: 1480, accountId: main.id, categoryId: "i_nomina", date: Day.add(Day.today, days: -22), time: "08:00", title: "Nómina"))
+                txs.append(Tx(type: .transfer, amount: 250, accountId: main.id, toAccountId: save.id, date: Day.add(Day.today, days: -21), time: "09:00", title: "Ahorro del mes"))
+                st.txs = txs
+                st.assets = [
+                    Asset(symbol: "S&P 500", ySymbol: "SXR8.DE", name: "S&P 500 (Acc)", accountId: broker.id, manualPrice: 600, color: "#f0c46a",
+                          ops: [AssetOp(qty: 1.2, price: 560, date: Day.add(Day.today, days: -120), cashAccountId: save.id),
+                                AssetOp(qty: 0.8, price: 585, date: Day.add(Day.today, days: -40), cashAccountId: save.id)]),
+                    Asset(symbol: "MSCI World", ySymbol: "EUNL.DE", name: "MSCI World (Acc)", accountId: broker.id, manualPrice: 105, color: "#5fd3c8",
+                          ops: [AssetOp(qty: 6, price: 98, date: Day.add(Day.today, days: -90), cashAccountId: save.id)]),
+                ]
+                st.companies = []; st.shifts = []; st.people = []; st.debts = []; st.recurring = []
+                store.state = st
+            }
             if args.contains("-demodebts"), store.state.people.isEmpty {   // (solo para las capturas del simulador)
                 let a = Person(name: "Jorlo", emoji: "🥸", color: "#5fe0a0", phone: "600000000")
                 let b = Person(name: "Álvaro", emoji: "🦊", color: "#ffa94d")
