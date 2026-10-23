@@ -122,6 +122,19 @@ struct RootView: View {
             // (capturas automáticas: -tab brain|review|library|brand|smoke, -demo rellena datos de ejemplo)
             let args = ProcessInfo.processInfo.arguments
             if args.contains("-demo") { Demo.fill(store) }
+            if args.contains("-celebrar") { store.s.smoke.seen.removeAll { $0 == "time-604800" } }
+            if args.contains("-medir") {
+                // un par de días apuntando cigarros
+                var log: [Date] = []
+                let cal = Calendar.current
+                for d in [-2, -1, 0] {
+                    let day = cal.date(byAdding: .day, value: d, to: cal.startOfDay(for: Date()))!
+                    var t = day.addingTimeInterval(8 * 3600 + 1200)
+                    let end = d == 0 ? Date() : day.addingTimeInterval(23 * 3600 + 1800)
+                    while t < end { log.append(t); t = t.addingTimeInterval(Double(Int.random(in: 40...75)) * 60) }
+                }
+                store.s.smoke.start = nil; store.s.smoke.measuring = true; store.s.smoke.log = log
+            }
             if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
                 let map = ["brain": "cerebro", "review": "revision", "library": "cine", "brand": "marca", "smoke": "humo"]
                 if let p = map[args[i + 1]] { router.open(p) }

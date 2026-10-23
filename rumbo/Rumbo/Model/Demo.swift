@@ -58,6 +58,8 @@ enum Demo {
         sm.reasons = ["Respirar mejor cuando corro", "Ahorrar para el viaje a Japón"]
         sm.wish = "Viaje a Japón"; sm.wishPrice = 1200
         sm.cravings = [Date().addingTimeInterval(-86400), Date().addingTimeInterval(-3 * 86400)]
+        sm.pledges = (0..<6).map { Day.add(Day.today, days: -$0) }
+        sm.seen = smokeBadges.filter { badgeProgress($0, sm, Date()) >= 1 }.map(\.id)
         st.smoke = sm
         st.settings.todayHidden = []
         store.s = st

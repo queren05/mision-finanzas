@@ -78,6 +78,9 @@ jobs:
           shot -demo -rate; sleep 8; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/12-que-te-ha-parecido.png"
           shot -demo -personalize; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/13-personalizar.png"
           shot -demo;              xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/14-hoy-modulos.png"
+          shot -demo -tab smoke -logros; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/15-logros.png"
+          shot -demo -tab smoke -celebrar; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/16-nuevo-logro.png"
+          shot -demo -tab smoke -medir; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/17-apuntar.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa
