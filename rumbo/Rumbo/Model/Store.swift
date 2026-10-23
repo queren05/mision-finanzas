@@ -15,7 +15,12 @@ struct AgendaEvent: Identifiable, Hashable {
 @Observable
 final class Store {
     static let shared = Store()
-    var s: RState { didSet { scheduleSave() } }
+    var s: RState {
+        didSet {
+            // los ajustes se guardan al momento; lo demás, un instante después
+            if oldValue.settings != s.settings { saveNow() } else { scheduleSave() }
+        }
+    }
     var agenda: [AgendaEvent] = []
     var calendarDenied = false
     var busy: Set<String> = []          // qué se está pidiendo a Claude ahora mismo
@@ -49,7 +54,12 @@ final class Store {
         }
     }
     func saveNow() {
-        if let d = try? JSONEncoder().encode(s) { try? d.write(to: url, options: .atomic) }
+        do {
+            let d = try JSONEncoder().encode(s)
+            try d.write(to: url, options: .atomic)
+        } catch {
+            self.error = "No se han podido guardar los cambios: \(error.localizedDescription)"
+        }
     }
 
     /// ejecuta una petición a Claude marcando la tarea como ocupada y guardando el error para enseñarlo

@@ -52,20 +52,26 @@ struct PersonalizeView: View {
                 }
             }
             Section("Tarjetas de Hoy") {
-                ForEach(store.s.settings.todayOrder, id: \.self) { m in
+                let order = store.s.settings.todayOrder
+                ForEach(Array(order.enumerated()), id: \.element) { i, m in
                     let ai = m == "briefing" && !store.s.settings.ai
-                    Toggle(isOn: Binding(get: { !store.s.settings.todayHidden.contains(m) }, set: { on in
-                        Haptic.select()
-                        withAnimation {
-                            if on { store.s.settings.todayHidden.removeAll { $0 == m } } else { store.s.settings.todayHidden.append(m) }
-                        }
-                    })) {
+                    HStack(spacing: 10) {
                         Label(TodayModule.label(m), systemImage: TodayModule.icon(m))
+                            .opacity(ai ? 0.45 : 1)
+                        Spacer()
+                        MoveButtons(index: i, count: order.count) { to in
+                            withAnimation { store.s.settings.todayOrder.swapAt(i, to) }
+                        }
+                        Toggle("", isOn: Binding(get: { !store.s.settings.todayHidden.contains(m) }, set: { on in
+                            Haptic.select()
+                            withAnimation {
+                                if on { store.s.settings.todayHidden.removeAll { $0 == m } } else if !store.s.settings.todayHidden.contains(m) { store.s.settings.todayHidden.append(m) }
+                            }
+                        }))
+                        .labelsHidden()
+                        .disabled(ai)
                     }
-                    .disabled(ai)
-                    .opacity(ai ? 0.45 : 1)
                 }
-                .onMove { from, to in store.s.settings.todayOrder.move(fromOffsets: from, toOffset: to); Haptic.select() }
             }
             Section {
                 Button("Volver a como estaba") {
@@ -80,7 +86,6 @@ struct PersonalizeView: View {
                 }
             }
         }
-        .environment(\.editMode, .constant(.active))
         .navigationTitle("Personalizar")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -97,20 +102,22 @@ struct TabsCustomizer: View {
         List {
             Section {
                 Label("Hoy", systemImage: Page.hoy.icon).foregroundStyle(.secondary)
-                ForEach(tabs, id: \.self) { id in
+                ForEach(Array(tabs.enumerated()), id: \.element) { i, id in
                     if let p = Page(rawValue: id) {
-                        HStack {
+                        HStack(spacing: 10) {
                             Label(p.label, systemImage: p.icon)
                             Spacer()
-                            Button { Haptic.tap(); withAnimation { store.s.settings.tabs.removeAll { $0 == id } } } label: {
-                                Image(systemName: "minus.circle.fill").foregroundStyle(Color.negative).font(.title3)
+                            MoveButtons(index: i, count: tabs.count) { to in
+                                withAnimation { store.s.settings.tabs.swapAt(i, to) }
                             }
-                            .buttonStyle(.plain)
+                            Button { Haptic.tap(); withAnimation { store.s.settings.tabs.removeAll { $0 == id } } } label: {
+                                Image(systemName: "minus.circle.fill").foregroundStyle(tabs.count <= 1 ? Color.secondary : Color.negative).font(.title3)
+                            }
+                            .buttonStyle(.borderless)
                             .disabled(tabs.count <= 1)
                         }
                     }
                 }
-                .onMove { from, to in store.s.settings.tabs.move(fromOffsets: from, toOffset: to); Haptic.select() }
             } header: { Text("En la barra (\(tabs.count) de \(Settings.maxTabs))") }
             if !rest.isEmpty {
                 Section("Fuera de la barra") {
@@ -121,15 +128,37 @@ struct TabsCustomizer: View {
                             Button { Haptic.tap(); withAnimation { store.s.settings.tabs.append(p.rawValue) } } label: {
                                 Image(systemName: "plus.circle.fill").foregroundStyle(tabs.count >= Settings.maxTabs ? Color.secondary : Color.income).font(.title3)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.borderless)
                             .disabled(tabs.count >= Settings.maxTabs)
                         }
                     }
                 }
             }
         }
-        .environment(\.editMode, .constant(.active))
         .navigationTitle("Barra de abajo")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// flechas para subir o bajar una fila
+struct MoveButtons: View {
+    var index: Int
+    var count: Int
+    var move: (Int) -> Void
+    var body: some View {
+        HStack(spacing: 4) {
+            arrow("chevron.up", index > 0) { move(index - 1) }
+            arrow("chevron.down", index < count - 1) { move(index + 1) }
+        }
+    }
+    private func arrow(_ icon: String, _ on: Bool, _ action: @escaping () -> Void) -> some View {
+        Button { Haptic.select(); action() } label: {
+            Image(systemName: icon).font(.caption.weight(.bold))
+                .frame(width: 30, height: 30)
+                .background(Color.white.opacity(on ? 0.08 : 0.03), in: Circle())
+                .foregroundStyle(on ? Color.primary : Color.secondary.opacity(0.4))
+        }
+        .buttonStyle(.borderless)
+        .disabled(!on)
     }
 }
