@@ -5,7 +5,7 @@ import SwiftUI
 
 // MARK: - Martillos
 
-enum HammerStyle { case chancla, toy, claw, mallet, mace, jack, sledge, thunder, thunderGold, diamond, cosmic, goldFlop }
+enum HammerStyle { case chancla, toy, claw, mallet, mace, jack, sledge, thunder, thunderGold, diamond, cosmic, goldFlop, fire, ice, viking, anvil }
 
 struct HammerDef: Identifiable {
     let id: Int
@@ -23,7 +23,7 @@ struct HammerDef: Identifiable {
 // MARK: - Huchas
 
 enum PigKind: String, Codable, CaseIterable {
-    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica
+    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica, hielo, suerte, zombi, millonaria
 
     var name: String {
         switch self {
@@ -43,6 +43,10 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: "Hucha robot"
         case .lava: "Hucha de lava"
         case .cosmica: "Hucha cósmica"
+        case .hielo: "Hucha de hielo"
+        case .suerte: "Hucha de la suerte"
+        case .zombi: "Hucha zombi"
+        case .millonaria: "Hucha millonaria"
         }
     }
     var line: String {
@@ -63,6 +67,10 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: "Blindada y rápida. Odia los martillos."
         case .lava: "Explota como diez bombas."
         case .cosmica: "Viene del espacio con un tesoro dentro."
+        case .hielo: "Congelada y durísima. Lenta como un lunes."
+        case .suerte: "Al romperla, te da un punto de herencia."
+        case .zombi: "La rompes y vuelve a levantarse."
+        case .millonaria: "Rarísima. Vale mil huchas."
         }
     }
     var hp: Double {
@@ -70,6 +78,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 1; case .gorda: 3; case .ruedas: 0.8; case .cristal: 0.3; case .acorazada: 4; case .bomba: 1.2; case .dorada: 1.5; case .rey: 40
         case .gigante: 14; case .fantasma: 1.5; case .madre: 5; case .diamante: 12; case .arcoiris: 3
         case .robot: 9; case .lava: 6; case .cosmica: 30
+        case .hielo: 25; case .suerte: 6; case .zombi: 10; case .millonaria: 60
         }
     }
     var value: Double {
@@ -77,6 +86,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 1; case .gorda: 3.5; case .ruedas: 2; case .cristal: 0.8; case .acorazada: 5; case .bomba: 1.5; case .dorada: 12; case .rey: 60
         case .gigante: 22; case .fantasma: 6; case .madre: 6; case .diamante: 45; case .arcoiris: 10
         case .robot: 18; case .lava: 14; case .cosmica: 150
+        case .hielo: 40; case .suerte: 30; case .zombi: 35; case .millonaria: 1_000
         }
     }
     var size: Double {
@@ -84,6 +94,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 62; case .gorda: 84; case .ruedas: 54; case .cristal: 56; case .acorazada: 70; case .bomba: 60; case .dorada: 64; case .rey: 128
         case .gigante: 150; case .fantasma: 64; case .madre: 92; case .diamante: 70; case .arcoiris: 66
         case .robot: 72; case .lava: 74; case .cosmica: 96
+        case .hielo: 88; case .suerte: 64; case .zombi: 70; case .millonaria: 110
         }
     }
     var speed: Double {
@@ -91,6 +102,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 14; case .gorda: 7; case .ruedas: 85; case .cristal: 10; case .acorazada: 9; case .bomba: 18; case .dorada: 26; case .rey: 12
         case .gigante: 5; case .fantasma: 20; case .madre: 8; case .diamante: 16; case .arcoiris: 30
         case .robot: 45; case .lava: 12; case .cosmica: 22
+        case .hielo: 4; case .suerte: 28; case .zombi: 10; case .millonaria: 18
         }
     }
     /// a partir de qué nivel de las huchas aparece (el nivel sube rompiéndolas)
@@ -99,6 +111,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 0; case .dorada: 0; case .gorda: 2; case .ruedas: 4; case .cristal: 6; case .acorazada: 9; case .bomba: 12
         case .rey: 15; case .gigante: 19; case .fantasma: 23; case .madre: 27; case .diamante: 32; case .arcoiris: 38
         case .robot: 45; case .lava: 52; case .cosmica: 60
+        case .hielo: 68; case .suerte: 75; case .zombi: 82; case .millonaria: 100
         }
     }
     var weight: Double {
@@ -106,6 +119,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .normal: 100; case .gorda: 20; case .ruedas: 12; case .cristal: 10; case .acorazada: 10; case .bomba: 8; case .dorada: 0; case .rey: 0
         case .gigante: 3; case .fantasma: 7; case .madre: 5; case .diamante: 2; case .arcoiris: 2
         case .robot: 6; case .lava: 4; case .cosmica: 1.5
+        case .hielo: 5; case .suerte: 2; case .zombi: 5; case .millonaria: 0.6
         }
     }
     var color: Color {
@@ -126,6 +140,10 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: Color(hex: "#8fa3b8")
         case .lava: Color(hex: "#f0642a")
         case .cosmica: Color(hex: "#6a4bc4")
+        case .hielo: Color(hex: "#c9f1ff")
+        case .suerte: Color(hex: "#5fd36a")
+        case .zombi: Color(hex: "#93b07a")
+        case .millonaria: Ink.gold
         }
     }
     var dark: Color {
@@ -142,6 +160,10 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: Color(hex: "#5b6b7c")
         case .lava: Color(hex: "#a52a12")
         case .cosmica: Color(hex: "#f2b632")
+        case .hielo: Color(hex: "#7cc8e8")
+        case .suerte: Color(hex: "#2f8f3a")
+        case .zombi: Color(hex: "#5a6b4a")
+        case .millonaria: Color(hex: "#c98d1d")
         }
     }
     /// las que salen al azar (la dorada y el rey salen aparte)
@@ -168,6 +190,7 @@ struct BillDef: Identifiable {
 enum SkillEffect {
     case damageFlat, damagePct, speedPct, radiusPct, stamina, killStamina, drainSave, startPigs, spawnPct, maxPigs
     case lootPct, golden, crit, critDamage, collateral, chest, jackpot, pierce, firstHit, fat, bomb, king, glass
+    case frenzyEarly, frenzyTime, frenzyMoney
 }
 
 struct SkillDef: Identifiable {
@@ -249,7 +272,11 @@ enum Content {
         HammerDef(id: 8, name: "Martillo del trueno dorado", line: "Ahora sí es suyo.", cost: 1.2e9, damage: 4_500, speed: 2.3, radius: 110, style: .thunderGold, head: "#f2b632", handle: "#7a1f2a"),
         HammerDef(id: 9, name: "Mazo de diamante", line: "Raya hasta el cristal blindado.", cost: 3e10, damage: 16_000, speed: 1.9, radius: 130, style: .diamond, head: "#9fe8ff", handle: "#3a3f45"),
         HammerDef(id: 10, name: "Cetro cósmico", line: "Lo encontraste en un meteorito.", cost: 9e11, damage: 60_000, speed: 2.8, radius: 140, style: .cosmic, head: "#8a5cc2", handle: "#2b1f4a"),
-        HammerDef(id: 11, name: "La chancla de oro", line: "La definitiva. La de la abuela.", cost: 4e13, damage: 260_000, speed: 3.2, radius: 160, style: .goldFlop, head: "#f2b632", handle: "#c8323c"),
+        HammerDef(id: 11, name: "La chancla de oro", line: "La de la abuela. Casi la definitiva.", cost: 4e13, damage: 260_000, speed: 3.2, radius: 160, style: .goldFlop, head: "#f2b632", handle: "#c8323c"),
+        HammerDef(id: 12, name: "Martillo de fuego", line: "Funde la cerámica al tocarla.", cost: 2e15, damage: 1.1e6, speed: 3.4, radius: 170, style: .fire, head: "#c8323c", handle: "#3a2a20"),
+        HammerDef(id: 13, name: "Mazo de hielo eterno", line: "Las huchas se quedan heladas.", cost: 9e16, damage: 4.5e6, speed: 3.6, radius: 185, style: .ice, head: "#9fe8ff", handle: "#e6f6ff"),
+        HammerDef(id: 14, name: "Hacha vikinga", line: "No es un martillo. Da igual.", cost: 4e18, damage: 2e7, speed: 4.0, radius: 200, style: .viking, head: "#c9ccd2", handle: "#8a5a36"),
+        HammerDef(id: 15, name: "Un yunque con un palo", line: "El final. Literalmente.", cost: 2e20, damage: 1e8, speed: 4.5, radius: 230, style: .anvil, head: "#5a5f66", handle: "#b07a4a"),
     ]
 
     static let bills: [BillDef] = [
@@ -297,11 +324,11 @@ enum Content {
         SkillDef(id: "midas", name: "Toque de Midas", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 40, maxLevel: 40, baseCost: 50_000, growth: 1.65, parent: "ojo", col: 2, row: 6, icon: "sparkles"),
         SkillDef(id: "bote", name: "El bote", desc: "%\u{2009}% de que una hucha dé ×20", effect: .jackpot, per: 0.5, maxLevel: 4, baseCost: 2e6, growth: 2.2, parent: "midas", col: 2, row: 8, icon: "dollarsign.circle.fill"),
         // derecha: huchas
-        SkillDef(id: "mas", name: "Más huchas", desc: "+% huchas al empezar", effect: .startPigs, per: 2, maxLevel: 6, baseCost: 30, growth: 1.8, parent: "golpe", col: 4, row: 1, icon: "plus.circle.fill"),
-        SkillDef(id: "repartidor", name: "El repartidor", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 12, maxLevel: 15, baseCost: 250, growth: 1.6, parent: "mas", col: 5, row: 2, icon: "shippingbox.fill"),
-        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% huchas a la vez", effect: .maxPigs, per: 3, maxLevel: 6, baseCost: 1_000, growth: 1.9, parent: "repartidor", col: 5, row: 3, icon: "rectangle.expand.vertical"),
+        SkillDef(id: "mas", name: "Más huchas", desc: "+% huchas al empezar", effect: .startPigs, per: 3, maxLevel: 15, baseCost: 30, growth: 1.8, parent: "golpe", col: 4, row: 1, icon: "plus.circle.fill"),
+        SkillDef(id: "repartidor", name: "El repartidor", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 12, maxLevel: 25, baseCost: 250, growth: 1.6, parent: "mas", col: 5, row: 2, icon: "shippingbox.fill"),
+        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% huchas a la vez", effect: .maxPigs, per: 4, maxLevel: 20, baseCost: 1_000, growth: 1.9, parent: "repartidor", col: 5, row: 3, icon: "rectangle.expand.vertical"),
         SkillDef(id: "gordas", name: "Huchas gordas", desc: "+%\u{2009}% de huchas gordas", effect: .fat, per: 5, maxLevel: 4, baseCost: 4_000, growth: 2, parent: "mesa", col: 6, row: 4, icon: "circle.fill"),
-        SkillDef(id: "fabrica", name: "Fábrica de huchas", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 15, maxLevel: 20, baseCost: 25_000, growth: 1.65, parent: "mesa", col: 5, row: 5, icon: "building.2.fill"),
+        SkillDef(id: "fabrica", name: "Fábrica de huchas", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 15, maxLevel: 35, baseCost: 25_000, growth: 1.65, parent: "mesa", col: 5, row: 5, icon: "building.2.fill"),
         SkillDef(id: "bombas", name: "Pólvora", desc: "Explosiones +%\u{2009}%", effect: .bomb, per: 50, maxLevel: 4, baseCost: 90_000, growth: 2.2, parent: "fabrica", col: 6, row: 6, icon: "flame.circle.fill"),
         SkillDef(id: "corte", name: "La corte del rey", desc: "+%\u{2009}% de que venga el Rey", effect: .king, per: 10, maxLevel: 5, baseCost: 1e6, growth: 2, parent: "fabrica", col: 5, row: 7, icon: "crown.fill"),
         // centro-derecha: alcance y velocidad
@@ -310,6 +337,16 @@ enum Content {
         SkillDef(id: "onda", name: "Onda expansiva", desc: "Las de al lado reciben un %\u{2009}%", effect: .collateral, per: 10, maxLevel: 5, baseCost: 3_500, growth: 1.9, parent: "reflejos", col: 4, row: 4, icon: "dot.radiowaves.left.and.right"),
         SkillDef(id: "sobres", name: "Sobres sorpresa", desc: "+%\u{2009}% de sobres", effect: .chest, per: 1, maxLevel: 5, baseCost: 40_000, growth: 2, parent: "onda", col: 4, row: 6, icon: "envelope.fill"),
         SkillDef(id: "huracan", name: "Huracán", desc: "+%\u{2009}% de velocidad", effect: .speedPct, per: 15, maxLevel: 5, baseCost: 2.5e6, growth: 2, parent: "sobres", col: 4, row: 8, icon: "tornado"),
+        // la parte de abajo del corcho: para cuando ya lo tienes todo
+        SkillDef(id: "almacen", name: "Almacén de huchas", desc: "+% huchas a la vez", effect: .maxPigs, per: 4, maxLevel: 25, baseCost: 5e7, growth: 1.55, parent: "corte", col: 5, row: 9, icon: "shippingbox.circle.fill"),
+        SkillDef(id: "alud", name: "Avalancha", desc: "+% huchas al empezar", effect: .startPigs, per: 5, maxLevel: 15, baseCost: 2e8, growth: 1.6, parent: "almacen", col: 6, row: 9, icon: "square.stack.3d.down.forward.fill"),
+        SkillDef(id: "cinta", name: "Cinta transportadora", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 25, maxLevel: 30, baseCost: 6e8, growth: 1.55, parent: "alud", col: 6, row: 10, icon: "arrow.right.to.line.circle.fill"),
+        SkillDef(id: "horapunta", name: "Hora punta", desc: "Frenesí con % huchas menos de combo", effect: .frenzyEarly, per: 2, maxLevel: 8, baseCost: 8e7, growth: 1.8, parent: "huracan", col: 4, row: 10, icon: "timer"),
+        SkillDef(id: "fiesta", name: "Fiesta", desc: "El frenesí dura +% s", effect: .frenzyTime, per: 1, maxLevel: 12, baseCost: 3e8, growth: 1.75, parent: "horapunta", col: 4, row: 11, icon: "party.popper.fill"),
+        SkillDef(id: "locura", name: "Locura", desc: "En frenesí, +%\u{2009}% de dinero", effect: .frenzyMoney, per: 50, maxLevel: 25, baseCost: 1e9, growth: 1.6, parent: "fiesta", col: 5, row: 11, icon: "sparkles"),
+        SkillDef(id: "martillazo", name: "Martillazo", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 100, maxLevel: 50, baseCost: 4e7, growth: 1.5, parent: "furia", col: 3, row: 10, icon: "hammer.circle.fill"),
+        SkillDef(id: "tesoro", name: "El tesoro", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 100, maxLevel: 50, baseCost: 6e7, growth: 1.5, parent: "bote", col: 2, row: 10, icon: "crown.fill"),
+        SkillDef(id: "hormigon", name: "Pulmones de hormigón", desc: "+% de aguante", effect: .stamina, per: 50, maxLevel: 20, baseCost: 3e7, growth: 1.6, parent: "maraton", col: 1, row: 9, icon: "figure.strengthtraining.functional"),
     ]
 
     static let rings: [RingDef] = [
@@ -326,10 +363,10 @@ enum Content {
         RingDef(id: "reloj", name: "Reloj de bolsillo", desc: "+% días para cada factura", effect: .extraDays, per: 1, maxLevel: 3, baseCost: 60, growth: 4, color: "#b9b3ad", bracelet: true),
         RingDef(id: "esmeralda", name: "Anillo de esmeralda", desc: "+%\u{2009}% de velocidad", effect: .speed, per: 4, maxLevel: 20, baseCost: 40, growth: 1.6, color: "#2fae5a", bracelet: false),
         RingDef(id: "zafiro", name: "Anillo de zafiro", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 20, maxLevel: 20, baseCost: 45, growth: 1.6, color: "#2f5fd0", bracelet: false),
-        RingDef(id: "collar", name: "Collar de perlas", desc: "+% huchas al empezar", effect: .startPigs, per: 1, maxLevel: 12, baseCost: 60, growth: 1.7, color: "#f4efe6", bracelet: true),
-        RingDef(id: "broche", name: "Broche de flor", desc: "+% huchas a la vez", effect: .maxPigs, per: 1, maxLevel: 15, baseCost: 70, growth: 1.65, color: "#e8483a", bracelet: true),
-        RingDef(id: "tobillera", name: "Tobillera", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 5, maxLevel: 20, baseCost: 55, growth: 1.6, color: "#f2b632", bracelet: true),
-        RingDef(id: "relojoro", name: "Reloj de oro", desc: "El frenesí dura +% s", effect: .frenzy, per: 0.5, maxLevel: 10, baseCost: 90, growth: 1.8, color: "#f2b632", bracelet: true),
+        RingDef(id: "collar", name: "Collar de perlas", desc: "+% huchas al empezar", effect: .startPigs, per: 2, maxLevel: 20, baseCost: 60, growth: 1.7, color: "#f4efe6", bracelet: true),
+        RingDef(id: "broche", name: "Broche de flor", desc: "+% huchas a la vez", effect: .maxPigs, per: 2, maxLevel: 30, baseCost: 70, growth: 1.65, color: "#e8483a", bracelet: true),
+        RingDef(id: "tobillera", name: "Tobillera", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 8, maxLevel: 40, baseCost: 55, growth: 1.6, color: "#f2b632", bracelet: true),
+        RingDef(id: "relojoro", name: "Reloj de oro", desc: "El frenesí dura +% s", effect: .frenzy, per: 0.5, maxLevel: 20, baseCost: 90, growth: 1.8, color: "#f2b632", bracelet: true),
         RingDef(id: "gargantilla", name: "Gargantilla", desc: "+%\u{2009}% de experiencia", effect: .xp, per: 10, maxLevel: 20, baseCost: 50, growth: 1.6, color: "#c8323c", bracelet: true),
         RingDef(id: "diadema", name: "Diadema", desc: "Las huchas suben de nivel un %\u{2009}% más rápido", effect: .pigXP, per: 8, maxLevel: 15, baseCost: 120, growth: 1.75, color: "#8a5cc2", bracelet: true),
         RingDef(id: "llavero", name: "Llavero de casa", desc: "En la hucha de casa caben +% h más", effect: .bankHours, per: 1, maxLevel: 12, baseCost: 35, growth: 1.7, color: "#d9a441", bracelet: true),
@@ -407,6 +444,8 @@ extension PigKind {
         case .bomba: "bomba"
         case .diamante: "cristal"
         case .robot: "hierro"
+        case .hielo: "cristal"
+        case .millonaria: "oro"
         default: "normal"
         }
     }

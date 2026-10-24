@@ -27,6 +27,8 @@ struct HitStats {
     var king = 0.0
     var glass = 2.0
     var frenzyExtra = 0.0
+    var frenzyEarly = 0
+    var frenzyMoney = 0.0
 }
 
 struct DayReport: Identifiable {
@@ -46,6 +48,7 @@ struct DayReport: Identifiable {
     var byKind: [String: Int] = [:]
     var xp = 0.0
     var record = false
+    var legacy = 0.0
 }
 
 struct ChestPrize: Identifiable {
@@ -140,6 +143,9 @@ final class Game {
             case .bomb: st.bomb += v / 100
             case .king: st.king += v / 100
             case .glass: st.glass += v
+            case .frenzyEarly: st.frenzyEarly += Int(v)
+            case .frenzyTime: st.frenzyExtra += v
+            case .frenzyMoney: st.frenzyMoney += v / 100
             }
         }
         for r in Content.rings {
@@ -263,6 +269,7 @@ final class Game {
         s.stats.bestDay = max(s.stats.bestDay, r.earned)
         s.stats.bestCombo = max(s.stats.bestCombo, Double(r.bestCombo))
         s.stats.frenzies += Double(r.frenzies)
+        s.legacy += r.legacy
         s.pendingChests += r.chests
         for c in r.coins { addCoin(c) }
         s.day += 1

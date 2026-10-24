@@ -346,6 +346,12 @@ final class DeskScene: SKScene {
                     n.body.color = UIColor(red: 1, green: 0.35 + 0.15 * sin(t * 6 + Double(p.id)), blue: 0.1, alpha: 1); n.body.colorBlendFactor = 0.55
                 case .cosmica:
                     n.body.color = UIColor(hue: 0.72 + 0.08 * sin(t * 2 + Double(p.id)), saturation: 0.8, brightness: 0.9, alpha: 1); n.body.colorBlendFactor = 0.55
+                case .hielo:
+                    n.body.color = UIColor(red: 0.7, green: 0.95, blue: 1, alpha: 1); n.body.colorBlendFactor = 0.45
+                case .suerte:
+                    n.body.color = UIColor(red: 0.35, green: 0.85, blue: 0.4, alpha: 1); n.body.colorBlendFactor = 0.5
+                case .zombi:
+                    n.body.color = UIColor(red: 0.55, green: 0.7, blue: 0.45, alpha: 1); n.body.colorBlendFactor = 0.55
                 case .robot:
                     n.body.color = UIColor(red: 0.5, green: 0.75, blue: 1, alpha: 1); n.body.colorBlendFactor = 0.3
                 default:
@@ -607,7 +613,7 @@ final class DeskScene: SKScene {
         let w = size.width
         let top = desk.top
         if desk.frenzy {
-            let left = (desk.frenzyUntil - t) / 6
+            let left = (desk.frenzyUntil - t) / (6 + desk.stats.frenzyExtra)
             frenzyTint.isHidden = false
             frenzyTint.alpha = 0.12 + 0.06 * sin(t * 12)
             let bw = w * 0.6
@@ -628,7 +634,7 @@ final class DeskScene: SKScene {
             lastCombo = combo
             let tex = Tex.text("COMBO ×\(combo)", 26, UIColor(color))
             comboNode.texture = tex; comboNode.size = tex.size()
-            let mt = Tex.text("dinero ×" + Fmt.dec(desk.comboMult * (desk.frenzy ? 2 : 1), 2), 15, UIColor(Ink.paper))
+            let mt = Tex.text("dinero ×" + Fmt.dec(desk.comboMult * (desk.frenzy ? desk.frenzyGain : 1), 2), 15, UIColor(Ink.paper))
             multNode.texture = mt; multNode.size = mt.size()
         }
         comboNode.isHidden = false; multNode.isHidden = false

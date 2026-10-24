@@ -370,12 +370,26 @@ struct KindIcon: View {
                 SkinIcon(id: skin.id, size: size, look: kind.look)
             }
         }
-        .colorMultiply(kind == .lava ? Color(hex: "#ff7a3a") : (kind == .cosmica ? Color(hex: "#a98bff") : (kind == .robot ? Color(hex: "#b8d8ff") : .white)))
+        .colorMultiply(kindTint)
         .opacity(kind == .fantasma ? 0.55 : 1)
         .hueRotation(.degrees(kind == .arcoiris ? 120 : 0))
         .saturation(kind == .diamante || kind == .arcoiris ? 1.7 : 1)
         .overlay(alignment: .top) {
             if kind == .rey { Image(systemName: "crown.fill").font(.system(size: size * 0.28)).foregroundStyle(Ink.gold).offset(y: -size * 0.12) }
+        }
+    }
+}
+
+extension KindIcon {
+    var kindTint: Color {
+        switch kind {
+        case .lava: Color(hex: "#ff7a3a")
+        case .cosmica: Color(hex: "#a98bff")
+        case .robot: Color(hex: "#b8d8ff")
+        case .hielo: Color(hex: "#c8f2ff")
+        case .suerte: Color(hex: "#8fe39a")
+        case .zombi: Color(hex: "#a9c08f")
+        default: .white
         }
     }
 }

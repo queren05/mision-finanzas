@@ -68,8 +68,11 @@ final class Desk {
     private(set) var frenzyUntil = -10.0
     var frenzy: Bool { time < frenzyUntil }
     var comboMult: Double { 1 + Double(min(combo, 50)) * 0.04 }
+    /// combo que hace falta para el primer frenesí del día
+    var frenzyBase: Int { max(8, Desk.frenzyAt - stats.frenzyEarly) }
+    var frenzyGain: Double { 2 + stats.frenzyMoney }
     static let comboWindow = 1.7
-    static let frenzyAt = 30
+    static let frenzyAt = 25
     /// primera partida: enseña dónde tocar
     var tutorial = false
     private(set) var firstBreakAt: Double? = nil
@@ -91,6 +94,7 @@ final class Desk {
         self.hammer = hammer
         self.stamina = stats.stamina.rounded()
         self.regainLeft = (stats.stamina * 0.4).rounded()
+        self.nextFrenzy = max(8, Desk.frenzyAt - stats.frenzyEarly)
         self.report = DayReport(day: day)
     }
 
@@ -231,7 +235,7 @@ final class Desk {
         report.bestCombo = max(report.bestCombo, combo)
         if firstBreakAt == nil { firstBreakAt = time }
         if combo >= nextFrenzy && !frenzy {
-            nextFrenzy = combo + Desk.frenzyAt + 20 * (report.frenzies + 1)
+            nextFrenzy = combo + frenzyBase + 12 * (report.frenzies + 1)
             frenzyUntil = time + 6 + stats.frenzyExtra
             report.frenzies += 1
             shake = max(shake, 12)
@@ -239,7 +243,7 @@ final class Desk {
             floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
         }
         report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
-        var value = pig.value * stats.loot * comboMult * (frenzy ? 2 : 1)
+        var value = pig.value * stats.loot * comboMult * (frenzy ? frenzyGain : 1)
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
@@ -296,6 +300,12 @@ final class Desk {
             explode(at: pig.pos, power: pig.maxHP * 4)
         case .cosmica:
             if let c = Game.shared.goldenCoinDrop() { report.coins.append(c) }
+        case .suerte:
+            report.legacy += 1
+            if floaters.count < 16 { floaters.append(Floater(text: "+1 herencia", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 46), born: time + 0.1, color: Ink.purple, size: 18)) }
+        case .zombi:
+            // vuelve a levantarse una vez, más pequeña
+            if pig.size > PigKind.zombi.size * 0.8 { spawn(.zombi, at: pig.pos, scale: 0.7) }
         default: break
         }
         let chestChance = pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
@@ -375,10 +385,10 @@ final class Desk {
             spawnTimer -= dt * (frenzy ? 4 : 1)
             if spawnTimer <= 0 {
                 spawnTimer = stats.spawnEvery * Double.random(in: 0.7...1.3)
-                if pigs.count < stats.maxPigs + (frenzy ? 10 : 0) { spawn() }
+                if pigs.count < min(220, stats.maxPigs + (frenzy ? max(10, stats.maxPigs / 2) : 0)) { spawn() }
             }
         }
-        if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = Desk.frenzyAt + 20 * report.frenzies }
+        if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
 
         // se mueven
         for i in pigs.indices {
@@ -943,6 +953,10 @@ enum HammerArt {
         .diamond: ("m_diamante", 228, 350, 114, 71),
         .cosmic: ("m_cosmico", 186, 320, 93, 93),
         .goldFlop: ("m_chancla_oro", 179, 328, 81, 151),
+        .fire: ("m_fuego", 174, 327, 87, 93),
+        .ice: ("m_hielo", 192, 345, 96, 72),
+        .viking: ("m_vikingo", 140, 319, 81, 81),
+        .anvil: ("m_yunque", 244, 348, 126, 74),
     ]
     static func image(_ h: HammerDef) -> Image? { ItemArt.image(meta[h.style]!.file) }
 
