@@ -264,8 +264,8 @@ enum Content {
         // izquierda: aguante
         SkillDef(id: "desayuno", name: "Desayuno fuerte", desc: "+% de aguante", effect: .stamina, per: 5, maxLevel: 10, baseCost: 25, growth: 1.5, parent: "golpe", col: 2, row: 1, icon: "cup.and.saucer.fill"),
         SkillDef(id: "gimnasio", name: "Ir al gimnasio", desc: "+% de aguante", effect: .stamina, per: 8, maxLevel: 10, baseCost: 300, growth: 1.55, parent: "desayuno", col: 1, row: 2, icon: "dumbbell.fill"),
-        SkillDef(id: "segundo", name: "Segundo aire", desc: "%\u{2009}% de recuperar 1 al romper", effect: .killStamina, per: 10, maxLevel: 5, baseCost: 1_200, growth: 1.8, parent: "gimnasio", col: 1, row: 3, icon: "wind"),
-        SkillDef(id: "respira", name: "Respirar hondo", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, per: 6, maxLevel: 5, baseCost: 5_000, growth: 1.9, parent: "segundo", col: 0, row: 4, icon: "lungs.fill"),
+        SkillDef(id: "segundo", name: "Segundo aire", desc: "%\u{2009}% de recuperar 1 al romper", effect: .killStamina, per: 6, maxLevel: 5, baseCost: 1_200, growth: 1.8, parent: "gimnasio", col: 1, row: 3, icon: "wind"),
+        SkillDef(id: "respira", name: "Respirar hondo", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, per: 4, maxLevel: 5, baseCost: 5_000, growth: 1.9, parent: "segundo", col: 0, row: 4, icon: "lungs.fill"),
         SkillDef(id: "cafe", name: "Café doble", desc: "+% de aguante", effect: .stamina, per: 15, maxLevel: 10, baseCost: 30_000, growth: 1.6, parent: "segundo", col: 1, row: 5, icon: "mug.fill"),
         SkillDef(id: "cristalero", name: "Cristalero", desc: "Las de cristal dan +% de aguante", effect: .glass, per: 1, maxLevel: 3, baseCost: 80_000, growth: 2.5, parent: "cafe", col: 0, row: 6, icon: "drop.fill"),
         SkillDef(id: "maraton", name: "Maratón", desc: "+% de aguante", effect: .stamina, per: 30, maxLevel: 10, baseCost: 700_000, growth: 1.7, parent: "cafe", col: 1, row: 7, icon: "figure.run"),
