@@ -10,7 +10,7 @@ enum Tex {
     private static var cache: [String: SKTexture] = [:]
     private static var texts = 0
 
-    static func get(_ key: String, _ make: () -> UIImage?) -> SKTexture? {
+    static func cached(_ key: String, _ make: () -> UIImage?) -> SKTexture? {
         if let t = cache[key] { return t }
         guard let img = make() else { return nil }
         let t = SKTexture(image: img)
@@ -59,7 +59,7 @@ enum Tex {
     }
 
     static func shard(_ color: UIColor, _ variant: Int) -> SKTexture? {
-        get("sh|\(key(color))|\(variant)") {
+        cached("sh|\(key(color))|\(variant)") {
             draw(CGSize(width: 48, height: 48)) { c in
                 let r = 20.0
                 let rots = [0.0, 0.7, 1.9]
@@ -76,7 +76,7 @@ enum Tex {
     }
 
     static var shadow: SKTexture? {
-        get("shadow") {
+        cached("shadow") {
             draw(CGSize(width: 100, height: 24)) { c in
                 c.setFillColor(UIColor.black.withAlphaComponent(0.22).cgColor)
                 c.fillEllipse(in: CGRect(x: 0, y: 0, width: 100, height: 24))
@@ -85,7 +85,7 @@ enum Tex {
     }
 
     static func ring(_ color: UIColor, width: CGFloat) -> SKTexture? {
-        get("ring|\(key(color))|\(width)") {
+        cached("ring|\(key(color))|\(width)") {
             draw(CGSize(width: 220, height: 140)) { c in
                 c.setStrokeColor(color.cgColor); c.setLineWidth(width); c.setLineDash(phase: 0, lengths: [12, 14])
                 c.strokeEllipse(in: CGRect(x: 6, y: 6, width: 208, height: 128))
@@ -94,7 +94,7 @@ enum Tex {
     }
 
     static var impact: SKTexture? {
-        get("impact") {
+        cached("impact") {
             draw(CGSize(width: 220, height: 140)) { c in
                 c.setStrokeColor(ink.cgColor); c.setLineWidth(5); c.setLineCap(.round)
                 for a in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
@@ -107,7 +107,7 @@ enum Tex {
     }
 
     static var blast: SKTexture? {
-        get("blast") {
+        cached("blast") {
             draw(CGSize(width: 200, height: 200)) { c in
                 c.setFillColor(UIColor(Ink.gold).withAlphaComponent(0.5).cgColor)
                 c.fillEllipse(in: CGRect(x: 4, y: 4, width: 192, height: 192))
@@ -118,7 +118,7 @@ enum Tex {
     }
 
     static var crown: SKTexture? {
-        get("crown") {
+        cached("crown") {
             draw(CGSize(width: 90, height: 50)) { c in
                 var pts = [CGPoint(x: 5, y: 45)]
                 for k in 0..<7 { pts.append(CGPoint(x: 5 + Double(k) * 80 / 6, y: k % 2 == 1 ? 32 : 5)) }
@@ -133,7 +133,7 @@ enum Tex {
     }
 
     static var fuse: SKTexture? {
-        get("fuse") {
+        cached("fuse") {
             draw(CGSize(width: 50, height: 50)) { c in
                 c.setLineCap(.round)
                 c.move(to: CGPoint(x: 30, y: 46)); c.addQuadCurve(to: CGPoint(x: 12, y: 10), control: CGPoint(x: 44, y: 14))
@@ -145,7 +145,7 @@ enum Tex {
     }
 
     static var flame: SKTexture? {
-        get("flame") {
+        cached("flame") {
             draw(CGSize(width: 30, height: 30)) { c in
                 c.setFillColor(UIColor(Ink.gold).cgColor); c.fillEllipse(in: CGRect(x: 1, y: 1, width: 28, height: 28))
                 c.setFillColor(UIColor(Ink.red).cgColor); c.fillEllipse(in: CGRect(x: 8, y: 8, width: 14, height: 14))
@@ -154,7 +154,7 @@ enum Tex {
     }
 
     static var skate: SKTexture? {
-        get("skate") {
+        cached("skate") {
             draw(CGSize(width: 120, height: 34)) { c in
                 c.setFillColor(ink.cgColor)
                 for x in [24.0, 96.0] { c.fillEllipse(in: CGRect(x: x - 10, y: 12, width: 20, height: 20)) }
@@ -170,17 +170,17 @@ enum Tex {
 
     static func pig(_ skin: SkinDef, _ kind: PigKind) -> SKTexture? {
         if skin.drawn {
-            return get("pigd|\(kind.rawValue)") {
+            return cached("pigd|\(kind.rawValue)") {
                 let r = ImageRenderer(content: PigIcon(size: 160, kind: kind))
                 r.scale = 2
                 return r.uiImage
             }
         }
-        return get("pig|\(skin.id)|\(kind.look)") { SkinArt.uiImage(skin.id, kind.look) }
+        return cached("pig|\(skin.id)|\(kind.look)") { SkinArt.uiImage(skin.id, kind.look) }
     }
 
     static func item(_ name: String, ext: String = "png") -> SKTexture? {
-        get("item|\(name)") { ItemArt.uiImage(name, ext: ext) }
+        cached("item|\(name)") { ItemArt.uiImage(name, ext: ext) }
     }
 }
 
