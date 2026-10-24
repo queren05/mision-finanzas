@@ -70,6 +70,7 @@ struct TodayView: View {
         case "tareas": tasks
         case "humo": SmokeMini()
         case "cine": watching
+        case "deseos": WishMini()
         default: EmptyView()
         }
     }

@@ -264,7 +264,7 @@ struct Settings: Codable, Hashable {
     var askRating: Bool = true
     var notifySmoke: Bool = true
 
-    static let allModules = ["resumen", "semana", "briefing", "agenda", "recordatorios", "prioridades", "tareas", "humo", "cine"]
+    static let allModules = ["resumen", "semana", "briefing", "agenda", "recordatorios", "prioridades", "tareas", "humo", "cine", "deseos"]
     static let defaultTabs = ["cerebro", "revision", "cine", "marca"]
     static let maxTabs = 4
 
@@ -313,10 +313,11 @@ struct RState: Codable {
     var films: [Film] = []
     var filmQA: [QA] = []
     var smoke = Smoke()
+    var wishes: [Wish] = []
     var settings = Settings()
 
     init() {}
-    enum CodingKeys: String, CodingKey { case tasks, reminders, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, smoke, settings }
+    enum CodingKeys: String, CodingKey { case tasks, reminders, briefing, docs, brainQA, checkIns, weekly, brandInfo, kit, pieces, library, libraryQA, films, filmQA, smoke, wishes, settings }
     // tolera datos guardados por versiones anteriores
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -335,6 +336,38 @@ struct RState: Codable {
         films = (try? c.decodeIfPresent([Film].self, forKey: .films)) ?? []
         filmQA = (try? c.decodeIfPresent([QA].self, forKey: .filmQA)) ?? []
         smoke = (try? c.decodeIfPresent(Smoke.self, forKey: .smoke)) ?? Smoke()
+        wishes = (try? c.decodeIfPresent([Wish].self, forKey: .wishes)) ?? []
         settings = (try? c.decodeIfPresent(Settings.self, forKey: .settings)) ?? Settings()
+    }
+}
+
+/// algo que quieres comprarte
+struct Wish: Codable, Identifiable, Hashable {
+    var id = UUID().uuidString
+    var title: String
+    var price: Double? = nil
+    var saved: Double = 0
+    var link: String = ""
+    var note: String = ""
+    /// 0 algún día · 1 me gustaría · 2 lo quiero ya
+    var priority: Int = 1
+    var photo: Data? = nil
+    var imageURL: String = ""
+    var created = Date()
+    var bought: Date? = nil
+
+    init(title: String) { self.title = title }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        let x = Wish(title: "")
+        func v<T: Decodable>(_ k: CodingKeys, _ def: T) -> T { (try? c.decodeIfPresent(T.self, forKey: k)) ?? def }
+        id = v(.id, x.id); title = v(.title, ""); price = try? c.decodeIfPresent(Double.self, forKey: .price)
+        saved = v(.saved, 0); link = v(.link, ""); note = v(.note, ""); priority = v(.priority, 1)
+        photo = try? c.decodeIfPresent(Data.self, forKey: .photo); imageURL = v(.imageURL, "")
+        created = v(.created, Date()); bought = try? c.decodeIfPresent(Date.self, forKey: .bought)
+    }
+    var progress: Double? {
+        guard let p = price, p > 0 else { return nil }
+        return min(1, saved / p)
     }
 }

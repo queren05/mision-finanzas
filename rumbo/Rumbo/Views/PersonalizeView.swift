@@ -13,6 +13,7 @@ enum TodayModule {
         case "tareas": "Tareas"
         case "humo": "Sin humo"
         case "cine": "Viendo ahora"
+        case "deseos": "Deseos"
         default: m
         }
     }
@@ -27,6 +28,7 @@ enum TodayModule {
         case "tareas": "checklist"
         case "humo": "wind"
         case "cine": "film.fill"
+        case "deseos": "gift.fill"
         default: "square"
         }
     }

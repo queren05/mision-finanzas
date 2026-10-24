@@ -61,6 +61,19 @@ enum Demo {
         sm.pledges = (0..<6).map { Day.add(Day.today, days: -$0) }
         sm.seen = smokeBadges.filter { badgeProgress($0, sm, Date()) >= 1 }.map(\.id)
         st.smoke = sm
+        func wish(_ t: String, _ p: Double, _ pr: Int, saved: Double = 0, bought: Int? = nil) -> Wish {
+            var w = Wish(title: t); w.price = p; w.priority = pr; w.saved = saved
+            if let b = bought { w.bought = Date().addingTimeInterval(Double(-b) * 86400) }
+            return w
+        }
+        st.wishes = [
+            wish("Nintendo Switch 2", 469.99, 2, saved: 280),
+            wish("Zapatillas de correr", 129.95, 1, saved: 40),
+            wish("Silla de oficina ergonómica", 349, 1),
+            wish("Monitor 27\" 1440p", 289, 0),
+            wish("Viaje a Japón", 2400, 0, saved: 350),
+            wish("Auriculares inalámbricos", 199, 2, bought: 12),
+        ]
         st.settings.todayHidden = []
         store.s = st
         // pósteres de verdad para las capturas

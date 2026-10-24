@@ -66,7 +66,7 @@ struct RumboApp: App {
 
 /// páginas de la app; Hoy va siempre la primera y las demás se eligen en Personalizar
 enum Page: String, CaseIterable, Identifiable {
-    case hoy, cerebro, revision, cine, marca, humo
+    case hoy, cerebro, revision, cine, marca, humo, deseos
     var id: String { rawValue }
     var label: String {
         switch self {
@@ -76,6 +76,7 @@ enum Page: String, CaseIterable, Identifiable {
         case .cine: "Cine"
         case .marca: "Marca"
         case .humo: "Sin humo"
+        case .deseos: "Deseos"
         }
     }
     var icon: String {
@@ -86,6 +87,7 @@ enum Page: String, CaseIterable, Identifiable {
         case .cine: "film.stack.fill"
         case .marca: "paintpalette.fill"
         case .humo: "wind"
+        case .deseos: "gift.fill"
         }
     }
     @MainActor @ViewBuilder var view: some View {
@@ -96,6 +98,7 @@ enum Page: String, CaseIterable, Identifiable {
         case .cine: LibraryView()
         case .marca: BrandView()
         case .humo: SmokeView()
+        case .deseos: WishView()
         }
     }
 }
@@ -154,7 +157,7 @@ struct RootView: View {
                 store.s.smoke.start = nil; store.s.smoke.measuring = true; store.s.smoke.log = log
             }
             if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
-                let map = ["brain": "cerebro", "review": "revision", "library": "cine", "brand": "marca", "smoke": "humo"]
+                let map = ["brain": "cerebro", "review": "revision", "library": "cine", "brand": "marca", "smoke": "humo", "wish": "deseos"]
                 if let p = map[args[i + 1]] { router.open(p) }
             }
             if args.contains("-rate"), let f = store.s.films.first { router.rateFilm = f.id }
