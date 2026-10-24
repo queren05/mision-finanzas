@@ -271,36 +271,3 @@ struct EventView: View {
         withAnimation { game.event = nil }
     }
 }
-
-// MARK: - Primera vez
-
-struct IntroView: View {
-    @Environment(Game.self) private var game
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.55).ignoresSafeArea()
-            VStack(spacing: 14) {
-                SkinIcon(id: game.s.skin, size: 110)
-                Text("FIN DE MES").font(.chunky(38)).foregroundStyle(Ink.red)
-                Text("Las facturas no se pagan solas. Rompe huchas a martillazos, paga antes de que venzan y no dejes que venga el cobrador.")
-                    .font(.typewriter(15)).multilineTextAlignment(.center)
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("Cada martillazo gasta aguante", systemImage: "hammer.fill")
-                    Label("Golpea donde haya más huchas juntas", systemImage: "scope")
-                    Label("Gasta en el corcho y en la ferretería", systemImage: "pin.fill")
-                }
-                .font(.typewriter(13, bold: true))
-                Button {
-                    Sound.shared.click()
-                    withAnimation { game.s.seenIntro = true }
-                    game.save()
-                } label: { Text("¡Vamos!").frame(maxWidth: .infinity) }
-                    .buttonStyle(ChunkyButton(color: Ink.gold, size: 22))
-            }
-            .foregroundStyle(Ink.ink)
-            .padding(22)
-            .paper(tilt: 0.6)
-            .padding(24)
-        }
-    }
-}
