@@ -12,6 +12,9 @@ struct Stats: Codable, Hashable {
     var chests = 0.0
     var bestDay = 0.0
     var crits = 0.0
+    var bestCombo = 0.0
+    var frenzies = 0.0
+    var missions = 0.0
 
     init() {}
     init(from d: Decoder) throws {
@@ -19,6 +22,7 @@ struct Stats: Codable, Hashable {
         func v(_ k: CodingKeys) -> Double { (try? c.decodeIfPresent(Double.self, forKey: k)) ?? 0 }
         broken = v(.broken); swings = v(.swings); earned = v(.earned); billsPaid = v(.billsPaid); days = v(.days)
         bankruptcies = v(.bankruptcies); kings = v(.kings); golden = v(.golden); chests = v(.chests); bestDay = v(.bestDay); crits = v(.crits)
+        bestCombo = v(.bestCombo); frenzies = v(.frenzies); missions = v(.missions)
     }
 }
 
@@ -59,12 +63,25 @@ struct SaveState: Codable {
     var seenIntro = false
     var skin = "cerdo"
     var skinsOwned: Set<String> = ["cerdo", "gamba", "dibujo"]
+    // lo que engancha: nivel, encargos, logros, premio diario y la hucha de casa
+    var level = 1
+    var xp = 0.0
+    var quests: [Quest] = []
+    var achievements: Set<String> = []
+    var streak = 0
+    var lastDaily = ""
+    var bankSince: Date? = nil
+    var tutorial = 0
+    /// el nivel de las huchas es `tier`; esto es lo que lleva hacia el siguiente
+    var pigXP = 0.0
+    var brokenByKind: [String: Double] = [:]
 
     init() {}
 
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
+        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -79,6 +96,11 @@ struct SaveState: Codable {
         stats = v(.stats, x.stats); settings = v(.settings, x.settings); seenIntro = v(.seenIntro, x.seenIntro)
         skin = v(.skin, x.skin); skinsOwned = v(.skinsOwned, x.skinsOwned).union(x.skinsOwned)
         if !Content.skins.contains(where: { $0.id == skin }) { skin = x.skin }
+        level = max(1, v(.level, 1)); xp = v(.xp, 0.0); quests = v(.quests, [Quest]()); achievements = v(.achievements, Set<String>())
+        streak = v(.streak, 0); lastDaily = v(.lastDaily, ""); bankSince = try? c.decodeIfPresent(Date.self, forKey: .bankSince)
+        // las partidas de antes ya saben jugar
+        tutorial = v(.tutorial, seenIntro ? 9 : 0)
+        pigXP = v(.pigXP, 0.0); brokenByKind = v(.brokenByKind, [String: Double]())
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

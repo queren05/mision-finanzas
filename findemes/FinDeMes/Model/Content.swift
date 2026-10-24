@@ -23,7 +23,7 @@ struct HammerDef: Identifiable {
 // MARK: - Huchas
 
 enum PigKind: String, Codable, CaseIterable {
-    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey
+    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris
 
     var name: String {
         switch self {
@@ -35,26 +35,66 @@ enum PigKind: String, Codable, CaseIterable {
         case .bomba: "Hucha bomba"
         case .dorada: "Hucha dorada"
         case .rey: "Rey Cerdito"
+        case .gigante: "Hucha gigante"
+        case .fantasma: "Hucha fantasma"
+        case .madre: "Mamá hucha"
+        case .diamante: "Hucha de diamante"
+        case .arcoiris: "Hucha arcoíris"
+        }
+    }
+    var line: String {
+        switch self {
+        case .normal: "La de toda la vida."
+        case .gorda: "Aguanta más y suelta más."
+        case .ruedas: "Corre que se las pela."
+        case .cristal: "Frágil. Te devuelve aguante."
+        case .acorazada: "Lleva coraza: cuesta hacerle daño."
+        case .bomba: "Al romperla, explota y rompe las de al lado."
+        case .dorada: "Rara. Puede soltar monedas del álbum."
+        case .rey: "El jefe. Muchísima vida y un botín enorme."
+        case .gigante: "Del tamaño de una lavadora."
+        case .fantasma: "Desaparece y aparece donde quiere."
+        case .madre: "Al romperla salen tres huchitas."
+        case .diamante: "Durísima. Vale una fortuna."
+        case .arcoiris: "Casi siempre suelta un sobre."
         }
     }
     var hp: Double {
-        switch self { case .normal: 1; case .gorda: 3; case .ruedas: 0.8; case .cristal: 0.3; case .acorazada: 4; case .bomba: 1.2; case .dorada: 1.5; case .rey: 40 }
+        switch self {
+        case .normal: 1; case .gorda: 3; case .ruedas: 0.8; case .cristal: 0.3; case .acorazada: 4; case .bomba: 1.2; case .dorada: 1.5; case .rey: 40
+        case .gigante: 14; case .fantasma: 1.5; case .madre: 5; case .diamante: 12; case .arcoiris: 3
+        }
     }
     var value: Double {
-        switch self { case .normal: 1; case .gorda: 3.5; case .ruedas: 2; case .cristal: 0.8; case .acorazada: 5; case .bomba: 1.5; case .dorada: 12; case .rey: 60 }
+        switch self {
+        case .normal: 1; case .gorda: 3.5; case .ruedas: 2; case .cristal: 0.8; case .acorazada: 5; case .bomba: 1.5; case .dorada: 12; case .rey: 60
+        case .gigante: 22; case .fantasma: 6; case .madre: 6; case .diamante: 45; case .arcoiris: 10
+        }
     }
     var size: Double {
-        switch self { case .normal: 62; case .gorda: 84; case .ruedas: 54; case .cristal: 56; case .acorazada: 70; case .bomba: 60; case .dorada: 64; case .rey: 128 }
+        switch self {
+        case .normal: 62; case .gorda: 84; case .ruedas: 54; case .cristal: 56; case .acorazada: 70; case .bomba: 60; case .dorada: 64; case .rey: 128
+        case .gigante: 150; case .fantasma: 64; case .madre: 92; case .diamante: 70; case .arcoiris: 66
+        }
     }
     var speed: Double {
-        switch self { case .normal: 14; case .gorda: 7; case .ruedas: 85; case .cristal: 10; case .acorazada: 9; case .bomba: 18; case .dorada: 26; case .rey: 12 }
+        switch self {
+        case .normal: 14; case .gorda: 7; case .ruedas: 85; case .cristal: 10; case .acorazada: 9; case .bomba: 18; case .dorada: 26; case .rey: 12
+        case .gigante: 5; case .fantasma: 20; case .madre: 8; case .diamante: 16; case .arcoiris: 30
+        }
     }
-    /// a partir de qué nivel de huchas aparece (sube al pagar facturas)
+    /// a partir de qué nivel de las huchas aparece (el nivel sube rompiéndolas)
     var minTier: Int {
-        switch self { case .normal: 0; case .gorda: 1; case .ruedas: 2; case .cristal: 3; case .acorazada: 4; case .bomba: 5; case .dorada: 0; case .rey: 8 }
+        switch self {
+        case .normal: 0; case .dorada: 0; case .gorda: 2; case .ruedas: 4; case .cristal: 6; case .acorazada: 9; case .bomba: 12
+        case .rey: 15; case .gigante: 19; case .fantasma: 23; case .madre: 27; case .diamante: 32; case .arcoiris: 38
+        }
     }
     var weight: Double {
-        switch self { case .normal: 100; case .gorda: 20; case .ruedas: 12; case .cristal: 10; case .acorazada: 10; case .bomba: 8; case .dorada: 0; case .rey: 0 }
+        switch self {
+        case .normal: 100; case .gorda: 20; case .ruedas: 12; case .cristal: 10; case .acorazada: 10; case .bomba: 8; case .dorada: 0; case .rey: 0
+        case .gigante: 3; case .fantasma: 7; case .madre: 5; case .diamante: 2; case .arcoiris: 2
+        }
     }
     var color: Color {
         switch self {
@@ -66,18 +106,33 @@ enum PigKind: String, Codable, CaseIterable {
         case .bomba: Color(hex: "#4a4552")
         case .dorada: Ink.gold
         case .rey: Color(hex: "#f08aa3")
+        case .gigante: Color(hex: "#f2a0b4")
+        case .fantasma: Color(hex: "#eef2f6")
+        case .madre: Color(hex: "#f7b6c6")
+        case .diamante: Color(hex: "#9fe8ff")
+        case .arcoiris: Color(hex: "#b48ef0")
         }
     }
     var dark: Color {
         switch self {
-        case .normal, .gorda, .rey: Ink.pinkDark
+        case .normal, .gorda, .rey, .gigante, .madre: Ink.pinkDark
         case .ruedas: Color(hex: "#5e98c6")
         case .cristal: Color(hex: "#93c6d8")
         case .acorazada: Color(hex: "#8a847d")
         case .bomba: Color(hex: "#2c2833")
         case .dorada: Color(hex: "#c98d1d")
+        case .fantasma: Color(hex: "#c4ccd6")
+        case .diamante: Color(hex: "#4fb8d8")
+        case .arcoiris: Color(hex: "#f2b632")
         }
     }
+    /// las que salen al azar (la dorada y el rey salen aparte)
+    var special: Bool { self == .dorada || self == .rey }
+}
+
+/// el nivel de las huchas: sube muy poco a poco con cada hucha rota
+enum PigLevel {
+    static func needed(_ level: Int) -> Double { (40 * pow(1.2, Double(level))).rounded() }
 }
 
 // MARK: - Facturas
@@ -313,7 +368,12 @@ extension PigKind {
         case .cristal: "cristal"
         case .acorazada: "hierro"
         case .bomba: "bomba"
+        case .diamante: "cristal"
         default: "normal"
         }
     }
+}
+
+extension Rarity {
+    var order: Int { Rarity.allCases.firstIndex(of: self) ?? 0 }
 }

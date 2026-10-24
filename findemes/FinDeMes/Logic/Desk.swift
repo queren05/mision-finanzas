@@ -62,6 +62,17 @@ final class Desk {
     var onFinish: ((DayReport) -> Void)? = nil
     private(set) var dirty = false
     var earnedPending = 0.0
+    /// combo: huchas rotas seguidas sin parar más de un momento
+    private(set) var combo = 0
+    private var comboAt = -10.0
+    private var frenzyUntil = -10.0
+    var frenzy: Bool { time < frenzyUntil }
+    var comboMult: Double { 1 + Double(min(combo, 50)) * 0.04 }
+    static let comboWindow = 1.7
+    static let frenzyAt = 30
+    /// primera partida: enseña dónde tocar
+    var tutorial = false
+    private var firstBreakAt: Double? = nil
 
     init(stats: HitStats, tier: Int, hammer: HammerDef, day: Int, skin: SkinDef = Content.skins[0]) {
         self.skin = skin
@@ -88,17 +99,18 @@ final class Desk {
         return .normal
     }
 
-    private func spawn(_ forced: PigKind? = nil) {
+    private func spawn(_ forced: PigKind? = nil, at: CGPoint? = nil, scale: Double = 1) {
         let kind = forced ?? pickKind()
-        let s = kind.size * 0.85
-        let x = Double.random(in: s * 0.7...max(s * 0.7 + 1, size.width - s * 0.7))
-        let y = Double.random(in: top + s * 0.5...max(top + s * 0.5 + 1, size.height - bottom - s * 0.5))
+        let s = kind.size * 0.85 * scale
+        var x = Double.random(in: s * 0.7...max(s * 0.7 + 1, size.width - s * 0.7))
+        var y = Double.random(in: top + s * 0.5...max(top + s * 0.5 + 1, size.height - bottom - s * 0.5))
+        if let at { x = at.x + Double.random(in: -30...30); y = at.y + Double.random(in: -20...20) }
         let a = Double.random(in: 0..<(2 * .pi))
         let hp = Content.pigHP(tier) * kind.hp
         nextId += 1
         pigs.append(Pig(id: nextId, kind: kind, pos: CGPoint(x: x, y: y),
                         vel: CGVector(dx: cos(a) * kind.speed, dy: sin(a) * kind.speed * 0.6),
-                        hp: hp, maxHP: hp, value: Content.pigValue(tier) * kind.value, size: s, born: time,
+                        hp: hp * scale, maxHP: hp * scale, value: Content.pigValue(tier) * kind.value * scale, size: s, born: time,
                         facing: cos(a) >= 0 ? 1 : -1, wander: Double.random(in: 0...6)))
         Sound.shared.pop()
     }
@@ -106,7 +118,7 @@ final class Desk {
     // MARK: - Martillazo
 
     func tap(_ p: CGPoint) {
-        guard !finished, stamina > 0, p.y > top - 30, p.y < size.height - bottom + 30 else { return }
+        guard !finished, stamina > 0 || frenzy, p.y > top - 30, p.y < size.height - bottom + 30 else { return }
         if time - lastSwing >= cooldown { swing(at: p) } else { pending = p }
     }
 
@@ -114,7 +126,9 @@ final class Desk {
         lastSwing = time
         pending = nil
         report.swings += 1
-        if Double.random(in: 0..<1) >= stats.drainSave { stamina -= 1 }
+        if frenzy {
+            // en frenesí los golpes no gastan
+        } else if Double.random(in: 0..<1) >= stats.drainSave { stamina -= 1 }
         else { floaters.append(Floater(text: "¡Gratis!", pos: CGPoint(x: p.x, y: p.y - 40), born: time, color: Ink.green, size: 18)) }
         Sound.shared.swing()
 
@@ -142,7 +156,7 @@ final class Desk {
         }
         for i in killed { breakPig(i) }
         pigs.removeAll { $0.dead }
-        if stamina <= 0 && endAt == nil { endAt = time + 1.4 }
+        if stamina <= 0 && endAt == nil && !frenzy { endAt = time + 1.4 }
         markDirty()
     }
 
@@ -187,7 +201,20 @@ final class Desk {
         guard !pigs[i].dead else { return }
         pigs[i].dead = true
         let pig = pigs[i]
-        var value = pig.value * stats.loot
+        report.byKind[pig.kind.rawValue, default: 0] += 1
+        combo += 1
+        comboAt = time
+        report.bestCombo = max(report.bestCombo, combo)
+        if firstBreakAt == nil { firstBreakAt = time }
+        if combo % Desk.frenzyAt == 0 && !frenzy {
+            frenzyUntil = time + 6
+            report.frenzies += 1
+            shake = max(shake, 12)
+            Sound.shared.fanfare()
+            floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
+        }
+        report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
+        var value = pig.value * stats.loot * comboMult * (frenzy ? 2 : 1)
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
@@ -236,13 +263,15 @@ final class Desk {
             explode(at: pig.pos, power: pig.maxHP)
         case .rey:
             report.kings += 1
+        case .madre:
+            for _ in 0..<3 { spawn(.normal, at: pig.pos, scale: 0.6) }
         default: break
         }
         if Double.random(in: 0..<1) < stats.killStamina {
             stamina += 1
             floaters.append(Floater(text: "+1 aguante", pos: CGPoint(x: pig.pos.x + 30, y: pig.pos.y - 30), born: time + 0.1, color: Ink.blue, size: 16))
         }
-        let chestChance = stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
+        let chestChance = pig.kind == .arcoiris ? 0.7 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
         if Double.random(in: 0..<1) < chestChance {
             let r = Game.shared.rollChest()
             report.chests.append(r)
@@ -301,16 +330,17 @@ final class Desk {
         if hitStop > 0 { hitStop -= dt; dt *= 0.08 }
         time += dt
 
-        if let p = pending, time - lastSwing >= cooldown, stamina > 0 { swing(at: p) }
+        if let p = pending, time - lastSwing >= cooldown, stamina > 0 || frenzy { swing(at: p) }
 
         // aparecen huchas
-        if stamina > 0 {
-            spawnTimer -= dt
+        if stamina > 0 || frenzy {
+            spawnTimer -= dt * (frenzy ? 4 : 1)
             if spawnTimer <= 0 {
                 spawnTimer = stats.spawnEvery * Double.random(in: 0.7...1.3)
-                if pigs.count < stats.maxPigs { spawn() }
+                if pigs.count < stats.maxPigs + (frenzy ? 10 : 0) { spawn() }
             }
         }
+        if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0 }
 
         // se mueven
         for i in pigs.indices {
@@ -319,6 +349,11 @@ final class Desk {
             if Int(p.wander * 10) % 23 == 0 && Double.random(in: 0..<1) < 0.04 {
                 let a = Double.random(in: 0..<(2 * .pi))
                 p.vel = CGVector(dx: cos(a) * p.kind.speed, dy: sin(a) * p.kind.speed * 0.6)
+            }
+            if p.kind == .fantasma && Double.random(in: 0..<1) < dt * 0.35 {
+                p.pos = CGPoint(x: Double.random(in: p.size...max(p.size + 1, size.width - p.size)),
+                                y: Double.random(in: top + p.size * 0.5...max(top + p.size * 0.5 + 1, size.height - bottom - p.size * 0.5)))
+                p.born = time - 0.05
             }
             let slow = time - p.hitAt < 0.3 ? 0.2 : 1
             p.pos.x += p.vel.dx * dt * slow
@@ -372,6 +407,7 @@ final class Desk {
         blasts.removeAll { time - $0.born > 0.6 }
         shake *= pow(0.0005, dt)
 
+        if stamina <= 0 && endAt == nil && !frenzy && !finished { endAt = time + 1.0 }
         if earnedPending > 0 { markDirty() }
         if let e = endAt, time >= e, !finished {
             finished = true
@@ -404,37 +440,81 @@ final class Desk {
         for sw in swings { drawSwing(&ctx, sw) }
         for l in loot where time >= l.born { drawLoot(&ctx, l) }
         for f in floaters where time >= f.born { drawFloater(&ctx, f) }
+        drawCombo(&ctx)
+        if tutorial { drawTutorial(&ctx) }
+    }
+
+    /// texto gordo con borde de tinta
+    private func inkText(_ ctx: inout GraphicsContext, _ s: String, _ size: Double, _ color: Color, at p: CGPoint) {
+        let t = ctx.resolve(Text(s).font(.chunky(size)).foregroundColor(Ink.ink))
+        for (dx, dy) in [(-2.5, 0.0), (2.5, 0), (0, -2.5), (0, 2.5), (2, 3.5), (-2, 2.5)] { ctx.draw(t, at: CGPoint(x: p.x + dx, y: p.y + dy)) }
+        ctx.draw(Text(s).font(.chunky(size)).foregroundColor(color), at: p)
+    }
+
+    private func drawCombo(_ c: inout GraphicsContext) {
+        var ctx = c
+        if frenzy {
+            let left = (frenzyUntil - time) / 6
+            let pulse = 0.12 + 0.06 * sin(time * 12)
+            ctx.fill(Path(CGRect(x: -20, y: -20, width: size.width + 40, height: size.height + 40)), with: .color(Ink.gold.opacity(pulse)))
+            let w = size.width * 0.6
+            let r = CGRect(x: (size.width - w) / 2, y: top + 44, width: w, height: 12)
+            ctx.fill(Path(roundedRect: r, cornerRadius: 6), with: .color(Ink.paper))
+            ctx.fill(Path(roundedRect: CGRect(x: r.minX, y: r.minY, width: w * max(0, left), height: 12), cornerRadius: 6), with: .color(Ink.red))
+            ctx.stroke(Path(roundedRect: r, cornerRadius: 6), with: .color(Ink.ink), lineWidth: 2.5)
+        }
+        guard combo >= 3 else { return }
+        let since = time - comboAt
+        let pop = 1 + 0.35 * exp(-since * 10)
+        let y = top + 22
+        let color: Color = combo >= 25 ? Ink.red : (combo >= 10 ? Ink.gold : Ink.paper)
+        var t = ctx
+        t.translateBy(x: size.width / 2, y: y)
+        t.scaleBy(x: pop, y: pop)
+        inkText(&t, "COMBO ×\(combo)", 26, color, at: CGPoint(x: 0, y: 0))
+        inkText(&ctx, "dinero ×" + Fmt.dec(comboMult * (frenzy ? 2 : 1), 2), 15, Ink.paper, at: CGPoint(x: size.width / 2, y: y + 24))
+        if !frenzy {
+            let k = max(0, 1 - since / Desk.comboWindow)
+            let w = 90.0
+            let r = CGRect(x: size.width / 2 - w / 2, y: y + 36, width: w * k, height: 5)
+            ctx.fill(Path(roundedRect: r, cornerRadius: 2.5), with: .color(Ink.paper.opacity(0.9)))
+        }
+    }
+
+    /// la primera vez: un dedo señala dónde hay más huchas juntas
+    private func drawTutorial(_ c: inout GraphicsContext) {
+        var ctx = c
+        if report.swings == 0, let p = bestCluster() {
+            let k = 0.5 + 0.5 * sin(time * 5)
+            let r = 46 + 10 * k
+            ctx.stroke(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)), with: .color(Ink.paper), style: StrokeStyle(lineWidth: 4, dash: [8, 6]))
+            inkText(&ctx, "¡Toca aquí!", 28, Ink.paper, at: CGPoint(x: p.x, y: p.y - r - 24))
+            ctx.draw(Text("👆").font(.system(size: 44)), at: CGPoint(x: p.x + 14, y: p.y + 40 - 8 * k))
+        } else if let f = firstBreakAt, time - f < 4 {
+            inkText(&ctx, "Junta varias en cada golpe", 22, Ink.paper, at: CGPoint(x: size.width / 2, y: size.height - bottom - 70))
+            inkText(&ctx, "Cada golpe gasta aguante ↓", 22, Ink.gold, at: CGPoint(x: size.width / 2, y: size.height - bottom - 36))
+        }
+    }
+
+    private func bestCluster() -> CGPoint? {
+        var best: CGPoint? = nil
+        var n = 0
+        for p in pigs {
+            let c = pigs.filter { hypot($0.pos.x - p.pos.x, $0.pos.y - p.pos.y) < stats.radius + 50 }.count
+            if c > n { n = c; best = p.pos }
+        }
+        return best
     }
 
     private func drawDesk(_ ctx: inout GraphicsContext) {
         let w = size.width, h = size.height
-        ctx.fill(Path(CGRect(x: -20, y: -20, width: w + 40, height: h + 40)), with: .color(Ink.wood))
-        let plank = 74.0
-        var y = -20.0
-        var k = 0
-        while y < h + 20 {
-            let shade = k % 2 == 0 ? Ink.woodLight.opacity(0.25) : Ink.woodDark.opacity(0.12)
-            ctx.fill(Path(CGRect(x: -20, y: y, width: w + 40, height: plank)), with: .color(shade))
-            ctx.fill(Path(CGRect(x: -20, y: y + plank - 3, width: w + 40, height: 3)), with: .color(Ink.woodDark.opacity(0.7)))
-            // vetas
-            for v in 0..<3 {
-                var g = Path()
-                let gy = y + 16 + Double(v) * 18
-                g.move(to: CGPoint(x: -20, y: gy))
-                var x = -20.0
-                while x < w + 20 {
-                    x += 40
-                    g.addLine(to: CGPoint(x: x, y: gy + sin(x * 0.02 + Double(k * 3 + v)) * 4))
-                }
-                ctx.stroke(g, with: .color(Ink.woodDark.opacity(0.18)), lineWidth: 1.5)
-            }
-            // juntas
-            let off = Double((k * 137) % 260)
-            for jx in stride(from: off, to: w + 20, by: 260) {
-                ctx.fill(Path(CGRect(x: jx, y: y, width: 3, height: plank - 3)), with: .color(Ink.woodDark.opacity(0.5)))
-            }
-            y += plank; k += 1
+        if let img = ItemArt.image("mesa", ext: "jpg") {
+            // la imagen de la mesa ocupa toda la pantalla (sin deformarse)
+            let k = max((w + 40) / 1179, (h + 40) / 2556)
+            ctx.draw(img, in: CGRect(x: (w - 1179 * k) / 2, y: (h - 2556 * k) / 2, width: 1179 * k, height: 2556 * k))
+            return
         }
+        ctx.fill(Path(CGRect(x: -20, y: -20, width: w + 40, height: h + 40)), with: .color(Ink.wood))
     }
 
     private func drawPig(_ c: inout GraphicsContext, _ p: Pig) {
@@ -633,6 +713,12 @@ final class Desk {
         }
         let rect = CGRect(x: -dw / 2, y: -dh + (wheels ? s * 0.0 : s * 0.02), width: dw, height: dh)
         var ic = ctx
+        switch p.kind {
+        case .fantasma: ic.opacity = 0.45 + 0.15 * sin(time * 4 + Double(p.id))
+        case .arcoiris: ic.addFilter(.hueRotation(.degrees(time * 160 + Double(p.id) * 40))); ic.addFilter(.saturation(1.6))
+        case .diamante: ic.addFilter(.saturation(1.8)); ic.addFilter(.brightness(0.08))
+        default: break
+        }
         if h < 0.08 { ic.addFilter(.brightness(0.35)) }
         ic.draw(img, in: rect)
         // grietas y brillo, recortados a la silueta
@@ -812,15 +898,15 @@ enum HammerArt {
 enum ItemArt {
     private static var cache: [String: Image] = [:]
     private static var ui: [String: UIImage] = [:]
-    static func uiImage(_ name: String) -> UIImage? {
+    static func uiImage(_ name: String, ext: String = "png") -> UIImage? {
         if let i = ui[name] { return i }
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png"), let img = UIImage(contentsOfFile: url.path) else { return nil }
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext), let img = UIImage(contentsOfFile: url.path) else { return nil }
         ui[name] = img
         return img
     }
-    static func image(_ name: String) -> Image? {
+    static func image(_ name: String, ext: String = "png") -> Image? {
         if let i = cache[name] { return i }
-        guard let u = uiImage(name) else { return nil }
+        guard let u = uiImage(name, ext: ext) else { return nil }
         let i = Image(uiImage: u)
         cache[name] = i
         return i

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings, skins
+    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests
     var id: String { rawValue }
 }
 
@@ -17,9 +17,16 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 22) {
                     topBar
+                    LevelStrip()
                     billCard
                     playButton
-                    characterCard
+                    if !game.s.pendingChests.isEmpty {
+                        ChestsButton(open: Binding(get: { sheet == .chests }, set: { sheet = $0 ? .chests : nil }))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                    if game.unlocked(.encargos) && !game.s.quests.isEmpty { QuestsCard() }
+                    if game.unlocked(.hucha) { BankCard() }
+                    bestiaryCard
                     drawers
                     if let next = game.nextBill {
                         HStack(spacing: 6) {
@@ -41,6 +48,9 @@ struct HomeView: View {
             case .coins: CoinsView()
             case .settings: SettingsView()
             case .skins: SkinsView()
+            case .achievements: AchievementsView()
+            case .bestiary: BestiaryView()
+            case .chests: ChestSheet()
             }
         }
         .onAppear {
@@ -50,6 +60,8 @@ struct HomeView: View {
             if args.contains("-jewelry") { sheet = .jewelry }
             if args.contains("-coins") { sheet = .coins }
             if args.contains("-skins") { sheet = .skins }
+            if args.contains("-logros") { sheet = .achievements }
+            if args.contains("-huchario") { sheet = .bestiary }
         }
     }
 
@@ -148,21 +160,17 @@ struct HomeView: View {
         .buttonStyle(ChunkyButton(color: Ink.gold, size: 24, radius: 18))
     }
 
-    private var characterCard: some View {
-        let k = Content.skin(game.s.skin)
-        let more = Content.skins.contains { !game.s.skinsOwned.contains($0.id) && game.s.legacy >= $0.cost }
-        return Button { Sound.shared.click(); sheet = .skins } label: {
-            HStack(spacing: 14) {
-                SkinIcon(id: k.id, size: 60)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Personaje").font(.chunky(22)).foregroundStyle(Ink.ink)
-                    Text(k.name).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+    private var bestiaryCard: some View {
+        Button { Sound.shared.click(); sheet = .bestiary } label: {
+            HStack(spacing: 12) {
+                KindIcon(kind: PigKind.allCases.filter { game.s.tier >= $0.minTier }.max { $0.minTier < $1.minTier } ?? .normal, size: 52)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("El huchario").font(.chunky(20)).foregroundStyle(Ink.ink)
+                    PigLevelStrip()
                 }
-                Spacer()
-                if more { Text("¡!").font(.chunky(15)).foregroundStyle(Ink.paper).padding(.horizontal, 7).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
                 Image(systemName: "chevron.right").font(.system(size: 16, weight: .black)).foregroundStyle(Ink.ink)
             }
-            .padding(.horizontal, 14).padding(.vertical, 6)
+            .padding(.horizontal, 12).padding(.vertical, 4)
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(ChunkyButton(color: Ink.paper, size: 18, radius: 16))
@@ -174,29 +182,33 @@ struct HomeView: View {
         let skillsAvailable = Content.skills.contains { game.canBuy($0) }
         let hammerAvailable = Content.hammers.contains { !game.s.hammersOwned.contains($0.id) && game.s.cash >= $0.cost }
         let found = Content.coins.filter { (game.s.coins[$0.id] ?? 0) > 0 }.count
+        let skinAvailable = Content.skins.contains { !game.s.skinsOwned.contains($0.id) && game.s.legacy >= $0.cost }
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-            drawer("Mejoras", "El corcho", "pin.fill", Ink.red, badge: skillsAvailable) { sheet = .tree }
-            drawer("Martillos", Content.hammers[game.s.hammer].name, "hammer.fill", Ink.blue, badge: hammerAvailable) { sheet = .hammers }
-            drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }) { sheet = .jewelry }
-            drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false) { sheet = .coins }
+            drawer("Mejoras", "El corcho", "pin.fill", Ink.red, badge: skillsAvailable, .mejoras) { sheet = .tree }
+            drawer("Martillos", Content.hammers[game.s.hammer].name, "hammer.fill", Ink.blue, badge: hammerAvailable, .martillos) { sheet = .hammers }
+            drawer("Logros", "\(game.s.achievements.count) de \(Meta.achievements.count)", "rosette", Ink.gold, badge: game.achievementsReady > 0, .logros) { sheet = .achievements }
+            drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
+            drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
+            drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins }
         }
     }
 
-    private func drawer(_ title: String, _ sub: String, _ icon: String, _ color: Color, badge: Bool, _ action: @escaping () -> Void) -> some View {
-        Button { Sound.shared.click(); action() } label: {
+    private func drawer(_ title: String, _ sub: String, _ icon: String, _ color: Color, badge: Bool, _ feature: Feature, _ action: @escaping () -> Void) -> some View {
+        let open = game.unlocked(feature)
+        return Button { Sound.shared.click(); if open { action() } else { Sound.shared.denied() } } label: {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Image(systemName: icon).font(.system(size: 20, weight: .black)).foregroundStyle(color)
+                    Image(systemName: open ? icon : "lock.fill").font(.system(size: 20, weight: .black)).foregroundStyle(open ? color : Ink.soft)
                     Spacer()
-                    if badge { Text("¡!").font(.chunky(15)).foregroundStyle(Ink.paper).padding(.horizontal, 7).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
+                    if badge && open { Text("¡!").font(.chunky(15)).foregroundStyle(Ink.paper).padding(.horizontal, 7).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
                 }
-                Text(title).font(.chunky(22)).foregroundStyle(Ink.ink)
-                Text(sub).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft).lineLimit(1).minimumScaleFactor(0.8)
+                Text(title).font(.chunky(22)).foregroundStyle(open ? Ink.ink : Ink.soft)
+                Text(open ? sub : feature.hint).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft).lineLimit(1).minimumScaleFactor(0.7)
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(ChunkyButton(color: Ink.paper, size: 18, radius: 16))
+        .buttonStyle(ChunkyButton(color: open ? Ink.paper : Ink.paperDark, size: 18, radius: 16))
     }
 }
 

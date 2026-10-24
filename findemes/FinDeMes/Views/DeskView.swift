@@ -11,6 +11,7 @@ struct DeskView: View {
 
     init(game: Game) {
         let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day, skin: Content.skin(game.s.skin))
+        d.tutorial = game.s.tutorial < 9
         _desk = State(initialValue: d)
         _stamina = State(initialValue: d.stamina)
         _cash = State(initialValue: game.s.cash)

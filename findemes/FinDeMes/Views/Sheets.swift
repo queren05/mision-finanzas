@@ -6,9 +6,7 @@ struct ReportView: View {
     @Environment(Game.self) private var game
     let report: DayReport
     @State private var shown = 0
-    @State private var prize: ChestPrize? = nil
-    @State private var opening = false
-    @State private var shakeKey = 0
+    @State private var hadChests = false
 
     private var lines: [(String, String)] {
         var l: [(String, String)] = [
@@ -20,6 +18,8 @@ struct ReportView: View {
         if report.kings > 0 { l.append(("REY CERDITO", "\(report.kings)")) }
         if !report.coins.isEmpty { l.append(("MONEDAS RARAS", "\(report.coins.count)")) }
         if report.best > 0 { l.append(("MEJOR HUCHA", Fmt.money(report.best))) }
+        if report.bestCombo >= 3 { l.append(("MEJOR COMBO", "×\(report.bestCombo)")) }
+        if report.frenzies > 0 { l.append(("FRENESÍ", "\(report.frenzies)")) }
         return l
     }
 
@@ -29,7 +29,14 @@ struct ReportView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     ticket
-                    if !game.s.pendingChests.isEmpty || prize != nil { chests }
+                    if report.record {
+                        Stamp(text: "¡RÉCORD!", color: Ink.green).scaleEffect(1.4).opacity(shown >= lines.count ? 1 : 0)
+                    }
+                    if report.xp > 0 {
+                        Text("+\(Fmt.num(report.xp)) de experiencia").font(.chunky(18)).foregroundStyle(Ink.paper)
+                            .shadow(color: Ink.ink, radius: 0, x: 2, y: 2).opacity(shown >= lines.count ? 1 : 0)
+                    }
+                    if hadChests { ChestOpener() }
                     Button {
                         Sound.shared.click()
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { game.afterReport() }
@@ -41,6 +48,7 @@ struct ReportView: View {
             }
             .scrollIndicators(.hidden)
         }
+        .onAppear { hadChests = !game.s.pendingChests.isEmpty }
         .task {
             // las líneas del ticket salen una a una, como en la caja
             for i in 0..<lines.count {
@@ -93,9 +101,17 @@ struct ReportView: View {
         Text(String(repeating: "- ", count: 22)).font(.typewriter(12)).foregroundStyle(Ink.soft).lineLimit(1)
     }
 
-    // MARK: sobres
+}
 
-    private var chests: some View {
+/// los sobres sorpresa: se abren uno a uno
+struct ChestOpener: View {
+    @Environment(Game.self) private var game
+    @State private var prize: ChestPrize? = nil
+    @State private var opening = false
+    @State private var shakeKey = 0
+
+
+    var body: some View {
         VStack(spacing: 12) {
             Text(game.s.pendingChests.isEmpty ? "¡SOBRES ABIERTOS!" : "\(game.s.pendingChests.count) SOBRE\(game.s.pendingChests.count == 1 ? "" : "S") SORPRESA")
                 .font(.chunky(24)).foregroundStyle(Ink.paper).shadow(color: Ink.ink, radius: 0, x: 2, y: 2)

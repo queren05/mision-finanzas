@@ -40,6 +40,11 @@ struct DayReport: Identifiable {
     var chests: [Rarity] = []
     var coins: [String] = []
     var best = 0.0
+    var bestCombo = 0
+    var frenzies = 0
+    var byKind: [String: Int] = [:]
+    var xp = 0.0
+    var record = false
 }
 
 struct ChestPrize: Identifiable {
@@ -73,6 +78,10 @@ final class Game {
     var inRun = false
     var report: DayReport? = nil
     var event: GameEvent? = nil
+    /// nivel nuevo recién alcanzado (para la celebración)
+    var levelUp: Int? = nil
+    /// huchas nuevas que acaban de aparecer
+    var newKinds: [PigKind] = []
     /// sube cada vez que cambia algo que afecta a las estadísticas
     private(set) var stats = HitStats()
 
@@ -80,6 +89,8 @@ final class Game {
         s = Persistence.load() ?? SaveState()
         applySettings()
         recompute()
+        refillQuests()
+        startBankIfNeeded()
     }
 
     func applySettings() {
@@ -147,6 +158,8 @@ final class Game {
         }
         // cada moneda de la colección da dinero para siempre
         for c in Content.coins where (s.coins[c.id] ?? 0) > 0 { lootPct += c.rarity.bonus * 100 }
+        // cada nivel da +2 % y cada logro +3 % de dinero, para siempre
+        lootPct += Double(s.level - 1) * 2 + Double(s.achievements.count) * 3
         st.damage *= 1 + dmgPct / 100
         st.speed *= 1 + speedPct / 100
         st.radius *= 1 + radiusPct / 100
@@ -175,7 +188,8 @@ final class Game {
         s.cash -= a
         s.paidThisCycle += a
         s.stats.billsPaid += 1
-        s.tier += 1
+        progressQuests(.facturas, add: 1)
+        addXP((25 * Double(s.billIndex + 1)).rounded())
         Sound.shared.stamp()
         if s.billIndex == Content.bills.count - 1 {
             s.awaitingTaxChoice = true
@@ -212,7 +226,7 @@ final class Game {
         s.legacy += g
         s.stats.bankruptcies += 1
         s.cash = 0
-        s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0; s.tier = 0
+        s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0
         s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]
         s.awaitingTaxChoice = false
         recompute()
@@ -237,11 +251,28 @@ final class Game {
         s.stats.days += 1
         s.stats.broken += Double(r.broken); s.stats.swings += Double(r.swings); s.stats.crits += Double(r.crits)
         s.stats.golden += Double(r.golden); s.stats.kings += Double(r.kings)
+        var r = r
+        r.record = r.earned > s.stats.bestDay && s.stats.days > 1
         s.stats.bestDay = max(s.stats.bestDay, r.earned)
+        s.stats.bestCombo = max(s.stats.bestCombo, Double(r.bestCombo))
+        s.stats.frenzies += Double(r.frenzies)
         s.pendingChests += r.chests
         for c in r.coins { addCoin(c) }
         s.day += 1
+        for (k, n) in r.byKind { s.brokenByKind[k, default: 0] += Double(n) }
+        addPigXP(Double(r.broken))
+        progressQuests(.romper, add: Double(r.broken))
+        progressQuests(.ganar, add: r.earned)
+        progressQuests(.combo, best: Double(r.bestCombo))
+        progressQuests(.doradas, add: Double(r.golden))
+        progressQuests(.criticos, add: Double(r.crits))
+        progressQuests(.diaRico, best: r.earned)
+        progressQuests(.frenesi, add: Double(r.frenzies))
+        if s.tutorial < 9 { s.tutorial = 9 }
         report = r
+        addXP(r.xp)
+        refillQuests()
+        startBankIfNeeded()
         save()
     }
 
@@ -277,6 +308,7 @@ final class Game {
         guard canBuy(k) else { Sound.shared.denied(); return false }
         s.cash -= k.cost(level(k))
         s.skills[k.id] = level(k) + 1
+        progressQuests(.mejoras, add: 1)
         recompute()
         Sound.shared.coin()
         save()
@@ -384,6 +416,7 @@ final class Game {
         s = SaveState()
         s.settings = settings
         s.seenIntro = true
+        s.tutorial = 9
         inRun = false; report = nil; event = nil
         recompute()
         save()

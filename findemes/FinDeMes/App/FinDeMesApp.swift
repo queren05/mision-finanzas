@@ -20,6 +20,8 @@ struct FinDeMesApp: App {
 
 struct RootView: View {
     @Environment(Game.self) private var game
+    /// sin partida, ticket ni avisos encima
+    private var calm: Bool { !game.inRun && game.report == nil && game.event == nil && game.s.seenIntro }
 
     var body: some View {
         ZStack {
@@ -38,6 +40,13 @@ struct RootView: View {
             }
             if !game.s.seenIntro && !game.inRun {
                 IntroView().transition(.opacity).zIndex(7)
+            }
+            if calm, let k = game.newKinds.first {
+                NewKindView(kind: k).id(k).transition(.opacity).zIndex(8)
+            } else if calm, let l = game.levelUp {
+                LevelUpView(level: l).transition(.opacity).zIndex(8)
+            } else if calm && game.dailyReady {
+                DailyView().transition(.opacity).zIndex(8)
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: game.inRun)
@@ -68,6 +77,15 @@ enum Demo {
         s.coins = ["peseta": 2, "duro": 1, "yen": 1, "reala8": 1, "doblon": 1]
         s.stats.bankruptcies = 2; s.stats.billsPaid = 30; s.stats.broken = 1_830; s.stats.days = 41
         s.skinsOwned = ["cerdo", "gamba", "dibujo", "chaqueta", "vaca"]
+        s.tutorial = 9; s.level = 12; s.xp = 410; s.tier = 13; s.pigXP = 260
+        s.lastDaily = args.contains("-daily") ? "" : Game.dayKey(Date())
+        s.streak = 3
+        s.bankSince = Date().addingTimeInterval(-2.5 * 3600)
+        s.achievements = ["rotas-10", "rotas-100", "rotas-1000", "ganado-1000", "facturas-1", "facturas-12", "dias-7", "dias-30", "doradas-1", "combo-10"]
+        s.brokenByKind = ["normal": 1420, "gorda": 260, "ruedas": 90, "cristal": 51, "acorazada": 38, "bomba": 12, "dorada": 9]
+        s.stats.bestCombo = 22; s.stats.missions = 14; s.stats.chests = 6
+        s.quests = [Quest(kind: .romper, target: 160, progress: 160, reward: 70, xp: 160), Quest(kind: .combo, target: 28, progress: 22, reward: 60, xp: 160), Quest(kind: .ganar, target: 9_000, progress: 3_100, reward: 80, xp: 160)]
+        if args.contains("-sobres") { s.pendingChests = [.comun, .rara, .epica] }
         if let i = args.firstIndex(of: "-skin"), i + 1 < args.count { s.skin = args[i + 1] }
         game.s = s
         game.recompute()
@@ -80,5 +98,8 @@ enum Demo {
             game.report = r
         }
         if args.contains("-collector") { game.event = .collector(legacy: 32) }
+        if args.contains("-nivel") { game.levelUp = 13 }
+        if args.contains("-nueva") { game.newKinds = [.bomba] }
+        if args.contains("-intro") { game.s.seenIntro = false }
     }
 }
