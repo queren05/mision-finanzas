@@ -193,7 +193,7 @@ final class Sound {
     }
 }
 
-/// música de ascensor de fondo, en bucle infinito («Two Left Socks» de congusbongus y «8bit Bossa» de Joth, CC0)
+/// música de ascensor de fondo, en bucle infinito (cuatro temas de Kevin MacLeod, CC BY 4.0; el crédito va en Ajustes)
 @MainActor
 final class Music {
     static let shared = Music()

@@ -435,6 +435,8 @@ struct SettingsView: View {
                     Toggle(isOn: $game.s.settings.music) { Text("Música").font(.chunky(20)) }
                     Toggle(isOn: $game.s.settings.sound) { Text("Sonido").font(.chunky(20)) }
                     Toggle(isOn: $game.s.settings.haptics) { Text("Vibración").font(.chunky(20)) }
+                    Text("Música: «Lobby Time», «Local Forecast - Elevator», «Bossa Antigua» y «Easy Lemon» de Kevin MacLeod (incompetech.com), licencia CC BY 4.0. Personajes: Quaternius (CC0).")
+                        .font(.typewriter(11)).foregroundStyle(Ink.soft)
                 }
                 .tint(Ink.green)
                 .foregroundStyle(Ink.ink)
