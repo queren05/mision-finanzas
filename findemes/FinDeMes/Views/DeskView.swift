@@ -78,8 +78,9 @@ struct DeskView: View {
                 Text("DÍA \(game.s.day)").font(.chunky(22)).foregroundStyle(Ink.paper)
                     .shadow(color: Ink.ink, radius: 0, x: 2, y: 2)
                 let left = game.daysLeft
-                Text("\(game.bill.company): \(Fmt.money(game.billAmount))")
-                    .font(.typewriter(12, bold: true)).foregroundStyle(Ink.ink)
+                Text("Factura: \(Fmt.money(game.billAmount))")
+                    .font(.typewriter(13, bold: true)).foregroundStyle(Ink.ink)
+                    .lineLimit(1).fixedSize()
                     .padding(.horizontal, 7).padding(.vertical, 3)
                     .background(left == 0 ? Ink.red.opacity(0.85) : Ink.paper)
                     .overlay(Rectangle().strokeBorder(Ink.ink, lineWidth: 2))

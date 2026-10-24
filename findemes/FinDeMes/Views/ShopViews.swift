@@ -74,6 +74,7 @@ struct TreeView: View {
                     .frame(width: w, height: h)
                     .frame(minWidth: UIScreen.main.bounds.width)
                 }
+                .defaultScrollAnchor(.top)
                 .scrollIndicators(.hidden)
             }
         }
