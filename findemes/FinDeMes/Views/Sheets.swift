@@ -264,7 +264,7 @@ struct IntroView: View {
         ZStack {
             Color.black.opacity(0.55).ignoresSafeArea()
             VStack(spacing: 14) {
-                PigIcon(size: 90)
+                SkinIcon(id: game.s.skin, size: 110)
                 Text("FIN DE MES").font(.chunky(38)).foregroundStyle(Ink.red)
                 Text("Las facturas no se pagan solas. Rompe huchas a martillazos, paga antes de que venzan y no dejes que venga el cobrador.")
                     .font(.typewriter(15)).multilineTextAlignment(.center)

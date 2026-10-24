@@ -31,6 +31,7 @@ final class Desk {
     let stats: HitStats
     let tier: Int
     let hammer: HammerDef
+    let skin: SkinDef
     var pigs: [Pig] = []
     var shards: [Shard] = []
     var loot: [Loot] = []
@@ -62,7 +63,8 @@ final class Desk {
     private(set) var dirty = false
     var earnedPending = 0.0
 
-    init(stats: HitStats, tier: Int, hammer: HammerDef, day: Int) {
+    init(stats: HitStats, tier: Int, hammer: HammerDef, day: Int, skin: SkinDef = Content.skins[0]) {
+        self.skin = skin
         self.stats = stats
         self.tier = tier
         self.hammer = hammer
@@ -207,7 +209,7 @@ final class Desk {
             }
             shards.append(Shard(pos: pig.pos, vel: CGVector(dx: cos(a) * sp, dy: sin(a) * sp - 220), rot: 0,
                                 spin: Double.random(in: -12...12), born: time,
-                                color: Bool.random() ? pig.kind.color : pig.kind.dark, pts: pts))
+                                color: shardColor(pig.kind), pts: pts))
         }
         // monedas y billetes que vuelan al marcador
         let n = min(14, 3 + Int(log10(max(1, value)) * 1.6))
@@ -249,6 +251,11 @@ final class Desk {
         if endAt != nil && stamina > 0 { endAt = nil }
     }
 
+    private func shardColor(_ k: PigKind) -> Color {
+        if skin.drawn || k.look != "normal" || skin.shards.isEmpty { return Bool.random() ? k.color : k.dark }
+        return Color(hex: skin.shards.randomElement()!)
+    }
+
     private func explode(at p: CGPoint, power: Double) {
         blasts.append(Blast(pos: p, born: time, radius: 140))
         Sound.shared.boom()
@@ -282,7 +289,11 @@ final class Desk {
         var dt = min(max(raw, 0), 1.0 / 20)
         if !started {
             started = true
-            for _ in 0..<stats.startPigs { spawn() }
+            if ProcessInfo.processInfo.arguments.contains("-zoo") {
+                for k in PigKind.allCases { spawn(k) }
+            } else {
+                for _ in 0..<stats.startPigs { spawn() }
+            }
             spawnTimer = stats.spawnEvery
             if tier >= PigKind.rey.minTier && Double.random(in: 0..<1) < 0.25 + stats.king { kingDone = true; spawn(.rey) }
         }
@@ -427,6 +438,10 @@ final class Desk {
     }
 
     private func drawPig(_ c: inout GraphicsContext, _ p: Pig) {
+        if !skin.drawn, let img = SkinArt.image(skin.id, p.kind.look) {
+            drawModel(&c, p, img)
+            return
+        }
         var ctx = c
         let s = p.size
         let age = time - p.born
@@ -575,6 +590,116 @@ final class Desk {
         }
     }
 
+    /// personaje 3D (imagen renderizada) que va dando saltitos por la mesa
+    private func drawModel(_ c: inout GraphicsContext, _ p: Pig, _ img: Image) {
+        var ctx = c
+        let s = p.size
+        let age = time - p.born
+        let pop = age < 0.3 ? max(0.01, 1 + 0.25 * sin(age / 0.3 * .pi) - (1 - age / 0.3) * (1 - age / 0.3) * 0.9) : 1
+        let h = time - p.hitAt
+        let sq = h < 0.35 ? exp(-h * 12) * cos(h * 40) * 0.22 : 0
+        var dw = s * 1.5
+        var dh = dw * skin.h / skin.w
+        if dh > s * 1.35 { dh = s * 1.35; dw = dh * skin.w / skin.h }
+        let wheels = p.kind == .ruedas
+        let moving = hypot(p.vel.dx, p.vel.dy) > 2 && h > 0.3
+        let ph = time * (p.kind == .bomba ? 11 : 8.5) + Double(p.id) * 1.7
+        let up = abs(sin(ph))
+        let hop = (wheels || !moving) ? 0 : up * s * 0.14
+        let land = (!wheels && moving) ? max(0, 0.22 - up) * 0.4 : 0
+        let breathe = moving ? 0 : sin(time * 3 + Double(p.id)) * 0.025
+        let tilt = wheels ? -0.05 : (moving ? cos(ph) * 0.08 : 0)
+        let feet = p.pos.y + s * 0.42
+        // sombra: se encoge cuando salta
+        let sw = dw * 0.62 * pop * (1 - hop / s * 1.6)
+        ctx.fill(Path(ellipseIn: CGRect(x: p.pos.x - sw / 2, y: feet - sw * 0.1 + (wheels ? s * 0.12 : 0), width: sw, height: sw * 0.22)), with: .color(.black.opacity(0.22)))
+        ctx.translateBy(x: p.pos.x, y: feet - hop)
+        ctx.rotate(by: .radians(tilt * p.facing))
+        ctx.scaleBy(x: p.facing * pop * (1 + sq + land), y: pop * (1 - sq - land + breathe))
+        let ink = GraphicsContext.Shading.color(Ink.ink)
+        let line = max(2.2, s * 0.045)
+        // monopatín
+        if wheels {
+            let bw = dw * 0.86
+            let wy = s * 0.02
+            for wx in [-bw * 0.32, bw * 0.32] {
+                let r = CGRect(x: wx - s * 0.06, y: wy + s * 0.03, width: s * 0.12, height: s * 0.12)
+                ctx.fill(Path(ellipseIn: r), with: .color(Ink.ink))
+                ctx.fill(Path(ellipseIn: r.insetBy(dx: s * 0.03, dy: s * 0.03)), with: .color(.gray))
+            }
+            let board = Path(roundedRect: CGRect(x: -bw / 2, y: wy - s * 0.02, width: bw, height: s * 0.07), cornerRadius: s * 0.035)
+            ctx.fill(board, with: .color(Color(hex: "#d9573b")))
+            ctx.stroke(board, with: ink, lineWidth: line * 0.8)
+        }
+        let rect = CGRect(x: -dw / 2, y: -dh + (wheels ? s * 0.0 : s * 0.02), width: dw, height: dh)
+        var ic = ctx
+        if h < 0.08 { ic.addFilter(.brightness(0.35)) }
+        ic.draw(img, in: rect)
+        // grietas y brillo, recortados a la silueta
+        if !p.cracks.isEmpty || p.kind == .dorada {
+            var cl = ctx
+            cl.clipToLayer { l in l.draw(img, in: rect) }
+            for crack in p.cracks {
+                var path = Path()
+                for (k, pt) in crack.enumerated() {
+                    let q = CGPoint(x: pt.x * s * 1.15, y: pt.y * s - s * 0.42)
+                    if k == 0 { path.move(to: q) } else { path.addLine(to: q) }
+                }
+                cl.stroke(path, with: ink, style: StrokeStyle(lineWidth: line * 0.75, lineCap: .round, lineJoin: .round))
+            }
+            if p.kind == .dorada {
+                let t = (time * 0.8 + Double(p.id)).truncatingRemainder(dividingBy: 2)
+                var shine = Path()
+                let x0 = -dw * 0.6 + t * dw * 0.8
+                shine.move(to: CGPoint(x: x0, y: -dh)); shine.addLine(to: CGPoint(x: x0 + dw * 0.1, y: -dh))
+                shine.addLine(to: CGPoint(x: x0 - dw * 0.08, y: 0)); shine.addLine(to: CGPoint(x: x0 - dw * 0.18, y: 0))
+                cl.fill(shine, with: .color(.white.opacity(0.5)))
+            }
+        }
+        // corona del rey o mecha de la bomba sobre la cabeza
+        let hx = rect.minX + skin.head.x / skin.w * dw
+        let hy = rect.minY + skin.head.y / skin.h * dh
+        switch p.kind {
+        case .rey:
+            let cw = s * 0.42
+            var crown = Path()
+            let cy = hy + s * 0.04
+            crown.move(to: CGPoint(x: hx - cw / 2, y: cy))
+            for k in 0..<7 {
+                let x = hx - cw / 2 + Double(k) * cw / 6
+                crown.addLine(to: CGPoint(x: x, y: cy - (k % 2 == 1 ? s * 0.06 : s * 0.2)))
+            }
+            crown.addLine(to: CGPoint(x: hx + cw / 2, y: cy))
+            crown.closeSubpath()
+            ctx.fill(crown, with: .color(Ink.gold))
+            ctx.stroke(crown, with: ink, style: StrokeStyle(lineWidth: line * 0.8, lineJoin: .round))
+            for k in [1, 3, 5] {
+                let x = hx - cw / 2 + Double(k) * cw / 6
+                ctx.fill(Path(ellipseIn: CGRect(x: x - s * 0.02, y: cy - s * 0.1, width: s * 0.04, height: s * 0.04)), with: .color(Ink.red))
+            }
+        case .bomba:
+            var fuse = Path()
+            fuse.move(to: CGPoint(x: hx, y: hy + s * 0.04))
+            fuse.addQuadCurve(to: CGPoint(x: hx - s * 0.14, y: hy - s * 0.2), control: CGPoint(x: hx + s * 0.1, y: hy - s * 0.16))
+            ctx.stroke(fuse, with: .color(Ink.ink), style: StrokeStyle(lineWidth: line * 1.7, lineCap: .round))
+            ctx.stroke(fuse, with: .color(Color(hex: "#c9a26b")), style: StrokeStyle(lineWidth: line * 1.0, lineCap: .round))
+            let fl = s * (0.07 + 0.03 * sin(time * 30))
+            let fp = CGPoint(x: hx - s * 0.14, y: hy - s * 0.2)
+            ctx.fill(Path(ellipseIn: CGRect(x: fp.x - fl, y: fp.y - fl, width: fl * 2, height: fl * 2)), with: .color(Ink.gold))
+            ctx.fill(Path(ellipseIn: CGRect(x: fp.x - fl * 0.5, y: fp.y - fl * 0.5, width: fl, height: fl)), with: .color(Ink.red))
+        default: break
+        }
+        // vida
+        if p.hp < p.maxHP {
+            var bar = c
+            let w = max(50, s * 0.8)
+            let r = CGRect(x: p.pos.x - w / 2, y: feet - hop - dh * pop - 16, width: w, height: 9)
+            bar.fill(Path(roundedRect: r, cornerRadius: 4.5), with: .color(Ink.paper))
+            bar.fill(Path(roundedRect: CGRect(x: r.minX, y: r.minY, width: w * max(0, p.hp / p.maxHP), height: 9), cornerRadius: 4.5), with: .color(Ink.red))
+            bar.stroke(Path(roundedRect: r, cornerRadius: 4.5), with: ink, lineWidth: 2)
+        }
+    }
+
     private func drawShard(_ c: inout GraphicsContext, _ s: Shard) {
         let age = time - s.born
         var ctx = c
@@ -715,5 +840,27 @@ enum HammerArt {
             bolt.closeSubpath()
             ctx.fill(bolt, with: .color(Ink.gold)); ctx.stroke(bolt, with: ink, lineWidth: 1.5 * k)
         }
+    }
+}
+
+/// las imágenes de los personajes, cargadas una vez
+@MainActor
+enum SkinArt {
+    private static var cache: [String: Image] = [:]
+    private static var ui: [String: UIImage] = [:]
+    static func uiImage(_ skin: String, _ look: String = "normal") -> UIImage? {
+        let key = skin + "_" + look
+        if let i = ui[key] { return i }
+        guard let url = Bundle.main.url(forResource: key, withExtension: "png"), let img = UIImage(contentsOfFile: url.path) else { return nil }
+        ui[key] = img
+        return img
+    }
+    static func image(_ skin: String, _ look: String) -> Image? {
+        let key = skin + "_" + look
+        if let i = cache[key] { return i }
+        guard let u = uiImage(skin, look) else { return nil }
+        let i = Image(uiImage: u)
+        cache[key] = i
+        return i
     }
 }

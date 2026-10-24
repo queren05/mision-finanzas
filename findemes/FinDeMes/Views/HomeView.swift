@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings
+    case tree, hammers, jewelry, coins, settings, skins
     var id: String { rawValue }
 }
 
@@ -19,6 +19,7 @@ struct HomeView: View {
                     topBar
                     billCard
                     playButton
+                    characterCard
                     drawers
                     if let next = game.nextBill {
                         HStack(spacing: 6) {
@@ -39,6 +40,7 @@ struct HomeView: View {
             case .jewelry: JewelryView()
             case .coins: CoinsView()
             case .settings: SettingsView()
+            case .skins: SkinsView()
             }
         }
         .onAppear {
@@ -47,6 +49,7 @@ struct HomeView: View {
             if args.contains("-hammers") { sheet = .hammers }
             if args.contains("-jewelry") { sheet = .jewelry }
             if args.contains("-coins") { sheet = .coins }
+            if args.contains("-skins") { sheet = .skins }
         }
     }
 
@@ -133,7 +136,7 @@ struct HomeView: View {
     private var playButton: some View {
         Button { game.startDay() } label: {
             HStack(spacing: 12) {
-                PigIcon(size: 46)
+                SkinIcon(id: game.s.skin, size: 52)
                 VStack(alignment: .leading, spacing: 0) {
                     Text("A ROMPER HUCHAS").font(.chunky(26))
                     Text("con \(Content.hammers[game.s.hammer].name.lowercased())").font(.typewriter(13, bold: true)).opacity(0.75)
@@ -143,6 +146,26 @@ struct HomeView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(ChunkyButton(color: Ink.gold, size: 24, radius: 18))
+    }
+
+    private var characterCard: some View {
+        let k = Content.skin(game.s.skin)
+        let more = Content.skins.contains { !game.s.skinsOwned.contains($0.id) && game.s.legacy >= $0.cost }
+        return Button { Sound.shared.click(); sheet = .skins } label: {
+            HStack(spacing: 14) {
+                SkinIcon(id: k.id, size: 60)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Personaje").font(.chunky(22)).foregroundStyle(Ink.ink)
+                    Text(k.name).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                }
+                Spacer()
+                if more { Text("¡!").font(.chunky(15)).foregroundStyle(Ink.paper).padding(.horizontal, 7).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
+                Image(systemName: "chevron.right").font(.system(size: 16, weight: .black)).foregroundStyle(Ink.ink)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(ChunkyButton(color: Ink.paper, size: 18, radius: 16))
     }
 
     // MARK: cajones

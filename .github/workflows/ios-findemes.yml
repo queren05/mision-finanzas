@@ -71,6 +71,11 @@ jobs:
           shot -demo -coins;         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-monedas.png"
           shot -demo -report;        xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/9-ticket.png"
           shot -demo -collector;     xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/10-cobrador.png"
+          shot -demo -skins;         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/11-personajes.png"
+          shot -demo -play -zoo;     xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/12-cerditos.png"
+          shot -demo -play -zoo -skin gamba;      xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/13-gambas.png"
+          shot -demo -play -zoo -skin langostino; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/14-langostinos.png"
+          shot -demo -play -zoo -skin vaca;       xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/15-vacas.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

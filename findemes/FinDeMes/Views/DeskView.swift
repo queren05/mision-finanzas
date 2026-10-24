@@ -10,7 +10,7 @@ struct DeskView: View {
     @State private var askQuit = false
 
     init(game: Game) {
-        let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day)
+        let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day, skin: Content.skin(game.s.skin))
         _desk = State(initialValue: d)
         _stamina = State(initialValue: d.stamina)
         _cash = State(initialValue: game.s.cash)

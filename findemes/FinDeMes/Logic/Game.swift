@@ -303,6 +303,16 @@ final class Game {
         save()
     }
 
+    func pickSkin(_ k: SkinDef) {
+        if s.skinsOwned.contains(k.id) { s.skin = k.id; Sound.shared.click(); save(); return }
+        guard s.legacy >= k.cost else { Sound.shared.denied(); return }
+        s.legacy -= k.cost
+        s.skinsOwned.insert(k.id)
+        s.skin = k.id
+        Sound.shared.till()
+        save()
+    }
+
     // MARK: - Sobres y monedas
 
     func rollChest() -> Rarity {

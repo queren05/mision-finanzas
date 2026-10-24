@@ -66,6 +66,8 @@ enum Demo {
         s.rings = ["abuela": 3, "oro": 2, "cuero": 4]
         s.coins = ["peseta": 2, "duro": 1, "yen": 1, "reala8": 1, "doblon": 1]
         s.stats.bankruptcies = 2; s.stats.billsPaid = 30; s.stats.broken = 1_830; s.stats.days = 41
+        s.skinsOwned = ["cerdo", "gamba", "dibujo", "chaqueta", "vaca"]
+        if let i = args.firstIndex(of: "-skin"), i + 1 < args.count { s.skin = args[i + 1] }
         game.s = s
         game.recompute()
         if args.contains("-play") { game.startDay() }

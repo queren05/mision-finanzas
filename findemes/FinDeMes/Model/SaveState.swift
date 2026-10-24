@@ -55,12 +55,14 @@ struct SaveState: Codable {
     var stats = Stats()
     var settings = Settings()
     var seenIntro = false
+    var skin = "cerdo"
+    var skinsOwned: Set<String> = ["cerdo", "gamba", "dibujo"]
 
     init() {}
 
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
-        case legacy, rings, coins, stats, settings, seenIntro
+        case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -73,6 +75,8 @@ struct SaveState: Codable {
         pendingChests = v(.pendingChests, x.pendingChests); awaitingTaxChoice = v(.awaitingTaxChoice, x.awaitingTaxChoice)
         legacy = v(.legacy, x.legacy); rings = v(.rings, x.rings); coins = v(.coins, x.coins)
         stats = v(.stats, x.stats); settings = v(.settings, x.settings); seenIntro = v(.seenIntro, x.seenIntro)
+        skin = v(.skin, x.skin); skinsOwned = v(.skinsOwned, x.skinsOwned).union(x.skinsOwned)
+        if !Content.skins.contains(where: { $0.id == skin }) { skin = x.skin }
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

@@ -276,3 +276,44 @@ enum Content {
         CoinDef(id: "primera", name: "La primera peseta", line: "1868. Única.", rarity: .legendaria, metal: "#e0b84a", mark: "I"),
     ]
 }
+
+// MARK: - Personajes (modelos 3D renderizados a imagen)
+
+struct SkinDef: Identifiable {
+    let id: String
+    let name: String
+    let cost: Double          // puntos de herencia (0 = gratis)
+    let w: Double, h: Double  // tamaño de la imagen
+    let head: CGPoint         // dónde va la corona o la mecha (en píxeles de la imagen)
+    let shards: [String]      // colores de los pedazos al romperse
+    var drawn: Bool { id == "dibujo" }
+}
+
+extension Content {
+    static let skins: [SkinDef] = [
+        SkinDef(id: "cerdo", name: "Cerdito", cost: 0, w: 296, h: 211, head: CGPoint(x: 176, y: 39), shards: ["#f4b8c4", "#e48aa0"]),
+        SkinDef(id: "gamba", name: "Gamba", cost: 0, w: 341, h: 239, head: CGPoint(x: 215, y: 120), shards: ["#f6b98a", "#e58a5a"]),
+        SkinDef(id: "chaqueta", name: "Gamba con chaqueta", cost: 10, w: 301, h: 230, head: CGPoint(x: 210, y: 95), shards: ["#f6b98a", "#4d8fc7"]),
+        SkinDef(id: "gafas", name: "Gamba con gafas", cost: 10, w: 319, h: 180, head: CGPoint(x: 215, y: 85), shards: ["#f3b48f", "#a7d36a"]),
+        SkinDef(id: "langostino", name: "Langostino", cost: 25, w: 344, h: 249, head: CGPoint(x: 225, y: 75), shards: ["#f7a64a", "#e8603c"]),
+        SkinDef(id: "langosta", name: "Langosta", cost: 40, w: 316, h: 144, head: CGPoint(x: 205, y: 60), shards: ["#ef3b2c", "#b8261b"]),
+        SkinDef(id: "vaca", name: "Vaca", cost: 20, w: 300, h: 226, head: CGPoint(x: 178, y: 46), shards: ["#ffffff", "#3a3a3a"]),
+        SkinDef(id: "carlino", name: "Carlino", cost: 20, w: 274, h: 251, head: CGPoint(x: 232, y: 35), shards: ["#f3e6c4", "#6b4a3a"]),
+        SkinDef(id: "llama", name: "Llama", cost: 30, w: 264, h: 307, head: CGPoint(x: 208, y: 12), shards: ["#a77b5a", "#ffffff"]),
+        SkinDef(id: "dibujo", name: "Hucha de dibujo", cost: 0, w: 1, h: 1, head: .zero, shards: []),
+    ]
+    static func skin(_ id: String) -> SkinDef { skins.first { $0.id == id } ?? skins[0] }
+}
+
+extension PigKind {
+    /// qué versión del personaje se usa para cada tipo de hucha
+    var look: String {
+        switch self {
+        case .dorada: "oro"
+        case .cristal: "cristal"
+        case .acorazada: "hierro"
+        case .bomba: "bomba"
+        default: "normal"
+        }
+    }
+}

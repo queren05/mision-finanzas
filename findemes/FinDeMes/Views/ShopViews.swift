@@ -467,3 +467,62 @@ struct SettingsView: View {
         HStack { Text(l).font(.typewriter(14)); Spacer(); Text(v).font(.typewriter(14, bold: true)) }
     }
 }
+
+// MARK: - Personajes
+
+struct SkinsView: View {
+    @Environment(Game.self) private var game
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color(hex: "#2f5d50").ignoresSafeArea()
+            VStack(spacing: 0) {
+                SheetHeader(title: "Personajes", subtitle: "Lo que rompes a martillazos")
+                CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                        ForEach(Content.skins) { k in SkinCard(def: k) }
+                    }
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+    }
+}
+
+struct SkinCard: View {
+    @Environment(Game.self) private var game
+    let def: SkinDef
+    var body: some View {
+        let owned = game.s.skinsOwned.contains(def.id)
+        let using = game.s.skin == def.id
+        let can = owned || game.s.legacy >= def.cost
+        VStack(spacing: 8) {
+            SkinIcon(id: def.id, size: 110)
+                .frame(height: 96)
+                .opacity(owned ? 1 : 0.85)
+            Text(def.name).font(.chunky(17)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
+            Button { game.pickSkin(def) } label: {
+                Text(using ? "EN USO" : (owned ? "USAR" : "\(Fmt.num(def.cost)) puntos")).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(ChunkyButton(color: using ? Ink.green : (owned ? Ink.paper : Color(hex: "#f2d58a")), text: using ? Ink.paper : Ink.ink, size: 15, radius: 10))
+            .disabled(using || !can)
+        }
+        .padding(10)
+        .paper()
+    }
+}
+
+/// el personaje en pequeño (para botones)
+struct SkinIcon: View {
+    var id: String
+    var size: CGFloat
+    var look = "normal"
+    var body: some View {
+        if let ui = SkinArt.uiImage(id, look) {
+            Image(uiImage: ui).resizable().interpolation(.high).scaledToFit().frame(width: size, height: size)
+        } else {
+            PigIcon(size: size)
+        }
+    }
+}
