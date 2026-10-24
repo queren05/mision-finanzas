@@ -52,7 +52,7 @@ final class Desk {
     private var pending: CGPoint? = nil
     private var spawnTimer = 0.0
     private var nextId = 0
-    private var shake = 0.0
+    private(set) var shake = 0.0
     private var hitStop = 0.0
     private var endAt: Double? = nil
     private var kingDone = false
@@ -64,15 +64,15 @@ final class Desk {
     var earnedPending = 0.0
     /// combo: huchas rotas seguidas sin parar más de un momento
     private(set) var combo = 0
-    private var comboAt = -10.0
-    private var frenzyUntil = -10.0
+    private(set) var comboAt = -10.0
+    private(set) var frenzyUntil = -10.0
     var frenzy: Bool { time < frenzyUntil }
     var comboMult: Double { 1 + Double(min(combo, 50)) * 0.04 }
     static let comboWindow = 1.7
     static let frenzyAt = 30
     /// primera partida: enseña dónde tocar
     var tutorial = false
-    private var firstBreakAt: Double? = nil
+    private(set) var firstBreakAt: Double? = nil
     /// golpe de ahora: cuántas rompe (para no repetir sonidos ni parones)
     private var swingKills = 0
     private var swingEarned = 0.0
@@ -533,7 +533,7 @@ final class Desk {
         }
     }
 
-    private func bestCluster() -> CGPoint? {
+    func bestCluster() -> CGPoint? {
         var best: CGPoint? = nil
         var n = 0
         for p in pigs {

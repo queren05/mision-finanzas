@@ -19,6 +19,7 @@ targets:
       path: FinDeMes/Info.plist
       properties:
         UIAppFonts: [LilitaOne-Regular.ttf, CourierPrime-Regular.ttf, CourierPrime-Bold.ttf]
+        CADisableMinimumFrameDurationOnPhone: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.findemes

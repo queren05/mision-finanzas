@@ -1,9 +1,11 @@
 import SwiftUI
+import SpriteKit
 
 /// Un día rompiendo huchas
 struct DeskView: View {
     @Environment(Game.self) private var game
     @State private var desk: Desk
+    @State private var scene: DeskScene
     @State private var stamina: Double
     @State private var cash: Double
     @State private var cooldownTick = 0
@@ -13,25 +15,15 @@ struct DeskView: View {
         let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day, skin: Content.skin(game.s.skin))
         d.tutorial = game.s.tutorial < 9
         _desk = State(initialValue: d)
+        _scene = State(initialValue: DeskScene(desk: d))
         _stamina = State(initialValue: d.stamina)
         _cash = State(initialValue: game.s.cash)
     }
 
     var body: some View {
         ZStack(alignment: .top) {
-            TimelineView(.animation) { tl in
-                Canvas { ctx, size in
-                    MainActor.assumeIsolated {
-                        desk.frame(tl.date, size: size)
-                        desk.draw(&ctx)
-                    }
-                }
-            }
-            .ignoresSafeArea()
-            .contentShape(Rectangle())
-            .gesture(
-                SpatialTapGesture(coordinateSpace: .global).onEnded { v in desk.tap(v.location) }
-            )
+            SpriteView(scene: scene, preferredFramesPerSecond: 120, options: [.ignoresSiblingOrder])
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 hud
