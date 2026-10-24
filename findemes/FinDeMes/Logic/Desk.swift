@@ -188,7 +188,7 @@ final class Desk {
     private func damage(_ i: Int, base: Double, crit: Bool, at p: CGPoint, quiet: Bool = false) -> Bool {
         var d = base * (crit ? stats.critMult : 1)
         if pigs[i].hp >= pigs[i].maxHP { d *= 1 + stats.firstHit }
-        if pigs[i].kind == .acorazada { d *= min(1, 0.4 + stats.pierce) }
+        if pigs[i].kind == .acorazada || pigs[i].kind == .robot { d *= min(1, 0.4 + stats.pierce) }
         pigs[i].hp -= d
         pigs[i].hitAt = time
         // los ojos dan un respingo
@@ -232,7 +232,7 @@ final class Desk {
         if firstBreakAt == nil { firstBreakAt = time }
         if combo >= nextFrenzy && !frenzy {
             nextFrenzy = combo + Desk.frenzyAt + 20 * (report.frenzies + 1)
-            frenzyUntil = time + 6
+            frenzyUntil = time + 6 + stats.frenzyExtra
             report.frenzies += 1
             shake = max(shake, 12)
             Sound.shared.fanfare()
@@ -292,9 +292,13 @@ final class Desk {
             report.kings += 1
         case .madre:
             for _ in 0..<3 { spawn(.normal, at: pig.pos, scale: 0.6) }
+        case .lava:
+            explode(at: pig.pos, power: pig.maxHP * 4)
+        case .cosmica:
+            if let c = Game.shared.goldenCoinDrop() { report.coins.append(c) }
         default: break
         }
-        let chestChance = pig.kind == .arcoiris ? 0.7 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
+        let chestChance = pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
         if Double.random(in: 0..<1) < chestChance {
             let r = Game.shared.rollChest()
             report.chests.append(r)
@@ -935,6 +939,10 @@ enum HammerArt {
         .jack: ("m_jack", 252, 336, 126, 135),
         .sledge: ("m_sledge", 222, 348, 111, 68),
         .thunder: ("m_thunder", 250, 349, 125, 87),
+        .thunderGold: ("m_trueno_oro", 292, 357, 146, 98),
+        .diamond: ("m_diamante", 228, 350, 114, 71),
+        .cosmic: ("m_cosmico", 186, 320, 93, 93),
+        .goldFlop: ("m_chancla_oro", 179, 328, 81, 151),
     ]
     static func image(_ h: HammerDef) -> Image? { ItemArt.image(meta[h.style]!.file) }
 

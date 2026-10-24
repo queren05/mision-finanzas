@@ -26,6 +26,7 @@ struct HitStats {
     var bomb = 1.0
     var king = 0.0
     var glass = 2.0
+    var frenzyExtra = 0.0
 }
 
 struct DayReport: Identifiable {
@@ -153,7 +154,13 @@ final class Game {
             case .golden: st.golden += v / 100
             case .radius: radiusPct += v
             case .chest: st.chest += v / 100; st.chestLuck += Int(l)
-            case .startCash, .extraDays, .legacy, .bills: break
+            case .speed: speedPct += v
+            case .critDamage: st.critMult += v / 100
+            case .startPigs: st.startPigs += Int(v)
+            case .maxPigs: st.maxPigs += Int(v)
+            case .spawn: spawnPct += v
+            case .frenzy: st.frenzyExtra += v
+            case .startCash, .extraDays, .legacy, .bills, .xp, .pigXP, .bankHours, .quests: break
             }
         }
         // cada moneda de la colección da dinero para siempre

@@ -370,6 +370,7 @@ struct KindIcon: View {
                 SkinIcon(id: skin.id, size: size, look: kind.look)
             }
         }
+        .colorMultiply(kind == .lava ? Color(hex: "#ff7a3a") : (kind == .cosmica ? Color(hex: "#a98bff") : (kind == .robot ? Color(hex: "#b8d8ff") : .white)))
         .opacity(kind == .fantasma ? 0.55 : 1)
         .hueRotation(.degrees(kind == .arcoiris ? 120 : 0))
         .saturation(kind == .diamante || kind == .arcoiris ? 1.7 : 1)

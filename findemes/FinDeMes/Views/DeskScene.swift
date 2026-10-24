@@ -342,6 +342,12 @@ final class DeskScene: SKScene {
                     n.body.colorBlendFactor = 0.5
                 case .diamante:
                     n.body.color = UIColor(red: 0.55, green: 0.9, blue: 1, alpha: 1); n.body.colorBlendFactor = 0.3
+                case .lava:
+                    n.body.color = UIColor(red: 1, green: 0.35 + 0.15 * sin(t * 6 + Double(p.id)), blue: 0.1, alpha: 1); n.body.colorBlendFactor = 0.55
+                case .cosmica:
+                    n.body.color = UIColor(hue: 0.72 + 0.08 * sin(t * 2 + Double(p.id)), saturation: 0.8, brightness: 0.9, alpha: 1); n.body.colorBlendFactor = 0.55
+                case .robot:
+                    n.body.color = UIColor(red: 0.5, green: 0.75, blue: 1, alpha: 1); n.body.colorBlendFactor = 0.3
                 default:
                     n.body.colorBlendFactor = 0
                 }

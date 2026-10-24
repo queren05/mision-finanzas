@@ -48,7 +48,7 @@ struct Quest: Codable, Identifiable, Hashable {
 // MARK: - Logros: cada uno da +3 % de dinero para siempre
 
 enum AchMetric {
-    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay
+    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel
 }
 
 struct AchDef: Identifiable {
@@ -76,6 +76,7 @@ struct AchDef: Identifiable {
         case .hammers: return "Ten \(n) martillos a la vez"
         case .quests: return "Cumple \(n) encargos"
         case .bestDay: return "Gana \(Fmt.money(target)) en un día"
+        case .pigLevel: return "Sube las huchas al nivel \(n)"
         }
     }
 }
@@ -101,6 +102,9 @@ enum Meta {
             + tiers(.coins, "album", [(5, "Numismático"), (12, "Medio álbum"), (24, "Álbum completo")])
             + tiers(.skins, "personajes", [(4, "Disfraces"), (7, "Zoológico"), (10, "Todos")])
             + tiers(.hammers, "martillos", [(3, "Caja de herramientas"), (6, "Ferretería propia"), (8, "Todos los martillos")])
+            + tiers(.pigLevel, "huchas", [(10, "Criador"), (25, "Granja de huchas"), (45, "Huchas robóticas"), (60, "Hasta el espacio"), (80, "Más allá")])
+            + tiers(.hammers, "martillos2", [(10, "Coleccionista de martillos"), (12, "La chancla de oro")])
+            + tiers(.skins, "personajes2", [(13, "Arca de Noé")])
             + tiers(.quests, "encargos", [(5, "Recadero"), (50, "Eficiente"), (250, "Indispensable"), (1_000, "Hombre para todo")])
     }()
 
@@ -159,7 +163,7 @@ extension Game {
 
     func addXP(_ v: Double) {
         guard v > 0 else { return }
-        s.xp += v
+        s.xp += (v * (1 + ringValue(.xp) / 100)).rounded()
         var ups = 0
         while s.xp >= Meta.xpNeeded(s.level) {
             s.xp -= Meta.xpNeeded(s.level)
@@ -179,7 +183,7 @@ extension Game {
     var pigNeeded: Double { PigLevel.needed(s.tier) }
 
     func addPigXP(_ v: Double) {
-        s.pigXP += v
+        s.pigXP += v * (1 + ringValue(.pigXP) / 100)
         var fresh: [PigKind] = []
         while s.pigXP >= PigLevel.needed(s.tier) {
             s.pigXP -= PigLevel.needed(s.tier)
@@ -228,7 +232,7 @@ extension Game {
         }
     }
 
-    func questReward(_ q: Quest) -> Double { (q.reward * pigWorth).rounded() }
+    func questReward(_ q: Quest) -> Double { (q.reward * pigWorth * (1 + ringValue(.quests) / 100)).rounded() }
 
     func claim(_ q: Quest) {
         guard let i = s.quests.firstIndex(where: { $0.id == q.id }), s.quests[i].done else { return }
@@ -265,6 +269,7 @@ extension Game {
         case .hammers: return Double(s.hammersOwned.count)
         case .quests: return st.missions
         case .bestDay: return st.bestDay
+        case .pigLevel: return Double(s.tier)
         }
     }
 
@@ -313,7 +318,7 @@ extension Game {
 
     // MARK: hucha de casa (se llena sola mientras no juegas)
 
-    var bankCap: Double { (pigWorth * Meta.bankRate * 60 * Meta.bankHours).rounded() }
+    var bankCap: Double { (pigWorth * Meta.bankRate * 60 * (Meta.bankHours + ringValue(.bankHours))).rounded() }
     func bankAmount(_ now: Date) -> Double {
         guard let since = s.bankSince else { return 0 }
         let mins = max(0, now.timeIntervalSince(since) / 60)
