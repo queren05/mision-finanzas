@@ -109,6 +109,9 @@ struct ChestOpener: View {
     @State private var prize: ChestPrize? = nil
     @State private var opening = false
     @State private var shakeKey = 0
+    @State private var all: AllPrizes? = nil
+
+    struct AllPrizes { var count = 0; var cash = 0.0; var fresh: [CoinDef] = []; var legacy = 0.0; var best = Rarity.comun }
 
 
     var body: some View {
@@ -146,11 +149,52 @@ struct ChestOpener: View {
                 .buttonStyle(.plain)
                 .disabled(opening)
                 Text("Toca para abrir").font(.typewriter(13, bold: true)).foregroundStyle(Ink.paper)
+                if game.s.pendingChests.count >= 2 {
+                    Button { openAll() } label: { Text("Abrir los \(game.s.pendingChests.count) de golpe").frame(maxWidth: .infinity) }
+                        .buttonStyle(ChunkyButton(color: Ink.gold, size: 18))
+                        .disabled(opening)
+                }
+            }
+            if let a = all {
+                VStack(spacing: 8) {
+                    Text("\(a.count) SOBRES ABIERTOS").font(.chunky(20)).foregroundStyle(a.best == .comun ? Ink.ink : a.best.color)
+                    Text("+" + Fmt.money(a.cash)).font(.chunky(34)).foregroundStyle(Ink.green)
+                    if !a.fresh.isEmpty {
+                        Text("¡Monedas nuevas para el álbum!").font(.typewriter(12, bold: true)).foregroundStyle(Ink.purple)
+                        HStack(spacing: 6) {
+                            ForEach(Array(a.fresh.prefix(6).enumerated()), id: \.offset) { _, c in CoinArt(def: c, found: true).frame(width: 44, height: 44) }
+                        }
+                    }
+                    if a.legacy > 0 { Text("Repetidas: +\(Fmt.num(a.legacy)) puntos de herencia").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft) }
+                }
+                .foregroundStyle(Ink.ink)
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .paper(Ink.paper)
+                .transition(.scale(scale: 0.3).combined(with: .opacity))
             }
         }
     }
 
+    private func openAll() {
+        opening = true
+        shakeKey += 1
+        var a = AllPrizes()
+        while let p = game.openChest() {
+            a.count += 1
+            a.cash += p.cash
+            a.legacy += p.legacy
+            if let c = p.coin, !p.duplicate { a.fresh.append(c) }
+            if p.rarity.order > a.best.order { a.best = p.rarity }
+        }
+        prize = nil
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { all = a }
+        a.best == .comun ? Sound.shared.till() : Sound.shared.fanfare()
+        opening = false
+    }
+
     private func open() {
+        all = nil
         opening = true
         shakeKey += 1
         Sound.shared.click()
