@@ -397,7 +397,7 @@ struct CoinArt: View {
                 ItemImage(name: "c_" + def.id)
                     .saturation(found ? 1 : 0)
                     .opacity(found ? 1 : 0.35)
-                Text(found ? def.mark : "?")
+                Text(found ? (def.id == "yen" ? "" : def.mark) : "?")
                     .font(.chunky(side * (def.mark.count > 2 ? 0.26 : 0.34)))
                     .foregroundStyle(Ink.ink.opacity(found ? 0.6 : 0.4))
                     .offset(x: -side * 0.02)
