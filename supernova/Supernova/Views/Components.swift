@@ -41,7 +41,7 @@ struct SpaceBackground: View {
 struct GlassCard: ViewModifier {
     var radius: CGFloat = 20
     var tint: Color = .white
-    func body(content: Content) -> some View {
+    func body(content: Self.Content) -> some View {
         content
             .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .background(tint.opacity(0.05), in: RoundedRectangle(cornerRadius: radius, style: .continuous))
