@@ -111,7 +111,7 @@ struct SkillDef: Identifiable {
     let row: Int
     let icon: String
 
-    func cost(_ level: Int) -> Double { (baseCost * pow(growth, Double(level))).rounded() }
+    func cost(_ level: Int) -> Double { (baseCost * 3 * pow(growth + 0.2, Double(level))).rounded() }
 }
 
 // MARK: - Joyas (puntos de herencia: se quedan tras la bancarrota)
@@ -166,13 +166,13 @@ struct CoinDef: Identifiable {
 enum Content {
     static let hammers: [HammerDef] = [
         HammerDef(id: 0, name: "La chancla", line: "La de tu madre. Nunca falla.", cost: 0, damage: 4, speed: 1.1, radius: 34, style: .chancla, head: "#3f74b0", handle: "#2a2018"),
-        HammerDef(id: 1, name: "Martillo de juguete", line: "Pita al golpear.", cost: 120, damage: 7, speed: 1.4, radius: 40, style: .toy, head: "#e8483a", handle: "#f2b632"),
-        HammerDef(id: 2, name: "Martillo de carpintero", line: "Clavos aparte.", cost: 900, damage: 15, speed: 1.5, radius: 44, style: .claw, head: "#7b8086", handle: "#9a6438"),
-        HammerDef(id: 3, name: "Mazo de goma", line: "Rebota que da gusto.", cost: 6_000, damage: 32, speed: 1.75, radius: 58, style: .mallet, head: "#2f2b2b", handle: "#c9a26b"),
-        HammerDef(id: 4, name: "Maza medieval", line: "De un mercadillo.", cost: 45_000, damage: 75, speed: 1.6, radius: 64, style: .mace, head: "#8d8f94", handle: "#6e4126"),
-        HammerDef(id: 5, name: "Martillo neumático", line: "Los vecinos encantados.", cost: 320_000, damage: 140, speed: 3.4, radius: 46, style: .jack, head: "#f2b632", handle: "#3a3a3a"),
-        HammerDef(id: 6, name: "Mazo de demolición", line: "Para tabiques y huchas.", cost: 2.6e6, damage: 450, speed: 1.5, radius: 86, style: .sledge, head: "#5a5f66", handle: "#b47a48"),
-        HammerDef(id: 7, name: "Martillo del trueno", line: "Prestado. No preguntes.", cost: 2.4e7, damage: 1_300, speed: 2.1, radius: 100, style: .thunder, head: "#c9ccd2", handle: "#7a4a2a"),
+        HammerDef(id: 1, name: "Martillo de juguete", line: "Pita al golpear.", cost: 420, damage: 7, speed: 1.4, radius: 40, style: .toy, head: "#e8483a", handle: "#f2b632"),
+        HammerDef(id: 2, name: "Martillo de carpintero", line: "Clavos aparte.", cost: 3150, damage: 15, speed: 1.5, radius: 44, style: .claw, head: "#7b8086", handle: "#9a6438"),
+        HammerDef(id: 3, name: "Mazo de goma", line: "Rebota que da gusto.", cost: 21000, damage: 32, speed: 1.75, radius: 58, style: .mallet, head: "#2f2b2b", handle: "#c9a26b"),
+        HammerDef(id: 4, name: "Maza medieval", line: "De un mercadillo.", cost: 157500, damage: 75, speed: 1.6, radius: 64, style: .mace, head: "#8d8f94", handle: "#6e4126"),
+        HammerDef(id: 5, name: "Martillo neumático", line: "Los vecinos encantados.", cost: 1.12e+06, damage: 140, speed: 3.4, radius: 46, style: .jack, head: "#f2b632", handle: "#3a3a3a"),
+        HammerDef(id: 6, name: "Mazo de demolición", line: "Para tabiques y huchas.", cost: 9.1e+06, damage: 450, speed: 1.5, radius: 86, style: .sledge, head: "#5a5f66", handle: "#b47a48"),
+        HammerDef(id: 7, name: "Martillo del trueno", line: "Prestado. No preguntes.", cost: 8.4e+07, damage: 1_300, speed: 2.1, radius: 100, style: .thunder, head: "#c9ccd2", handle: "#7a4a2a"),
     ]
 
     static let bills: [BillDef] = [
@@ -193,7 +193,7 @@ enum Content {
     static let yearGrowth = 7.0
 
     static func pigHP(_ tier: Int) -> Double { 8 * pow(1.3, Double(tier)) }
-    static func pigValue(_ tier: Int) -> Double { 2 * pow(1.36, Double(tier)) }
+    static func pigValue(_ tier: Int) -> Double { 0.9 * pow(1.32, Double(tier)) }
 
     static let skills: [SkillDef] = [
         // centro: daño
@@ -220,9 +220,9 @@ enum Content {
         SkillDef(id: "midas", name: "Toque de Midas", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 40, maxLevel: 10, baseCost: 50_000, growth: 1.65, parent: "ojo", col: 2, row: 6, icon: "sparkles"),
         SkillDef(id: "bote", name: "El bote", desc: "%\u{2009}% de que una hucha dé ×20", effect: .jackpot, per: 0.5, maxLevel: 4, baseCost: 2e6, growth: 2.2, parent: "midas", col: 2, row: 8, icon: "dollarsign.circle.fill"),
         // derecha: huchas
-        SkillDef(id: "mas", name: "Más huchas", desc: "+% huchas al empezar", effect: .startPigs, per: 1, maxLevel: 6, baseCost: 30, growth: 1.8, parent: "golpe", col: 4, row: 1, icon: "plus.circle.fill"),
+        SkillDef(id: "mas", name: "Más huchas", desc: "+% huchas al empezar", effect: .startPigs, per: 2, maxLevel: 6, baseCost: 30, growth: 1.8, parent: "golpe", col: 4, row: 1, icon: "plus.circle.fill"),
         SkillDef(id: "repartidor", name: "El repartidor", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 12, maxLevel: 10, baseCost: 250, growth: 1.6, parent: "mas", col: 5, row: 2, icon: "shippingbox.fill"),
-        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% huchas a la vez", effect: .maxPigs, per: 2, maxLevel: 6, baseCost: 1_000, growth: 1.9, parent: "repartidor", col: 5, row: 3, icon: "rectangle.expand.vertical"),
+        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% huchas a la vez", effect: .maxPigs, per: 3, maxLevel: 6, baseCost: 1_000, growth: 1.9, parent: "repartidor", col: 5, row: 3, icon: "rectangle.expand.vertical"),
         SkillDef(id: "gordas", name: "Huchas gordas", desc: "+%\u{2009}% de huchas gordas", effect: .fat, per: 5, maxLevel: 4, baseCost: 4_000, growth: 2, parent: "mesa", col: 6, row: 4, icon: "circle.fill"),
         SkillDef(id: "fabrica", name: "Fábrica de huchas", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 15, maxLevel: 10, baseCost: 25_000, growth: 1.65, parent: "mesa", col: 5, row: 5, icon: "building.2.fill"),
         SkillDef(id: "bombas", name: "Pólvora", desc: "Explosiones +%\u{2009}%", effect: .bomb, per: 50, maxLevel: 4, baseCost: 90_000, growth: 2.2, parent: "fabrica", col: 6, row: 6, icon: "flame.circle.fill"),

@@ -25,11 +25,13 @@ struct Stats: Codable, Hashable {
 struct Settings: Codable, Hashable {
     var sound = true
     var haptics = true
+    var music = true
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         sound = (try? c.decodeIfPresent(Bool.self, forKey: .sound)) ?? true
         haptics = (try? c.decodeIfPresent(Bool.self, forKey: .haptics)) ?? true
+        music = (try? c.decodeIfPresent(Bool.self, forKey: .music)) ?? true
     }
 }
 

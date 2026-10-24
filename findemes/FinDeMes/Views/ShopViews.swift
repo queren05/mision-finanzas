@@ -207,12 +207,10 @@ struct HammerRow: View {
         let equipped = game.s.hammer == def.id
         let can = game.s.cash >= def.cost
         HStack(spacing: 14) {
-            Canvas { ctx, size in
-                ctx.translateBy(x: size.width / 2, y: size.height / 2 + 6)
-                ctx.rotate(by: .degrees(-30))
-                HammerArt.draw(&ctx, def, scale: 0.9)
-            }
-            .frame(width: 74, height: 84)
+            ItemImage(name: HammerArt.meta[def.style]!.file)
+                .rotationEffect(.degrees(-25))
+                .padding(6)
+                .frame(width: 74, height: 84)
             .background(Ink.paperDark.opacity(0.6))
             .overlay(Rectangle().strokeBorder(Ink.ink, lineWidth: 2))
             VStack(alignment: .leading, spacing: 3) {
@@ -294,7 +292,7 @@ struct RingRow: View {
         let maxed = l >= def.maxLevel
         let can = !maxed && game.s.legacy >= def.cost(l)
         HStack(spacing: 12) {
-            JewelIcon(color: Color(hex: def.color), bracelet: def.bracelet).frame(width: 52, height: 52)
+            ItemImage(name: "j_" + def.id).frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(def.name).font(.chunky(17)).foregroundStyle(Ink.ink)
@@ -393,23 +391,30 @@ struct CoinArt: View {
     let def: CoinDef
     var found: Bool
     var body: some View {
-        Canvas { ctx, size in
-            let r = min(size.width, size.height) / 2 - 3
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            let ink = GraphicsContext.Shading.color(Ink.ink)
-            let metal = found ? Color(hex: def.metal) : Ink.paperDark
-            let outer = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
-            ctx.fill(Path(ellipseIn: CGRect(x: c.x - r + 3, y: c.y - r + 4, width: r * 2, height: r * 2)), with: ink)
-            ctx.fill(outer, with: .color(metal))
-            ctx.stroke(outer, with: ink, lineWidth: 2.5)
-            let inner = Path(ellipseIn: CGRect(x: c.x - r * 0.76, y: c.y - r * 0.76, width: r * 1.52, height: r * 1.52))
-            ctx.stroke(inner, with: .color(Ink.ink.opacity(found ? 0.45 : 0.25)), style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
-            ctx.draw(Text(found ? def.mark : "?").font(.chunky(r * 0.8)).foregroundColor(Ink.ink.opacity(found ? 0.75 : 0.35)), at: c)
-            if found {
-                var shine = Path()
-                shine.addArc(center: c, radius: r * 0.88, startAngle: .degrees(200), endAngle: .degrees(250), clockwise: false)
-                ctx.stroke(shine, with: .color(.white.opacity(0.7)), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+        GeometryReader { g in
+            let side = min(g.size.width, g.size.height)
+            ZStack {
+                ItemImage(name: "c_" + def.id)
+                    .saturation(found ? 1 : 0)
+                    .opacity(found ? 1 : 0.35)
+                Text(found ? def.mark : "?")
+                    .font(.chunky(side * (def.mark.count > 2 ? 0.26 : 0.34)))
+                    .foregroundStyle(Ink.ink.opacity(found ? 0.6 : 0.4))
+                    .offset(x: -side * 0.02)
             }
+            .frame(width: g.size.width, height: g.size.height)
+        }
+    }
+}
+
+/// imagen de un objeto 3D (martillo, joya o moneda)
+struct ItemImage: View {
+    let name: String
+    var body: some View {
+        if let ui = ItemArt.uiImage(name) {
+            Image(uiImage: ui).resizable().interpolation(.high).scaledToFit()
+        } else {
+            Color.clear
         }
     }
 }
@@ -427,6 +432,7 @@ struct SettingsView: View {
                 HStack { Spacer() }
                 Text("AJUSTES").font(.chunky(30)).foregroundStyle(Ink.ink).padding(.top, 20)
                 VStack(spacing: 14) {
+                    Toggle(isOn: $game.s.settings.music) { Text("Música").font(.chunky(20)) }
                     Toggle(isOn: $game.s.settings.sound) { Text("Sonido").font(.chunky(20)) }
                     Toggle(isOn: $game.s.settings.haptics) { Text("Vibración").font(.chunky(20)) }
                 }

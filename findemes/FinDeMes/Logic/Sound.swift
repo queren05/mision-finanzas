@@ -192,3 +192,27 @@ final class Sound {
         }
     }
 }
+
+/// música de ascensor de fondo, en bucle infinito («Two Left Socks» de congusbongus y «8bit Bossa» de Joth, CC0)
+@MainActor
+final class Music {
+    static let shared = Music()
+    private var player: AVAudioPlayer?
+    var on = true { didSet { on ? resume() : pause() } }
+
+    private init() {
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
+        guard let url = Bundle.main.url(forResource: "ascensor", withExtension: "m4a") else { return }
+        player = try? AVAudioPlayer(contentsOf: url)
+        player?.numberOfLoops = -1
+        player?.volume = 0.32
+        player?.prepareToPlay()
+    }
+
+    func resume() {
+        guard on, let p = player, !p.isPlaying else { return }
+        try? AVAudioSession.sharedInstance().setActive(true)
+        p.play()
+    }
+    func pause() { player?.pause() }
+}

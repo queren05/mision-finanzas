@@ -9,9 +9,10 @@ struct FinDeMesApp: App {
         WindowGroup {
             RootView()
                 .environment(game)
-                .onAppear { Demo.apply(game) }
+                .onAppear { Demo.apply(game); Music.shared.resume() }
                 .onChange(of: phase) { _, p in
-                    if p == .background { game.save(); Sound.shared.stop() }
+                    if p == .background { game.save(); Sound.shared.stop(); Music.shared.pause() }
+                    if p == .active { Music.shared.resume() }
                 }
         }
     }

@@ -90,7 +90,7 @@ final class Desk {
 
     private func spawn(_ forced: PigKind? = nil) {
         let kind = forced ?? pickKind()
-        let s = kind.size
+        let s = kind.size * 0.85
         let x = Double.random(in: s * 0.7...max(s * 0.7 + 1, size.width - s * 0.7))
         let y = Double.random(in: top + s * 0.5...max(top + s * 0.5 + 1, size.height - bottom - s * 0.5))
         let a = Double.random(in: 0..<(2 * .pi))
@@ -717,14 +717,10 @@ final class Desk {
         ctx.translateBy(x: l.pos.x, y: l.pos.y)
         if l.bill {
             ctx.rotate(by: .radians(sin(l.rot) * 0.6))
-            let r = CGRect(x: -13, y: -7, width: 26, height: 14)
-            ctx.fill(Path(r), with: .color(Ink.money))
-            ctx.stroke(Path(r), with: .color(Ink.ink), lineWidth: 2)
-            ctx.fill(Path(ellipseIn: CGRect(x: -4, y: -4, width: 8, height: 8)), with: .color(Ink.ink.opacity(0.35)))
+            if let img = ItemArt.image("billete") { ctx.draw(img, in: CGRect(x: -17, y: -9, width: 34, height: 18)) }
         } else {
-            let w = 9 * abs(cos(l.rot)) + 2
-            ctx.fill(Path(ellipseIn: CGRect(x: -w, y: -9, width: w * 2, height: 18)), with: .color(Ink.gold))
-            ctx.stroke(Path(ellipseIn: CGRect(x: -w, y: -9, width: w * 2, height: 18)), with: .color(Ink.ink), lineWidth: 2)
+            ctx.scaleBy(x: max(0.15, abs(cos(l.rot))), y: 1)
+            if let img = ItemArt.image("c_loot") { ctx.draw(img, in: CGRect(x: -11, y: -11, width: 22, height: 22)) }
         }
     }
 
@@ -748,13 +744,19 @@ final class Desk {
                 }
             }
         }
-        // el martillo: baja de golpe y se queda un instante
+        // el martillo: gira desde el mango y la cabeza cae justo donde has tocado
+        let hh = 92.0
+        let v = HammerArt.handle(hammer, height: hh)
+        let final = -0.45
         let swingT = min(1, age / 0.07)
-        let angle = -70 * (1 - swingT) + (sw.hit ? 0 : 8)
+        let ang = final + (1 - swingT) * 1.25 + (sw.hit ? 0 : 0.12)
+        // el final del mango se queda quieto
+        let pivot = CGPoint(x: sw.pos.x + v.dx * cos(final) - v.dy * sin(final), y: sw.pos.y + v.dx * sin(final) + v.dy * cos(final))
         ctx.opacity = age > 0.3 ? max(0, 1 - (age - 0.3) / 0.15) : 1
-        ctx.translateBy(x: sw.pos.x + 26, y: sw.pos.y + 46)
-        ctx.rotate(by: .degrees(angle - 20))
-        HammerArt.draw(&ctx, hammer, scale: 1)
+        ctx.translateBy(x: pivot.x, y: pivot.y)
+        ctx.rotate(by: .radians(ang))
+        ctx.translateBy(x: -v.dx, y: -v.dy)
+        HammerArt.draw(&ctx, hammer, height: hh)
     }
 
     private func drawFloater(_ c: inout GraphicsContext, _ f: Floater) {
@@ -775,71 +777,53 @@ final class Desk {
 }
 
 /// dibujo de cada martillo (se usa en la mesa y en la tienda)
+/// los martillos son modelos 3D renderizados a imagen (Items/m_*.png)
+@MainActor
 enum HammerArt {
-    /// dibuja con el mango hacia abajo y la cabeza en el origen
-    static func draw(_ ctx: inout GraphicsContext, _ h: HammerDef, scale k: Double) {
-        let ink = GraphicsContext.Shading.color(Ink.ink)
-        let head = Color(hex: h.head), handle = Color(hex: h.handle)
-        let lw = 2.5 * k
-        func box(_ r: CGRect, _ c: Color, _ radius: Double = 3) {
-            let p = Path(roundedRect: r, cornerRadius: radius * k)
-            ctx.fill(p, with: .color(c)); ctx.stroke(p, with: ink, lineWidth: lw)
-        }
-        switch h.style {
-        case .chancla:
-            let sole = Path(roundedRect: CGRect(x: -15 * k, y: -44 * k, width: 30 * k, height: 70 * k), cornerRadius: 14 * k)
-            ctx.fill(sole, with: .color(head)); ctx.stroke(sole, with: ink, lineWidth: lw)
-            var strap = Path()
-            strap.move(to: CGPoint(x: -14 * k, y: -18 * k))
-            strap.addQuadCurve(to: CGPoint(x: 14 * k, y: -18 * k), control: CGPoint(x: 0, y: -40 * k))
-            ctx.stroke(strap, with: .color(Ink.paper), style: StrokeStyle(lineWidth: 6 * k, lineCap: .round))
-            ctx.stroke(strap, with: ink, style: StrokeStyle(lineWidth: 1.5 * k, lineCap: .round))
-        case .toy:
-            box(CGRect(x: -4 * k, y: -8 * k, width: 8 * k, height: 50 * k), handle, 4)
-            box(CGRect(x: -22 * k, y: -26 * k, width: 44 * k, height: 22 * k), head, 9)
-            box(CGRect(x: -26 * k, y: -24 * k, width: 7 * k, height: 18 * k), Ink.gold, 3)
-            box(CGRect(x: 19 * k, y: -24 * k, width: 7 * k, height: 18 * k), Ink.gold, 3)
-        case .claw:
-            box(CGRect(x: -4 * k, y: -6 * k, width: 8 * k, height: 54 * k), handle, 3)
-            box(CGRect(x: -6 * k, y: -26 * k, width: 28 * k, height: 18 * k), head, 3)
-            var claw = Path()
-            claw.move(to: CGPoint(x: -6 * k, y: -24 * k))
-            claw.addQuadCurve(to: CGPoint(x: -26 * k, y: -8 * k), control: CGPoint(x: -24 * k, y: -26 * k))
-            claw.addLine(to: CGPoint(x: -20 * k, y: -6 * k))
-            claw.addQuadCurve(to: CGPoint(x: -6 * k, y: -12 * k), control: CGPoint(x: -14 * k, y: -16 * k))
-            claw.closeSubpath()
-            ctx.fill(claw, with: .color(head)); ctx.stroke(claw, with: ink, lineWidth: lw)
-        case .mallet:
-            box(CGRect(x: -4 * k, y: -6 * k, width: 8 * k, height: 56 * k), handle, 3)
-            box(CGRect(x: -24 * k, y: -30 * k, width: 48 * k, height: 26 * k), head, 7)
-        case .mace:
-            box(CGRect(x: -4 * k, y: -6 * k, width: 8 * k, height: 58 * k), handle, 3)
-            let ball = Path(ellipseIn: CGRect(x: -18 * k, y: -38 * k, width: 36 * k, height: 36 * k))
-            for a in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
-                var spike = Path()
-                spike.move(to: CGPoint(x: cos(a - 0.25) * 16 * k, y: -20 * k + sin(a - 0.25) * 16 * k))
-                spike.addLine(to: CGPoint(x: cos(a) * 26 * k, y: -20 * k + sin(a) * 26 * k))
-                spike.addLine(to: CGPoint(x: cos(a + 0.25) * 16 * k, y: -20 * k + sin(a + 0.25) * 16 * k))
-                ctx.fill(spike, with: .color(Color(hex: "#d7d9dd"))); ctx.stroke(spike, with: ink, lineWidth: 1.8 * k)
-            }
-            ctx.fill(ball, with: .color(head)); ctx.stroke(ball, with: ink, lineWidth: lw)
-        case .jack:
-            box(CGRect(x: -16 * k, y: -34 * k, width: 32 * k, height: 40 * k), head, 6)
-            box(CGRect(x: -26 * k, y: -30 * k, width: 52 * k, height: 8 * k), handle, 4)
-            box(CGRect(x: -3 * k, y: 6 * k, width: 6 * k, height: 30 * k), Color(hex: "#9aa0a6"), 2)
-        case .sledge:
-            box(CGRect(x: -4 * k, y: -6 * k, width: 8 * k, height: 64 * k), handle, 3)
-            box(CGRect(x: -30 * k, y: -32 * k, width: 60 * k, height: 28 * k), head, 4)
-            box(CGRect(x: -30 * k, y: -32 * k, width: 10 * k, height: 28 * k), Color(hex: "#3a3f45"), 3)
-            box(CGRect(x: 20 * k, y: -32 * k, width: 10 * k, height: 28 * k), Color(hex: "#3a3f45"), 3)
-        case .thunder:
-            box(CGRect(x: -4 * k, y: -6 * k, width: 8 * k, height: 50 * k), handle, 3)
-            box(CGRect(x: -26 * k, y: -34 * k, width: 52 * k, height: 30 * k), head, 5)
-            var bolt = Path()
-            bolt.addLines([CGPoint(x: 2 * k, y: -32 * k), CGPoint(x: -6 * k, y: -18 * k), CGPoint(x: 1 * k, y: -18 * k), CGPoint(x: -4 * k, y: -6 * k), CGPoint(x: 8 * k, y: -22 * k), CGPoint(x: 1 * k, y: -22 * k)])
-            bolt.closeSubpath()
-            ctx.fill(bolt, with: .color(Ink.gold)); ctx.stroke(bolt, with: ink, lineWidth: 1.5 * k)
-        }
+    /// ancho, alto y centro de la cabeza (en píxeles de la imagen)
+    static let meta: [HammerStyle: (file: String, w: Double, h: Double, ax: Double, ay: Double)] = [
+        .chancla: ("m_chancla", 179, 328, 81, 151),
+        .toy: ("m_toy", 238, 341, 119, 78),
+        .claw: ("m_claw", 246, 342, 152, 45),
+        .mallet: ("m_mallet", 208, 340, 104, 76),
+        .mace: ("m_mace", 158, 324, 79, 82),
+        .jack: ("m_jack", 252, 336, 126, 135),
+        .sledge: ("m_sledge", 222, 348, 111, 68),
+        .thunder: ("m_thunder", 250, 349, 125, 87),
+    ]
+    static func image(_ h: HammerDef) -> Image? { ItemArt.image(meta[h.style]!.file) }
+
+    /// dibuja el martillo con el mango hacia abajo; la cabeza queda en el origen
+    static func draw(_ ctx: inout GraphicsContext, _ h: HammerDef, height: Double) {
+        guard let img = image(h), let m = meta[h.style] else { return }
+        let k = height / m.h
+        ctx.draw(img, in: CGRect(x: -m.ax * k, y: -m.ay * k, width: m.w * k, height: m.h * k))
+    }
+    /// vector de la cabeza al final del mango (en puntos)
+    static func handle(_ h: HammerDef, height: Double) -> CGVector {
+        let m = meta[h.style]!
+        let k = height / m.h
+        return CGVector(dx: (m.w / 2 - m.ax) * k, dy: (m.h - m.ay) * k)
+    }
+}
+
+/// imágenes de objetos (martillos, joyas, monedas), cargadas una vez
+@MainActor
+enum ItemArt {
+    private static var cache: [String: Image] = [:]
+    private static var ui: [String: UIImage] = [:]
+    static func uiImage(_ name: String) -> UIImage? {
+        if let i = ui[name] { return i }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"), let img = UIImage(contentsOfFile: url.path) else { return nil }
+        ui[name] = img
+        return img
+    }
+    static func image(_ name: String) -> Image? {
+        if let i = cache[name] { return i }
+        guard let u = uiImage(name) else { return nil }
+        let i = Image(uiImage: u)
+        cache[name] = i
+        return i
     }
 }
 

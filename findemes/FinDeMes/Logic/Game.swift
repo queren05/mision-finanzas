@@ -9,15 +9,15 @@ struct HitStats {
     var stamina = 25.0
     var killStamina = 0.0     // probabilidad de recuperar 1 al romper
     var drainSave = 0.0       // probabilidad de que un golpe no gaste
-    var startPigs = 4
-    var spawnEvery = 2.6
-    var maxPigs = 9
+    var startPigs = 10
+    var spawnEvery = 0.9
+    var maxPigs = 18
     var loot = 1.0
-    var golden = 0.015
+    var golden = 0.008
     var crit = 0.05
     var critMult = 2.5
     var collateral = 0.0
-    var chest = 0.015
+    var chest = 0.006
     var chestLuck = 0
     var jackpot = 0.0
     var pierce = 0.0
@@ -85,6 +85,7 @@ final class Game {
     func applySettings() {
         Sound.shared.on = s.settings.sound
         Sound.shared.haptics = s.settings.haptics
+        Music.shared.on = s.settings.music
     }
 
     func save() { Persistence.save(s) }
@@ -150,7 +151,7 @@ final class Game {
         st.speed *= 1 + speedPct / 100
         st.radius *= 1 + radiusPct / 100
         st.loot = 1 + lootPct / 100
-        st.spawnEvery = 2.6 / (1 + spawnPct / 100)
+        st.spawnEvery = 0.9 / (1 + spawnPct / 100)
         stats = st
     }
 
