@@ -212,6 +212,8 @@ struct WishEditor: View {
     @State private var photoItem: PhotosPickerItem? = nil
     @State private var loading = false
     @State private var askDelete = false
+    @State private var filledFrom = ""
+    @State private var userPhoto = false
 
     var body: some View {
         NavigationStack {
@@ -229,7 +231,7 @@ struct WishEditor: View {
                         TextField("Qué quieres", text: $w.title, axis: .vertical).font(.headline)
                     }
                     if w.photo != nil || !w.imageURL.isEmpty {
-                        Button("Quitar la foto", role: .destructive) { w.photo = nil; w.imageURL = "" }
+                        Button("Quitar la foto", role: .destructive) { w.photo = nil; w.imageURL = ""; userPhoto = true }
                     }
                 }
                 Section {
@@ -287,15 +289,25 @@ struct WishEditor: View {
             .onAppear {
                 if let o = original {
                     w = o
+                    filledFrom = o.link.trimmingCharacters(in: .whitespacesAndNewlines)
+                    userPhoto = o.photo != nil
                     priceText = o.price.map(Money.num) ?? ""
                     savedText = o.saved > 0 ? Money.num(o.saved) : ""
                 }
+            }
+            .task(id: w.link) {
+                // al pegar o escribir el enlace se rellena solo (foto, nombre y precio)
+                let link = w.link.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard link.hasPrefix("http"), link != filledFrom else { return }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                guard !Task.isCancelled else { return }
+                await fill()
             }
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
                 Task {
                     if let d = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: d) {
-                        w.photo = WishEditor.thumb(img); w.imageURL = ""
+                        w.photo = WishEditor.thumb(img); w.imageURL = ""; userPhoto = true
                     }
                 }
             }
@@ -322,14 +334,25 @@ struct WishEditor: View {
 
     /// rellena nombre, foto y precio con lo que diga la página de la tienda
     private func fill() async {
-        guard let u = URL(string: w.link), u.scheme?.hasPrefix("http") == true else { return }
+        let link = w.link.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let u = URL(string: link), u.scheme?.hasPrefix("http") == true else { return }
+        filledFrom = link
         loading = true
         defer { loading = false }
         guard let info = await LinkInfo.fetch(u) else { return }
         if w.title.trimmingCharacters(in: .whitespaces).isEmpty, let t = info.title { w.title = t }
         if priceText.isEmpty, let p = info.price { priceText = Money.num(p) }
-        if w.photo == nil, let img = info.image {
-            if let (d, _) = try? await URLSession.shared.data(from: img), let ui = UIImage(data: d) { w.photo = WishEditor.thumb(ui) } else { w.imageURL = img.absoluteString }
+        // la foto del producto: siempre la del enlace nuevo, salvo que hayas puesto una tuya
+        if !userPhoto {
+            for img in info.images {
+                var req = URLRequest(url: img, timeoutInterval: 15)
+                req.setValue(LinkInfo.mobileUA, forHTTPHeaderField: "User-Agent")
+                req.setValue(u.absoluteString, forHTTPHeaderField: "Referer")
+                if let (d, _) = try? await URLSession.shared.data(for: req), let ui = UIImage(data: d), ui.size.width >= 80 {
+                    w.photo = WishEditor.thumb(ui); w.imageURL = ""
+                    break
+                }
+            }
         }
     }
 
@@ -342,42 +365,86 @@ struct WishEditor: View {
     }
 }
 
-/// lee el título, la imagen y el precio de una página de producto
+/// lee el título, las fotos y el precio de una página de producto
 enum LinkInfo {
-    struct Info { var title: String?; var image: URL?; var price: Double? }
+    struct Info { var title: String?; var images: [URL] = []; var price: Double? }
+
+    static let mobileUA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    static let desktopUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
 
     static func fetch(_ url: URL) async -> Info? {
+        var best: Info? = nil
+        // algunas tiendas solo dan la foto a la versión de ordenador
+        for ua in [mobileUA, desktopUA] {
+            guard let html = await page(url, ua) else { continue }
+            let i = parse(html, base: url)
+            if best == nil || (best!.images.isEmpty && !i.images.isEmpty) {
+                var m = i
+                if m.title == nil { m.title = best?.title }
+                if m.price == nil { m.price = best?.price }
+                best = m
+            }
+            if !(best?.images.isEmpty ?? true) { break }
+        }
+        return best
+    }
+
+    private static func page(_ url: URL, _ ua: String) async -> String? {
         var req = URLRequest(url: url, timeoutInterval: 15)
-        req.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
+        req.setValue(ua, forHTTPHeaderField: "User-Agent")
         req.setValue("es-ES,es;q=0.9", forHTTPHeaderField: "Accept-Language")
+        req.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
         guard let (d, _) = try? await URLSession.shared.data(for: req) else { return nil }
-        let html = String(decoding: d.prefix(1_500_000), as: UTF8.self)
+        return String(decoding: d.prefix(3_000_000), as: UTF8.self)
+    }
+
+    static func parse(_ html: String, base: URL) -> Info {
         var info = Info()
-        info.title = (meta(html, "og:title") ?? tag(html, "title")).map(clean)
-        if let i = meta(html, "og:image") ?? meta(html, "twitter:image") { info.image = URL(string: i, relativeTo: url)?.absoluteURL }
+        info.title = (meta(html, "og:title") ?? meta(html, "twitter:title") ?? tag(html, "title")).map(clean)
+        if let t = info.title, t.count > 90 { info.title = String(t.prefix(90)) }
+        // fotos, de la más fiable a la menos
+        var cands: [String] = []
+        for k in ["og:image:secure_url", "og:image", "twitter:image", "twitter:image:src", "product:image"] { if let v = meta(html, k) { cands.append(v) } }
+        cands += all(html, #"data-old-hires="([^"]+)""#)                       // Amazon
+        cands += all(html, #""hiRes"\s*:\s*"([^"]+)""#)                         // Amazon
+        cands += all(html, #""large"\s*:\s*"(https:[^"]+)""#)                   // Amazon
+        cands += all(html, #"<link[^>]+rel=["']image_src["'][^>]*href=["']([^"']+)["']"#)
+        cands += all(html, #""image"\s*:\s*"([^"]+\.(?:jpe?g|png|webp)[^"]*)""#) // JSON-LD
+        cands += all(html, #""image"\s*:\s*\[\s*"([^"]+)""#)                    // JSON-LD con lista
+        cands += all(html, #"itemprop=["']image["'][^>]*(?:content|src)=["']([^"']+)["']"#)
+        var seen = Set<String>()
+        for c in cands {
+            let s = clean(c).replacingOccurrences(of: "\\/", with: "/")
+            guard !s.isEmpty, !seen.contains(s), let u = URL(string: s.hasPrefix("//") ? "https:" + s : s, relativeTo: base)?.absoluteURL else { continue }
+            seen.insert(s)
+            info.images.append(u)
+            if info.images.count >= 6 { break }
+        }
         let p = meta(html, "product:price:amount") ?? meta(html, "og:price:amount")
             ?? first(html, #""price"\s*:\s*"?([0-9]+(?:[.,][0-9]{1,2})?)"#)
             ?? first(html, #"itemprop="price"[^>]*content="([0-9.,]+)""#)
+            ?? first(html, #"class="a-offscreen">([0-9.,]+)\s*€"#)
         if let p { info.price = Money.parse(p) }
-        if let t = info.title, t.count > 90 { info.title = String(t.prefix(90)) }
         return info
     }
 
     private static func meta(_ html: String, _ name: String) -> String? {
         let n = NSRegularExpression.escapedPattern(for: name)
-        return first(html, #"<meta[^>]+(?:property|name)=["']"# + n + #"["'][^>]*content=["']([^"']+)["']"#)
-            ?? first(html, #"<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']"# + n + #"["']"#)
+        return first(html, #"<meta[^>]+(?:property|name|itemprop)=["']"# + n + #"["'][^>]*content=["']([^"']+)["']"#)
+            ?? first(html, #"<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name|itemprop)=["']"# + n + #"["']"#)
     }
     private static func tag(_ html: String, _ t: String) -> String? { first(html, "<\(t)[^>]*>([^<]+)</\(t)>") }
-    private static func first(_ s: String, _ pattern: String) -> String? {
-        guard let re = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
-              let m = re.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)), m.numberOfRanges > 1,
-              let r = Range(m.range(at: 1), in: s) else { return nil }
-        return String(s[r])
+    private static func first(_ s: String, _ pattern: String) -> String? { all(s, pattern).first }
+    private static func all(_ s: String, _ pattern: String) -> [String] {
+        guard let re = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
+        return re.matches(in: s, range: NSRange(s.startIndex..., in: s)).prefix(4).compactMap { m in
+            guard m.numberOfRanges > 1, let r = Range(m.range(at: 1), in: s) else { return nil }
+            return String(s[r])
+        }
     }
     private static func clean(_ s: String) -> String {
         var t = s
-        for (a, b) in [("&amp;", "&"), ("&quot;", "\""), ("&#39;", "'"), ("&#x27;", "'"), ("&nbsp;", " ")] { t = t.replacingOccurrences(of: a, with: b) }
+        for (a, b) in [("&amp;", "&"), ("&quot;", "\""), ("&#39;", "'"), ("&#x27;", "'"), ("&nbsp;", " "), ("\\u0026", "&")] { t = t.replacingOccurrences(of: a, with: b) }
         return t.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
