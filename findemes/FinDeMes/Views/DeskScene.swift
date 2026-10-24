@@ -468,55 +468,63 @@ final class DeskScene: SKScene {
         return n
     }
 
+    /// nodos ligados a un número fijo (así no cambian de dibujo cuando otros desaparecen)
+    private var shardMap: [Int: SKSpriteNode] = [:]
+    private var lootMap: [Int: SKSpriteNode] = [:]
+    private var floatMap: [Int: SKSpriteNode] = [:]
+    private var spare: [SKSpriteNode] = []
+
+    @MainActor private func take(_ z: CGFloat) -> SKSpriteNode {
+        let n = spare.popLast() ?? { let x = SKSpriteNode(); world.addChild(x); return x }()
+        n.isHidden = false
+        n.zPosition = z
+        n.xScale = 1; n.yScale = 1; n.zRotation = 0; n.alpha = 1
+        return n
+    }
+    @MainActor private func recycle(_ map: inout [Int: SKSpriteNode], keep: Set<Int>) {
+        for (id, n) in map where !keep.contains(id) {
+            n.isHidden = true
+            spare.append(n)
+            map[id] = nil
+        }
+    }
+
     @MainActor private func syncShards() {
         let t = desk.time
-        let list = desk.shards
-        while shardNodes.count < list.count {
-            let n = SKSpriteNode()
-            n.zPosition = 300
-            world.addChild(n)
-            shardNodes.append(n)
-        }
-        for (i, n) in shardNodes.enumerated() {
-            guard i < list.count else { n.isHidden = true; continue }
-            let s = list[i]
-            n.isHidden = false
-            let r = s.pts.first.map { hypot($0.x, $0.y) } ?? 6
-            n.texture = Tex.shard(UIColor(s.color), i % 3)
-            n.size = CGSize(width: r * 2.4, height: r * 2.4)
+        var keep = Set<Int>()
+        for s in desk.shards {
+            keep.insert(s.id)
+            let n: SKSpriteNode
+            if let x = shardMap[s.id] { n = x } else {
+                n = take(300)
+                let r = s.pts.first.map { hypot($0.x, $0.y) } ?? 6
+                n.texture = Tex.shard(UIColor(s.color), s.id % 3)
+                n.size = CGSize(width: r * 2.4, height: r * 2.4)
+                shardMap[s.id] = n
+            }
             n.position = P(s.pos.x, s.pos.y)
             n.zRotation = -s.rot
             n.alpha = max(0, 1 - max(0, (t - s.born) - 0.8) * 2)
         }
+        recycle(&shardMap, keep: keep)
     }
 
     @MainActor private func syncLoot() {
         let t = desk.time
-        let list = desk.loot
-        while lootNodes.count < list.count {
-            let n = SKSpriteNode()
-            n.zPosition = 350
-            world.addChild(n)
-            lootNodes.append(n)
-        }
-        let coin = Tex.item("c_loot"), bill = Tex.item("billete")
-        for (i, n) in lootNodes.enumerated() {
-            guard i < list.count, t >= list[i].born else { n.isHidden = true; continue }
-            let l = list[i]
-            n.isHidden = false
-            n.position = P(l.pos.x, l.pos.y)
-            if l.bill {
-                n.texture = bill
-                n.size = CGSize(width: 34, height: 18)
-                n.xScale = 1
-                n.zRotation = -sin(l.rot) * 0.6
-            } else {
-                n.texture = coin
-                n.size = CGSize(width: 22, height: 22)
-                n.xScale = max(0.15, abs(cos(l.rot)))
-                n.zRotation = 0
+        var keep = Set<Int>()
+        for l in desk.loot where t >= l.born {
+            keep.insert(l.id)
+            let n: SKSpriteNode
+            if let x = lootMap[l.id] { n = x } else {
+                n = take(350)
+                n.texture = l.bill ? Tex.item("billete") : Tex.item("c_loot")
+                n.size = l.bill ? CGSize(width: 34, height: 18) : CGSize(width: 22, height: 22)
+                lootMap[l.id] = n
             }
+            n.position = P(l.pos.x, l.pos.y)
+            if l.bill { n.zRotation = -sin(l.rot) * 0.6 } else { n.xScale = max(0.15, abs(cos(l.rot))) }
         }
+        recycle(&lootMap, keep: keep)
     }
 
     @MainActor private func syncSwings() {
@@ -584,28 +592,25 @@ final class DeskScene: SKScene {
 
     @MainActor private func syncFloaters() {
         let t = desk.time
-        let list = desk.floaters
-        while floaterNodes.count < list.count {
-            let n = SKSpriteNode(); n.zPosition = 500; world.addChild(n); floaterNodes.append(n); floaterKeys.append("")
-        }
-        for (i, n) in floaterNodes.enumerated() {
-            guard i < list.count, t >= list[i].born else { n.isHidden = true; continue }
-            let f = list[i]
-            let key = "\(f.text)|\(f.size)"
-            if floaterKeys[i] != key {
-                floaterKeys[i] = key
+        var keep = Set<Int>()
+        for f in desk.floaters where t >= f.born {
+            keep.insert(f.id)
+            let n: SKSpriteNode
+            if let x = floatMap[f.id] { n = x } else {
+                n = take(500)
                 let tex = Tex.text(f.text, f.size, UIColor(f.color == Ink.ink ? Ink.paper : f.color))
                 n.texture = tex
                 n.size = tex.size()
+                floatMap[f.id] = n
             }
             let age = t - f.born
             let y = f.pos.y - 70 * age + 30 * age * age
             let pop = age < 0.12 ? 0.6 + age / 0.12 * 0.5 : (age < 0.2 ? 1.1 - (age - 0.12) / 0.08 * 0.1 : 1)
-            n.isHidden = false
             n.position = P(f.pos.x, y)
             n.setScale(pop)
             n.alpha = min(1, (1.1 - age) * 3)
         }
+        recycle(&floatMap, keep: keep)
     }
 
     @MainActor private func syncHUD() {
@@ -621,7 +626,7 @@ final class DeskScene: SKScene {
             frenzyBack.size = CGSize(width: bw + 4, height: 16)
             frenzyBack.position = P(w / 2, top + 50)
             frenzyFill.isHidden = false
-            frenzyFill.size = CGSize(width: max(0.5, bw * max(0, left)), height: 12)
+            frenzyFill.size = CGSize(width: max(0.5, bw * min(1, max(0, left))), height: 12)
             frenzyFill.position = P((w - bw) / 2, top + 50)
         } else {
             frenzyTint.isHidden = true; frenzyBack.isHidden = true; frenzyFill.isHidden = true

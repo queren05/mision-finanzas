@@ -22,9 +22,9 @@ final class Desk {
         var wander = 0.0
         var dead = false
     }
-    struct Shard { var pos: CGPoint; var vel: CGVector; var rot: Double; var spin: Double; var born: Double; var color: Color; var pts: [CGPoint] }
-    struct Loot { var pos: CGPoint; var vel: CGVector; var born: Double; var bill: Bool; var rot: Double }
-    struct Floater { var text: String; var pos: CGPoint; var born: Double; var color: Color; var size: Double }
+    struct Shard { var pos: CGPoint; var vel: CGVector; var rot: Double; var spin: Double; var born: Double; var color: Color; var pts: [CGPoint]; var id = 0 }
+    struct Loot { var pos: CGPoint; var vel: CGVector; var born: Double; var bill: Bool; var rot: Double; var id = 0 }
+    struct Floater { var text: String; var pos: CGPoint; var born: Double; var color: Color; var size: Double; var id = 0 }
     struct Swing { var pos: CGPoint; var born: Double; var radius: Double; var hit: Bool; var crit: Bool }
     struct Blast { var pos: CGPoint; var born: Double; var radius: Double }
 
@@ -81,6 +81,7 @@ final class Desk {
     private var swingEarned = 0.0
     private var swingPos = CGPoint.zero
     private var lastPop = -10.0
+    private var nextPart = 0
     /// aguante que se puede recuperar en un día (para que las partidas terminen)
     private var regainLeft = 0.0
     private var nextFrenzy = Desk.frenzyAt
@@ -324,7 +325,8 @@ final class Desk {
 
     /// recuperar aguante, con tope por día
     private func regain(_ v: Double, at p: CGPoint) {
-        let g = min(v, regainLeft)
+        // nunca por encima del aguante máximo
+        let g = min(v, regainLeft, (stats.stamina - stamina).rounded(.down))
         guard g >= 1 else { return }
         regainLeft -= g
         stamina += g
@@ -457,6 +459,10 @@ final class Desk {
         blasts.removeAll { time - $0.born > 0.6 }
         shake *= pow(0.0005, dt)
 
+        // cada pedazo, moneda y número lleva su número para que no salten de dibujo
+        for i in shards.indices where shards[i].id == 0 { nextPart += 1; shards[i].id = nextPart }
+        for i in loot.indices where loot[i].id == 0 { nextPart += 1; loot[i].id = nextPart }
+        for i in floaters.indices where floaters[i].id == 0 { nextPart += 1; floaters[i].id = nextPart }
         if stamina <= 0 && endAt == nil && !frenzy && !finished { endAt = time + 1.0 }
         if earnedPending > 0 { markDirty() }
         if let e = endAt, time >= e, !finished {

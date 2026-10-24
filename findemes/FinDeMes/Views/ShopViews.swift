@@ -123,12 +123,12 @@ struct SkillCard: View {
                     Text(maxed ? "MÁX." : Fmt.money(def.cost(l)))
                         .font(.typewriter(11, bold: true))
                         .foregroundStyle(maxed ? Ink.green : (can ? Ink.ink : Ink.soft))
-                    // niveles como rayitas
-                    HStack(spacing: 2) {
-                        ForEach(0..<min(def.maxLevel, 10), id: \.self) { i in
-                            Rectangle().fill(i < l ? Ink.red : Ink.paperDark).frame(width: 5, height: 5).overlay(Rectangle().strokeBorder(Ink.ink, lineWidth: 1))
-                        }
-                    }
+                    // nivel actual sobre el máximo
+                    Text("\(l)/\(def.maxLevel)")
+                        .font(.typewriter(10, bold: true))
+                        .foregroundStyle(Ink.paper)
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(maxed ? Ink.green : (l > 0 ? Ink.red : Ink.soft), in: Capsule())
                 }
             }
             .padding(.horizontal, 5).padding(.bottom, 7)
