@@ -1,0 +1,80 @@
+# Supernova (juego incremental nativo en SwiftUI): compila un .ipa SIN FIRMAR (para instalar con KSign, Sideloadly…) y lo publica
+# como descarga directa en la release «supernova-latest». Se lanza solo al cambiar supernova/ en la rama caudal.
+name: Supernova (IPA)
+
+on:
+  push:
+    branches: [caudal]
+    paths: ["supernova/**", ".github/workflows/ios-supernova.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Usar el Xcode más reciente (SDK de iOS 26, Liquid Glass)"
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); [ -n "$X" ] || X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"; xcodebuild -version
+
+      - name: Generar el proyecto (XcodeGen)
+        working-directory: supernova
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Compilar sin firma
+        working-directory: supernova
+        run: |
+          set -o pipefail
+          xcodebuild -project Supernova.xcodeproj -scheme Supernova -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: unre|BUILD" || true
+          grep -q "BUILD SUCCEEDED" "$RUNNER_TEMP/build.log" || { grep -E "error:" "$RUNNER_TEMP/build.log" | head -60; exit 1; }
+
+      - name: Empaquetar el .ipa
+        run: |
+          APP=$(find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 2 -name 'Supernova.app' -type d | head -1)
+          test -d "$APP"
+          mkdir -p "$RUNNER_TEMP/pkg/Payload" out
+          cp -R "$APP" "$RUNNER_TEMP/pkg/Payload/"
+          (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Supernova.ipa" Payload)
+          ls -la out
+
+      - name: Capturas en el simulador
+        working-directory: supernova
+        continue-on-error: true
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];l=[x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone') and 'Pro' in x['name'] and 'Max' not in x['name']];print(l[-1]['udid'])")
+          xcodebuild -project Supernova.xcodeproj -scheme Supernova -configuration Debug -destination "id=$DEV" -derivedDataPath "$RUNNER_TEMP/sim" build -quiet
+          xcrun simctl boot "$DEV"; sleep 15
+          xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          APP=$(find "$RUNNER_TEMP/sim/Build/Products" -name 'Supernova.app' -type d | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          shot() { xcrun simctl terminate "$DEV" es.david.supernova 2>/dev/null || true; xcrun simctl launch "$DEV" es.david.supernova "$@" >/dev/null || true; sleep 9; }
+          shot;                         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/1-inicio.png"
+          shot -demo -star;             xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/2-generadores.png"
+          shot -demo -tab upgrades;     xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/3-mejoras.png"
+          shot -demo -tab research;     xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/4-laboratorio.png"
+          shot -demo -tab missions;     xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5-misiones.png"
+          shot -demo -bigbang;          xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/6-big-bang.png"
+          shot -demo -logros;           xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-logros.png"
+          shot -demo -offline;          xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-sin-conexion.png"
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Publicar el .ipa como descarga directa
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete supernova-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create supernova-latest out/Supernova.ipa $(ls out/*.png 2>/dev/null) --target "$GITHUB_SHA" --title "Supernova · IPA sin firmar" \
+            --notes "Build ${{ github.run_number }} · instálala con KSign o Sideloadly"
