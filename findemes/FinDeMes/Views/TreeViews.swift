@@ -265,6 +265,7 @@ struct TreeView: View {
             .font(.typewriter(size, bold: true)).foregroundStyle(Ink.paper)
             .padding(.horizontal, 4).padding(.vertical, 1)
             .background(maxed ? Ink.green : (l > 0 ? branchColor(k) : Ink.soft), in: Capsule())
+            .fixedSize()
     }
 
     private func tap(_ k: SkillDef) {
