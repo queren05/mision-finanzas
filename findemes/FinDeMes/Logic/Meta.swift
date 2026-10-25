@@ -48,7 +48,7 @@ struct Quest: Codable, Identifiable, Hashable {
 // MARK: - Logros: cada uno da +3 % de dinero para siempre
 
 enum AchMetric {
-    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts, pets
+    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts, pets, family, races
 }
 
 struct AchDef: Identifiable {
@@ -83,6 +83,8 @@ struct AchDef: Identifiable {
         case .totems: return "Ten \(n) tótems"
         case .parts: return "Sube \(n) niveles en el taller en una partida"
         case .pets: return "Ten \(n) \(target == 1 ? "mascota" : "mascotas")"
+        case .family: return "Sube \(n) niveles del árbol familiar"
+        case .races: return "Apuesta en \(n) carreras"
         }
     }
 }
@@ -121,6 +123,9 @@ enum Meta {
             + tiers(.hammers, "martillos3", [(19, "Sartenazo"), (22, "El juez ha hablado")])
             + tiers(.pigLevel, "huchas2", [(180, "En las nubes"), (220, "Agujero negro")])
             + tiers(.totems, "totems2", [(16, "Bosque sagrado")])
+            + tiers(.family, "familia", [(1, "Buena familia"), (25, "Familia numerosa"), (100, "Clan"), (300, "Dinastía")])
+            + tiers(.races, "carreras", [(1, "Al hipódromo"), (25, "Apostador"), (200, "Rey del hipódromo")])
+            + tiers(.pets, "mascotas2", [(12, "Todas las mascotas")])
             + tiers(.quests, "encargos", [(5, "Recadero"), (50, "Eficiente"), (250, "Indispensable"), (1_000, "Hombre para todo")])
     }()
 
@@ -141,7 +146,7 @@ enum Meta {
 
 /// lo que se desbloquea poco a poco (para no abrumar al principio)
 enum Feature {
-    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar, mascotas
+    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar, mascotas, familia
 
     var hint: String {
         switch self {
@@ -156,6 +161,7 @@ enum Feature {
         case .totems: "Arruínate una vez"
         case .bar: "Juega 3 días"
         case .mascotas: "Arruínate una vez"
+        case .familia: "Arruínate una vez"
         }
     }
 }
@@ -174,7 +180,7 @@ extension Game {
         case .taller: return st.billsPaid >= 1 || veteran
         case .totems: return veteran
         case .bar: return st.days >= 3 || veteran
-        case .mascotas: return veteran
+        case .mascotas, .familia: return veteran
         }
     }
 
@@ -207,7 +213,7 @@ extension Game {
     var pigNeeded: Double { PigLevel.needed(s.tier) }
 
     func addPigXP(_ v: Double) {
-        s.pigXP += v * (1 + ringValue(.pigXP) / 100 + totemValue(.pigXP) * 0.12)
+        s.pigXP += v * (1 + ringValue(.pigXP) / 100 + totemValue(.pigXP) * 0.12) * stats.pigXP
         var fresh: [PigKind] = []
         while s.pigXP >= PigLevel.needed(s.tier) {
             s.pigXP -= PigLevel.needed(s.tier)
@@ -304,6 +310,8 @@ extension Game {
         case .totems: return Double(s.totems.count)
         case .parts: return Double(s.parts.values.reduce(0, +))
         case .pets: return Double(s.pets.count)
+        case .family: return Double(s.family.values.reduce(0, +))
+        case .races: return s.races
         }
     }
 

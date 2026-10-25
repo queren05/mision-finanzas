@@ -91,6 +91,13 @@ struct SaveState: Codable {
     var pets: [String: Int] = [:]
     var pet = ""
     var brokenByKind: [String: Double] = [:]
+    /// árbol familiar (para siempre) y facturas pagadas en esta partida
+    var family: [String: Int] = [:]
+    var billsThisRun = 0
+    var scratchesToday = 0
+    var autoBuy = true
+    /// apuestas de la carrera de cerdos
+    var races = 0.0
 
     init() {}
 
@@ -98,6 +105,7 @@ struct SaveState: Codable {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
         case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
+        case family, billsThisRun, scratchesToday, autoBuy, races
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -121,6 +129,8 @@ struct SaveState: Codable {
         parts = v(.parts, [String: Int]()); totems = v(.totems, [String: Int]())
         totemsOn = v(.totemsOn, [String]()).filter { totems[$0] != nil }; lastScratch = v(.lastScratch, "")
         pets = v(.pets, [String: Int]()); pet = v(.pet, "")
+        family = v(.family, [String: Int]()); billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
+        scratchesToday = v(.scratchesToday, 0); autoBuy = v(.autoBuy, true); races = v(.races, 0.0)
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

@@ -228,7 +228,7 @@ enum PigKind: String, Codable, CaseIterable {
 
 /// el nivel de las huchas: sube muy poco a poco con cada hucha rota
 enum PigLevel {
-    static func needed(_ level: Int) -> Double { (120 * pow(1.12, Double(level))).rounded() }
+    static func needed(_ level: Int) -> Double { (100 * pow(1.09, Double(level))).rounded() }
 }
 
 // MARK: - Facturas
@@ -247,6 +247,11 @@ enum SkillEffect {
     case damageFlat, damagePct, speedPct, radiusPct, stamina, killStamina, drainSave, startPigs, spawnPct, maxPigs
     case lootPct, golden, crit, critDamage, collateral, chest, jackpot, pierce, firstHit, fat, bomb, king, glass
     case frenzyEarly, frenzyTime, frenzyMoney
+    // se multiplican nivel a nivel
+    case damageMul, lootMul, bothMul, pigXPMul
+    case petDamage, goldenValue, chestValue, comboCap, comboTime
+    // solo en el árbol familiar
+    case keepTier, startHammer, keepParts, totemSlot, legacyPct, autoBuy, scratch
 }
 
 struct SkillDef: Identifiable {
@@ -262,8 +267,19 @@ struct SkillDef: Identifiable {
     let col: Int
     let row: Int
     let icon: String
+    /// del árbol familiar: se paga con puntos de herencia y no se pierde nunca
+    var family = false
 
-    func cost(_ level: Int) -> Double { (baseCost * 2.5 * pow(growth + 0.1, Double(level))).rounded() }
+    func cost(_ level: Int) -> Double {
+        family ? (baseCost * pow(growth, Double(level))).rounded() : (baseCost * 2.5 * pow(growth + 0.1, Double(level))).rounded()
+    }
+    var compound: Bool { effect == .damageMul || effect == .lootMul || effect == .bothMul || effect == .pigXPMul }
+    /// lo que da en el nivel l, ya escrito
+    func text(_ l: Int) -> String {
+        if compound { let v = pow(1 + per / 100, Double(l)); return desc.filling(v < 100 ? Fmt.dec(v, 2) : Fmt.num(v)) }
+        return desc.filling(Fmt.num(per * Double(l)))
+    }
+    var perText: String { compound ? desc.filling(Fmt.dec(1 + per / 100, 2)) : desc.filling(Fmt.num(per)) }
 }
 
 // MARK: - Joyas (puntos de herencia: se quedan tras la bancarrota)
@@ -362,9 +378,9 @@ enum Content {
         BillDef(id: 17, company: "AGENCIA TRIBUTARIA", concept: "Declaración de la renta", amount: 320_000, days: 5),
     ]
     /// cada año seguido sin declararte en bancarrota, las facturas se multiplican por esto
-    static let yearGrowth = 7.0
+    static let yearGrowth = 20.0
 
-    static func pigHP(_ tier: Int) -> Double { 8 * pow(1.3, Double(tier)) }
+    static func pigHP(_ tier: Int) -> Double { 8 * pow(1.36, Double(tier)) }
     static func pigValue(_ tier: Int) -> Double { 0.9 * pow(1.32, Double(tier)) }
 
     static let skills: [SkillDef] = [
@@ -383,9 +399,9 @@ enum Content {
         SkillDef(id: "gimnasio", name: "Ir al gimnasio", desc: "+% de aguante", effect: .stamina, per: 8, maxLevel: 20, baseCost: 300, growth: 1.55, parent: "desayuno", col: 1, row: 2, icon: "dumbbell.fill"),
         SkillDef(id: "segundo", name: "Segundo aire", desc: "%\u{2009}% de recuperar 1 al romper", effect: .killStamina, per: 6, maxLevel: 5, baseCost: 1_200, growth: 1.8, parent: "gimnasio", col: 1, row: 3, icon: "wind"),
         SkillDef(id: "respira", name: "Respirar hondo", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, per: 4, maxLevel: 5, baseCost: 5_000, growth: 1.9, parent: "segundo", col: 0, row: 4, icon: "lungs.fill"),
-        SkillDef(id: "cafe", name: "Café doble", desc: "+% de aguante", effect: .stamina, per: 15, maxLevel: 20, baseCost: 30_000, growth: 1.6, parent: "segundo", col: 1, row: 5, icon: "mug.fill"),
+        SkillDef(id: "cafe", name: "Café doble", desc: "+% de aguante", effect: .stamina, per: 5, maxLevel: 20, baseCost: 30_000, growth: 1.6, parent: "segundo", col: 1, row: 5, icon: "mug.fill"),
         SkillDef(id: "cristalero", name: "Cristalero", desc: "Las de cristal dan +% de aguante", effect: .glass, per: 1, maxLevel: 3, baseCost: 80_000, growth: 2.5, parent: "cafe", col: 0, row: 6, icon: "drop.fill"),
-        SkillDef(id: "maraton", name: "Maratón", desc: "+% de aguante", effect: .stamina, per: 30, maxLevel: 25, baseCost: 700_000, growth: 1.7, parent: "cafe", col: 1, row: 7, icon: "figure.run"),
+        SkillDef(id: "maraton", name: "Maratón", desc: "+% de aguante", effect: .stamina, per: 9, maxLevel: 25, baseCost: 700_000, growth: 1.7, parent: "cafe", col: 1, row: 7, icon: "figure.run"),
         // izquierda-centro: botín
         SkillDef(id: "sofa", name: "Rebuscar en el sofá", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 20, maxLevel: 30, baseCost: 80, growth: 1.55, parent: "desayuno", col: 2, row: 2, icon: "sofa.fill"),
         SkillDef(id: "ojo", name: "Ojo para el oro", desc: "+%\u{2009}% de huchas doradas", effect: .golden, per: 1, maxLevel: 5, baseCost: 2_000, growth: 2, parent: "sofa", col: 2, row: 4, icon: "eye.fill"),
@@ -414,7 +430,49 @@ enum Content {
         SkillDef(id: "locura", name: "Locura", desc: "En frenesí, +%\u{2009}% de dinero", effect: .frenzyMoney, per: 50, maxLevel: 25, baseCost: 1e9, growth: 1.6, parent: "fiesta", col: 5, row: 11, icon: "sparkles"),
         SkillDef(id: "martillazo", name: "Martillazo", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 100, maxLevel: 50, baseCost: 4e7, growth: 1.5, parent: "furia", col: 3, row: 10, icon: "hammer.circle.fill"),
         SkillDef(id: "tesoro", name: "El tesoro", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 100, maxLevel: 50, baseCost: 6e7, growth: 1.5, parent: "bote", col: 2, row: 10, icon: "crown.fill"),
-        SkillDef(id: "hormigon", name: "Pulmones de hormigón", desc: "+% de aguante", effect: .stamina, per: 50, maxLevel: 20, baseCost: 3e7, growth: 1.6, parent: "maraton", col: 1, row: 9, icon: "figure.strengthtraining.functional"),
+        SkillDef(id: "hormigon", name: "Pulmones de hormigón", desc: "+% de aguante", effect: .stamina, per: 15, maxLevel: 20, baseCost: 3e7, growth: 1.6, parent: "maraton", col: 1, row: 9, icon: "figure.strengthtraining.functional"),
+        // filas nuevas: lo más caro del corcho
+        SkillDef(id: "demoledor", name: "Demoledor", desc: "×% de daño", effect: .damageMul, per: 10, maxLevel: 60, baseCost: 1e10, growth: 1.45, parent: "martillazo", col: 3, row: 12, icon: "hammer.circle"),
+        SkillDef(id: "banquero", name: "Amigo banquero", desc: "×% de dinero", effect: .lootMul, per: 10, maxLevel: 60, baseCost: 1.5e10, growth: 1.45, parent: "tesoro", col: 2, row: 12, icon: "banknote.fill"),
+        SkillDef(id: "cartero", name: "El cartero", desc: "Los sobres dan +%\u{2009}% de dinero", effect: .chestValue, per: 50, maxLevel: 20, baseCost: 2e10, growth: 1.6, parent: "hormigon", col: 1, row: 12, icon: "envelope.open.fill"),
+        SkillDef(id: "manada", name: "Manada", desc: "+% huchas a la vez", effect: .maxPigs, per: 15, maxLevel: 30, baseCost: 5e9, growth: 1.5, parent: "cinta", col: 6, row: 12, icon: "square.grid.3x3.fill"),
+        SkillDef(id: "criadero", name: "Criadero", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 40, maxLevel: 30, baseCost: 2e10, growth: 1.5, parent: "manada", col: 6, row: 13, icon: "arrow.triangle.2.circlepath"),
+        SkillDef(id: "mascotero", name: "Chuches para la mascota", desc: "Tu mascota hace +%\u{2009}% de daño", effect: .petDamage, per: 40, maxLevel: 25, baseCost: 8e9, growth: 1.55, parent: "locura", col: 5, row: 13, icon: "pawprint.fill"),
+        SkillDef(id: "comboloco", name: "Combo loco", desc: "El combo llega +% más alto", effect: .comboCap, per: 10, maxLevel: 10, baseCost: 3e10, growth: 2, parent: "fiesta", col: 4, row: 13, icon: "flame"),
+        SkillDef(id: "pegamento", name: "Combo pegajoso", desc: "El combo aguanta +% s", effect: .comboTime, per: 0.15, maxLevel: 8, baseCost: 6e10, growth: 2, parent: "comboloco", col: 4, row: 14, icon: "timer"),
+        SkillDef(id: "orfebre", name: "Orfebre", desc: "Las doradas valen +%\u{2009}%", effect: .goldenValue, per: 50, maxLevel: 20, baseCost: 4e10, growth: 1.6, parent: "banquero", col: 2, row: 14, icon: "seal.fill"),
+        SkillDef(id: "brutal", name: "Golpe brutal", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 100, maxLevel: 30, baseCost: 5e10, growth: 1.55, parent: "demoledor", col: 3, row: 14, icon: "bolt.circle.fill"),
+        SkillDef(id: "granja", name: "Granja de huchas", desc: "Las huchas suben de nivel ×%", effect: .pigXPMul, per: 10, maxLevel: 30, baseCost: 1e11, growth: 1.7, parent: "mascotero", col: 5, row: 15, icon: "leaf.fill"),
+        SkillDef(id: "sismo", name: "Sismo", desc: "Las de al lado reciben un +%\u{2009}%", effect: .collateral, per: 10, maxLevel: 10, baseCost: 2e11, growth: 1.9, parent: "brutal", col: 3, row: 15, icon: "waveform.path"),
+        SkillDef(id: "dinamita", name: "Dinamita", desc: "Explosiones +%\u{2009}%", effect: .bomb, per: 100, maxLevel: 10, baseCost: 2e11, growth: 1.9, parent: "criadero", col: 6, row: 14, icon: "burst.fill"),
+        SkillDef(id: "multitud", name: "Multitud", desc: "+% huchas a la vez", effect: .maxPigs, per: 25, maxLevel: 20, baseCost: 1e13, growth: 1.6, parent: "dinamita", col: 6, row: 15, icon: "person.3.fill"),
+        SkillDef(id: "eterno", name: "Frenesí eterno", desc: "El frenesí dura +% s", effect: .frenzyTime, per: 1, maxLevel: 15, baseCost: 5e12, growth: 1.7, parent: "pegamento", col: 4, row: 15, icon: "hourglass"),
+        SkillDef(id: "lluvia", name: "Lluvia de oro", desc: "+%\u{2009}% de huchas doradas", effect: .golden, per: 0.5, maxLevel: 10, baseCost: 1e11, growth: 1.8, parent: "orfebre", col: 2, row: 15, icon: "cloud.rain.fill"),
+        SkillDef(id: "omega", name: "El martillazo final", desc: "×% de daño", effect: .damageMul, per: 25, maxLevel: 50, baseCost: 1e14, growth: 1.5, parent: "sismo", col: 3, row: 16, icon: "sparkle"),
+        SkillDef(id: "fortuna", name: "La gran fortuna", desc: "×% de dinero", effect: .lootMul, per: 25, maxLevel: 50, baseCost: 1e14, growth: 1.5, parent: "lluvia", col: 2, row: 16, icon: "crown"),
+    ]
+
+    /// el árbol familiar: se paga con puntos de herencia y se queda para siempre
+    static let family: [SkillDef] = [
+        SkillDef(id: "f_abuelo", name: "Abuelo Paco", desc: "×% de dinero", effect: .lootMul, per: 25, maxLevel: 60, baseCost: 5, growth: 1.3, parent: nil, col: 3, row: 0, icon: "figure.walk", family: true),
+        SkillDef(id: "f_abuela", name: "Abuela Carmen", desc: "×% de daño", effect: .damageMul, per: 25, maxLevel: 60, baseCost: 5, growth: 1.3, parent: "f_abuelo", col: 2, row: 1, icon: "figure.stand.dress", family: true),
+        SkillDef(id: "f_tio", name: "Tío Fermín", desc: "+% huchas a la vez", effect: .maxPigs, per: 12, maxLevel: 25, baseCost: 10, growth: 1.45, parent: "f_abuelo", col: 4, row: 1, icon: "figure.wave", family: true),
+        SkillDef(id: "f_rosi", name: "Tía Rosi", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 40, maxLevel: 30, baseCost: 8, growth: 1.35, parent: "f_abuela", col: 1, row: 2, icon: "figure.dance", family: true),
+        SkillDef(id: "f_bisabuela", name: "La bisabuela", desc: "Empiezas con las huchas al %\u{2009}% de tu récord", effect: .keepTier, per: 5, maxLevel: 10, baseCost: 30, growth: 1.9, parent: "f_abuela", col: 3, row: 2, icon: "brain.head.profile", family: true),
+        SkillDef(id: "f_jonatan", name: "Primo Jonatan", desc: "+% huchas al empezar", effect: .startPigs, per: 10, maxLevel: 25, baseCost: 10, growth: 1.4, parent: "f_tio", col: 4, row: 2, icon: "figure.run", family: true),
+        SkillDef(id: "f_vane", name: "Prima Vane", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 20, maxLevel: 25, baseCost: 12, growth: 1.4, parent: "f_tio", col: 5, row: 2, icon: "figure.socialdance", family: true),
+        SkillDef(id: "f_tomas", name: "Abuelo Tomás", desc: "+%\u{2009}% de velocidad", effect: .speedPct, per: 5, maxLevel: 20, baseCost: 15, growth: 1.45, parent: "f_rosi", col: 1, row: 3, icon: "figure.walk.motion", family: true),
+        SkillDef(id: "f_gemelos", name: "Los gemelos", desc: "Las huchas suben de nivel ×%", effect: .pigXPMul, per: 20, maxLevel: 50, baseCost: 10, growth: 1.38, parent: "f_bisabuela", col: 3, row: 3, icon: "person.2.fill", family: true),
+        SkillDef(id: "f_sobrino", name: "El sobrino", desc: "Tu mascota hace +%\u{2009}% de daño", effect: .petDamage, per: 30, maxLevel: 25, baseCost: 20, growth: 1.45, parent: "f_vane", col: 5, row: 3, icon: "pawprint.fill", family: true),
+        SkillDef(id: "f_herrero", name: "Bisabuelo herrero", desc: "Empiezas con los % primeros martillos", effect: .startHammer, per: 1, maxLevel: 12, baseCost: 40, growth: 1.8, parent: "f_tomas", col: 1, row: 4, icon: "hammer.fill", family: true),
+        SkillDef(id: "f_cunado", name: "Cuñado contable", desc: "Al acabar el día compra solo lo más barato del corcho y el taller", effect: .autoBuy, per: 1, maxLevel: 1, baseCost: 150, growth: 1, parent: "f_gemelos", col: 3, row: 4, icon: "list.clipboard.fill", family: true),
+        SkillDef(id: "f_lotera", name: "Tía lotera", desc: "+% rascas gratis al día", effect: .scratch, per: 1, maxLevel: 2, baseCost: 80, growth: 4, parent: "f_sobrino", col: 5, row: 4, icon: "ticket.fill", family: true),
+        SkillDef(id: "f_mecanico", name: "Tío mecánico", desc: "Guardas el %\u{2009}% del taller en la bancarrota", effect: .keepParts, per: 5, maxLevel: 10, baseCost: 60, growth: 1.9, parent: "f_herrero", col: 1, row: 5, icon: "wrench.and.screwdriver.fill", family: true),
+        SkillDef(id: "f_padrino", name: "El padrino", desc: "+% huecos para tótems", effect: .totemSlot, per: 1, maxLevel: 2, baseCost: 300, growth: 6, parent: "f_cunado", col: 3, row: 5, icon: "theatermasks.fill", family: true),
+        SkillDef(id: "f_notario", name: "El notario", desc: "+%\u{2009}% de puntos de herencia", effect: .legacyPct, per: 10, maxLevel: 30, baseCost: 50, growth: 1.5, parent: "f_lotera", col: 5, row: 5, icon: "signature", family: true),
+        SkillDef(id: "f_oro", name: "La abuela del oro", desc: "Las doradas valen +%\u{2009}%", effect: .goldenValue, per: 50, maxLevel: 20, baseCost: 40, growth: 1.5, parent: "f_mecanico", col: 1, row: 6, icon: "seal.fill", family: true),
+        SkillDef(id: "f_tatara", name: "El tatarabuelo", desc: "×% de dinero y de daño", effect: .bothMul, per: 50, maxLevel: 30, baseCost: 500, growth: 1.6, parent: "f_padrino", col: 3, row: 6, icon: "crown.fill", family: true),
+        SkillDef(id: "f_fiesta", name: "Tío fiestero", desc: "Frenesí con % huchas menos de combo", effect: .frenzyEarly, per: 2, maxLevel: 10, baseCost: 40, growth: 1.6, parent: "f_notario", col: 5, row: 6, icon: "party.popper.fill", family: true),
     ]
 
     static let rings: [RingDef] = [
@@ -518,6 +576,9 @@ extension Content {
         SkinDef(id: "dibujo", name: "Hucha de dibujo", cost: 0, w: 1, h: 1, head: .zero, shards: []),
     ]
     static func skin(_ id: String) -> SkinDef { skins.first { $0.id == id } ?? skins[0] }
+    /// de momento todo son vacas: los personajes siguen aquí (y lo comprado se guarda) por si vuelven
+    static let onlyCows = true
+    static func playing(_ id: String) -> SkinDef { onlyCows ? skin("vaca") : skin(id) }
 }
 
 extension PigKind {

@@ -61,7 +61,7 @@ extension Game {
     func totemValue(_ e: TotemEffect) -> Double { Double(activeTotems.first { $0.effect == e }.map { totemLevel($0) } ?? 0) }
 
     /// huecos para tótems: uno, otro en el nivel 15 y otro en el 35
-    var totemSlots: Int { 1 + (s.level >= 15 ? 1 : 0) + (s.level >= 35 ? 1 : 0) }
+    var totemSlots: Int { 1 + (s.level >= 15 ? 1 : 0) + (s.level >= 35 ? 1 : 0) + Int(familyValue(.totemSlot)) }
     static let totemSlotLevels = [1, 15, 35]
 
     func buyTotem(_ t: TotemDef) {
@@ -144,13 +144,16 @@ extension Game {
         let c = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         return "\(c.year!)-\(c.month!)-\(c.day!)"
     }
-    var freeScratch: Bool { s.lastScratch != todayKey }
+    /// rascas gratis de hoy (la tía lotera da más)
+    var freeScratches: Int { s.lastScratch != todayKey ? 1 + Int(familyValue(.scratch)) : max(0, 1 + Int(familyValue(.scratch)) - s.scratchesToday) }
+    var freeScratch: Bool { freeScratches > 0 }
     /// el rasca de pago vale lo mismo que 60 huchas de las de ahora
     var scratchPrice: Double { max(5, (Content.pigValue(s.tier) * 60).rounded()) }
 
     func buyScratch() -> ScratchCard? {
         if freeScratch {
-            s.lastScratch = todayKey
+            if s.lastScratch != todayKey { s.lastScratch = todayKey; s.scratchesToday = 0 }
+            s.scratchesToday += 1
         } else {
             guard s.cash >= scratchPrice else { Sound.shared.denied(); return nil }
             s.cash -= scratchPrice
@@ -192,5 +195,58 @@ extension Game {
         Sound.shared.fanfare()
         save()
         return p.name
+    }
+}
+
+// MARK: - Carreras
+
+struct Racer {
+    let name: String
+    let kind: PigKind
+    let chance: Double
+    /// lo que paga por lo apostado (la casa se queda un 8 %)
+    var pays: Double { (0.92 / chance * 10).rounded() / 10 }
+}
+
+struct RaceResult: Equatable {
+    let order: [Int]          // quién llega primero, segundo…
+    let pick: Int
+    let bet: Double
+    let won: Double
+}
+
+extension Content {
+    static let racers: [Racer] = [
+        Racer(name: "Leche Rápida", kind: .ruedas, chance: 0.38),
+        Racer(name: "La Pinta", kind: .normal, chance: 0.25),
+        Racer(name: "Doña Ubre", kind: .gorda, chance: 0.18),
+        Racer(name: "Rayo Lechero", kind: .ninja, chance: 0.12),
+        Racer(name: "Vaca de Oro", kind: .dorada, chance: 0.07),
+    ]
+}
+
+@MainActor
+extension Game {
+    func race(bet: Double, pick: Int) -> RaceResult? {
+        let bet = min(s.cash, bet.rounded())
+        guard bet >= 1 else { Sound.shared.denied(); return nil }
+        s.cash -= bet
+        s.races += 1
+        // el orden de llegada: cada puesto se sortea entre los que quedan, según su suerte
+        var left = Array(Content.racers.indices)
+        var order: [Int] = []
+        while !left.isEmpty {
+            var r = Double.random(in: 0..<left.reduce(0) { $0 + Content.racers[$1].chance })
+            var picked = left[left.count - 1]
+            for i in left { if r < Content.racers[i].chance { picked = i; break }; r -= Content.racers[i].chance }
+            order.append(picked)
+            left.removeAll { $0 == picked }
+        }
+        var won = 0.0
+        if order[0] == pick { won = (bet * Content.racers[pick].pays * casinoBoost).rounded() }
+        s.cash += won
+        if won > bet { s.stats.earned += won - bet }
+        save()
+        return RaceResult(order: order, pick: pick, bet: bet, won: won)
     }
 }

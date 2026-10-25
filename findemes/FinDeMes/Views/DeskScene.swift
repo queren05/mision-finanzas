@@ -288,7 +288,22 @@ final class DeskScene: SKScene {
         let pts = touches.map { $0.location(in: self) }
         MainActor.assumeIsolated {
             for p in pts { desk.tap(CGPoint(x: p.x, y: h - p.y)) }
+            if let p = pts.last { desk.holding = CGPoint(x: p.x, y: h - p.y) }
         }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let h = size.height
+        guard let p = touches.first?.location(in: self) else { return }
+        MainActor.assumeIsolated { desk.holding = CGPoint(x: p.x, y: h - p.y) }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        MainActor.assumeIsolated { desk.holding = nil }
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        MainActor.assumeIsolated { desk.holding = nil }
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -426,7 +441,7 @@ final class DeskScene: SKScene {
             if p.hp < p.maxHP {
                 n.bar.isHidden = false
                 n.bar.position = P(p.pos.x, feet - hop - dh * pop - 16)
-                n.barFill.size = CGSize(width: max(0.5, max(50, s * 0.8) * max(0, p.hp / p.maxHP)), height: 7)
+                n.barFill.size = CGSize(width: max(0.5, max(26, s * 0.8) * max(0, p.hp / p.maxHP)), height: 7)
             }
         }
         for (id, n) in pigNodes where !alive.contains(id) {
@@ -491,7 +506,7 @@ final class DeskScene: SKScene {
         }
 
         // barra de vida (fuera del muñeco para que no gire con él)
-        let w = max(50, s * 0.8)
+        let w = max(26, s * 0.8)
         let edge = SKSpriteNode(color: Tex.ink, size: CGSize(width: w + 4, height: 11))
         let back = SKSpriteNode(color: UIColor(Ink.paper), size: CGSize(width: w, height: 7))
         n.barFill.anchorPoint = CGPoint(x: 0, y: 0.5)

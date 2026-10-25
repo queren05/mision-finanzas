@@ -17,7 +17,10 @@ final class Sound {
 
     private let engine = AVAudioEngine()
     private var players: [AVAudioPlayerNode] = []
-    private var next = 0
+    private var busyUntil: [Double] = []
+    private var lastPlayed: [String: Double] = [:]
+    /// cada sonido no se repite antes de esto (si no, con muchas huchas se amontonan y se rayan)
+    private let gap: [String: Double] = ["smash": 0.07, "coin": 0.06, "crack": 0.045, "pop": 0.09, "boom": 0.15, "swing": 0.04, "thud": 0.05]
     private var b: [String: [AVAudioPCMBuffer]] = [:]
     private var started = false
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
@@ -29,6 +32,8 @@ final class Sound {
         b["crack"] = (0..<4).map { _ in crack() }
         b["smash"] = (0..<4).map { _ in smash() }
         b["coin"] = [1, 1.12, 1.26, 1.5].map { coin($0) }
+        // escala que sube con el combo: cada rotura suena un poco más aguda
+        for (i, k) in [1.0, 1.12, 1.26, 1.335, 1.5, 1.68, 1.89, 2.0].enumerated() { b["up\(i)"] = [coin(k)] }
         b["swing"] = (0..<3).map { _ in whoosh() }
         b["thud"] = [thud(70, noise: 0.25)]
         b["stamp"] = [thud(95, noise: 0.6)]
@@ -38,11 +43,22 @@ final class Sound {
         b["click"] = [click()]
         b["fanfare"] = [fanfare()]
         b["sad"] = [sad()]
-        for _ in 0..<8 {
+        // todo pasa por un mezclador propio y un limitador para que nunca sature
+        let mix = AVAudioMixerNode()
+        engine.attach(mix)
+        let limiter = AVAudioUnitEffect(audioComponentDescription: AudioComponentDescription(
+            componentType: kAudioUnitType_Effect, componentSubType: kAudioUnitSubType_PeakLimiter,
+            componentManufacturer: kAudioUnitManufacturer_Apple, componentFlags: 0, componentFlagsMask: 0))
+        engine.attach(limiter)
+        engine.connect(mix, to: limiter, format: format)
+        engine.connect(limiter, to: engine.mainMixerNode, format: format)
+        mix.outputVolume = 0.75
+        for _ in 0..<12 {
             let p = AVAudioPlayerNode()
             engine.attach(p)
-            engine.connect(p, to: engine.mainMixerNode, format: format)
+            engine.connect(p, to: mix, format: format)
             players.append(p)
+            busyUntil.append(0)
         }
     }
 
@@ -53,7 +69,13 @@ final class Sound {
         if !started {
             do { try AVAudioSession.sharedInstance().setActive(true); try engine.start(); started = true } catch { return }
         }
-        let p = players[next]; next = (next + 1) % players.count
+        let now = CACurrentMediaTime()
+        if let g = gap[name], now - (lastPlayed[name] ?? 0) < g { return }
+        // una voz libre; si están todas sonando, no se corta ninguna (cortar a medias es lo que hace «clic»)
+        guard let i = busyUntil.indices.first(where: { busyUntil[$0] <= now }) else { return }
+        lastPlayed[name] = now
+        busyUntil[i] = now + Double(buf.frameLength) / format.sampleRate + 0.02
+        let p = players[i]
         p.stop()
         p.volume = volume
         p.scheduleBuffer(buf, at: nil, options: [])
@@ -68,9 +90,9 @@ final class Sound {
         play("crack")
         if haptics { crit ? heavy.impactOccurred() : rigid.impactOccurred(intensity: 0.8) }
     }
-    func smash(big: Bool) {
+    func smash(big: Bool, combo: Int = 0) {
         play("smash")
-        play("coin", volume: 0.7)
+        if combo > 1 { play("up\(min(7, combo / 4))", volume: 0.75) } else { play("coin", volume: 0.7) }
         if haptics { heavy.impactOccurred(intensity: big ? 1 : 0.85) }
     }
     func boom() { play("boom"); if haptics { heavy.impactOccurred(intensity: 1) } }

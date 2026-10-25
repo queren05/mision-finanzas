@@ -180,7 +180,7 @@ struct ChestOpener: View {
         opening = true
         shakeKey += 1
         var a = AllPrizes()
-        while let p = game.openChest() {
+        for p in game.openAllChests() {
             a.count += 1
             a.cash += p.cash
             a.legacy += p.legacy

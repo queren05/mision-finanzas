@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar, pets
+    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar, pets, family
     var id: String { rawValue }
 }
 
@@ -56,6 +56,7 @@ struct HomeView: View {
             case .totems: TotemsView()
             case .bar: BarView()
             case .pets: PetsView()
+            case .family: TreeView(family: true)
             }
         }
         .onAppear {
@@ -71,6 +72,7 @@ struct HomeView: View {
             if args.contains("-totems") { sheet = .totems }
             if args.contains("-bar") { sheet = .bar }
             if args.contains("-mascotas") { sheet = .pets }
+            if args.contains("-familia") { sheet = .family }
         }
     }
 
@@ -157,7 +159,7 @@ struct HomeView: View {
     private var playButton: some View {
         Button { game.startDay() } label: {
             HStack(spacing: 12) {
-                SkinIcon(id: game.s.skin, size: 52)
+                SkinIcon(id: Content.playing(game.s.skin).id, size: 52)
                 VStack(alignment: .leading, spacing: 0) {
                     Text("A ROMPER HUCHAS").font(.chunky(26))
                     Text("con \(Content.hammers[game.s.hammer].name.lowercased())").font(.typewriter(13, bold: true)).opacity(0.75)
@@ -198,10 +200,11 @@ struct HomeView: View {
             drawer("Taller", "Piezas para el martillo", "wrench.and.screwdriver.fill", Ink.wood, badge: Content.parts.contains { game.canBuyPart($0) }, .taller) { sheet = .workshop }
             drawer("Tótems", "\(game.s.totemsOn.count) de \(game.totemSlots) puestos", "pawprint.fill", Ink.green, badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, .totems) { sheet = .totems }
             drawer("Logros", "\(game.s.achievements.count) de \(Meta.achievements.count)", "rosette", Ink.gold, badge: game.achievementsReady > 0, .logros) { sheet = .achievements }
+            drawer("Familia", "Árbol familiar", "tree.fill", Ink.wood, badge: Content.family.contains { game.canBuyFamily($0) }, .familia) { sheet = .family }
             drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
             drawer("Mascotas", game.stats.pet?.name ?? "Ninguna", "pawprint.circle.fill", Ink.blue, badge: Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }, .mascotas) { sheet = .pets }
             drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
-            drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins }
+            if !Content.onlyCows { drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins } }
         }
     }
 

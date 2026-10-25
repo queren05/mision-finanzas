@@ -362,7 +362,7 @@ struct KindIcon: View {
     let kind: PigKind
     var size: CGFloat
     var body: some View {
-        let skin = Content.skin(game.s.skin)
+        let skin = Content.playing(game.s.skin)
         Group {
             if skin.drawn {
                 PigIcon(size: size, kind: kind)

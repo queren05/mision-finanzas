@@ -34,6 +34,8 @@ struct CashPill: View {
 
 struct TreeView: View {
     @Environment(Game.self) private var game
+    var family = false
+    private var defs: [SkillDef] { family ? Content.family : Content.skills }
     @State private var picked: SkillDef? = nil
     @State private var zoom: CGFloat = 0.75
     @State private var baseZoom: CGFloat = 0.75
@@ -45,17 +47,18 @@ struct TreeView: View {
     private let gapY: CGFloat = 26
 
     var body: some View {
-        let cols = (Content.skills.map(\.col).max() ?? 0) + 1
-        let rows = (Content.skills.map(\.row).max() ?? 0) + 1
+        let cols = (defs.map(\.col).max() ?? 0) + 1
+        let rows = (defs.map(\.row).max() ?? 0) + 1
         let w = CGFloat(cols) * cell + CGFloat(cols - 1) * gapX + 40
         let h = CGFloat(rows) * cell + CGFloat(rows - 1) * gapY + 40
-        let affordable = Content.skills.filter { game.canBuy($0) }.count
+        let affordable = defs.filter { game.canGet($0) }.count
         ZStack(alignment: .top) {
-            CorkBackground()
+            CorkBackground(family: family)
             VStack(spacing: 0) {
-                SheetHeader(title: "El corcho", subtitle: "Toca para comprar · mantén para ver")
+                SheetHeader(title: family ? "Árbol familiar" : "El corcho", subtitle: family ? "Se queda para siempre" : "Toca para comprar · mantén para ver")
                 HStack(spacing: 10) {
-                    CashPill(value: Fmt.money(game.s.cash))
+                    if family { CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")) }
+                    else { CashPill(value: Fmt.money(game.s.cash)) }
                     Spacer()
                     Button { setZoom(zoom - 0.15) } label: { Image(systemName: "minus.magnifyingglass").font(.system(size: 16, weight: .black)) }
                         .buttonStyle(ChunkyButton(color: Ink.paper, size: 15, radius: 10))
@@ -66,8 +69,8 @@ struct TreeView: View {
                 ScrollView([.horizontal, .vertical]) {
                     ZStack(alignment: .topLeading) {
                         Canvas { ctx, _ in
-                            for k in Content.skills {
-                                guard let pid = k.parent, let p = Content.skills.first(where: { $0.id == pid }),
+                            for k in defs {
+                                guard let pid = k.parent, let p = defs.first(where: { $0.id == pid }),
                                       game.isVisible(k) || game.isVisible(p) else { continue }
                                 let a = center(p), b = center(k)
                                 var path = Path()
@@ -78,12 +81,12 @@ struct TreeView: View {
                             }
                         }
                         .frame(width: w, height: h)
-                        ForEach(Content.skills) { k in
+                        ForEach(defs) { k in
                             SkillCard(def: k, size: cell)
                                 .position(center(k))
                                 .onTapGesture {
                                     // tocar compra al momento; si no llega el dinero, enseña la ficha
-                                    if game.canBuy(k) { game.buy(k) } else { Sound.shared.click(); picked = k }
+                                    if game.canGet(k) { game.get(k) } else { Sound.shared.click(); picked = k }
                                 }
                                 .onLongPressGesture(minimumDuration: 0.35) { Sound.shared.click(); picked = k }
                         }
@@ -131,8 +134,8 @@ struct TreeView: View {
 
     private func buyAll() {
         var n = 0
-        while n < 500, let k = Content.skills.filter({ game.canBuy($0) }).min(by: { $0.cost(game.level($0)) < $1.cost(game.level($1)) }) {
-            game.buy(k, quiet: true)
+        while n < 500, let k = defs.filter({ game.canGet($0) }).min(by: { $0.cost(game.level($0)) < $1.cost(game.level($1)) }) {
+            game.get(k, quiet: true)
             n += 1
         }
         if n > 0 { game.save(); Sound.shared.till() }
@@ -145,9 +148,10 @@ struct TreeView: View {
 }
 
 struct CorkBackground: View {
+    var family = false
     var body: some View {
         Canvas { ctx, size in
-            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: "#c48d58")))
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: family ? "#8a6a4a" : "#c48d58")))
             for i in 0..<900 {
                 let x = Double((i * 7919) % 1000) / 1000 * size.width
                 let y = Double((i * 104_729) % 1000) / 1000 * size.height
@@ -167,7 +171,7 @@ struct SkillCard: View {
         let l = game.level(def)
         let visible = game.isVisible(def)
         let maxed = l >= def.maxLevel
-        let can = game.canBuy(def)
+        let can = game.canGet(def)
         let tilt = Double((def.id.hashValue % 5)) * 0.8 - 1.6
         ZStack(alignment: .top) {
             VStack(spacing: 3) {
@@ -178,7 +182,7 @@ struct SkillCard: View {
                 Text(visible ? def.name : "???").font(.chunky(12)).foregroundStyle(Ink.ink).lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 if visible {
-                    Text(maxed ? "MÁX." : Fmt.money(def.cost(l)))
+                    Text(maxed ? "MÁX." : game.price(def, def.cost(l)))
                         .font(.typewriter(11, bold: true))
                         .foregroundStyle(maxed ? Ink.green : (can ? Ink.ink : Ink.soft))
                     // nivel actual sobre el máximo
@@ -211,14 +215,14 @@ struct SkillDetail: View {
             Image(systemName: visible ? def.icon : "lock.fill").font(.system(size: 34, weight: .black)).foregroundStyle(Ink.red)
             Text(visible ? def.name : "Bloqueada").font(.chunky(28)).foregroundStyle(Ink.ink)
             if visible {
-                Text(def.desc.filling(Fmt.num(def.per)) + " por nivel").font(.typewriter(16, bold: true)).foregroundStyle(Ink.ink).multilineTextAlignment(.center)
+                Text(def.perText + " por nivel").font(.typewriter(16, bold: true)).foregroundStyle(Ink.ink).multilineTextAlignment(.center)
                 Text("Nivel \(l) de \(def.maxLevel)").font(.typewriter(13, bold: true)).foregroundStyle(Ink.soft)
                 if l > 0 || l < def.maxLevel {
                     HStack(spacing: 8) {
-                        Text(l > 0 ? def.desc.filling(Fmt.num(def.per * Double(l))) : "Nada").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                        Text(l > 0 ? def.text(l) : "Nada").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                         if l < def.maxLevel {
                             Image(systemName: "arrow.right").font(.system(size: 12, weight: .black))
-                            Text(def.desc.filling(Fmt.num(def.per * Double(l + 1)))).font(.typewriter(12, bold: true)).foregroundStyle(Ink.green)
+                            Text(def.text(l + 1)).font(.typewriter(12, bold: true)).foregroundStyle(Ink.green)
                         }
                     }
                     .multilineTextAlignment(.center)
@@ -226,19 +230,19 @@ struct SkillDetail: View {
                 if l < def.maxLevel {
                     HStack(spacing: 10) {
                         Button {
-                            game.buy(def)
+                            game.get(def)
                         } label: {
-                            Text(game.canBuy(def) ? "+1 · \(Fmt.money(def.cost(l)))" : "Te faltan \(Fmt.money(max(0, def.cost(l) - game.s.cash)))").frame(maxWidth: .infinity)
+                            Text(game.canGet(def) ? "+1 · \(game.price(def, def.cost(l)))" : "Te faltan \(game.price(def, game.missing(def)))").frame(maxWidth: .infinity)
                         }
                         .buttonStyle(ChunkyButton(color: Ink.gold, size: 18))
-                        .disabled(!game.canBuy(def))
+                        .disabled(!game.canGet(def))
                         Button {
                             var n = 0
-                            while n < 100 && game.canBuy(def) { game.buy(def, quiet: true); n += 1 }
+                            while n < 100 && game.canGet(def) { game.get(def, quiet: true); n += 1 }
                             if n > 0 { game.save(); Sound.shared.till() }
                         } label: { Text("Máx.") }
                         .buttonStyle(ChunkyButton(color: Ink.green, text: Ink.paper, size: 18))
-                        .disabled(!game.canBuy(def))
+                        .disabled(!game.canGet(def))
                     }
                 } else {
                     Stamp(text: "COMPLETA", color: Ink.green)
@@ -353,7 +357,7 @@ struct JewelryView: View {
     private var bankruptCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("BANCARROTA").font(.chunky(24)).foregroundStyle(Ink.red)
-            Text("Has pagado \(Fmt.money(game.s.paidThisCycle)) en facturas. Cada 200 € pagados son 1 punto de herencia.")
+            Text("Huchas a nivel \(game.s.tier) · \(game.s.billsThisRun) facturas pagadas")
                 .font(.typewriter(13)).foregroundStyle(Ink.ink)
             Button { askBankrupt = true } label: { Text("Declararme en bancarrota · +\(Fmt.num(game.legacyGain))").frame(maxWidth: .infinity) }
                 .buttonStyle(ChunkyButton(color: Ink.red, text: Ink.paper, size: 17))

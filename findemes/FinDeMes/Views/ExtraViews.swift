@@ -93,7 +93,7 @@ struct TotemsView: View {
     /// los huecos de arriba: lo que tienes puesto
     private var slots: some View {
         HStack(spacing: 10) {
-            ForEach(0..<3, id: \.self) { i in
+            ForEach(0..<max(3, game.totemSlots), id: \.self) { i in
                 let open = i < game.totemSlots
                 let id = i < game.s.totemsOn.count ? game.s.totemsOn[i] : nil
                 VStack(spacing: 2) {
@@ -166,10 +166,11 @@ struct BarView: View {
                 HStack(spacing: 10) {
                     tabButton("Tragaperras", 0)
                     tabButton(game.freeScratch ? "Rasca (gratis)" : "Rasca", 1)
+                    tabButton("Carreras", 2)
                 }
                 .padding(.horizontal, 18).padding(.bottom, 8)
                 ScrollView {
-                    if tab == 0 { SlotMachineView() } else { ScratchView() }
+                    if tab == 0 { SlotMachineView() } else if tab == 1 { ScratchView() } else { RaceView() }
                 }
                 .scrollIndicators(.hidden)
             }
@@ -404,6 +405,124 @@ struct ScratchView: View {
     private func finish() {
         guard let card else { return }
         if card.prize != nil { claimed = game.claimScratch(card.prize) } else { Sound.shared.denied() }
+    }
+}
+
+// MARK: - Carreras
+
+struct RaceView: View {
+    @Environment(Game.self) private var game
+    @State private var pick = 0
+    @State private var share = 0.1
+    @State private var result: RaceResult? = nil
+    @State private var start: Date? = nil
+    @State private var done = true
+
+    private let shares: [(String, Double)] = [("10 %", 0.1), ("25 %", 0.25), ("50 %", 0.5), ("Todo", 1)]
+    private let length = 5.0
+
+    var body: some View {
+        let bet = (game.s.cash * share).rounded(.down)
+        VStack(spacing: 16) {
+            VStack(spacing: 10) {
+                Text("LA GRAN CARRERA").font(.chunky(24)).foregroundStyle(Ink.gold).shadow(color: Ink.ink, radius: 0, x: 2, y: 2)
+                TimelineView(.animation(paused: done)) { ctx in
+                    let t = start.map { ctx.date.timeIntervalSince($0) / length } ?? 0
+                    track(t)
+                }
+                Group {
+                    if let r = result, done {
+                        if r.won > 0 { Text("¡Ha ganado! +\(Fmt.money(r.won - r.bet))").foregroundStyle(Ink.gold) }
+                        else { Text("Ganó \(Content.racers[r.order[0]].name). −\(Fmt.money(r.bet))").foregroundStyle(Color(hex: "#ff9a8a")) }
+                    } else { Text(done ? " " : "…").foregroundStyle(Ink.paper) }
+                }
+                .font(.chunky(19)).frame(height: 26).lineLimit(1).minimumScaleFactor(0.6)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity)
+            .outlined(18, color: Color(hex: "#3d6b3f"), shadow: 6)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("¿Por quién apuestas?").font(.chunky(18)).foregroundStyle(Ink.ink)
+                ForEach(Content.racers.indices, id: \.self) { i in
+                    let r = Content.racers[i]
+                    Button { Sound.shared.click(); pick = i } label: {
+                        HStack(spacing: 10) {
+                            Text("\(i + 1)").font(.chunky(16)).frame(width: 26, height: 26).background(Circle().fill(pick == i ? Ink.red : Ink.paperDark)).foregroundStyle(pick == i ? Ink.paper : Ink.ink)
+                            KindIcon(kind: r.kind, size: 34)
+                            Text(r.name).font(.chunky(16)).foregroundStyle(Ink.ink)
+                            Spacer()
+                            Text("×\(Fmt.dec(r.pays * game.casinoBoost, 1))").font(.typewriter(14, bold: true)).foregroundStyle(Ink.ink)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(pick == i ? Color(hex: "#fff6c8") : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!done)
+                }
+                Text("Apuesta: \(Fmt.money(max(0, bet)))").font(.chunky(18)).foregroundStyle(Ink.ink).padding(.top, 4)
+                HStack(spacing: 8) {
+                    ForEach(0..<shares.count, id: \.self) { i in
+                        let s = shares[i]
+                        Button { Sound.shared.click(); share = s.1 } label: { Text(s.0).frame(maxWidth: .infinity) }
+                            .buttonStyle(ChunkyButton(color: share == s.1 ? Ink.gold : Ink.paper, size: 14, radius: 10))
+                    }
+                }
+                Button { go(bet) } label: { Text("¡SALIDA!").frame(maxWidth: .infinity) }
+                    .buttonStyle(ChunkyButton(color: Ink.red, text: Ink.paper, size: 24))
+                    .disabled(!done || bet < 1 || game.inRun)
+                    .padding(.top, 4)
+            }
+            .padding(14)
+            .paper()
+        }
+        .padding(.horizontal, 18).padding(.vertical, 6)
+    }
+
+    /// la pista: cada cerdo avanza a trompicones y llega en su puesto
+    private func track(_ t: Double) -> some View {
+        VStack(spacing: 4) {
+            ForEach(Content.racers.indices, id: \.self) { i in
+                GeometryReader { g in
+                    let w = g.size.width - 44
+                    let x = progress(i, t) * w
+                    ZStack(alignment: .leading) {
+                        Rectangle().fill(Color(hex: i % 2 == 0 ? "#c9a26b" : "#b8915c"))
+                        Rectangle().fill(Ink.paper).frame(width: 4).offset(x: g.size.width - 12)
+                        KindIcon(kind: Content.racers[i].kind, size: 38)
+                            .scaleEffect(x: -1)
+                            .offset(x: x, y: done ? 0 : -abs(sin(t * 40 + Double(i))) * 5)
+                        Text("\(i + 1)").font(.chunky(12)).foregroundStyle(Ink.paper).offset(x: x + 14, y: 12)
+                    }
+                }
+                .frame(height: 40)
+                .overlay(alignment: .leading) {
+                    if pick == i { Rectangle().fill(Ink.red).frame(width: 4) }
+                }
+            }
+        }
+        .overlay(Rectangle().strokeBorder(Ink.ink, lineWidth: 3))
+    }
+
+    private func progress(_ i: Int, _ t: Double) -> Double {
+        guard let r = result else { return 0 }
+        let place = Double(r.order.firstIndex(of: i) ?? 4)
+        let end = 1 + place * 0.06
+        let base = min(1, t / end)
+        let wobble = sin(t * (9 + Double(i) * 2.3) + Double(i)) * 0.04 * (1 - base)
+        return max(0, min(1, base + wobble))
+    }
+
+    private func go(_ bet: Double) {
+        guard let r = game.race(bet: bet, pick: pick) else { return }
+        Sound.shared.fanfare()
+        result = r
+        start = Date()
+        done = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + length * 1.3) {
+            done = true
+            if r.won > 0 { Sound.shared.till() } else { Sound.shared.denied() }
+        }
     }
 }
 

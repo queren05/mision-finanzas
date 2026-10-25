@@ -12,7 +12,7 @@ struct DeskView: View {
     @State private var askQuit = false
 
     init(game: Game) {
-        let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day, skin: Content.skin(game.s.skin))
+        let d = Desk(stats: game.stats, tier: game.s.tier, hammer: Content.hammers[game.s.hammer], day: game.s.day, skin: Content.playing(game.s.skin))
         d.tutorial = game.s.tutorial < 9
         _desk = State(initialValue: d)
         _scene = State(initialValue: DeskScene(desk: d))

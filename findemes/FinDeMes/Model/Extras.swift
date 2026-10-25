@@ -13,7 +13,7 @@ struct PartDef: Identifiable {
     let maxLevel: Int
     let base: Double          // en huchas del nivel de ahora
     let growth: Double
-    /// el daño y el dinero se multiplican nivel a nivel (×1,12 cada uno)
+    /// el daño y el dinero se multiplican nivel a nivel (×1,10 cada uno)
     var compound: Bool { effect == .damage || effect == .loot }
     func value(_ l: Int) -> Double { compound ? pow(1 + per / 100, Double(l)) : per * Double(l) }
 }
@@ -87,8 +87,8 @@ enum ScratchPrize: Int, CaseIterable {
 
 extension Content {
     static let parts: [PartDef] = [
-        PartDef(id: "contrapeso", name: "Contrapeso de plomo", desc: "×% de daño", effect: .damage, per: 12, maxLevel: 120, base: 30, growth: 1.22),
-        PartDef(id: "iman", name: "Imán de nevera", desc: "×% de dinero", effect: .loot, per: 12, maxLevel: 120, base: 40, growth: 1.22),
+        PartDef(id: "contrapeso", name: "Contrapeso de plomo", desc: "×% de daño", effect: .damage, per: 10, maxLevel: 60, base: 30, growth: 1.45),
+        PartDef(id: "iman", name: "Imán de nevera", desc: "×% de dinero", effect: .loot, per: 10, maxLevel: 60, base: 40, growth: 1.45),
         PartDef(id: "mango", name: "Mango de goma", desc: "+%\u{2009}% de velocidad", effect: .speed, per: 5, maxLevel: 40, base: 35, growth: 1.3),
         PartDef(id: "silbato", name: "Silbato", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 8, maxLevel: 50, base: 35, growth: 1.28),
         PartDef(id: "cajon", name: "Cajón de fruta", desc: "+% huchas a la vez", effect: .maxPigs, per: 3, maxLevel: 50, base: 60, growth: 1.3),
@@ -126,7 +126,7 @@ extension Content {
 
 // MARK: - Mascotas: van por la mesa rompiendo huchas solas
 
-enum PetSkill { case none, chests, money, richest, triple, octopus, fire, fast }
+enum PetSkill { case none, chests, money, richest, triple, octopus, fire, fast, freeze, swarm, unicorn, stamina }
 
 struct PetDef: Identifiable {
     let id: String
@@ -151,6 +151,10 @@ struct PetDef: Identifiable {
         case .octopus: "Golpea a todas las que tiene alrededor"
         case .fire: "Escupe fuego: explota al golpear"
         case .fast: "Rapidísimo, aunque pega flojo"
+        case .freeze: "Congela todo lo que tiene cerca"
+        case .swarm: "Pica a cinco huchas a la vez"
+        case .unicorn: "Lo que rompe vale ×3 y a veces suelta moneda"
+        case .stamina: "Cada golpe suyo te devuelve aguante"
         }
     }
 }
@@ -165,5 +169,9 @@ extension Content {
         PetDef(id: "cuervo", name: "Edgar", line: "Le gustan las cosas brillantes.", skill: .triple, every: 1.7, damage: 0.6, speed: 320, base: 140),
         PetDef(id: "pulpo", name: "Ocho", line: "Ocho brazos, ocho huchas.", skill: .octopus, every: 2.4, damage: 0.7, speed: 180, base: 220),
         PetDef(id: "dragon", name: "Chispa", line: "Un dragón pequeñito. De momento.", skill: .fire, every: 3.0, damage: 1.5, speed: 210, base: 400),
+        PetDef(id: "pinguino", name: "Pingu", line: "Viene del congelador.", skill: .freeze, every: 2.0, damage: 0.7, speed: 240, base: 600),
+        PetDef(id: "abeja", name: "Maya", line: "Bzzz. Bzzzzz.", skill: .swarm, every: 1.4, damage: 0.45, speed: 420, base: 900),
+        PetDef(id: "tortuga", name: "Manolita", line: "Lenta pero incansable.", skill: .stamina, every: 2.6, damage: 1.2, speed: 120, base: 1_300),
+        PetDef(id: "unicornio", name: "Lucero", line: "Nadie se cree que sea tuyo.", skill: .unicorn, every: 2.2, damage: 1.0, speed: 300, base: 2_000),
     ]
 }

@@ -69,7 +69,7 @@ final class Desk {
     private(set) var comboAt = -10.0
     private(set) var frenzyUntil = -10.0
     var frenzy: Bool { time < frenzyUntil }
-    var comboMult: Double { 1 + Double(min(combo, 50)) * 0.04 }
+    var comboMult: Double { 1 + Double(min(combo, stats.comboCap)) * 0.04 }
     /// combo que hace falta para el primer frenesí del día
     var frenzyBase: Int { max(8, Desk.frenzyAt - stats.frenzyEarly) }
     var frenzyGain: Double { 2 + stats.frenzyMoney }
@@ -134,7 +134,7 @@ final class Desk {
 
     private func spawn(_ forced: PigKind? = nil, at: CGPoint? = nil, scale: Double = 1) {
         let kind = forced ?? pickKind()
-        let s = kind.size * 0.85 * scale
+        let s = kind.size * 0.85 * scale * crowd
         var x = Double.random(in: s * 0.7...max(s * 0.7 + 1, size.width - s * 0.7))
         var y = Double.random(in: top + s * 0.5...max(top + s * 0.5 + 1, size.height - bottom - s * 0.5))
         if let at { x = at.x + Double.random(in: -30...30); y = at.y + Double.random(in: -20...20) }
@@ -149,6 +149,12 @@ final class Desk {
     }
 
     // MARK: - Martillazo
+
+    /// dónde está el dedo mientras se mantiene pulsado
+    var holding: CGPoint? = nil
+    static let maxOnDesk = 600
+    /// con muchas huchas en la mesa se ven más pequeñas, para que quepan
+    var crowd: Double { max(0.42, min(1, (45 / Double(max(45, stats.maxPigs))).squareRoot())) }
 
     func tap(_ p: CGPoint) {
         guard !finished, stamina > 0 || frenzy, p.y > top - 30, p.y < size.height - bottom + 30 else { return }
@@ -218,11 +224,18 @@ final class Desk {
         pigs.removeAll { $0.dead }
         if swingKills > 0 {
             // un solo sonido, un solo parón y un solo número por golpe, aunque rompa veinte
-            Sound.shared.smash(big: swingKills >= 4)
+            Sound.shared.smash(big: swingKills >= 4, combo: combo)
             if !frenzy { hitStop = max(hitStop, swingKills >= 6 ? 0.06 : 0.035) }
             shake = max(shake, min(16, 5 + Double(swingKills)))
             if swingKills >= 3 {
                 floaters.append(Floater(text: "×\(swingKills)  +" + Fmt.money(swingEarned), pos: CGPoint(x: p.x, y: p.y - 70), born: time, color: Ink.gold, size: min(40, 26 + Double(swingKills))))
+            }
+            // cuantas más de un golpe, más grande el grito
+            if let shout = Desk.shouts.last(where: { swingKills >= $0.0 }) {
+                floaters.append(Floater(text: shout.1, pos: CGPoint(x: size.width / 2, y: top + 180), born: time, color: shout.2, size: shout.3))
+                shake = max(shake, 18)
+                hitStop = max(hitStop, 0.09)
+                Sound.shared.boom()
             }
             if Double.random(in: 0..<1) < stats.killStamina { regain(1, at: p) }
         }
@@ -271,12 +284,27 @@ final class Desk {
         pigs[i].cracks.append(line)
     }
 
+    /// gritos según las huchas rotas de un golpe
+    static let shouts: [(Int, String, Color, Double)] = [
+        (10, "¡DESTROZO!", Ink.paper, 38), (25, "¡MASACRE!", Ink.gold, 44), (60, "¡CATACLISMO!", Ink.red, 50), (150, "¡APOCALIPSIS!", Ink.purple, 46),
+    ]
+    /// premios por huchas rotas en el día
+    static let milestones: [(Int, Rarity)] = [(50, .comun), (150, .comun), (400, .rara), (1_000, .rara), (2_500, .epica), (6_000, .epica), (15_000, .legendaria), (40_000, .legendaria)]
+
     private func breakPig(_ i: Int) {
         guard !pigs[i].dead else { return }
         pigs[i].dead = true
         let pig = pigs[i]
         report.byKind[pig.kind.rawValue, default: 0] += 1
         combo += 1
+        if [10, 25, 50, 100, 200].contains(combo) && floaters.count < 30 {
+            floaters.append(Floater(text: "COMBO ×\(combo)", pos: CGPoint(x: size.width / 2, y: top + 60), born: time, color: Ink.gold, size: 30 + Double(min(combo, 100)) / 8))
+        }
+        if let m = Desk.milestones.first(where: { $0.0 == report.broken + 1 }) {
+            report.chests.append(m.1)
+            floaters.append(Floater(text: "¡\(m.0) HUCHAS! Sobre \(m.1.name.lowercased())", pos: CGPoint(x: size.width / 2, y: top + 230), born: time, color: m.1 == .comun ? Ink.paper : m.1.color, size: 26))
+            Sound.shared.fanfare()
+        }
         comboAt = time
         report.bestCombo = max(report.bestCombo, combo)
         if firstBreakAt == nil { firstBreakAt = time }
@@ -289,7 +317,7 @@ final class Desk {
             floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
         }
         report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
-        var value = pig.value * stats.loot * valueBoost * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : (happening == .estampida ? 2 : 1))
+        var value = pig.value * (pig.kind == .dorada ? stats.goldenValue : 1) * stats.loot * valueBoost * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : (happening == .estampida ? 2 : 1))
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
@@ -301,7 +329,7 @@ final class Desk {
         if pig.kind == .rey { hitStop = 0.12; shake = 16; Sound.shared.smash(big: true) }
 
         // pedazos de cerámica (menos cuantos más haya ya volando)
-        let budget = shards.count > 140 ? 2 : (shards.count > 70 ? 5 : 10)
+        let budget = shards.count > 170 ? 0 : (shards.count > 140 ? 2 : (shards.count > 70 ? 5 : 10))
         for _ in 0..<(pig.kind == .rey ? 26 : budget) {
             let a = Double.random(in: 0..<(2 * .pi))
             let sp = Double.random(in: 120...420)
@@ -315,7 +343,7 @@ final class Desk {
                                 color: shardColor(pig.kind), pts: pts))
         }
         // monedas y billetes que vuelan al marcador
-        let n = loot.count > 60 ? 1 : (loot.count > 30 ? 2 : min(10, 3 + Int(log10(max(1, value)) * 1.4)))
+        let n = loot.count > 120 ? 0 : loot.count > 60 ? 1 : (loot.count > 30 ? 2 : min(10, 3 + Int(log10(max(1, value)) * 1.4)))
         for k in 0..<n {
             let a = Double.random(in: -.pi...0)
             loot.append(Loot(pos: pig.pos, vel: CGVector(dx: cos(a) * Double.random(in: 80...260), dy: sin(a) * Double.random(in: 160...360)),
@@ -351,7 +379,7 @@ final class Desk {
             if floaters.count < 16 { floaters.append(Floater(text: "+1 herencia", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 46), born: time + 0.1, color: Ink.purple, size: 18)) }
         case .zombi:
             // vuelve a levantarse una vez, más pequeña
-            if pig.size > PigKind.zombi.size * 0.8 { spawn(.zombi, at: pig.pos, scale: 0.7) }
+            if pig.size > PigKind.zombi.size * 0.8 * crowd { spawn(.zombi, at: pig.pos, scale: 0.7) }
         case .payaso:
             for _ in 0..<5 { spawn([PigKind.normal, .gorda, .ruedas, .cristal].randomElement()!, at: pig.pos, scale: 0.55) }
         case .vampiro:
@@ -366,7 +394,7 @@ final class Desk {
         case .nube:
             for _ in 0..<3 { spawn(.dorada, at: pig.pos, scale: 0.8) }
         case .fenix:
-            if pig.size > PigKind.fenix.size * 0.85 * 0.95 {
+            if pig.size > PigKind.fenix.size * 0.85 * 0.95 * crowd {
                 spawn(.fenix, at: pig.pos, scale: 0.9)
                 if floaters.count < 16 { floaters.append(Floater(text: "¡RENACE!", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 50), born: time, color: Ink.red, size: 20)) }
             }
@@ -511,12 +539,23 @@ final class Desk {
             targets += pigs.indices.filter { $0 != i && !pigs[$0].dead }.shuffled().prefix(2)
         case .octopus:
             targets += pigs.indices.filter { $0 != i && !pigs[$0].dead && hypot(pigs[$0].pos.x - at.x, pigs[$0].pos.y - at.y) < 120 }
+        case .swarm:
+            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead }.shuffled().prefix(4)
+        case .freeze:
+            for j in pigs.indices where !pigs[j].dead && hypot(pigs[j].pos.x - at.x, pigs[j].pos.y - at.y) < 140 { pigs[j].frozenUntil = time + 3 }
+            blasts.append(Blast(pos: at, born: time, radius: 140))
+        case .stamina:
+            regain(1, at: at)
         default: break
         }
         for j in targets where !pigs[j].dead {
             if damage(j, base: base, crit: crit, at: pigs[j].pos, quiet: j != i) { killed.append(j) }
         }
         if pet.skill == .money { valueBoost = 2 }
+        if pet.skill == .unicorn {
+            valueBoost = 3
+            if !killed.isEmpty && Double.random(in: 0..<1) < 0.06, let c = Game.shared.goldenCoinDrop() { report.coins.append(c) }
+        }
         for j in killed where !pigs[j].dead {
             breakPig(j)
             if pet.skill == .chests && Double.random(in: 0..<1) < 0.04 {
@@ -555,7 +594,7 @@ final class Desk {
             if ProcessInfo.processInfo.arguments.contains("-zoo") {
                 for k in PigKind.allCases { spawn(k) }
             } else {
-                for _ in 0..<stats.startPigs { spawn() }
+                for _ in 0..<min(Desk.maxOnDesk, stats.startPigs) { spawn() }
             }
             spawnTimer = stats.spawnEvery
             petPos = CGPoint(x: size.width / 2, y: size.height - bottom - 30)
@@ -566,13 +605,15 @@ final class Desk {
         time += dt
 
         if let p = pending, time - lastSwing >= cooldown, stamina > 0 || frenzy { swing(at: p) }
+        // con el dedo puesto se sigue golpeando donde esté
+        if let h = holding, pending == nil, !finished, time - lastSwing >= cooldown, stamina > 0 || frenzy, h.y > top - 30, h.y < size.height - bottom + 30 { swing(at: h) }
 
         // aparecen huchas
         if stamina > 0 || frenzy {
             spawnTimer -= dt * (frenzy ? 4 : 1)
             if spawnTimer <= 0 {
                 spawnTimer = stats.spawnEvery * Double.random(in: 0.7...1.3)
-                if pigs.count < min(220, stats.maxPigs + (frenzy ? max(10, stats.maxPigs / 2) : 0)) { spawn() }
+                if pigs.count < min(Desk.maxOnDesk, stats.maxPigs + (frenzy ? max(10, stats.maxPigs / 2) : 0)) { spawn() }
             }
         }
         // sucesos: lluvia de oro, hora feliz, terremoto, invasión y rebajas de aguante
@@ -582,7 +623,7 @@ final class Desk {
             startHappening()
         }
         updatePet(dt)
-        if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
+        if combo > 0 && time - comboAt > Desk.comboWindow + stats.comboTime && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
 
         // se mueven
         var burned: [Int] = []
