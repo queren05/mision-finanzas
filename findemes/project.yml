@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.9"
+    MARKETING_VERSION: "2.0"
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: ""
 targets:
@@ -29,7 +29,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
         DEVELOPMENT_LANGUAGE: es
-        INFOPLIST_KEY_CFBundleDisplayName: "Fin de Mes"
+        INFOPLIST_KEY_CFBundleDisplayName: "Fin de Mes 2"
         INFOPLIST_KEY_CFBundleDevelopmentRegion: es
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
