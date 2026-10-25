@@ -269,9 +269,9 @@ struct TreeView: View {
     }
 
     private func tap(_ k: SkillDef) {
-        // tocar compra al momento y enseña abajo qué hace
+        // tocar solo la elige: abajo se ve qué hace y se compra con el botón
+        Sound.shared.click()
         withAnimation(.snappy) { picked = k.id }
-        if game.canGet(k) { game.get(k) } else { Sound.shared.click() }
     }
 
     /// nota cuadrada (corcho y columnas)
