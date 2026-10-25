@@ -1,0 +1,54 @@
+import Foundation
+
+/// la habilidad especial de cada martillo
+extension HammerStyle {
+    var perkName: String {
+        switch self {
+        case .chancla: "Puntería de madre"
+        case .toy: "Ligero"
+        case .claw: "Uña"
+        case .mallet: "Rebote"
+        case .mace: "Pinchos"
+        case .jack: "Neumático"
+        case .sledge: "Demolición"
+        case .thunder: "Rayo"
+        case .thunderGold: "Rayo de oro"
+        case .diamond: "Filo de diamante"
+        case .cosmic: "Gravedad cero"
+        case .goldFlop: "La de la abuela"
+        case .fire: "Quemadura"
+        case .ice: "Congelación"
+        case .viking: "Furia vikinga"
+        case .anvil: "Temblor"
+        }
+    }
+    var perk: String {
+        switch self {
+        case .chancla: "+10 % de crítico"
+        case .toy: "+25 % de velocidad"
+        case .claw: "Atraviesa el 40 % de las corazas"
+        case .mallet: "25 % de dar dos golpes de una vez"
+        case .mace: "Críticos +100 %"
+        case .jack: "25 % de golpes que no gastan aguante"
+        case .sledge: "Golpea también un poco a las de alrededor"
+        case .thunder: "30 % de que caiga un rayo sobre 3 huchas"
+        case .thunderGold: "Rayos y +100 % de dinero"
+        case .diamond: "+15 % de crítico y críticos +200 %"
+        case .cosmic: "El frenesí sale con 10 de combo menos"
+        case .goldFlop: "+50 % de dinero y el doble de sobres"
+        case .fire: "Las huchas golpeadas arden y pierden vida"
+        case .ice: "Las huchas golpeadas se congelan y reciben +30 % de daño"
+        case .viking: "+25 % de crítico y críticos +150 %"
+        case .anvil: "Cada golpe hace temblar toda la mesa"
+        }
+    }
+    var lightning: Bool { self == .thunder || self == .thunderGold }
+}
+
+enum HammerLevel {
+    static let top = 25
+    /// cada nivel de afilado: +15 % de daño y +2 % de velocidad
+    static func damage(_ l: Int) -> Double { 1 + 0.15 * Double(l) }
+    static func speed(_ l: Int) -> Double { 1 + 0.02 * Double(l) }
+    static func cost(_ h: HammerDef, _ l: Int) -> Double { (max(60, h.cost * 0.25) * pow(1.55, Double(l))).rounded() }
+}

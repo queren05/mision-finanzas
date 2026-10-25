@@ -76,6 +76,8 @@ struct SaveState: Codable {
     var pigXP = 0.0
     /// el nivel más alto que han llegado a tener las huchas (el huchario lo recuerda siempre)
     var bestTier = 0
+    /// nivel de afilado de cada martillo (se pierde con la bancarrota, como los martillos)
+    var hammerLevels: [Int: Int] = [:]
     var brokenByKind: [String: Double] = [:]
 
     init() {}
@@ -83,7 +85,7 @@ struct SaveState: Codable {
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
-        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier
+        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier, hammerLevels
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -104,6 +106,7 @@ struct SaveState: Codable {
         tutorial = v(.tutorial, seenIntro ? 9 : 0)
         pigXP = v(.pigXP, 0.0); brokenByKind = v(.brokenByKind, [String: Double]())
         bestTier = max(v(.bestTier, 0), tier)
+        hammerLevels = v(.hammerLevels, [Int: Int]())
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

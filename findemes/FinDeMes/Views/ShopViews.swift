@@ -292,10 +292,16 @@ struct HammerRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(def.name).font(.chunky(20)).foregroundStyle(Ink.ink)
                 Text(def.line).font(.typewriter(12)).foregroundStyle(Ink.soft)
+                HStack(alignment: .top, spacing: 5) {
+                    Image(systemName: "star.fill").font(.system(size: 11, weight: .black)).foregroundStyle(Ink.gold)
+                    Text("\(def.style.perkName): \(def.style.perk)").font(.typewriter(11, bold: true)).foregroundStyle(Ink.ink)
+                }
+                let hl = game.hammerLevel(def)
                 HStack(spacing: 10) {
-                    stat("DAÑO", Fmt.num(def.damage))
-                    stat("GOLPES/S", Fmt.dec(def.speed, 1))
+                    stat("DAÑO", Fmt.num(def.damage * HammerLevel.damage(hl)))
+                    stat("GOLPES/S", Fmt.dec(def.speed * HammerLevel.speed(hl), 1))
                     stat("ALCANCE", "\(Int(def.radius))")
+                    if hl > 0 { stat("AFILADO", "+\(hl)") }
                 }
                 .padding(.top, 2)
                 Button { game.buyHammer(def) } label: {
@@ -304,6 +310,14 @@ struct HammerRow: View {
                 .buttonStyle(ChunkyButton(color: equipped ? Ink.paperDark : (owned ? Ink.paper : Ink.gold), size: 17, radius: 10))
                 .disabled(equipped || (!owned && !can))
                 .padding(.top, 4)
+                if owned {
+                    let c = HammerLevel.cost(def, hl)
+                    Button { game.sharpen(def) } label: {
+                        Text(hl >= HammerLevel.top ? "AFILADO AL MÁXIMO" : "Afilar (\(hl)/\(HammerLevel.top)) · \(Fmt.money(c))").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(ChunkyButton(color: Color(hex: "#cfe3f2"), size: 15, radius: 10))
+                    .disabled(hl >= HammerLevel.top || game.s.cash < c)
+                }
             }
         }
         .padding(12)

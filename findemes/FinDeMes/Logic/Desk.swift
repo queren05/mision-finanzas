@@ -19,6 +19,8 @@ final class Desk {
         var pupil = CGVector.zero
         var pupilVel = CGVector.zero
         var facing: Double = 1
+        var burnUntil = -10.0
+        var frozenUntil = -10.0
         var wander = 0.0
         var dead = false
     }
@@ -179,7 +181,31 @@ final class Desk {
             Sound.shared.miss()
             shake = max(shake, 2)
         }
-        for i in killed { breakPig(i) }
+        // habilidades del martillo
+        if hitAny {
+            if hammer.style == .mallet && Double.random(in: 0..<1) < 0.25 {
+                for i in pigs.indices where !pigs[i].dead && !killed.contains(i) && hypot(pigs[i].pos.x - p.x, pigs[i].pos.y - p.y) < r + pigs[i].size * 0.45 {
+                    if damage(i, base: stats.damage, crit: false, at: p, quiet: true) { killed.append(i) }
+                }
+                floaters.append(Floater(text: "¡REBOTE!", pos: CGPoint(x: p.x, y: p.y - 40), born: time, color: Ink.paper, size: 20))
+            }
+            if hammer.style.lightning && Double.random(in: 0..<1) < 0.3 {
+                let targets = pigs.indices.filter { !pigs[$0].dead && !killed.contains($0) }.shuffled().prefix(3)
+                for i in targets {
+                    blasts.append(Blast(pos: pigs[i].pos, born: time, radius: 50))
+                    if damage(i, base: stats.damage * 2, crit: false, at: pigs[i].pos, quiet: true) { killed.append(i) }
+                }
+                if !targets.isEmpty { Sound.shared.boom(); floaters.append(Floater(text: "¡RAYO!", pos: CGPoint(x: p.x, y: p.y - 60), born: time, color: Ink.gold, size: 24)) }
+            }
+        }
+        if hammer.style == .anvil {
+            for i in pigs.indices where !pigs[i].dead && !killed.contains(i) {
+                pigs[i].hp -= stats.damage * 0.12
+                if pigs[i].hp <= 0 { killed.append(i) }
+            }
+            shake = max(shake, 6)
+        }
+        for i in killed where !pigs[i].dead { breakPig(i) }
         pigs.removeAll { $0.dead }
         if swingKills > 0 {
             // un solo sonido, un solo parón y un solo número por golpe, aunque rompa veinte
@@ -200,8 +226,11 @@ final class Desk {
         var d = base * (crit ? stats.critMult : 1)
         if pigs[i].hp >= pigs[i].maxHP { d *= 1 + stats.firstHit }
         if pigs[i].kind == .acorazada || pigs[i].kind == .robot { d *= min(1, 0.4 + stats.pierce) }
+        if time < pigs[i].frozenUntil { d *= 1.3 }
         pigs[i].hp -= d
         pigs[i].hitAt = time
+        if hammer.style == .fire { pigs[i].burnUntil = time + 3 }
+        if hammer.style == .ice { pigs[i].frozenUntil = time + 3 }
         // los ojos dan un respingo
         pigs[i].pupilVel = CGVector(dx: Double.random(in: -60...60), dy: Double.random(in: -60...60))
         addCrack(i, from: p)
@@ -439,6 +468,7 @@ final class Desk {
         if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
 
         // se mueven
+        var burned: [Int] = []
         for i in pigs.indices {
             var p = pigs[i]
             p.wander += dt
@@ -451,7 +481,11 @@ final class Desk {
                                 y: Double.random(in: top + p.size * 0.5...max(top + p.size * 0.5 + 1, size.height - bottom - p.size * 0.5)))
                 p.born = time - 0.05
             }
-            let slow = time - p.hitAt < 0.3 ? 0.2 : 1
+            let slow = time < p.frozenUntil ? 0 : (time - p.hitAt < 0.3 ? 0.2 : 1)
+            if time < p.burnUntil && !p.dead {
+                p.hp -= p.maxHP * 0.12 * dt
+                if p.hp <= 0 { burned.append(p.id) }
+            }
             p.pos.x += p.vel.dx * dt * slow
             p.pos.y += p.vel.dy * dt * slow
             let mx = p.size * 0.6, my = p.size * 0.45
@@ -470,6 +504,11 @@ final class Desk {
             pigs[i] = p
         }
 
+        if !burned.isEmpty {
+            swingKills = 0; swingEarned = 0
+            for id in burned { if let i = pigs.firstIndex(where: { $0.id == id && !$0.dead }) { breakPig(i) } }
+            pigs.removeAll { $0.dead }
+        }
         for i in shards.indices {
             shards[i].vel.dy += 1100 * dt
             shards[i].pos.x += shards[i].vel.dx * dt

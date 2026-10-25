@@ -113,7 +113,8 @@ final class Game {
     func recompute() {
         let h = Content.hammers[s.hammer]
         var st = HitStats()
-        st.damage = h.damage; st.speed = h.speed; st.radius = h.radius
+        let hl = s.hammerLevels[h.id] ?? 0
+        st.damage = h.damage * HammerLevel.damage(hl); st.speed = h.speed * HammerLevel.speed(hl); st.radius = h.radius
         var dmgPct = 0.0, speedPct = 0.0, radiusPct = 0.0, lootPct = 0.0, spawnPct = 0.0
         for k in Content.skills {
             let l = Double(level(k))
@@ -178,6 +179,21 @@ final class Game {
         st.radius *= 1 + radiusPct / 100
         st.loot = 1 + lootPct / 100
         st.spawnEvery = 0.9 / (1 + spawnPct / 100)
+        // la habilidad del martillo en la mano
+        switch h.style {
+        case .chancla: st.crit += 0.10
+        case .toy: st.speed *= 1.25
+        case .claw: st.pierce += 0.4
+        case .mace: st.critMult += 1
+        case .jack: st.drainSave += 0.25
+        case .sledge: st.collateral += 0.35
+        case .thunderGold: st.loot *= 2
+        case .diamond: st.crit += 0.15; st.critMult += 2
+        case .cosmic: st.frenzyEarly += 10
+        case .goldFlop: st.loot *= 1.5; st.chest *= 2
+        case .viking: st.crit += 0.25; st.critMult += 1.5
+        default: break
+        }
         stats = st
     }
 
@@ -241,7 +257,7 @@ final class Game {
         s.cash = 0
         // cada partida las huchas vuelven a empezar (el huchario recuerda las descubiertas)
         s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0; s.tier = 0; s.pigXP = 0
-        s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]
+        s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]; s.hammerLevels = [:]
         s.awaitingTaxChoice = false
         recompute()
         s.cash = startCash
@@ -336,6 +352,20 @@ final class Game {
         s.cash -= h.cost
         s.hammersOwned.insert(h.id)
         s.hammer = h.id
+        recompute()
+        Sound.shared.till()
+        save()
+    }
+
+    func hammerLevel(_ h: HammerDef) -> Int { s.hammerLevels[h.id] ?? 0 }
+
+    /// afilar el martillo: más daño y algo más de velocidad
+    func sharpen(_ h: HammerDef) {
+        let l = hammerLevel(h)
+        let c = HammerLevel.cost(h, l)
+        guard s.hammersOwned.contains(h.id), l < HammerLevel.top, s.cash >= c else { Sound.shared.denied(); return }
+        s.cash -= c
+        s.hammerLevels[h.id] = l + 1
         recompute()
         Sound.shared.till()
         save()
