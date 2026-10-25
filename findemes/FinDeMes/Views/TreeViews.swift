@@ -267,6 +267,26 @@ struct TreeView: View {
             .background(maxed ? Ink.green : (l > 0 ? branchColor(k) : Ink.soft), in: Capsule())
     }
 
+    /// el icono en su círculo: oscuro y con el aro de color según el nivel cuando ya está comprada
+    private func badge(_ k: SkillDef, _ d: CGFloat) -> some View {
+        let l = game.level(k)
+        let col = branchColor(k)
+        return ZStack {
+            Circle().fill(Ink.ink)
+            Circle().fill(l > 0 ? col.opacity(0.22) : Ink.paper)
+            Circle()
+                .trim(from: 0, to: CGFloat(l) / CGFloat(max(1, k.maxLevel)))
+                .stroke(col, style: StrokeStyle(lineWidth: d * 0.09, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .padding(d * 0.08)
+            Circle().strokeBorder(game.canGet(k) ? Ink.gold : Ink.ink, lineWidth: game.canGet(k) ? d * 0.08 : d * 0.06)
+            Image(systemName: k.icon)
+                .font(.system(size: d * 0.4, weight: .black))
+                .foregroundStyle(l > 0 ? col : Ink.ink)
+        }
+        .frame(width: d, height: d)
+    }
+
     private func tap(_ k: SkillDef) {
         // tocar compra al momento y enseña abajo qué hace
         withAnimation(.snappy) { picked = k.id }
@@ -286,10 +306,8 @@ struct TreeView: View {
             Group {
                 if vis {
                     VStack(spacing: 2) {
-                        Image(systemName: k.icon)
-                            .font(.system(size: small ? 17 : 21, weight: .black))
-                            .foregroundStyle(l > 0 ? branchColor(k) : Ink.ink)
-                            .padding(.top, small ? 11 : 13)
+                        badge(k, small ? 24 : 30)
+                            .padding(.top, small ? 8 : 9)
                         Text(k.name).font(.chunky(small ? 10.5 : 12)).foregroundStyle(Ink.ink)
                             .lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.7)
                         Spacer(minLength: 0)
@@ -331,10 +349,11 @@ struct TreeView: View {
         let col = branchColor(k)
         return ZStack(alignment: .top) {
             HStack(spacing: 12) {
-                Image(systemName: vis ? k.icon : "questionmark")
-                    .font(.system(size: 26, weight: .black))
-                    .foregroundStyle(vis ? (l > 0 ? col : Ink.ink) : Ink.soft)
-                    .frame(width: 46)
+                Group {
+                    if vis { badge(k, 50) }
+                    else { Image(systemName: "questionmark").font(.system(size: 24, weight: .black)).foregroundStyle(Ink.soft) }
+                }
+                .frame(width: 52)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(vis ? k.name : "???").font(.chunky(16)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
                     Text(vis ? k.perText + " por nivel" : "Compra antes la de arriba").font(.typewriter(10.5, bold: true)).foregroundStyle(Ink.soft)
