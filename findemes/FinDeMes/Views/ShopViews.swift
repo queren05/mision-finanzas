@@ -321,14 +321,18 @@ struct SettingsView: View {
                 .padding(18)
                 // el animal que se rompe (los textos también cambian: vacas, cerdos, llamas…)
                 VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("ANIMAL").font(.typewriter(15, bold: true))
-                        Spacer()
-                        Text("\(Fmt.num(game.s.legacy)) puntos").font(.typewriter(13, bold: true)).foregroundStyle(Ink.soft)
-                    }
+                    Text("ANIMAL").font(.typewriter(15, bold: true))
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                         ForEach(Content.skins) { k in SkinCard(def: k) }
                     }
+                }
+                .foregroundStyle(Ink.ink)
+                .padding(18)
+                .paper(Color(hex: "#fffaf0"))
+                .padding(.horizontal, 18).padding(.bottom, 18)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("ÁRBOL DE MEJORAS").font(.typewriter(15, bold: true))
+                    TreeStylePicker()
                 }
                 .foregroundStyle(Ink.ink)
                 .padding(18)

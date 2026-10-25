@@ -66,6 +66,8 @@ jobs:
           shot -demo -play;          xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/3-mesa.png"
           shot -demo -play; sleep 3; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/4-mesa-luego.png"
           shot -demo -tree;          xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5-corcho.png"
+          shot -demo -tree -treestyle 1; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5b-columnas.png"
+          shot -demo -tree -treestyle 2; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5c-cajones.png"
           shot -demo -hammers;       xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/6-martillos.png"
           shot -demo -jewelry;       xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-joyero.png"
           shot -demo -coins;         xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-monedas.png"

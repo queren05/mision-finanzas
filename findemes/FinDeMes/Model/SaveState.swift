@@ -34,12 +34,15 @@ struct Settings: Codable, Hashable {
     var sound = true
     var haptics = true
     var music = true
+    /// cómo se ve el árbol de mejoras (TreeStyle)
+    var treeStyle = 0
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         sound = (try? c.decodeIfPresent(Bool.self, forKey: .sound)) ?? true
         haptics = (try? c.decodeIfPresent(Bool.self, forKey: .haptics)) ?? true
         music = (try? c.decodeIfPresent(Bool.self, forKey: .music)) ?? true
+        treeStyle = (try? c.decodeIfPresent(Int.self, forKey: .treeStyle)) ?? 0
     }
 }
 
