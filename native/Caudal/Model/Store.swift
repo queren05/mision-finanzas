@@ -24,6 +24,9 @@ final class Store {
 
     var widgetSync: Date? = nil
     var widgetSyncFailed = false
+    /// copia del servidor esperando a que digas si la recuperas
+    var pendingRestore: AppState? = nil
+    var lastBackup: Date? = ServerCopy.last
     @ObservationIgnored var widgetUpload: Task<Void, Never>? = nil
     @ObservationIgnored private var saveTask: Task<Void, Never>? = nil
     @ObservationIgnored private let url: URL = {

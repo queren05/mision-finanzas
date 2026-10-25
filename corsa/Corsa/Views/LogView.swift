@@ -234,6 +234,7 @@ struct MoreView: View {
                         if let u = URL(string: f.u) { Link(f.n, destination: u).font(.subheadline) }
                     }
                 }
+                BackupSection(message: $message)
                 Section {
                     Button { importing = true } label: { Label("Importar código o copia de la web", systemImage: "square.and.arrow.down") }
                     ShareLink(item: String(data: store.exportData(), encoding: .utf8) ?? "") { Label("Exportar copia de seguridad", systemImage: "square.and.arrow.up") }

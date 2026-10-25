@@ -4,6 +4,7 @@ import UserNotifications
 @main
 struct CorsaApp: App {
     @State private var store = Store()
+    @Environment(\.scenePhase) private var phase
     var body: some Scene {
         WindowGroup {
             RootView().scrollIndicators(.hidden)
@@ -16,6 +17,15 @@ struct CorsaApp: App {
                         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
                     }
                     store.scheduleNotifications()
+                }
+                .onChange(of: phase) { _, p in
+                    guard !ProcessInfo.processInfo.arguments.contains("-demo") else { return }
+                    if p == .background {
+                        store.saveNow()
+                        let id = UIApplication.shared.beginBackgroundTask()
+                        Task { _ = await store.backup(); UIApplication.shared.endBackgroundTask(id) }
+                    }
+                    if p == .active && store.s.done { Task { await store.checkBackup() } }
                 }
         }
     }
@@ -55,6 +65,12 @@ struct RootView: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: store.lastDeleted)
         .fullScreenCover(isPresented: $wizard) { WizardView() }
+        .alert("Hay una copia de seguridad", isPresented: Binding(get: { store.pendingRestore != nil }, set: { if !$0 { store.pendingRestore = nil } })) {
+            Button("Recuperarla") { if let st = store.pendingRestore { store.restore(st) } }
+            Button("No", role: .cancel) { store.pendingRestore = nil; ServerCopy.ready = true; if !store.s.done { wizard = true } }
+        } message: {
+            Text("En tu servidor hay \(store.pendingRestore?.backupSummary ?? ""). Si la recuperas, sustituye lo que hay ahora en Mi Corsa.")
+        }
         .task {
             // (capturas automáticas: -demo rellena datos de ejemplo, -tab parts|log|faults|more, -wizard)
             let args = ProcessInfo.processInfo.arguments
@@ -68,7 +84,12 @@ struct RootView: View {
                 default: break
                 }
             }
-            if args.contains("-wizard") || (!store.s.done && !args.contains("-demo")) { wizard = true }
+            if args.contains("-wizard") { wizard = true }
+            else if !args.contains("-demo") {
+                // recién instalada: antes del cuestionario mira si hay copia en el servidor
+                await store.checkBackup()
+                if !store.s.done && store.pendingRestore == nil { wizard = true }
+            }
         }
     }
 }

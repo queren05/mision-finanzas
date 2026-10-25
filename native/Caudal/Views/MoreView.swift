@@ -51,6 +51,7 @@ struct MoreView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                BackupSection(message: $message)
                 Section {
                     ShareLink(item: BackupFile(data: store.exportData()), preview: SharePreview("Copia de Caudal", image: Image(systemName: "doc.fill"))) {
                         Label("Exportar copia de seguridad", systemImage: "square.and.arrow.up")

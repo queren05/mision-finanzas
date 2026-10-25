@@ -24,7 +24,8 @@ final class Store {
     var agenda: [AgendaEvent] = []
     /// copia del servidor esperando a que digas si la recuperas
     var pendingRestore: RState? = nil
-    var lastBackup: Date? = UserDefaults.standard.object(forKey: "copia-ultima") as? Date
+    @ObservationIgnored var pendingKeys: [String: String] = [:]
+    var lastBackup: Date? = ServerCopy.last
     var calendarDenied = false
     var busy: Set<String> = []          // qué se está pidiendo a Claude ahora mismo
     var error: String? = nil

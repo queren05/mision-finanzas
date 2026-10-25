@@ -132,7 +132,7 @@ struct RootView: View {
         }
         .alert("Hay una copia de seguridad", isPresented: Binding(get: { store.pendingRestore != nil }, set: { if !$0 { store.pendingRestore = nil } })) {
             Button("Recuperarla") { if let st = store.pendingRestore { store.restore(st) } }
-            Button("No", role: .cancel) { store.pendingRestore = nil; Backup.ready = true }
+            Button("No", role: .cancel) { store.pendingRestore = nil; ServerCopy.ready = true }
         } message: {
             Text("En tu servidor hay \(store.pendingRestore?.backupSummary ?? ""). Si la recuperas, sustituye lo que hay ahora en Rumbo.")
         }

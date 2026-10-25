@@ -6,6 +6,9 @@ import UserNotifications
 final class Store {
     var s: CState { didSet { scheduleSave() } }
     var lastDeleted: LogEntry? = nil
+    /// copia del servidor esperando a que digas si la recuperas
+    var pendingRestore: CState? = nil
+    var lastBackup: Date? = ServerCopy.last
     let datos = Datos.shared
 
     @ObservationIgnored private var saveTask: Task<Void, Never>? = nil
