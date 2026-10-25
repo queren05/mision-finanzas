@@ -48,7 +48,7 @@ struct Quest: Codable, Identifiable, Hashable {
 // MARK: - Logros: cada uno da +3 % de dinero para siempre
 
 enum AchMetric {
-    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel
+    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts
 }
 
 struct AchDef: Identifiable {
@@ -77,6 +77,11 @@ struct AchDef: Identifiable {
         case .quests: return "Cumple \(n) encargos"
         case .bestDay: return "Gana \(Fmt.money(target)) en un día"
         case .pigLevel: return "Sube las huchas al nivel \(n)"
+        case .spins: return "Juega \(n) veces a la tragaperras"
+        case .jackpots: return "Saca tres coronas en la tragaperras"
+        case .scratches: return "Rasca \(n) rascas"
+        case .totems: return "Ten \(n) tótems"
+        case .parts: return "Sube \(n) niveles en el taller en una partida"
         }
     }
 }
@@ -105,6 +110,11 @@ enum Meta {
             + tiers(.pigLevel, "huchas", [(10, "Criador"), (25, "Granja de huchas"), (45, "Huchas robóticas"), (60, "Hasta el espacio"), (80, "Más allá"), (100, "Huchas millonarias"), (150, "Infinito")])
             + tiers(.hammers, "martillos2", [(10, "Coleccionista de martillos"), (12, "La chancla de oro"), (16, "Un yunque con un palo")])
             + tiers(.skins, "personajes2", [(13, "Arca de Noé")])
+            + tiers(.spins, "tragaperras", [(1, "Una monedita"), (50, "Cliente del bar"), (500, "Ludópata")])
+            + tiers(.jackpots, "bote", [(1, "¡Bote!")])
+            + tiers(.scratches, "rascas", [(1, "Rasca, rasca"), (30, "Uña de oro"), (200, "Lotero")])
+            + tiers(.totems, "totems", [(1, "Chamán"), (6, "Bosque de tótems"), (12, "Todos los tótems")])
+            + tiers(.parts, "taller", [(10, "Bricolaje"), (100, "Manitas de Paco"), (500, "Martillo tuneado")])
             + tiers(.quests, "encargos", [(5, "Recadero"), (50, "Eficiente"), (250, "Indispensable"), (1_000, "Hombre para todo")])
     }()
 
@@ -125,7 +135,7 @@ enum Meta {
 
 /// lo que se desbloquea poco a poco (para no abrumar al principio)
 enum Feature {
-    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes
+    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar
 
     var hint: String {
         switch self {
@@ -136,6 +146,9 @@ enum Feature {
         case .hucha: "Juega 2 días"
         case .joyero, .personajes: "Arruínate una vez"
         case .monedas: "Abre tu primer sobre"
+        case .taller: "Paga tu primera factura"
+        case .totems: "Arruínate una vez"
+        case .bar: "Juega 3 días"
         }
     }
 }
@@ -151,6 +164,9 @@ extension Game {
         case .logros, .hucha: return st.days >= 2 || veteran
         case .joyero, .personajes: return veteran
         case .monedas: return st.chests > 0 || !s.coins.isEmpty || veteran
+        case .taller: return st.billsPaid >= 1 || veteran
+        case .totems: return veteran
+        case .bar: return st.days >= 3 || veteran
         }
     }
 
@@ -183,7 +199,7 @@ extension Game {
     var pigNeeded: Double { PigLevel.needed(s.tier) }
 
     func addPigXP(_ v: Double) {
-        s.pigXP += v * (1 + ringValue(.pigXP) / 100)
+        s.pigXP += v * (1 + ringValue(.pigXP) / 100 + totemValue(.pigXP) * 0.12)
         var fresh: [PigKind] = []
         while s.pigXP >= PigLevel.needed(s.tier) {
             s.pigXP -= PigLevel.needed(s.tier)
@@ -274,6 +290,11 @@ extension Game {
         case .quests: return st.missions
         case .bestDay: return st.bestDay
         case .pigLevel: return Double(s.bestTier)
+        case .spins: return st.spins
+        case .jackpots: return st.jackpots
+        case .scratches: return st.scratches
+        case .totems: return Double(s.totems.count)
+        case .parts: return Double(s.parts.values.reduce(0, +))
         }
     }
 

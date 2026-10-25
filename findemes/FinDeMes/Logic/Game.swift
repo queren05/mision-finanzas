@@ -113,8 +113,7 @@ final class Game {
     func recompute() {
         let h = Content.hammers[s.hammer]
         var st = HitStats()
-        let hl = s.hammerLevels[h.id] ?? 0
-        st.damage = h.damage * HammerLevel.damage(hl); st.speed = h.speed * HammerLevel.speed(hl); st.radius = h.radius
+        st.damage = h.damage; st.speed = h.speed; st.radius = h.radius
         var dmgPct = 0.0, speedPct = 0.0, radiusPct = 0.0, lootPct = 0.0, spawnPct = 0.0
         for k in Content.skills {
             let l = Double(level(k))
@@ -170,14 +169,52 @@ final class Game {
             case .startCash, .extraDays, .legacy, .bills, .xp, .pigXP, .bankHours, .quests: break
             }
         }
+        // las piezas del taller
+        var dmgMul = 1.0, lootMul = 1.0
+        for p in Content.parts {
+            let l = partLevel(p)
+            guard l > 0 else { continue }
+            let v = p.value(l)
+            switch p.effect {
+            case .damage: dmgMul *= v
+            case .loot: lootMul *= v
+            case .speed: speedPct += v
+            case .spawn: spawnPct += v
+            case .maxPigs: st.maxPigs += Int(v)
+            case .startPigs: st.startPigs += Int(v)
+            case .stamina: st.stamina += v
+            case .crit: st.crit += v / 100
+            case .critDamage: st.critMult += v / 100
+            case .frenzy: st.frenzyExtra += v
+            case .golden: st.golden += v / 100
+            }
+        }
+        // los tótems puestos
+        var staminaMul = 1.0
+        for t in activeTotems {
+            let l = Double(totemLevel(t))
+            switch t.effect {
+            case .pigs: st.maxPigs += Int(5 * l); spawnPct += 10 * l
+            case .owl: st.crit += 0.02 * l; st.critMult += 0.25 * l
+            case .money: lootMul *= 1 + 0.5 * l
+            case .damage: dmgMul *= 1 + 0.5 * l
+            case .speed: speedPct += 8 * l
+            case .luck: st.golden += 0.005 * l; st.chest += 0.003 * l
+            case .stamina: st.stamina += 10 * l; st.drainSave += 0.02 * l
+            case .frenzy: st.frenzyExtra += l; st.frenzyMoney += 0.25 * l
+            case .dragon: lootMul *= 1 + 0.6 * l; dmgMul *= 1 + 0.6 * l; staminaMul *= 0.7
+            case .casino, .pigXP, .discount: break
+            }
+        }
         // cada moneda de la colección da dinero para siempre
         for c in Content.coins where (s.coins[c.id] ?? 0) > 0 { lootPct += c.rarity.bonus * 100 }
         // cada nivel da +2 % y cada logro +3 % de dinero, para siempre
         lootPct += Double(s.level - 1) * 2 + Double(s.achievements.count) * 3
-        st.damage *= 1 + dmgPct / 100
+        st.damage *= (1 + dmgPct / 100) * dmgMul
+        st.stamina = (st.stamina * staminaMul).rounded()
         st.speed *= 1 + speedPct / 100
         st.radius *= 1 + radiusPct / 100
-        st.loot = 1 + lootPct / 100
+        st.loot = (1 + lootPct / 100) * lootMul
         st.spawnEvery = 0.9 / (1 + spawnPct / 100)
         // la habilidad del martillo en la mano
         switch h.style {
@@ -257,7 +294,7 @@ final class Game {
         s.cash = 0
         // cada partida las huchas vuelven a empezar (el huchario recuerda las descubiertas)
         s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0; s.tier = 0; s.pigXP = 0
-        s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]; s.hammerLevels = [:]
+        s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]; s.parts = [:]
         s.awaitingTaxChoice = false
         recompute()
         s.cash = startCash
@@ -352,20 +389,6 @@ final class Game {
         s.cash -= h.cost
         s.hammersOwned.insert(h.id)
         s.hammer = h.id
-        recompute()
-        Sound.shared.till()
-        save()
-    }
-
-    func hammerLevel(_ h: HammerDef) -> Int { s.hammerLevels[h.id] ?? 0 }
-
-    /// afilar el martillo: más daño y algo más de velocidad
-    func sharpen(_ h: HammerDef) {
-        let l = hammerLevel(h)
-        let c = HammerLevel.cost(h, l)
-        guard s.hammersOwned.contains(h.id), l < HammerLevel.top, s.cash >= c else { Sound.shared.denied(); return }
-        s.cash -= c
-        s.hammerLevels[h.id] = l + 1
         recompute()
         Sound.shared.till()
         save()

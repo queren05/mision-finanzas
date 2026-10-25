@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests
+    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar
     var id: String { rawValue }
 }
 
@@ -28,6 +28,7 @@ struct HomeView: View {
                     if game.unlocked(.hucha) { BankCard() }
                     bestiaryCard
                     drawers
+                    barCard
                     if let next = game.nextBill {
                         HStack(spacing: 6) {
                             Text("Después:").font(.typewriter(13, bold: true))
@@ -51,6 +52,9 @@ struct HomeView: View {
             case .achievements: AchievementsView()
             case .bestiary: BestiaryView()
             case .chests: ChestSheet()
+            case .workshop: WorkshopView()
+            case .totems: TotemsView()
+            case .bar: BarView()
             }
         }
         .onAppear {
@@ -62,6 +66,9 @@ struct HomeView: View {
             if args.contains("-skins") { sheet = .skins }
             if args.contains("-logros") { sheet = .achievements }
             if args.contains("-huchario") { sheet = .bestiary }
+            if args.contains("-taller") { sheet = .workshop }
+            if args.contains("-totems") { sheet = .totems }
+            if args.contains("-bar") { sheet = .bar }
         }
     }
 
@@ -186,11 +193,31 @@ struct HomeView: View {
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
             drawer("Mejoras", "El corcho", "pin.fill", Ink.red, badge: skillsAvailable, .mejoras) { sheet = .tree }
             drawer("Martillos", Content.hammers[game.s.hammer].name, "hammer.fill", Ink.blue, badge: hammerAvailable, .martillos) { sheet = .hammers }
+            drawer("Taller", "Piezas para el martillo", "wrench.and.screwdriver.fill", Ink.wood, badge: Content.parts.contains { game.canBuyPart($0) }, .taller) { sheet = .workshop }
+            drawer("Tótems", "\(game.s.totemsOn.count) de \(game.totemSlots) puestos", "pawprint.fill", Ink.green, badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, .totems) { sheet = .totems }
             drawer("Logros", "\(game.s.achievements.count) de \(Meta.achievements.count)", "rosette", Ink.gold, badge: game.achievementsReady > 0, .logros) { sheet = .achievements }
             drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
             drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
             drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins }
         }
+    }
+
+    private var barCard: some View {
+        let open = game.unlocked(.bar)
+        return Button { Sound.shared.click(); if open { sheet = .bar } else { Sound.shared.denied() } } label: {
+            HStack(spacing: 12) {
+                Image(systemName: open ? "dice.fill" : "lock.fill").font(.system(size: 26, weight: .black)).foregroundStyle(open ? Ink.red : Ink.soft)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("El bar de Manolo").font(.chunky(22)).foregroundStyle(open ? Ink.ink : Ink.soft)
+                    Text(open ? "Tragaperras y rasca" : Feature.bar.hint).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                }
+                Spacer()
+                if open && game.freeScratch { Text("¡Rasca gratis!").font(.chunky(14)).foregroundStyle(Ink.paper).padding(.horizontal, 8).padding(.vertical, 2).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
+            }
+            .padding(.horizontal, 6)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(ChunkyButton(color: open ? Ink.paper : Ink.paperDark, size: 18, radius: 16))
     }
 
     private func drawer(_ title: String, _ sub: String, _ icon: String, _ color: Color, badge: Bool, _ feature: Feature, _ action: @escaping () -> Void) -> some View {

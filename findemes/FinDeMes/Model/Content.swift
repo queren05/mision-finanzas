@@ -23,7 +23,7 @@ struct HammerDef: Identifiable {
 // MARK: - Huchas
 
 enum PigKind: String, Codable, CaseIterable {
-    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica, hielo, suerte, zombi, millonaria
+    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica, hielo, suerte, zombi, millonaria, ninja, payaso, pirata, vampiro, titan
 
     var name: String {
         switch self {
@@ -47,6 +47,11 @@ enum PigKind: String, Codable, CaseIterable {
         case .suerte: "Hucha de la suerte"
         case .zombi: "Hucha zombi"
         case .millonaria: "Hucha millonaria"
+        case .ninja: "Hucha ninja"
+        case .payaso: "Hucha payaso"
+        case .pirata: "Hucha pirata"
+        case .vampiro: "Hucha vampiro"
+        case .titan: "Hucha titán"
         }
     }
     var line: String {
@@ -71,6 +76,11 @@ enum PigKind: String, Codable, CaseIterable {
         case .suerte: "Al romperla, te da un punto de herencia."
         case .zombi: "La rompes y vuelve a levantarse."
         case .millonaria: "Rarísima. Vale mil huchas."
+        case .ninja: "No la ves venir. Ni irse."
+        case .payaso: "Al romperla salen cinco huchitas de colores."
+        case .pirata: "Siempre lleva un sobre escondido."
+        case .vampiro: "Al romperla te devuelve 3 de aguante."
+        case .titan: "Enorme. Al romperla tiembla toda la mesa."
         }
     }
     var hp: Double {
@@ -79,6 +89,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .gigante: 14; case .fantasma: 1.5; case .madre: 5; case .diamante: 12; case .arcoiris: 3
         case .robot: 9; case .lava: 6; case .cosmica: 30
         case .hielo: 25; case .suerte: 6; case .zombi: 10; case .millonaria: 60
+        case .ninja: 6; case .payaso: 12; case .pirata: 20; case .vampiro: 18; case .titan: 120
         }
     }
     var value: Double {
@@ -87,6 +98,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .gigante: 22; case .fantasma: 6; case .madre: 6; case .diamante: 45; case .arcoiris: 10
         case .robot: 18; case .lava: 14; case .cosmica: 150
         case .hielo: 40; case .suerte: 30; case .zombi: 35; case .millonaria: 1_000
+        case .ninja: 45; case .payaso: 30; case .pirata: 90; case .vampiro: 70; case .titan: 500
         }
     }
     var size: Double {
@@ -95,6 +107,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .gigante: 150; case .fantasma: 64; case .madre: 92; case .diamante: 70; case .arcoiris: 66
         case .robot: 72; case .lava: 74; case .cosmica: 96
         case .hielo: 88; case .suerte: 64; case .zombi: 70; case .millonaria: 110
+        case .ninja: 58; case .payaso: 80; case .pirata: 76; case .vampiro: 72; case .titan: 175
         }
     }
     var speed: Double {
@@ -103,6 +116,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .gigante: 5; case .fantasma: 20; case .madre: 8; case .diamante: 16; case .arcoiris: 30
         case .robot: 45; case .lava: 12; case .cosmica: 22
         case .hielo: 4; case .suerte: 28; case .zombi: 10; case .millonaria: 18
+        case .ninja: 140; case .payaso: 22; case .pirata: 20; case .vampiro: 34; case .titan: 4
         }
     }
     /// a partir de qué nivel de las huchas aparece (el nivel sube rompiéndolas)
@@ -112,6 +126,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .rey: 15; case .gigante: 19; case .fantasma: 23; case .madre: 27; case .diamante: 32; case .arcoiris: 38
         case .robot: 45; case .lava: 52; case .cosmica: 60
         case .hielo: 68; case .suerte: 75; case .zombi: 82; case .millonaria: 100
+        case .ninja: 90; case .payaso: 96; case .pirata: 108; case .vampiro: 120; case .titan: 135
         }
     }
     var weight: Double {
@@ -120,6 +135,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .gigante: 3; case .fantasma: 7; case .madre: 5; case .diamante: 2; case .arcoiris: 2
         case .robot: 6; case .lava: 4; case .cosmica: 1.5
         case .hielo: 5; case .suerte: 2; case .zombi: 5; case .millonaria: 0.6
+        case .ninja: 6; case .payaso: 4; case .pirata: 3; case .vampiro: 4; case .titan: 1.2
         }
     }
     var color: Color {
@@ -144,6 +160,11 @@ enum PigKind: String, Codable, CaseIterable {
         case .suerte: Color(hex: "#5fd36a")
         case .zombi: Color(hex: "#93b07a")
         case .millonaria: Ink.gold
+        case .ninja: Color(hex: "#3a3540")
+        case .payaso: Color(hex: "#ffd23a")
+        case .pirata: Color(hex: "#c9965e")
+        case .vampiro: Color(hex: "#8a1f2a")
+        case .titan: Color(hex: "#9aa1a9")
         }
     }
     var dark: Color {
@@ -164,6 +185,11 @@ enum PigKind: String, Codable, CaseIterable {
         case .suerte: Color(hex: "#2f8f3a")
         case .zombi: Color(hex: "#5a6b4a")
         case .millonaria: Color(hex: "#c98d1d")
+        case .ninja: Color(hex: "#1d1a17")
+        case .payaso: Color(hex: "#e8483a")
+        case .pirata: Color(hex: "#6e4126")
+        case .vampiro: Color(hex: "#4a0f18")
+        case .titan: Color(hex: "#5a5f66")
         }
     }
     /// las que salen al azar (la dorada y el rey salen aparte)
@@ -270,13 +296,13 @@ enum Content {
         HammerDef(id: 6, name: "Mazo de demolición", line: "Para tabiques y huchas.", cost: 9.1e+06, damage: 450, speed: 1.5, radius: 86, style: .sledge, head: "#5a5f66", handle: "#b47a48"),
         HammerDef(id: 7, name: "Martillo del trueno", line: "Prestado. No preguntes.", cost: 8.4e+07, damage: 1_300, speed: 2.1, radius: 100, style: .thunder, head: "#c9ccd2", handle: "#7a4a2a"),
         HammerDef(id: 8, name: "Martillo del trueno dorado", line: "Ahora sí es suyo.", cost: 1.2e9, damage: 4_500, speed: 2.3, radius: 110, style: .thunderGold, head: "#f2b632", handle: "#7a1f2a"),
-        HammerDef(id: 9, name: "Mazo de diamante", line: "Raya hasta el cristal blindado.", cost: 3e10, damage: 16_000, speed: 1.9, radius: 130, style: .diamond, head: "#9fe8ff", handle: "#3a3f45"),
-        HammerDef(id: 10, name: "Cetro cósmico", line: "Lo encontraste en un meteorito.", cost: 9e11, damage: 60_000, speed: 2.8, radius: 140, style: .cosmic, head: "#8a5cc2", handle: "#2b1f4a"),
-        HammerDef(id: 11, name: "La chancla de oro", line: "La de la abuela. Casi la definitiva.", cost: 4e13, damage: 260_000, speed: 3.2, radius: 160, style: .goldFlop, head: "#f2b632", handle: "#c8323c"),
-        HammerDef(id: 12, name: "Martillo de fuego", line: "Funde la cerámica al tocarla.", cost: 2e15, damage: 1.1e6, speed: 3.4, radius: 170, style: .fire, head: "#c8323c", handle: "#3a2a20"),
-        HammerDef(id: 13, name: "Mazo de hielo eterno", line: "Las huchas se quedan heladas.", cost: 9e16, damage: 4.5e6, speed: 3.6, radius: 185, style: .ice, head: "#9fe8ff", handle: "#e6f6ff"),
-        HammerDef(id: 14, name: "Hacha vikinga", line: "No es un martillo. Da igual.", cost: 4e18, damage: 2e7, speed: 4.0, radius: 200, style: .viking, head: "#c9ccd2", handle: "#8a5a36"),
-        HammerDef(id: 15, name: "Un yunque con un palo", line: "El final. Literalmente.", cost: 2e20, damage: 1e8, speed: 4.5, radius: 230, style: .anvil, head: "#5a5f66", handle: "#b07a4a"),
+        HammerDef(id: 9, name: "Mazo de diamante", line: "Raya hasta el cristal blindado.", cost: 1.5e10, damage: 16_000, speed: 1.9, radius: 130, style: .diamond, head: "#9fe8ff", handle: "#3a3f45"),
+        HammerDef(id: 10, name: "Cetro cósmico", line: "Lo encontraste en un meteorito.", cost: 2e11, damage: 60_000, speed: 2.8, radius: 140, style: .cosmic, head: "#8a5cc2", handle: "#2b1f4a"),
+        HammerDef(id: 11, name: "La chancla de oro", line: "La de la abuela. Casi la definitiva.", cost: 3e12, damage: 260_000, speed: 3.2, radius: 160, style: .goldFlop, head: "#f2b632", handle: "#c8323c"),
+        HammerDef(id: 12, name: "Martillo de fuego", line: "Funde la cerámica al tocarla.", cost: 4e13, damage: 1.1e6, speed: 3.4, radius: 170, style: .fire, head: "#c8323c", handle: "#3a2a20"),
+        HammerDef(id: 13, name: "Mazo de hielo eterno", line: "Las huchas se quedan heladas.", cost: 6e14, damage: 4.5e6, speed: 3.6, radius: 185, style: .ice, head: "#9fe8ff", handle: "#e6f6ff"),
+        HammerDef(id: 14, name: "Hacha vikinga", line: "No es un martillo. Da igual.", cost: 9e15, damage: 2e7, speed: 4.0, radius: 200, style: .viking, head: "#c9ccd2", handle: "#8a5a36"),
+        HammerDef(id: 15, name: "Un yunque con un palo", line: "El final. Literalmente.", cost: 1.5e17, damage: 1e8, speed: 4.5, radius: 230, style: .anvil, head: "#5a5f66", handle: "#b07a4a"),
     ]
 
     static let bills: [BillDef] = [
@@ -452,6 +478,7 @@ extension PigKind {
         case .robot: "hierro"
         case .hielo: "cristal"
         case .millonaria: "oro"
+        case .titan: "hierro"
         default: "normal"
         }
     }

@@ -342,9 +342,16 @@ final class Desk {
         case .zombi:
             // vuelve a levantarse una vez, más pequeña
             if pig.size > PigKind.zombi.size * 0.8 { spawn(.zombi, at: pig.pos, scale: 0.7) }
+        case .payaso:
+            for _ in 0..<5 { spawn([PigKind.normal, .gorda, .ruedas, .cristal].randomElement()!, at: pig.pos, scale: 0.55) }
+        case .vampiro:
+            regain(3, at: pig.pos)
+        case .titan:
+            explode(at: pig.pos, power: pig.maxHP * 0.5)
+            shake = max(shake, 14)
         default: break
         }
-        let chestChance = pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
+        let chestChance = pig.kind == .pirata ? 1 : pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
         if Double.random(in: 0..<1) < chestChance {
             let r = Game.shared.rollChest()
             report.chests.append(r)

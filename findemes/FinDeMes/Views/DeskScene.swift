@@ -357,6 +357,14 @@ final class DeskScene: SKScene {
                     n.body.color = UIColor(red: 0.55, green: 0.7, blue: 0.45, alpha: 1); n.body.colorBlendFactor = 0.55
                 case .robot:
                     n.body.color = UIColor(red: 0.5, green: 0.75, blue: 1, alpha: 1); n.body.colorBlendFactor = 0.3
+                case .ninja:
+                    n.body.color = UIColor(red: 0.2, green: 0.19, blue: 0.24, alpha: 1); n.body.colorBlendFactor = 0.7
+                case .payaso:
+                    n.body.color = UIColor(hue: (t * 0.8 + Double(p.id) * 0.2).truncatingRemainder(dividingBy: 1), saturation: 0.6, brightness: 1, alpha: 1); n.body.colorBlendFactor = 0.4
+                case .pirata:
+                    n.body.color = UIColor(red: 0.8, green: 0.6, blue: 0.38, alpha: 1); n.body.colorBlendFactor = 0.45
+                case .vampiro:
+                    n.body.color = UIColor(red: 0.6, green: 0.12, blue: 0.2, alpha: 1); n.body.colorBlendFactor = 0.6
                 default:
                     n.body.colorBlendFactor = 0
                 }

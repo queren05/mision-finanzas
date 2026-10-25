@@ -15,6 +15,9 @@ struct Stats: Codable, Hashable {
     var bestCombo = 0.0
     var frenzies = 0.0
     var missions = 0.0
+    var spins = 0.0
+    var jackpots = 0.0
+    var scratches = 0.0
 
     init() {}
     init(from d: Decoder) throws {
@@ -23,6 +26,7 @@ struct Stats: Codable, Hashable {
         broken = v(.broken); swings = v(.swings); earned = v(.earned); billsPaid = v(.billsPaid); days = v(.days)
         bankruptcies = v(.bankruptcies); kings = v(.kings); golden = v(.golden); chests = v(.chests); bestDay = v(.bestDay); crits = v(.crits)
         bestCombo = v(.bestCombo); frenzies = v(.frenzies); missions = v(.missions)
+        spins = v(.spins); jackpots = v(.jackpots); scratches = v(.scratches)
     }
 }
 
@@ -76,8 +80,13 @@ struct SaveState: Codable {
     var pigXP = 0.0
     /// el nivel más alto que han llegado a tener las huchas (el huchario lo recuerda siempre)
     var bestTier = 0
-    /// nivel de afilado de cada martillo (se pierde con la bancarrota, como los martillos)
-    var hammerLevels: [Int: Int] = [:]
+    /// piezas del taller (se pierden con la bancarrota, como los martillos)
+    var parts: [String: Int] = [:]
+    /// tótems comprados (nivel) y los que están puestos
+    var totems: [String: Int] = [:]
+    var totemsOn: [String] = []
+    /// último día en que se rascó el rasca gratis
+    var lastScratch = ""
     var brokenByKind: [String: Double] = [:]
 
     init() {}
@@ -85,7 +94,7 @@ struct SaveState: Codable {
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
-        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier, hammerLevels
+        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -106,7 +115,8 @@ struct SaveState: Codable {
         tutorial = v(.tutorial, seenIntro ? 9 : 0)
         pigXP = v(.pigXP, 0.0); brokenByKind = v(.brokenByKind, [String: Double]())
         bestTier = max(v(.bestTier, 0), tier)
-        hammerLevels = v(.hammerLevels, [Int: Int]())
+        parts = v(.parts, [String: Int]()); totems = v(.totems, [String: Int]())
+        totemsOn = v(.totemsOn, [String]()).filter { totems[$0] != nil }; lastScratch = v(.lastScratch, "")
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

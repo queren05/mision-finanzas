@@ -44,11 +44,3 @@ extension HammerStyle {
     }
     var lightning: Bool { self == .thunder || self == .thunderGold }
 }
-
-enum HammerLevel {
-    static let top = 25
-    /// cada nivel de afilado: +15 % de daño y +2 % de velocidad
-    static func damage(_ l: Int) -> Double { 1 + 0.15 * Double(l) }
-    static func speed(_ l: Int) -> Double { 1 + 0.02 * Double(l) }
-    static func cost(_ h: HammerDef, _ l: Int) -> Double { (max(60, h.cost * 0.25) * pow(1.55, Double(l))).rounded() }
-}

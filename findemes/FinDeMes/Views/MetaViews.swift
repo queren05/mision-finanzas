@@ -389,6 +389,10 @@ extension KindIcon {
         case .hielo: Color(hex: "#c8f2ff")
         case .suerte: Color(hex: "#8fe39a")
         case .zombi: Color(hex: "#a9c08f")
+        case .ninja: Color(hex: "#6a6474")
+        case .payaso: Color(hex: "#ffd9a0")
+        case .pirata: Color(hex: "#e0b88a")
+        case .vampiro: Color(hex: "#c05060")
         default: .white
         }
     }
