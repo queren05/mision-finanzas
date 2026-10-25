@@ -252,9 +252,9 @@ struct IntroView: View {
 
     private let pages: [(String, String)] = [
         ("DÍA 1 DEL MES", "La nevera, vacía.\nEl buzón, lleno de facturas."),
-        ("LA HERENCIA", "Pero la abuela te dejó algo: un trastero lleno de huchas."),
+        ("LA HERENCIA", "Pero la abuela te dejó algo: un trastero lleno de {huchas}."),
         ("Y SU CHANCLA", "La de toda la vida. Nunca falla."),
-        ("EL PLAN", "Rompe huchas, paga las facturas antes de que venzan… y que no venga el cobrador."),
+        ("EL PLAN", "Rompe {huchas}, paga las facturas antes de que venzan… y que no venga el cobrador."),
     ]
 
     var body: some View {
@@ -374,7 +374,7 @@ struct PigLevelStrip: View {
     @Environment(Game.self) private var game
     var body: some View {
         HStack(spacing: 8) {
-            Text("Huchas nivel \(game.s.tier)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.ink)
+            Text("{Huchas} nivel \(game.s.tier)".a).font(.typewriter(12, bold: true)).foregroundStyle(Ink.ink)
             InkBar(value: game.s.pigXP / max(1, game.pigNeeded), color: Ink.pink, height: 8)
             Text("\(Fmt.num(game.s.pigXP))/\(Fmt.num(game.pigNeeded))").font(.typewriter(11)).foregroundStyle(Ink.soft)
         }
@@ -389,9 +389,9 @@ struct BestiaryView: View {
         ZStack(alignment: .top) {
             Color(hex: "#7a2f45").ignoresSafeArea()
             VStack(spacing: 0) {
-                SheetHeader(title: "El huchario", subtitle: "\(found) de \(kinds.count) huchas descubiertas")
+                SheetHeader(title: "El establo", subtitle: "\(found) de \(kinds.count) {huchas} descubiert{as}")
                 VStack(spacing: 6) {
-                    Text("NIVEL DE LAS HUCHAS: \(game.s.tier)").font(.chunky(18)).foregroundStyle(Ink.ink)
+                    Text("NIVEL DE {LAS} {HUCHAS}: \(game.s.tier)".a).font(.chunky(18)).foregroundStyle(Ink.ink)
                     Text("Récord: nivel \(game.s.bestTier)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                     PigLevelStrip()
                     Text("Suben rompiéndolas y vuelven a empezar con cada bancarrota").font(.typewriter(11)).foregroundStyle(Ink.soft)
@@ -444,13 +444,13 @@ struct NewKindView: View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { close() }
             VStack(spacing: 12) {
-                Text("¡HUCHA NUEVA!").font(.chunky(36)).foregroundStyle(Ink.red)
+                Text("¡{HUCHA} NUEV{A}!".a).font(.chunky(36)).foregroundStyle(Ink.red)
                 KindIcon(kind: kind, size: 150)
                     .scaleEffect(pop ? 1 : 0.2)
                     .rotationEffect(.degrees(pop ? 0 : -30))
                 Text(kind.name).font(.chunky(24))
                 Text(kind.line).font(.typewriter(14)).multilineTextAlignment(.center)
-                Text("Huchas nivel \(game.s.tier): más vida y más dinero").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                Text("{Huchas} nivel \(game.s.tier): más vida y más dinero".a).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                 Button { close() } label: { Text("¡A por ella!").frame(maxWidth: .infinity) }
                     .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
             }

@@ -24,7 +24,7 @@ final class Desk {
         var wander = 0.0
         var dead = false
     }
-    struct Shard { var pos: CGPoint; var vel: CGVector; var rot: Double; var spin: Double; var born: Double; var color: Color; var pts: [CGPoint]; var id = 0 }
+    struct Shard { var pos: CGPoint; var vel: CGVector; var rot: Double; var spin: Double; var born: Double; var color: Color; var pts: [CGPoint]; var id = 0; var look = "" }
     struct Loot { var pos: CGPoint; var vel: CGVector; var born: Double; var bill: Bool; var rot: Double; var id = 0 }
     struct Floater { var text: String; var pos: CGPoint; var born: Double; var color: Color; var size: Double; var id = 0 }
     struct Swing { var pos: CGPoint; var born: Double; var radius: Double; var hit: Bool; var crit: Bool }
@@ -72,7 +72,10 @@ final class Desk {
     var comboMult: Double { 1 + Double(min(combo, stats.comboCap)) * 0.04 }
     /// combo que hace falta para el primer frenesí del día
     var frenzyBase: Int { max(8, Desk.frenzyAt - stats.frenzyEarly) }
-    var frenzyGain: Double { 2 + stats.frenzyMoney }
+    /// el frenesí da más dinero con las mejoras, pero cada vez se nota menos (como mucho ×10)
+    var frenzyGain: Double { 2 + 8 * stats.frenzyMoney / (stats.frenzyMoney + 8) }
+    /// y dura más, hasta 18 s
+    var frenzyLength: Double { 6 + 12 * stats.frenzyExtra / (stats.frenzyExtra + 12) }
     static let comboWindow = 1.7
     static let frenzyAt = 25
     /// primera partida: enseña dónde tocar
@@ -302,15 +305,16 @@ final class Desk {
         }
         if let m = Desk.milestones.first(where: { $0.0 == report.broken + 1 }) {
             report.chests.append(m.1)
-            floaters.append(Floater(text: "¡\(m.0) HUCHAS! Sobre \(m.1.name.lowercased())", pos: CGPoint(x: size.width / 2, y: top + 230), born: time, color: m.1 == .comun ? Ink.paper : m.1.color, size: 26))
+            floaters.append(Floater(text: "¡\(m.0) {HUCHAS}! Sobre \(m.1.name.lowercased())", pos: CGPoint(x: size.width / 2, y: top + 230), born: time, color: m.1 == .comun ? Ink.paper : m.1.color, size: 26))
             Sound.shared.fanfare()
         }
         comboAt = time
         report.bestCombo = max(report.bestCombo, combo)
         if firstBreakAt == nil { firstBreakAt = time }
         if combo >= nextFrenzy && !frenzy {
-            nextFrenzy = combo + frenzyBase + 12 * (report.frenzies + 1)
-            frenzyUntil = time + 6 + stats.frenzyExtra
+            // cada frenesí del día cuesta bastante más combo que el anterior
+            nextFrenzy = combo + frenzyBase + 15 * (report.frenzies + 1) * (report.frenzies + 1)
+            frenzyUntil = time + frenzyLength
             report.frenzies += 1
             shake = max(shake, 12)
             Sound.shared.fanfare()
@@ -340,7 +344,7 @@ final class Desk {
             }
             shards.append(Shard(pos: pig.pos, vel: CGVector(dx: cos(a) * sp, dy: sin(a) * sp - 220), rot: 0,
                                 spin: Double.random(in: -12...12), born: time,
-                                color: shardColor(pig.kind), pts: pts))
+                                color: shardColor(pig.kind), pts: pts, look: skin.drawn ? "" : pig.kind.look))
         }
         // monedas y billetes que vuelan al marcador
         let n = loot.count > 120 ? 0 : loot.count > 60 ? 1 : (loot.count > 30 ? 2 : min(10, 3 + Int(log10(max(1, value)) * 1.4)))
@@ -375,8 +379,8 @@ final class Desk {
         case .cosmica:
             if let c = Game.shared.goldenCoinDrop() { report.coins.append(c) }
         case .suerte:
-            report.legacy += 1
-            if floaters.count < 16 { floaters.append(Floater(text: "+1 herencia", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 46), born: time + 0.1, color: Ink.purple, size: 18)) }
+            report.chests.append(.rara)
+            if floaters.count < 16 { floaters.append(Floater(text: "¡Sobre raro!", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 46), born: time + 0.1, color: Ink.purple, size: 18)) }
         case .zombi:
             // vuelve a levantarse una vez, más pequeña
             if pig.size > PigKind.zombi.size * 0.8 * crowd { spawn(.zombi, at: pig.pos, scale: 0.7) }
@@ -447,7 +451,7 @@ final class Desk {
             for i in killed { breakPig(i) }
             pigs.removeAll { $0.dead }
         case .invasion:
-            floaters.append(Floater(text: "¡INVASIÓN DE HUCHAS!", pos: mid, born: time, color: Ink.pink, size: 36))
+            floaters.append(Floater(text: "¡INVASIÓN DE {HUCHAS}!", pos: mid, born: time, color: Ink.pink, size: 36))
             for _ in 0..<min(30, max(10, stats.maxPigs / 3)) { spawn() }
         case .rebajas:
             floaters.append(Floater(text: "¡REBAJAS! +aguante", pos: mid, born: time, color: Ink.blue, size: 36))
@@ -629,7 +633,7 @@ final class Desk {
             startHappening()
         }
         updatePet(dt)
-        if combo > 0 && time - comboAt > Desk.comboWindow + stats.comboTime && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
+        if combo > 0 && time - comboAt > Desk.comboWindow + stats.comboTime && !frenzy { combo = 0; nextFrenzy = frenzyBase + 15 * report.frenzies * report.frenzies }
 
         // se mueven
         var burned: [Int] = []

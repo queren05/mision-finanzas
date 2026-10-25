@@ -382,7 +382,7 @@ struct ScratchView: View {
         case .sobreRaro: EnvelopeArt(rarity: .rara)
         case .sobreEpico: EnvelopeArt(rarity: .epica)
         case .sobreLegendario: EnvelopeArt(rarity: .legendaria)
-        case .herencia: ItemImage(name: "j_diamantes")
+        case .herencia: ItemImage(name: "billete")
         }
     }
 
@@ -534,7 +534,7 @@ struct PetsView: View {
         ZStack(alignment: .top) {
             Color(hex: "#3a5a7a").ignoresSafeArea()
             VStack(spacing: 0) {
-                SheetHeader(title: "Mascotas", subtitle: "Rompen huchas por su cuenta")
+                SheetHeader(title: "Mascotas", subtitle: "Rompen {huchas} por su cuenta")
                 CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
                 ScrollView {
                     VStack(spacing: 12) {

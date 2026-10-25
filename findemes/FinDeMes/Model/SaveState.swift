@@ -65,8 +65,8 @@ struct SaveState: Codable {
     var stats = Stats()
     var settings = Settings()
     var seenIntro = false
-    var skin = "cerdo"
-    var skinsOwned: Set<String> = ["cerdo", "gamba", "dibujo"]
+    var skin = "vaca"
+    var skinsOwned: Set<String> = ["vaca", "cerdo"]
     // lo que engancha: nivel, encargos, logros, y premio diario
     var level = 1
     var xp = 0.0
@@ -93,6 +93,8 @@ struct SaveState: Codable {
     /// árbol familiar (para siempre) y facturas pagadas en esta partida
     var family: [String: Int] = [:]
     var billsThisRun = 0
+    /// nivel de las vacas cuando llegó la factura de ahora (lo que vale)
+    var billTier = 0
     var scratchesToday = 0
     var autoBuy = true
     /// apuestas de la carrera de cerdos
@@ -104,7 +106,7 @@ struct SaveState: Codable {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
         case level, xp, quests, achievements, streak, lastDaily, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
-        case family, billsThisRun, scratchesToday, autoBuy, races
+        case family, billsThisRun, scratchesToday, autoBuy, races, billTier
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -130,6 +132,7 @@ struct SaveState: Codable {
         pets = v(.pets, [String: Int]()); pet = v(.pet, "")
         family = v(.family, [String: Int]()); billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
         scratchesToday = v(.scratchesToday, 0); autoBuy = v(.autoBuy, true); races = v(.races, 0.0)
+        billTier = v(.billTier, tier)
         // el llavero de la hucha de casa ya no existe: se devuelven sus puntos
         if let l = rings["llavero"] {
             for i in 0..<l { legacy += (35 * pow(1.7, Double(i))).rounded() }

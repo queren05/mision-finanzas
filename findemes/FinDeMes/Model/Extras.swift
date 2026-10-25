@@ -34,19 +34,19 @@ struct TotemDef: Identifiable {
     func desc(_ l: Int) -> String {
         let n = Double(max(1, l))
         switch effect {
-        case .pigs: return "+\(Int(5 * n)) huchas a la vez y salen un \(Int(10 * n)) % más rápido"
+        case .pigs: return "+\(Int(5 * n)) {huchas} a la vez y salen un \(Int(10 * n)) % más rápido"
         case .owl: return "+\(Int(2 * n)) % de crítico y críticos +\(Int(25 * n)) %"
         case .money: return "+\(Int(50 * n)) % de dinero"
         case .damage: return "+\(Int(50 * n)) % de daño"
         case .speed: return "+\(Int(8 * n)) % de velocidad"
-        case .luck: return "+\(Fmt.dec(0.5 * n, 1)) % de huchas doradas y +\(Fmt.dec(0.3 * n, 1)) % de sobres"
+        case .luck: return "+\(Fmt.dec(0.5 * n, 1)) % de {huchas} dorad{as} y +\(Fmt.dec(0.3 * n, 1)) % de sobres"
         case .stamina: return "+\(Int(10 * n)) de aguante y \(Int(2 * n)) % de golpes gratis"
         case .frenzy: return "El frenesí dura +\(Int(n)) s y da +\(Int(25 * n)) % de dinero"
         case .dragon: return "+\(Int(60 * n)) % de dinero y de daño, pero −30 % de aguante"
         case .casino: return "Premios del bar +\(Int(3 * n)) %"
-        case .pigXP: return "Las huchas suben de nivel un \(Int(12 * n)) % más rápido"
+        case .pigXP: return "{Las} {huchas} suben de nivel un \(Int(12 * n)) % más rápido"
         case .discount: return "El taller un \(Int(5 * n)) % más barato"
-        case .startPigs: return "+\(Int(8 * n)) huchas al empezar el día"
+        case .startPigs: return "+\(Int(8 * n)) {huchas} al empezar el día"
         case .combo: return "El frenesí sale con \(Int(2 * n)) de combo menos"
         case .pet: return "Tu mascota hace un \(Int(40 * n)) % más de daño"
         case .legacy: return "+\(Int(15 * n)) % de puntos de herencia"
@@ -77,7 +77,7 @@ enum ScratchPrize: Int, CaseIterable {
         case .fajo: "Un fajo de billetes"
         case .sobreRaro: "Sobre raro"
         case .sobreEpico: "Sobre épico"
-        case .herencia: "Puntos de herencia"
+        case .herencia: "Un maletín de billetes"
         case .sobreLegendario: "¡Sobre legendario!"
         }
     }
@@ -91,8 +91,8 @@ extension Content {
         PartDef(id: "iman", name: "Imán de nevera", desc: "×% de dinero", effect: .loot, per: 10, maxLevel: 60, base: 40, growth: 1.45),
         PartDef(id: "mango", name: "Mango de goma", desc: "+%\u{2009}% de velocidad", effect: .speed, per: 5, maxLevel: 40, base: 35, growth: 1.3),
         PartDef(id: "silbato", name: "Silbato", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 8, maxLevel: 50, base: 35, growth: 1.28),
-        PartDef(id: "cajon", name: "Cajón de fruta", desc: "+% huchas a la vez", effect: .maxPigs, per: 3, maxLevel: 50, base: 60, growth: 1.3),
-        PartDef(id: "muelle", name: "Muelle", desc: "+% huchas al empezar", effect: .startPigs, per: 2, maxLevel: 40, base: 50, growth: 1.3),
+        PartDef(id: "cajon", name: "Cajón de fruta", desc: "+% {huchas} a la vez", effect: .maxPigs, per: 3, maxLevel: 50, base: 60, growth: 1.3),
+        PartDef(id: "muelle", name: "Muelle", desc: "+% {huchas} al empezar", effect: .startPigs, per: 2, maxLevel: 40, base: 50, growth: 1.3),
         PartDef(id: "pila", name: "Pila de petaca", desc: "+% de aguante", effect: .stamina, per: 3, maxLevel: 60, base: 40, growth: 1.27),
         PartDef(id: "lupa", name: "Lupa", desc: "+%\u{2009}% de crítico", effect: .crit, per: 1, maxLevel: 30, base: 100, growth: 1.38),
         PartDef(id: "punta", name: "Punta de acero", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 15, maxLevel: 40, base: 120, growth: 1.33),
@@ -101,7 +101,7 @@ extension Content {
         PartDef(id: "brujula", name: "Brújula", desc: "+%\u{2009}% de sobres", effect: .chest, per: 0.15, maxLevel: 20, base: 200, growth: 1.42),
         PartDef(id: "temporizador", name: "Reloj de cocina", desc: "En frenesí, +%\u{2009}% de dinero", effect: .frenzyMoney, per: 10, maxLevel: 30, base: 180, growth: 1.38),
         PartDef(id: "lija", name: "Lija gorda", desc: "Atraviesa el +%\u{2009}% de las corazas", effect: .pierce, per: 3, maxLevel: 20, base: 150, growth: 1.4),
-        PartDef(id: "herradura", name: "Herradura", desc: "+%\u{2009}% de huchas doradas", effect: .golden, per: 0.2, maxLevel: 20, base: 300, growth: 1.45),
+        PartDef(id: "herradura", name: "Herradura", desc: "+%\u{2009}% de {huchas} dorad{as}", effect: .golden, per: 0.2, maxLevel: 20, base: 300, growth: 1.45),
     ]
 
     static let totems: [TotemDef] = [
@@ -146,13 +146,13 @@ struct PetDef: Identifiable {
         case .none: "Saca críticos como tú"
         case .chests: "Encuentra sobres al romper"
         case .money: "Las que rompe valen el doble"
-        case .richest: "Siempre va a por la hucha más valiosa"
-        case .triple: "Picotea tres huchas a la vez"
+        case .richest: "Siempre va a por {la} {hucha} más valios{a}"
+        case .triple: "Picotea tres {huchas} a la vez"
         case .octopus: "Golpea a todas las que tiene alrededor"
         case .fire: "Escupe fuego: explota al golpear"
         case .fast: "Rapidísimo, aunque pega flojo"
         case .freeze: "Congela todo lo que tiene cerca"
-        case .swarm: "Pica a cinco huchas a la vez"
+        case .swarm: "Pica a cinco {huchas} a la vez"
         case .unicorn: "Lo que rompe vale ×3 y a veces suelta moneda"
         case .stamina: "Cada golpe suyo te devuelve aguante"
         }
@@ -161,13 +161,13 @@ struct PetDef: Identifiable {
 
 extension Content {
     static let pets: [PetDef] = [
-        PetDef(id: "gato", name: "Michi", line: "Tira las huchas de la mesa por gusto.", skill: .none, every: 1.6, damage: 0.8, speed: 230, base: 25),
-        PetDef(id: "perro", name: "Toby", line: "Buen chico. Muerde huchas.", skill: .chests, every: 1.3, damage: 0.55, speed: 300, base: 40),
+        PetDef(id: "gato", name: "Michi", line: "Tira {las} {huchas} de la mesa por gusto.", skill: .none, every: 1.6, damage: 0.8, speed: 230, base: 25),
+        PetDef(id: "perro", name: "Toby", line: "Buen chico. Muerde {huchas}.", skill: .chests, every: 1.3, damage: 0.55, speed: 300, base: 40),
         PetDef(id: "hamster", name: "Bolita", line: "No para quieto.", skill: .fast, every: 0.55, damage: 0.28, speed: 380, base: 50),
         PetDef(id: "loro", name: "Paquito", line: "Repite «¡dinero, dinero!».", skill: .money, every: 2.0, damage: 0.6, speed: 260, base: 60),
         PetDef(id: "mapache", name: "Ladronzuelo", line: "Tiene buen ojo para lo caro.", skill: .richest, every: 1.8, damage: 0.9, speed: 250, base: 80),
         PetDef(id: "cuervo", name: "Edgar", line: "Le gustan las cosas brillantes.", skill: .triple, every: 1.7, damage: 0.6, speed: 320, base: 140),
-        PetDef(id: "pulpo", name: "Ocho", line: "Ocho brazos, ocho huchas.", skill: .octopus, every: 2.4, damage: 0.7, speed: 180, base: 220),
+        PetDef(id: "pulpo", name: "Ocho", line: "Ocho brazos, ocho {huchas}.", skill: .octopus, every: 2.4, damage: 0.7, speed: 180, base: 220),
         PetDef(id: "dragon", name: "Chispa", line: "Un dragón pequeñito. De momento.", skill: .fire, every: 3.0, damage: 1.5, speed: 210, base: 400),
         PetDef(id: "pinguino", name: "Pingu", line: "Viene del congelador.", skill: .freeze, every: 2.0, damage: 0.7, speed: 240, base: 600),
         PetDef(id: "abeja", name: "Maya", line: "Bzzz. Bzzzzz.", skill: .swarm, every: 1.4, damage: 0.45, speed: 420, base: 900),

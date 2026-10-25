@@ -190,7 +190,7 @@ extension Game {
         case .sobreEpico: s.pendingChests.append(.epica)
         case .sobreLegendario: s.pendingChests.append(.legendaria)
         case .herencia:
-            let v = Double(5 + s.bestTier / 4); s.legacy += v; Sound.shared.fanfare(); save(); return "+\(Fmt.num(v)) puntos de herencia"
+            let v = (worth * 2_500).rounded(); s.cash += v; s.stats.earned += v; Sound.shared.fanfare(); save(); return Fmt.money(v)
         }
         Sound.shared.fanfare()
         save()

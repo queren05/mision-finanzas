@@ -7,10 +7,10 @@ enum QuestKind: String, Codable, CaseIterable {
 
     var text: String {
         switch self {
-        case .romper: "Rompe % huchas"
+        case .romper: "Rompe % {huchas}"
         case .ganar: "Gana %"
         case .combo: "Haz un combo de %"
-        case .doradas: "Rompe % huchas doradas"
+        case .doradas: "Rompe % {huchas} dorad{as}"
         case .criticos: "Da % golpes críticos"
         case .diaRico: "Gana % en un solo día"
         case .mejoras: "Compra % mejoras del corcho"
@@ -59,12 +59,12 @@ struct AchDef: Identifiable {
     var desc: String {
         let n = Fmt.num(target)
         switch metric {
-        case .broken: return "Rompe \(n) huchas"
+        case .broken: return "Rompe \(n) {huchas}"
         case .earned: return "Gana \(Fmt.money(target)) en total"
         case .bills: return "Paga \(n) facturas"
         case .bankruptcies: return "Declárate en bancarrota \(n) \(target == 1 ? "vez" : "veces")"
         case .days: return "Juega \(n) días"
-        case .golden: return "Rompe \(n) huchas doradas"
+        case .golden: return "Rompe \(n) {huchas} dorad{as}"
         case .kings: return "Derrota al Rey Cerdito \(n) \(target == 1 ? "vez" : "veces")"
         case .chests: return "Abre \(n) sobres"
         case .crits: return "Da \(n) golpes críticos"
@@ -76,7 +76,7 @@ struct AchDef: Identifiable {
         case .hammers: return "Ten \(n) martillos a la vez"
         case .quests: return "Cumple \(n) encargos"
         case .bestDay: return "Gana \(Fmt.money(target)) en un día"
-        case .pigLevel: return "Sube las huchas al nivel \(n)"
+        case .pigLevel: return "Sube {las} {huchas} al nivel \(n)"
         case .spins: return "Juega \(n) veces a la tragaperras"
         case .jackpots: return "Saca tres coronas en la tragaperras"
         case .scratches: return "Rasca \(n) rascas"
@@ -94,7 +94,7 @@ enum Meta {
         func tiers(_ m: AchMetric, _ key: String, _ list: [(Double, String)]) -> [AchDef] {
             list.map { AchDef(id: "\(key)-\(Int($0.0))", name: $0.1, metric: m, target: $0.0) }
         }
-        return tiers(.broken, "rotas", [(10, "Primer estropicio"), (100, "Manitas"), (1_000, "Demoledor"), (10_000, "Terror de las huchas"), (100_000, "Plaga porcina"), (1_000_000, "El fin de las huchas")])
+        return tiers(.broken, "rotas", [(10, "Primer estropicio"), (100, "Manitas"), (1_000, "Demoledor"), (10_000, "Terror de {las} {huchas}"), (100_000, "Plaga porcina"), (1_000_000, "El fin de {las} {huchas}")])
             + tiers(.earned, "ganado", [(1_000, "Primeros ahorros"), (100_000, "Colchón"), (10_000_000, "Patrimonio"), (1e9, "Fortuna"), (1e12, "Imperio"), (1e15, "Más que el Estado")])
             + tiers(.bestDay, "dia", [(500, "Buen día"), (50_000, "Día redondo"), (5e6, "Día histórico"), (5e9, "El día del siglo")])
             + tiers(.bills, "facturas", [(1, "Al corriente"), (12, "Un año sin deudas"), (50, "Pagador ejemplar"), (200, "Cliente favorito"), (1_000, "Socio de honor")])
@@ -110,7 +110,7 @@ enum Meta {
             + tiers(.coins, "album", [(5, "Numismático"), (12, "Medio álbum"), (24, "Álbum completo")])
             + tiers(.skins, "personajes", [(4, "Disfraces"), (7, "Zoológico"), (10, "Todos")])
             + tiers(.hammers, "martillos", [(3, "Caja de herramientas"), (6, "Ferretería propia"), (8, "Todos los martillos")])
-            + tiers(.pigLevel, "huchas", [(10, "Criador"), (25, "Granja de huchas"), (45, "Huchas robóticas"), (60, "Hasta el espacio"), (80, "Más allá"), (100, "Huchas millonarias"), (150, "Infinito")])
+            + tiers(.pigLevel, "huchas", [(10, "Criador"), (25, "Granja de {huchas}"), (45, "{Huchas} robótic{as}"), (60, "Hasta el espacio"), (80, "Más allá"), (100, "{Huchas} millonari{as}"), (150, "Infinito")])
             + tiers(.hammers, "martillos2", [(10, "Coleccionista de martillos"), (12, "La chancla de oro"), (16, "Un yunque con un palo")])
             + tiers(.skins, "personajes2", [(13, "Arca de Noé")])
             + tiers(.spins, "tragaperras", [(1, "Una monedita"), (50, "Cliente del bar"), (500, "Ludópata")])
@@ -136,7 +136,7 @@ enum Meta {
     /// premios del calendario de 7 días
     static let daily: [(name: String, chest: Rarity?, pigs: Double, legacy: Double)] = [
         ("Dinero", nil, 40, 0), ("Sobre", .comun, 0, 0), ("Dinero", nil, 120, 0), ("Sobre raro", .rara, 0, 0),
-        ("Mucho dinero", nil, 300, 0), ("Sobre épico", .epica, 0, 0), ("¡Sobre legendario!", .legendaria, 0, 10),
+        ("Mucho dinero", nil, 300, 0), ("Sobre épico", .epica, 0, 0), ("¡Sobre legendario!", .legendaria, 0, 0),
     ]
 }
 
@@ -345,7 +345,6 @@ extension Game {
         let r = Meta.daily[i]
         if r.pigs > 0 { let c = (r.pigs * pigWorth).rounded(); s.cash += c; s.stats.earned += c }
         if let ch = r.chest { s.pendingChests.append(ch) }
-        s.legacy += r.legacy
         let yesterday = Game.dayKey(Date().addingTimeInterval(-86_400))
         s.streak = s.lastDaily == yesterday ? s.streak + 1 : 1
         s.lastDaily = Game.dayKey(Date())

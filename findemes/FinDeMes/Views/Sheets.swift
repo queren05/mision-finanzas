@@ -10,14 +10,14 @@ struct ReportView: View {
 
     private var lines: [(String, String)] {
         var l: [(String, String)] = [
-            ("HUCHAS ROTAS", "\(report.broken)"),
+            ("{HUCHAS} ROT{AS}", "\(report.broken)"),
             ("MARTILLAZOS", "\(report.swings)"),
             ("CRÍTICOS", "\(report.crits)"),
         ]
-        if report.golden > 0 { l.append(("HUCHAS DORADAS", "\(report.golden)")) }
+        if report.golden > 0 { l.append(("{HUCHAS} DORAD{AS}", "\(report.golden)")) }
         if report.kings > 0 { l.append(("REY CERDITO", "\(report.kings)")) }
         if !report.coins.isEmpty { l.append(("MONEDAS RARAS", "\(report.coins.count)")) }
-        if report.best > 0 { l.append(("MEJOR HUCHA", Fmt.money(report.best))) }
+        if report.best > 0 { l.append(("MEJOR {HUCHA}", Fmt.money(report.best))) }
         if report.bestCombo >= 3 { l.append(("MEJOR COMBO", "×\(report.bestCombo)")) }
         if report.frenzies > 0 { l.append(("FRENESÍ", "\(report.frenzies)")) }
         return l
@@ -63,7 +63,7 @@ struct ReportView: View {
 
     private var ticket: some View {
         VStack(spacing: 6) {
-            Text("SUPERMERCADO DE HUCHAS").font(.typewriter(13, bold: true))
+            Text("SUPERMERCADO DE {HUCHAS}".a).font(.typewriter(13, bold: true))
             Text("TICKET DEL DÍA \(report.day)").font(.typewriter(16, bold: true))
             dashed
             ForEach(Array(lines.enumerated()), id: \.offset) { i, l in
@@ -127,7 +127,7 @@ struct ChestOpener: View {
                             CoinArt(def: c, found: true).frame(width: 54, height: 54)
                             VStack(alignment: .leading) {
                                 Text(c.name).font(.chunky(18))
-                                Text(p.duplicate ? "Repetida: +\(Fmt.num(p.legacy)) puntos de herencia" : "¡Nueva para el álbum!").font(.typewriter(12, bold: true)).foregroundStyle(p.duplicate ? Ink.soft : Ink.purple)
+                                Text(p.duplicate ? "Repetida: +\(Fmt.money(p.legacy))" : "¡Nueva para el álbum!").font(.typewriter(12, bold: true)).foregroundStyle(p.duplicate ? Ink.soft : Ink.purple)
                             }
                         }
                     }
@@ -165,7 +165,7 @@ struct ChestOpener: View {
                             ForEach(Array(a.fresh.prefix(6).enumerated()), id: \.offset) { _, c in CoinArt(def: c, found: true).frame(width: 44, height: 44) }
                         }
                     }
-                    if a.legacy > 0 { Text("Repetidas: +\(Fmt.num(a.legacy)) puntos de herencia").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft) }
+                    if a.legacy > 0 { Text("Repetidas: +\(Fmt.money(a.legacy))").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft) }
                 }
                 .foregroundStyle(Ink.ink)
                 .padding(16)
@@ -270,7 +270,7 @@ struct EventView: View {
                         .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
                 case .taxes:
                     Text("¡HACIENDA PAGADA!").font(.chunky(32)).foregroundStyle(Ink.green)
-                    Text("Has sobrevivido a un año entero de facturas. Ahora puedes declararte en bancarrota y cobrar tus puntos de herencia, o aguantar otro año con facturas \(Int(Content.yearGrowth)) veces más caras (y huchas más ricas).")
+                    Text("Has sobrevivido a un año entero de facturas. Ahora puedes declararte en bancarrota y cobrar tus puntos de herencia, o aguantar otro año con facturas todavía más caras (y {huchas} más ric{as}).".a)
                         .font(.typewriter(14)).multilineTextAlignment(.center)
                     legacyLine(game.legacyGain)
                     Button { game.bankruptcy() } label: { Text("Bancarrota (+\(Fmt.num(game.legacyGain)) puntos)").frame(maxWidth: .infinity) }

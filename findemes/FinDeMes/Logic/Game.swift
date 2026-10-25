@@ -6,7 +6,7 @@ struct HitStats {
     var damage = 4.0
     var speed = 1.1
     var radius = 34.0
-    var stamina = 25.0
+    var stamina = 40.0
     var killStamina = 0.0     // probabilidad de recuperar 1 al romper
     var drainSave = 0.0       // probabilidad de que un golpe no gaste
     var startPigs = 20
@@ -100,6 +100,7 @@ final class Game {
     private init() {
         s = Persistence.load() ?? SaveState()
         applySettings()
+        Animal.use(Content.skin(s.skin))
         recompute()
         refillQuests()
     }
@@ -244,7 +245,8 @@ final class Game {
         st.speed *= 1 + speedPct / 100
         st.radius *= 1 + radiusPct / 100
         st.loot = (1 + lootPct / 100) * lootMul
-        st.spawnEvery = 0.6 / (1 + spawnPct / 100)
+        // cuanto más rápido salen, menos se nota cada mejora (si no, la mesa se desborda y el dinero se dispara)
+        st.spawnEvery = 0.6 / (1 + spawnPct / 100).squareRoot()
         // la habilidad del martillo en la mano
         switch h.style {
         case .chancla: st.crit += 0.10
@@ -276,9 +278,18 @@ final class Game {
     // MARK: - Facturas
 
     var bill: BillDef { Content.bills[s.billIndex] }
+    /// en vacas: la factura vale según lo que valía una vaca cuando llegó (la de ahora y las siguientes, según lo de ahora)
     func billAmount(_ b: BillDef) -> Double {
-        (b.amount * pow(Content.yearGrowth, Double(s.year)) * (1 - ringValue(.bills) / 100)).rounded()
+        let tier = b.id == s.billIndex ? s.billTier : s.tier
+        let units = Content.billUnits(s.year * Content.bills.count + b.id)
+        return max(1, (units * Content.pigValue(tier) / Content.pigValue(0) * (1 - ringValue(.bills) / 100)).rounded())
     }
+
+    /// precios en vacas del nivel de ahora (el corcho y los martillos)
+    func cost(_ k: SkillDef) -> Double {
+        k.family ? k.cost(level(k)) : max(1, (k.cost(level(k)) * Content.pigValue(s.tier)).rounded())
+    }
+    func hammerCost(_ h: HammerDef) -> Double { (Content.hammerUnits(h.id) * Content.pigValue(s.tier)).rounded() }
     var billAmount: Double { billAmount(bill) }
     var daysLeft: Int { s.billDue - s.day }      // 0 = hoy es el último día
     var nextBill: BillDef? { s.billIndex + 1 < Content.bills.count ? Content.bills[s.billIndex + 1] : nil }
@@ -298,6 +309,7 @@ final class Game {
             event = .taxes
         } else {
             s.billIndex += 1
+            s.billTier = s.tier
             s.billDue = s.day + bill.days - 1 + Int(ringValue(.extraDays))
         }
         save()
@@ -308,6 +320,7 @@ final class Game {
         s.awaitingTaxChoice = false
         s.year += 1
         s.billIndex = 0
+        s.billTier = s.tier
         s.billDue = s.day + bill.days - 1 + Int(ringValue(.extraDays))
         event = nil
         Sound.shared.till()
@@ -318,7 +331,8 @@ final class Game {
 
     /// puntos de herencia: según el nivel de las huchas y las facturas pagadas en esta partida
     var legacyGain: Double {
-        let base = Double(s.tier * s.tier) / 5 + 5 * Double(s.billsThisRun)
+        // crece mucho con cada factura pagada: llegar más lejos compensa de verdad
+        let base = 8 * pow(1.2, Double(s.billsThisRun))
         return floor(base * (1 + ringValue(.legacy) / 100 + totemValue(.legacy) * 0.15 + familyValue(.legacyPct) / 100))
     }
     var startCash: Double {
@@ -343,6 +357,7 @@ final class Game {
         recompute()
         s.cash = startCash
         s.billDue = 1 + Content.bills[0].days - 1 + Int(ringValue(.extraDays))
+        s.billTier = s.tier
         event = forced ? .collector(legacy: g) : .bankrupt(legacy: g)
         forced ? Sound.shared.sad() : Sound.shared.fanfare()
         save()
@@ -367,7 +382,6 @@ final class Game {
         s.stats.bestDay = max(s.stats.bestDay, r.earned)
         s.stats.bestCombo = max(s.stats.bestCombo, Double(r.bestCombo))
         s.stats.frenzies += Double(r.frenzies)
-        s.legacy += r.legacy
         s.pendingChests += r.chests
         for c in r.coins { addCoin(c) }
         s.day += 1
@@ -410,17 +424,18 @@ final class Game {
     func canBuy(_ k: SkillDef) -> Bool {
         let l = level(k)
         guard l < k.maxLevel else { return false }
-        if let p = k.parent, (s.skills[p] ?? 0) == 0 { return false }
-        return s.cash >= k.cost(l)
+        if let p = SkillTree.of(k).parent[k.id], (s.skills[p] ?? 0) == 0 { return false }
+        return s.cash >= cost(k)
     }
     func isVisible(_ k: SkillDef) -> Bool {
-        k.parent == nil || ((k.family ? s.family[k.parent!] : s.skills[k.parent!]) ?? 0) > 0 || level(k) > 0
+        guard let p = SkillTree.of(k).parent[k.id] else { return true }
+        return ((k.family ? s.family[p] : s.skills[p]) ?? 0) > 0 || level(k) > 0
     }
 
     @discardableResult
     func buy(_ k: SkillDef, quiet: Bool = false) -> Bool {
         guard canBuy(k) else { if !quiet { Sound.shared.denied() }; return false }
-        s.cash -= k.cost(level(k))
+        s.cash -= cost(k)
         s.skills[k.id] = level(k) + 1
         progressQuests(.mejoras, add: 1)
         recompute()
@@ -434,9 +449,9 @@ final class Game {
         let reserve = daysLeft <= 1 ? billAmount : 0
         var n = 0
         while n < 2_000 {
-            let skill = Content.skills.filter { canBuy($0) }.min { $0.cost(level($0)) < $1.cost(level($1)) }
+            let skill = Content.skills.filter { canBuy($0) }.min { cost($0) < cost($1) }
             let part = Content.parts.filter { canBuyPart($0) }.min { partCost($0) < partCost($1) }
-            let sc = skill.map { $0.cost(level($0)) } ?? .infinity
+            let sc = skill.map { cost($0) } ?? .infinity
             let pc = part.map { partCost($0) } ?? .infinity
             guard min(sc, pc) <= s.cash - reserve else { break }
             if sc <= pc, let k = skill { buy(k, quiet: true) } else if let p = part { buyPart(p, quiet: true) }
@@ -451,12 +466,12 @@ final class Game {
     @discardableResult
     func get(_ k: SkillDef, quiet: Bool = false) -> Bool { k.family ? buyFamily(k, quiet: quiet) : buy(k, quiet: quiet) }
     func price(_ k: SkillDef, _ v: Double) -> String { k.family ? "\(Fmt.num(v)) pts" : Fmt.money(v) }
-    func missing(_ k: SkillDef) -> Double { max(0, k.cost(level(k)) - (k.family ? s.legacy : s.cash)) }
+    func missing(_ k: SkillDef) -> Double { max(0, cost(k) - (k.family ? s.legacy : s.cash)) }
 
     func canBuyFamily(_ k: SkillDef) -> Bool {
         let l = level(k)
         guard l < k.maxLevel else { return false }
-        if let p = k.parent, (s.family[p] ?? 0) == 0 { return false }
+        if let p = SkillTree.of(k).parent[k.id], (s.family[p] ?? 0) == 0 { return false }
         return s.legacy >= k.cost(l)
     }
 
@@ -477,8 +492,8 @@ final class Game {
 
     func buyHammer(_ h: HammerDef) {
         if s.hammersOwned.contains(h.id) { s.hammer = h.id; recompute(); Sound.shared.click(); return }
-        guard s.cash >= h.cost else { Sound.shared.denied(); return }
-        s.cash -= h.cost
+        guard s.cash >= hammerCost(h) else { Sound.shared.denied(); return }
+        s.cash -= hammerCost(h)
         s.hammersOwned.insert(h.id)
         s.hammer = h.id
         recompute()
@@ -497,11 +512,12 @@ final class Game {
     }
 
     func pickSkin(_ k: SkinDef) {
-        if s.skinsOwned.contains(k.id) { s.skin = k.id; Sound.shared.click(); save(); return }
+        if s.skinsOwned.contains(k.id) { s.skin = k.id; Animal.use(k); Sound.shared.click(); save(); return }
         guard s.legacy >= k.cost else { Sound.shared.denied(); return }
         s.legacy -= k.cost
         s.skinsOwned.insert(k.id)
         s.skin = k.id
+        Animal.use(k)
         Sound.shared.till()
         save()
     }
@@ -526,7 +542,12 @@ final class Game {
         guard let c = Content.coins.first(where: { $0.id == id }) else { return (false, 0) }
         let had = (s.coins[id] ?? 0) > 0
         s.coins[id] = (s.coins[id] ?? 0) + 1
-        if had { s.legacy += c.rarity.duplicate; return (true, c.rarity.duplicate) }
+        // las repetidas se cambian por dinero (los puntos de herencia solo llegan con la bancarrota)
+        if had {
+            let v = (Content.pigValue(s.tier) * stats.loot * c.rarity.duplicate * 50).rounded()
+            s.cash += v; s.stats.earned += v
+            return (true, v)
+        }
         if refresh { recompute() }
         return (false, 0)
     }

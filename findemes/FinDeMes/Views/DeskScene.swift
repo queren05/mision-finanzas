@@ -34,6 +34,7 @@ enum Tex {
 
     /// texto gordo con borde de tinta
     static func text(_ s: String, _ size: CGFloat, _ color: UIColor) -> SKTexture {
+        let s = s.a
         let k = "t|\(s)|\(Int(size))|\(key(color))"
         if let t = cache[k] { return t }
         texts += 1
@@ -56,6 +57,41 @@ enum Tex {
         let t = SKTexture(image: img)
         cache[k] = t
         return t
+    }
+
+    /// un cachito del propio animal: un trozo recortado del dibujo con borde de tinta
+    static func chunk(_ skin: SkinDef, _ look: String, _ variant: Int) -> SKTexture? {
+        cached("ch|\(skin.id)|\(look)|\(variant)") {
+            guard let img = SkinArt.uiImage(skin.id, look) else { return nil }
+            let w = img.size.width, h = img.size.height
+            // de la parte del cuerpo (el centro del dibujo), cada variante de un sitio distinto
+            let cx = w * (0.3 + 0.4 * Double((variant * 37) % 10) / 10)
+            let cy = h * (0.35 + 0.35 * Double((variant * 53) % 10) / 10)
+            let side = min(w, h) * 0.34
+            let k = 64 / side
+            let base = UIColor(Color(hex: skin.shards.first ?? "#ffffff"))
+            return draw(CGSize(width: 64, height: 64)) { c in
+                let path = CGMutablePath()
+                let n = 7
+                for i in 0..<n {
+                    let a = Double(i) / Double(n) * 2 * .pi + Double(variant) * 0.5
+                    let r = 27 * (0.55 + 0.45 * Double((variant * 7 + i * 13) % 10) / 10)
+                    let p = CGPoint(x: 32 + cos(a) * r, y: 32 + sin(a) * r)
+                    if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+                }
+                path.closeSubpath()
+                c.saveGState()
+                c.addPath(path); c.clip()
+                c.setFillColor(base.cgColor); c.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+                UIGraphicsPushContext(c)
+                img.draw(in: CGRect(x: 32 - cx * k, y: 32 - cy * k, width: w * k, height: h * k))
+                UIGraphicsPopContext()
+                c.restoreGState()
+                c.addPath(path)
+                c.setStrokeColor(ink.cgColor); c.setLineWidth(3.5); c.setLineJoin(.round)
+                c.strokePath()
+            }
+        }
     }
 
     static func shard(_ color: UIColor, _ variant: Int) -> SKTexture? {
@@ -552,8 +588,13 @@ final class DeskScene: SKScene {
             if let x = shardMap[s.id] { n = x } else {
                 n = take(300)
                 let r = s.pts.first.map { hypot($0.x, $0.y) } ?? 6
-                n.texture = Tex.shard(UIColor(s.color), s.id % 3)
-                n.size = CGSize(width: r * 2.4, height: r * 2.4)
+                if !s.look.isEmpty, let t = Tex.chunk(desk.skin, s.look, s.id % 8) {
+                    n.texture = t
+                    n.size = CGSize(width: r * 3.4, height: r * 3.4)
+                } else {
+                    n.texture = Tex.shard(UIColor(s.color), s.id % 3)
+                    n.size = CGSize(width: r * 2.4, height: r * 2.4)
+                }
                 shardMap[s.id] = n
             }
             n.position = P(s.pos.x, s.pos.y)
@@ -686,7 +727,7 @@ final class DeskScene: SKScene {
         let w = size.width
         let top = desk.top
         if desk.frenzy {
-            let left = (desk.frenzyUntil - t) / (6 + desk.stats.frenzyExtra)
+            let left = (desk.frenzyUntil - t) / desk.frenzyLength
             frenzyTint.isHidden = false
             frenzyTint.alpha = 0.12 + 0.06 * sin(t * 12)
             let bw = w * 0.6

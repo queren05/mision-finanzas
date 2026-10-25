@@ -160,7 +160,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 SkinIcon(id: Content.playing(game.s.skin).id, size: 52)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("A ROMPER HUCHAS").font(.chunky(26))
+                    Text("A ROMPER {HUCHAS}".a).font(.chunky(26))
                     Text("con \(Content.hammers[game.s.hammer].name.lowercased())").font(.typewriter(13, bold: true)).opacity(0.75)
                 }
                 Spacer()
@@ -175,7 +175,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 KindIcon(kind: PigKind.allCases.filter { game.s.bestTier >= $0.minTier }.max { $0.minTier < $1.minTier } ?? .normal, size: 52)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("El huchario").font(.chunky(20)).foregroundStyle(Ink.ink)
+                    Text("El establo").font(.chunky(20)).foregroundStyle(Ink.ink)
                     PigLevelStrip()
                 }
                 Image(systemName: "chevron.right").font(.system(size: 16, weight: .black)).foregroundStyle(Ink.ink)
@@ -190,11 +190,10 @@ struct HomeView: View {
 
     private var drawers: some View {
         let skillsAvailable = Content.skills.contains { game.canBuy($0) }
-        let hammerAvailable = Content.hammers.contains { !game.s.hammersOwned.contains($0.id) && game.s.cash >= $0.cost }
+        let hammerAvailable = Content.hammers.contains { !game.s.hammersOwned.contains($0.id) && game.s.cash >= game.hammerCost($0) }
         let found = Content.coins.filter { (game.s.coins[$0.id] ?? 0) > 0 }.count
-        let skinAvailable = Content.skins.contains { !game.s.skinsOwned.contains($0.id) && game.s.legacy >= $0.cost }
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-            drawer("Mejoras", "El corcho", "pin.fill", Ink.red, badge: skillsAvailable, .mejoras) { sheet = .tree }
+            drawer("Mejoras", "Árbol de mejoras", "leaf.fill", Ink.red, badge: skillsAvailable, .mejoras) { sheet = .tree }
             drawer("Martillos", Content.hammers[game.s.hammer].name, "hammer.fill", Ink.blue, badge: hammerAvailable, .martillos) { sheet = .hammers }
             drawer("Taller", "Piezas para el martillo", "wrench.and.screwdriver.fill", Ink.wood, badge: Content.parts.contains { game.canBuyPart($0) }, .taller) { sheet = .workshop }
             drawer("Tótems", "\(game.s.totemsOn.count) de \(game.totemSlots) puestos", "pawprint.fill", Ink.green, badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, .totems) { sheet = .totems }
@@ -203,7 +202,6 @@ struct HomeView: View {
             drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
             drawer("Mascotas", game.stats.pet?.name ?? "Ninguna", "pawprint.circle.fill", Ink.blue, badge: Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }, .mascotas) { sheet = .pets }
             drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
-            if !Content.onlyCows { drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins } }
         }
     }
 
