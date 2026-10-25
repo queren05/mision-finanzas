@@ -409,15 +409,16 @@ struct BestiaryView: View {
     @Environment(Game.self) private var game
     var body: some View {
         let kinds = PigKind.allCases.sorted { $0.minTier < $1.minTier }
-        let found = kinds.filter { game.s.tier >= $0.minTier }.count
+        let found = kinds.filter { game.s.bestTier >= $0.minTier }.count
         ZStack(alignment: .top) {
             Color(hex: "#7a2f45").ignoresSafeArea()
             VStack(spacing: 0) {
                 SheetHeader(title: "El huchario", subtitle: "\(found) de \(kinds.count) huchas descubiertas")
                 VStack(spacing: 6) {
                     Text("NIVEL DE LAS HUCHAS: \(game.s.tier)").font(.chunky(18)).foregroundStyle(Ink.ink)
+                    Text("Récord: nivel \(game.s.bestTier)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                     PigLevelStrip()
-                    Text("Más nivel: más vida, más dinero y huchas nuevas").font(.typewriter(11)).foregroundStyle(Ink.soft)
+                    Text("Suben rompiéndolas y vuelven a empezar con cada bancarrota").font(.typewriter(11)).foregroundStyle(Ink.soft)
                 }
                 .padding(12).paper().padding(.horizontal, 18).padding(.bottom, 8)
                 ScrollView {
@@ -432,7 +433,7 @@ struct BestiaryView: View {
     }
 
     private func cell(_ k: PigKind) -> some View {
-        let open = game.s.tier >= k.minTier
+        let open = game.s.bestTier >= k.minTier
         let n = game.s.brokenByKind[k.rawValue] ?? 0
         return VStack(spacing: 6) {
             ZStack {

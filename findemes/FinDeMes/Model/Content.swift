@@ -172,7 +172,7 @@ enum PigKind: String, Codable, CaseIterable {
 
 /// el nivel de las huchas: sube muy poco a poco con cada hucha rota
 enum PigLevel {
-    static func needed(_ level: Int) -> Double { (40 * pow(1.2, Double(level))).rounded() }
+    static func needed(_ level: Int) -> Double { (120 * pow(1.12, Double(level))).rounded() }
 }
 
 // MARK: - Facturas
@@ -207,7 +207,7 @@ struct SkillDef: Identifiable {
     let row: Int
     let icon: String
 
-    func cost(_ level: Int) -> Double { (baseCost * 3 * pow(growth + 0.2, Double(level))).rounded() }
+    func cost(_ level: Int) -> Double { (baseCost * 2.5 * pow(growth + 0.1, Double(level))).rounded() }
 }
 
 // MARK: - Joyas (puntos de herencia: se quedan tras la bancarrota)
@@ -281,17 +281,23 @@ enum Content {
 
     static let bills: [BillDef] = [
         BillDef(id: 0, company: "NETFLIZ S.L.", concept: "Suscripción mensual", amount: 15, days: 3),
-        BillDef(id: 1, company: "MOVISTAAR", concept: "Tarifa del móvil", amount: 40, days: 3),
-        BillDef(id: 2, company: "FIBRA YA", concept: "Internet de casa", amount: 95, days: 3),
-        BillDef(id: 3, company: "CANAL DE AGUAS", concept: "Consumo bimestral", amount: 200, days: 3),
-        BillDef(id: 4, company: "IBERDROGA", concept: "Luz (otra vez más cara)", amount: 420, days: 3),
-        BillDef(id: 5, company: "GYM FIT 24H", concept: "Gimnasio al que no vas", amount: 850, days: 3),
-        BillDef(id: 6, company: "COMUNIDAD DE VECINOS", concept: "Derrama del ascensor", amount: 1_700, days: 3),
-        BillDef(id: 7, company: "SEGUROS MAPHRE", concept: "Seguro del coche", amount: 3_500, days: 4),
-        BillDef(id: 8, company: "ITV EXPRESS", concept: "Inspección + multa", amount: 7_200, days: 4),
-        BillDef(id: 9, company: "INMOBILIARIA LOS TIBURONES", concept: "Alquiler del piso", amount: 15_000, days: 4),
-        BillDef(id: 10, company: "UNIVERSIDAD PRIVADA", concept: "Matrícula del máster", amount: 32_000, days: 4),
-        BillDef(id: 11, company: "AGENCIA TRIBUTARIA", concept: "Declaración de la renta", amount: 80_000, days: 5),
+        BillDef(id: 1, company: "MOVISTAAR", concept: "Tarifa del móvil", amount: 30, days: 3),
+        BillDef(id: 2, company: "FIBRA YA", concept: "Internet de casa", amount: 55, days: 3),
+        BillDef(id: 3, company: "CANAL DE AGUAS", concept: "Consumo bimestral", amount: 100, days: 3),
+        BillDef(id: 4, company: "VETERINARIO EL GATO FELIZ", concept: "Vacunas del gato", amount: 180, days: 3),
+        BillDef(id: 5, company: "IBERDROGA", concept: "Luz (otra vez más cara)", amount: 320, days: 3),
+        BillDef(id: 6, company: "GYM FIT 24H", concept: "Gimnasio al que no vas", amount: 560, days: 3),
+        BillDef(id: 7, company: "DGT", concept: "Multa por exceso de velocidad", amount: 1_000, days: 3),
+        BillDef(id: 8, company: "COMUNIDAD DE VECINOS", concept: "Derrama del ascensor", amount: 1_800, days: 3),
+        BillDef(id: 9, company: "CLÍNICA SONRISAS", concept: "Empaste y limpieza", amount: 3_200, days: 4),
+        BillDef(id: 10, company: "SEGUROS MAPHRE", concept: "Seguro del coche", amount: 5_600, days: 4),
+        BillDef(id: 11, company: "ITV EXPRESS", concept: "Inspección + multa", amount: 10_000, days: 4),
+        BillDef(id: 12, company: "BODA DE TU PRIMO", concept: "Regalo, traje y viaje", amount: 18_000, days: 4),
+        BillDef(id: 13, company: "INMOBILIARIA LOS TIBURONES", concept: "Alquiler del piso", amount: 32_000, days: 4),
+        BillDef(id: 14, company: "REFORMAS PACO", concept: "El baño nuevo", amount: 56_000, days: 4),
+        BillDef(id: 15, company: "UNIVERSIDAD PRIVADA", concept: "Matrícula del máster", amount: 100_000, days: 5),
+        BillDef(id: 16, company: "CONCESIONARIO AUTOCAR", concept: "Coche nuevo (el viejo murió)", amount: 180_000, days: 5),
+        BillDef(id: 17, company: "AGENCIA TRIBUTARIA", concept: "Declaración de la renta", amount: 320_000, days: 5),
     ]
     /// cada año seguido sin declararte en bancarrota, las facturas se multiplican por esto
     static let yearGrowth = 7.0

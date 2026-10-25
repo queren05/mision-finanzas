@@ -35,6 +35,10 @@ struct CashPill: View {
 struct TreeView: View {
     @Environment(Game.self) private var game
     @State private var picked: SkillDef? = nil
+    @State private var zoom: CGFloat = 0.75
+    @State private var baseZoom: CGFloat = 0.75
+    @State private var bought = 0
+    @State private var boughtKey = 0
 
     private let cell: CGFloat = 92
     private let gapX: CGFloat = 16
@@ -45,11 +49,20 @@ struct TreeView: View {
         let rows = (Content.skills.map(\.row).max() ?? 0) + 1
         let w = CGFloat(cols) * cell + CGFloat(cols - 1) * gapX + 40
         let h = CGFloat(rows) * cell + CGFloat(rows - 1) * gapY + 40
+        let affordable = Content.skills.filter { game.canBuy($0) }.count
         ZStack(alignment: .top) {
             CorkBackground()
             VStack(spacing: 0) {
-                SheetHeader(title: "El corcho", subtitle: "Mejoras para esta partida")
-                CashPill(value: Fmt.money(game.s.cash)).padding(.bottom, 6)
+                SheetHeader(title: "El corcho", subtitle: "Toca para comprar · mantén para ver")
+                HStack(spacing: 10) {
+                    CashPill(value: Fmt.money(game.s.cash))
+                    Spacer()
+                    Button { setZoom(zoom - 0.15) } label: { Image(systemName: "minus.magnifyingglass").font(.system(size: 16, weight: .black)) }
+                        .buttonStyle(ChunkyButton(color: Ink.paper, size: 15, radius: 10))
+                    Button { setZoom(zoom + 0.15) } label: { Image(systemName: "plus.magnifyingglass").font(.system(size: 16, weight: .black)) }
+                        .buttonStyle(ChunkyButton(color: Ink.paper, size: 15, radius: 10))
+                }
+                .padding(.horizontal, 18).padding(.bottom, 6)
                 ScrollView([.horizontal, .vertical]) {
                     ZStack(alignment: .topLeading) {
                         Canvas { ctx, _ in
@@ -68,17 +81,62 @@ struct TreeView: View {
                         ForEach(Content.skills) { k in
                             SkillCard(def: k, size: cell)
                                 .position(center(k))
-                                .onTapGesture { Sound.shared.click(); picked = k }
+                                .onTapGesture {
+                                    // tocar compra al momento; si no llega el dinero, enseña la ficha
+                                    if game.canBuy(k) { game.buy(k) } else { Sound.shared.click(); picked = k }
+                                }
+                                .onLongPressGesture(minimumDuration: 0.35) { Sound.shared.click(); picked = k }
                         }
                     }
                     .frame(width: w, height: h)
+                    .scaleEffect(zoom, anchor: .topLeading)
+                    .frame(width: w * zoom, height: h * zoom, alignment: .topLeading)
                     .frame(minWidth: UIScreen.main.bounds.width)
                 }
                 .defaultScrollAnchor(.top)
                 .scrollIndicators(.hidden)
+                .simultaneousGesture(
+                    MagnifyGesture()
+                        .onChanged { v in zoom = min(1.6, max(0.45, baseZoom * v.magnification)) }
+                        .onEnded { _ in baseZoom = zoom }
+                )
+                // comprar de golpe todo lo que se pueda, empezando por lo más barato
+                Button { buyAll() } label: {
+                    Text(affordable == 0 ? "No llega para nada" : "Comprar todo lo que puedo").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(ChunkyButton(color: Ink.gold, size: 19))
+                .disabled(affordable == 0)
+                .padding(.horizontal, 18).padding(.vertical, 10)
+                .overlay(alignment: .top) {
+                    if bought > 0 {
+                        Text("+\(bought) mejoras").font(.chunky(20)).foregroundStyle(Ink.green)
+                            .padding(.horizontal, 10).padding(.vertical, 4)
+                            .outlined(10, color: Ink.paper, shadow: 3)
+                            .offset(y: -34)
+                            .id(boughtKey)
+                            .transition(.scale.combined(with: .opacity))
+                            .task { try? await Task.sleep(nanoseconds: 1_400_000_000); withAnimation { bought = 0 } }
+                    }
+                }
             }
         }
-        .sheet(item: $picked) { k in SkillDetail(def: k).presentationDetents([.height(330)]) }
+        .sheet(item: $picked) { k in SkillDetail(def: k).presentationDetents([.height(360)]) }
+    }
+
+    private func setZoom(_ z: CGFloat) {
+        Sound.shared.click()
+        withAnimation(.snappy) { zoom = min(1.6, max(0.45, z)) }
+        baseZoom = zoom
+    }
+
+    private func buyAll() {
+        var n = 0
+        while n < 500, let k = Content.skills.filter({ game.canBuy($0) }).min(by: { $0.cost(game.level($0)) < $1.cost(game.level($1)) }) {
+            game.buy(k, quiet: true)
+            n += 1
+        }
+        if n > 0 { game.save(); Sound.shared.till() }
+        withAnimation(.spring) { bought = n; boughtKey += 1 }
     }
 
     private func center(_ k: SkillDef) -> CGPoint {
@@ -154,16 +212,34 @@ struct SkillDetail: View {
             Text(visible ? def.name : "Bloqueada").font(.chunky(28)).foregroundStyle(Ink.ink)
             if visible {
                 Text(def.desc.filling(Fmt.num(def.per)) + " por nivel").font(.typewriter(16, bold: true)).foregroundStyle(Ink.ink).multilineTextAlignment(.center)
-                Text("Nivel \(l) de \(def.maxLevel)" + (l > 0 ? " · ahora " + def.desc.filling(Fmt.num(def.per * Double(l))) : ""))
-                    .font(.typewriter(13)).foregroundStyle(Ink.soft).multilineTextAlignment(.center)
-                if l < def.maxLevel {
-                    Button {
-                        game.buy(def)
-                    } label: {
-                        Text(game.canBuy(def) ? "Comprar · \(Fmt.money(def.cost(l)))" : "Te faltan \(Fmt.money(max(0, def.cost(l) - game.s.cash)))").frame(maxWidth: .infinity)
+                Text("Nivel \(l) de \(def.maxLevel)").font(.typewriter(13, bold: true)).foregroundStyle(Ink.soft)
+                if l > 0 || l < def.maxLevel {
+                    HStack(spacing: 8) {
+                        Text(l > 0 ? def.desc.filling(Fmt.num(def.per * Double(l))) : "Nada").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                        if l < def.maxLevel {
+                            Image(systemName: "arrow.right").font(.system(size: 12, weight: .black))
+                            Text(def.desc.filling(Fmt.num(def.per * Double(l + 1)))).font(.typewriter(12, bold: true)).foregroundStyle(Ink.green)
+                        }
                     }
-                    .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
-                    .disabled(!game.canBuy(def))
+                    .multilineTextAlignment(.center)
+                }
+                if l < def.maxLevel {
+                    HStack(spacing: 10) {
+                        Button {
+                            game.buy(def)
+                        } label: {
+                            Text(game.canBuy(def) ? "+1 · \(Fmt.money(def.cost(l)))" : "Te faltan \(Fmt.money(max(0, def.cost(l) - game.s.cash)))").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(ChunkyButton(color: Ink.gold, size: 18))
+                        .disabled(!game.canBuy(def))
+                        Button {
+                            var n = 0
+                            while n < 100 && game.canBuy(def) { game.buy(def, quiet: true); n += 1 }
+                            if n > 0 { game.save(); Sound.shared.till() }
+                        } label: { Text("Máx.") }
+                        .buttonStyle(ChunkyButton(color: Ink.green, text: Ink.paper, size: 18))
+                        .disabled(!game.canBuy(def))
+                    }
                 } else {
                     Stamp(text: "COMPLETA", color: Ink.green)
                 }
@@ -273,7 +349,7 @@ struct JewelryView: View {
     private var bankruptCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("BANCARROTA").font(.chunky(24)).foregroundStyle(Ink.red)
-            Text("Has pagado \(Fmt.money(game.s.paidThisCycle)) en facturas. Cada 50 € pagados son 1 punto de herencia.")
+            Text("Has pagado \(Fmt.money(game.s.paidThisCycle)) en facturas. Cada 200 € pagados son 1 punto de herencia.")
                 .font(.typewriter(13)).foregroundStyle(Ink.ink)
             Button { askBankrupt = true } label: { Text("Declararme en bancarrota · +\(Fmt.num(game.legacyGain))").frame(maxWidth: .infinity) }
                 .buttonStyle(ChunkyButton(color: Ink.red, text: Ink.paper, size: 17))

@@ -82,6 +82,11 @@ final class Desk {
     private var swingPos = CGPoint.zero
     private var lastPop = -10.0
     private var nextPart = 0
+    /// sucesos al azar durante el día
+    enum Happening { case lluvia, horaFeliz, terremoto, invasion, rebajas }
+    private(set) var happening: Happening? = nil
+    private(set) var happeningUntil = -10.0
+    private var nextHappening = Double.random(in: 10...22)
     /// aguante que se puede recuperar en un día (para que las partidas terminen)
     private var regainLeft = 0.0
     private var nextFrenzy = Desk.frenzyAt
@@ -106,6 +111,7 @@ final class Desk {
 
     private func pickKind() -> PigKind {
         if Double.random(in: 0..<1) < stats.golden { return .dorada }
+        if happening == .lluvia && Double.random(in: 0..<1) < 0.45 { return .dorada }
         let pool = PigKind.allCases.filter { $0.weight > 0 && tier >= $0.minTier }
         var weights = pool.map { $0 == .gorda ? $0.weight * (1 + stats.fat * 10) : $0.weight }
         let total = weights.reduce(0, +)
@@ -244,7 +250,7 @@ final class Desk {
             floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
         }
         report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
-        var value = pig.value * stats.loot * comboMult * (frenzy ? frenzyGain : 1)
+        var value = pig.value * stats.loot * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : 1)
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
@@ -323,6 +329,40 @@ final class Desk {
         return Color(hex: skin.shards.randomElement()!)
     }
 
+    private func startHappening() {
+        let all: [Happening] = [.lluvia, .horaFeliz, .terremoto, .invasion, .rebajas]
+        let h = all.randomElement()!
+        let mid = CGPoint(x: size.width / 2, y: top + 150)
+        Sound.shared.fanfare()
+        switch h {
+        case .lluvia:
+            happening = h; happeningUntil = time + 7
+            floaters.append(Floater(text: "¡LLUVIA DE ORO!", pos: mid, born: time, color: Ink.gold, size: 40))
+        case .horaFeliz:
+            happening = h; happeningUntil = time + 8
+            floaters.append(Floater(text: "¡HORA FELIZ! ×3", pos: mid, born: time, color: Ink.green, size: 40))
+        case .terremoto:
+            shake = 22
+            floaters.append(Floater(text: "¡TERREMOTO!", pos: mid, born: time, color: Ink.red, size: 40))
+            var killed: [Int] = []
+            for i in pigs.indices where !pigs[i].dead {
+                pigs[i].hp -= pigs[i].maxHP * 0.45
+                pigs[i].hitAt = time
+                addCrack(i, from: pigs[i].pos)
+                if pigs[i].hp <= 0 { killed.append(i) }
+            }
+            swingKills = 0; swingEarned = 0
+            for i in killed { breakPig(i) }
+            pigs.removeAll { $0.dead }
+        case .invasion:
+            floaters.append(Floater(text: "¡INVASIÓN DE HUCHAS!", pos: mid, born: time, color: Ink.pink, size: 36))
+            for _ in 0..<min(30, max(10, stats.maxPigs / 3)) { spawn() }
+        case .rebajas:
+            floaters.append(Floater(text: "¡REBAJAS! +aguante", pos: mid, born: time, color: Ink.blue, size: 36))
+            stamina = min(stats.stamina, stamina + (stats.stamina * 0.15).rounded())
+        }
+    }
+
     /// recuperar aguante, con tope por día
     private func regain(_ v: Double, at p: CGPoint) {
         // nunca por encima del aguante máximo
@@ -389,6 +429,12 @@ final class Desk {
                 spawnTimer = stats.spawnEvery * Double.random(in: 0.7...1.3)
                 if pigs.count < min(220, stats.maxPigs + (frenzy ? max(10, stats.maxPigs / 2) : 0)) { spawn() }
             }
+        }
+        // sucesos: lluvia de oro, hora feliz, terremoto, invasión y rebajas de aguante
+        if happening != nil && time > happeningUntil { happening = nil }
+        if time >= nextHappening && (stamina > 0 || frenzy) && !finished {
+            nextHappening = time + Double.random(in: 16...30)
+            startHappening()
         }
         if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
 

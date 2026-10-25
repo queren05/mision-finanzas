@@ -163,7 +163,7 @@ struct HomeView: View {
     private var bestiaryCard: some View {
         Button { Sound.shared.click(); sheet = .bestiary } label: {
             HStack(spacing: 12) {
-                KindIcon(kind: PigKind.allCases.filter { game.s.tier >= $0.minTier }.max { $0.minTier < $1.minTier } ?? .normal, size: 52)
+                KindIcon(kind: PigKind.allCases.filter { game.s.bestTier >= $0.minTier }.max { $0.minTier < $1.minTier } ?? .normal, size: 52)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("El huchario").font(.chunky(20)).foregroundStyle(Ink.ink)
                     PigLevelStrip()

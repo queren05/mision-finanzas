@@ -188,7 +188,11 @@ extension Game {
         while s.pigXP >= PigLevel.needed(s.tier) {
             s.pigXP -= PigLevel.needed(s.tier)
             s.tier += 1
-            fresh += PigKind.allCases.filter { $0.minTier == s.tier && !$0.special || ($0 == .rey && $0.minTier == s.tier) }
+            // solo se celebra la primera vez que sale cada una
+            if s.tier > s.bestTier {
+                fresh += PigKind.allCases.filter { $0.minTier == s.tier && (!$0.special || $0 == .rey) }
+                s.bestTier = s.tier
+            }
         }
         if !fresh.isEmpty { newKinds += fresh }
     }
@@ -269,7 +273,7 @@ extension Game {
         case .hammers: return Double(s.hammersOwned.count)
         case .quests: return st.missions
         case .bestDay: return st.bestDay
-        case .pigLevel: return Double(s.tier)
+        case .pigLevel: return Double(s.bestTier)
         }
     }
 

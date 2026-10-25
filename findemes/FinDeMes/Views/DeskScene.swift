@@ -220,6 +220,8 @@ final class DeskScene: SKScene {
     private let tutLow1 = SKSpriteNode()
     private let tutLow2 = SKSpriteNode()
     private var lastCombo = -1
+    private let happNode = SKSpriteNode()
+    private var lastHapp = ""
     private var lastComboColor = ""
 
     @MainActor
@@ -233,7 +235,8 @@ final class DeskScene: SKScene {
         bg.zPosition = -1000
         bg.texture = Tex.item("mesa", ext: "jpg")
         world.addChild(bg)
-        for n in [comboNode, multNode, comboBar, frenzyTint, frenzyBack, frenzyFill, tutRing, tutText, tutHand, tutLow1, tutLow2] {
+        happNode.zPosition = 620
+        for n in [happNode, comboNode, multNode, comboBar, frenzyTint, frenzyBack, frenzyFill, tutRing, tutText, tutHand, tutLow1, tutLow2] {
             n.isHidden = true
             addChild(n)
         }
@@ -630,6 +633,26 @@ final class DeskScene: SKScene {
             frenzyFill.position = P((w - bw) / 2, top + 50)
         } else {
             frenzyTint.isHidden = true; frenzyBack.isHidden = true; frenzyFill.isHidden = true
+        }
+        // suceso en marcha (con los segundos que le quedan)
+        if let h = desk.happening {
+            let left = Int(ceil(desk.happeningUntil - t))
+            let name: String
+            switch h {
+            case .lluvia: name = "Lluvia de oro"
+            case .horaFeliz: name = "Hora feliz ×3"
+            default: name = ""
+            }
+            let key = "\(name) \(left)"
+            if key != lastHapp {
+                lastHapp = key
+                let tex = Tex.text(name + " · \(left) s", 18, UIColor(h == .lluvia ? Ink.gold : Ink.green))
+                happNode.texture = tex; happNode.size = tex.size()
+            }
+            happNode.isHidden = name.isEmpty
+            happNode.position = P(w / 2, top + 84)
+        } else {
+            happNode.isHidden = true
         }
         let combo = desk.combo
         guard combo >= 3 else { comboNode.isHidden = true; multNode.isHidden = true; comboBar.isHidden = true; lastCombo = -1; return }

@@ -228,7 +228,7 @@ final class Game {
     // MARK: - Bancarrota (prestigio)
 
     /// 1 punto de herencia por cada 50 € pagados en facturas
-    var legacyGain: Double { floor(s.paidThisCycle / 50 * (1 + ringValue(.legacy) / 100)) }
+    var legacyGain: Double { floor(s.paidThisCycle / 200 * (1 + ringValue(.legacy) / 100)) }
     var startCash: Double {
         let l = ringValue(.startCash)
         return l > 0 ? 50 * pow(4, l - 1) : 0
@@ -239,7 +239,8 @@ final class Game {
         s.legacy += g
         s.stats.bankruptcies += 1
         s.cash = 0
-        s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0
+        // cada partida las huchas vuelven a empezar (el huchario recuerda las descubiertas)
+        s.day = 1; s.year = 0; s.billIndex = 0; s.paidThisCycle = 0; s.tier = 0; s.pigXP = 0
         s.hammer = 0; s.hammersOwned = [0]; s.skills = [:]
         s.awaitingTaxChoice = false
         recompute()
@@ -318,14 +319,14 @@ final class Game {
     func isVisible(_ k: SkillDef) -> Bool { k.parent == nil || (s.skills[k.parent!] ?? 0) > 0 || level(k) > 0 }
 
     @discardableResult
-    func buy(_ k: SkillDef) -> Bool {
-        guard canBuy(k) else { Sound.shared.denied(); return false }
+    func buy(_ k: SkillDef, quiet: Bool = false) -> Bool {
+        guard canBuy(k) else { if !quiet { Sound.shared.denied() }; return false }
         s.cash -= k.cost(level(k))
         s.skills[k.id] = level(k) + 1
         progressQuests(.mejoras, add: 1)
         recompute()
-        Sound.shared.coin()
-        save()
+        // comprando muchas de golpe, se guarda y suena una sola vez al final
+        if !quiet { Sound.shared.coin(); save() }
         return true
     }
 
