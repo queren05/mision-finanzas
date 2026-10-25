@@ -5,7 +5,7 @@ import SwiftUI
 
 // MARK: - Martillos
 
-enum HammerStyle { case chancla, toy, claw, mallet, mace, jack, sledge, thunder, thunderGold, diamond, cosmic, goldFlop, fire, ice, viking, anvil }
+enum HammerStyle { case chancla, toy, claw, mallet, mace, jack, sledge, thunder, thunderGold, diamond, cosmic, goldFlop, fire, ice, viking, anvil, plunger, swatter, pan, bat, choco, gavel }
 
 struct HammerDef: Identifiable {
     let id: Int
@@ -23,7 +23,7 @@ struct HammerDef: Identifiable {
 // MARK: - Huchas
 
 enum PigKind: String, Codable, CaseIterable {
-    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica, hielo, suerte, zombi, millonaria, ninja, payaso, pirata, vampiro, titan
+    case normal, gorda, ruedas, cristal, acorazada, bomba, dorada, rey, gigante, fantasma, madre, diamante, arcoiris, robot, lava, cosmica, hielo, suerte, zombi, millonaria, ninja, payaso, pirata, vampiro, titan, momia, alien, nube, reina, fenix, agujero
 
     var name: String {
         switch self {
@@ -52,6 +52,12 @@ enum PigKind: String, Codable, CaseIterable {
         case .pirata: "Hucha pirata"
         case .vampiro: "Hucha vampiro"
         case .titan: "Hucha titán"
+        case .momia: "Hucha momia"
+        case .alien: "Hucha alienígena"
+        case .nube: "Hucha nube"
+        case .reina: "Reina Cerdita"
+        case .fenix: "Hucha fénix"
+        case .agujero: "Hucha agujero negro"
         }
     }
     var line: String {
@@ -81,6 +87,12 @@ enum PigKind: String, Codable, CaseIterable {
         case .pirata: "Siempre lleva un sobre escondido."
         case .vampiro: "Al romperla te devuelve 3 de aguante."
         case .titan: "Enorme. Al romperla tiembla toda la mesa."
+        case .momia: "Lleva tres mil años ahorrando."
+        case .alien: "Al romperla se lleva a tres huchas en su nave."
+        case .nube: "Al romperla llueven huchas doradas."
+        case .reina: "La mujer del Rey. Suelta sobres buenos."
+        case .fenix: "Renace de sus cenizas una vez."
+        case .agujero: "Al romperla se traga todo lo que tiene cerca."
         }
     }
     var hp: Double {
@@ -90,6 +102,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 9; case .lava: 6; case .cosmica: 30
         case .hielo: 25; case .suerte: 6; case .zombi: 10; case .millonaria: 60
         case .ninja: 6; case .payaso: 12; case .pirata: 20; case .vampiro: 18; case .titan: 120
+        case .momia: 40; case .alien: 25; case .nube: 15; case .reina: 150; case .fenix: 30; case .agujero: 80
         }
     }
     var value: Double {
@@ -99,6 +112,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 18; case .lava: 14; case .cosmica: 150
         case .hielo: 40; case .suerte: 30; case .zombi: 35; case .millonaria: 1_000
         case .ninja: 45; case .payaso: 30; case .pirata: 90; case .vampiro: 70; case .titan: 500
+        case .momia: 120; case .alien: 160; case .nube: 140; case .reina: 800; case .fenix: 200; case .agujero: 600
         }
     }
     var size: Double {
@@ -108,6 +122,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 72; case .lava: 74; case .cosmica: 96
         case .hielo: 88; case .suerte: 64; case .zombi: 70; case .millonaria: 110
         case .ninja: 58; case .payaso: 80; case .pirata: 76; case .vampiro: 72; case .titan: 175
+        case .momia: 80; case .alien: 68; case .nube: 92; case .reina: 140; case .fenix: 76; case .agujero: 100
         }
     }
     var speed: Double {
@@ -117,6 +132,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 45; case .lava: 12; case .cosmica: 22
         case .hielo: 4; case .suerte: 28; case .zombi: 10; case .millonaria: 18
         case .ninja: 140; case .payaso: 22; case .pirata: 20; case .vampiro: 34; case .titan: 4
+        case .momia: 6; case .alien: 50; case .nube: 60; case .reina: 8; case .fenix: 30; case .agujero: 3
         }
     }
     /// a partir de qué nivel de las huchas aparece (el nivel sube rompiéndolas)
@@ -127,6 +143,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 45; case .lava: 52; case .cosmica: 60
         case .hielo: 68; case .suerte: 75; case .zombi: 82; case .millonaria: 100
         case .ninja: 90; case .payaso: 96; case .pirata: 108; case .vampiro: 120; case .titan: 135
+        case .momia: 150; case .alien: 165; case .nube: 180; case .reina: 190; case .fenix: 205; case .agujero: 220
         }
     }
     var weight: Double {
@@ -136,6 +153,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .robot: 6; case .lava: 4; case .cosmica: 1.5
         case .hielo: 5; case .suerte: 2; case .zombi: 5; case .millonaria: 0.6
         case .ninja: 6; case .payaso: 4; case .pirata: 3; case .vampiro: 4; case .titan: 1.2
+        case .momia: 4; case .alien: 3; case .nube: 3; case .reina: 0.8; case .fenix: 2; case .agujero: 1
         }
     }
     var color: Color {
@@ -165,6 +183,12 @@ enum PigKind: String, Codable, CaseIterable {
         case .pirata: Color(hex: "#c9965e")
         case .vampiro: Color(hex: "#8a1f2a")
         case .titan: Color(hex: "#9aa1a9")
+        case .momia: Color(hex: "#e7d8b4")
+        case .alien: Color(hex: "#8fe36a")
+        case .nube: Color(hex: "#f4f8ff")
+        case .reina: Color(hex: "#f5a7b8")
+        case .fenix: Color(hex: "#f0642a")
+        case .agujero: Color(hex: "#2a2440")
         }
     }
     var dark: Color {
@@ -190,6 +214,12 @@ enum PigKind: String, Codable, CaseIterable {
         case .pirata: Color(hex: "#6e4126")
         case .vampiro: Color(hex: "#4a0f18")
         case .titan: Color(hex: "#5a5f66")
+        case .momia: Color(hex: "#b9a77e")
+        case .alien: Color(hex: "#3d8b4f")
+        case .nube: Color(hex: "#b8c8e0")
+        case .reina: Ink.pinkDark
+        case .fenix: Color(hex: "#f2b632")
+        case .agujero: Color(hex: "#8a5cc2")
         }
     }
     /// las que salen al azar (la dorada y el rey salen aparte)
@@ -303,6 +333,12 @@ enum Content {
         HammerDef(id: 13, name: "Mazo de hielo eterno", line: "Las huchas se quedan heladas.", cost: 6e14, damage: 4.5e6, speed: 3.6, radius: 185, style: .ice, head: "#9fe8ff", handle: "#e6f6ff"),
         HammerDef(id: 14, name: "Hacha vikinga", line: "No es un martillo. Da igual.", cost: 9e15, damage: 2e7, speed: 4.0, radius: 200, style: .viking, head: "#c9ccd2", handle: "#8a5a36"),
         HammerDef(id: 15, name: "Un yunque con un palo", line: "El final. Literalmente.", cost: 1.5e17, damage: 1e8, speed: 4.5, radius: 230, style: .anvil, head: "#5a5f66", handle: "#b07a4a"),
+        HammerDef(id: 16, name: "Desatascador industrial", line: "Del fontanero del quinto.", cost: 2.2e18, damage: 4e8, speed: 4.0, radius: 220, style: .plunger, head: "#c8323c", handle: "#c9965e"),
+        HammerDef(id: 17, name: "Matamoscas eléctrico", line: "Chisporrotea. Mucho.", cost: 3.4e19, damage: 1.4e9, speed: 5.5, radius: 190, style: .swatter, head: "#f2b632", handle: "#3a3a3a"),
+        HammerDef(id: 18, name: "La sartén de la abuela", line: "Más peligrosa que la chancla.", cost: 5e20, damage: 6e9, speed: 3.8, radius: 240, style: .pan, head: "#2a2a30", handle: "#2a2420"),
+        HammerDef(id: 19, name: "Bate de béisbol", line: "¡Home run!", cost: 7.5e21, damage: 2.4e10, speed: 4.2, radius: 250, style: .bat, head: "#d9b27c", handle: "#1d1a17"),
+        HammerDef(id: 20, name: "Mazo de chocolate", line: "Se derrite de tanto dinero.", cost: 1.1e23, damage: 9e10, speed: 4.4, radius: 250, style: .choco, head: "#6b3a1f", handle: "#f4efe6"),
+        HammerDef(id: 21, name: "El mazo del juez", line: "Culpables. Todas.", cost: 1.7e24, damage: 4e11, speed: 5.0, radius: 270, style: .gavel, head: "#8a5a36", handle: "#7a4a2a"),
     ]
 
     static let bills: [BillDef] = [
@@ -403,6 +439,12 @@ enum Content {
         RingDef(id: "diadema", name: "Diadema", desc: "Las huchas suben de nivel un %\u{2009}% más rápido", effect: .pigXP, per: 8, maxLevel: 15, baseCost: 120, growth: 1.75, color: "#8a5cc2", bracelet: true),
         RingDef(id: "llavero", name: "Llavero de casa", desc: "En la hucha de casa caben +% h más", effect: .bankHours, per: 1, maxLevel: 12, baseCost: 35, growth: 1.7, color: "#d9a441", bracelet: true),
         RingDef(id: "compromiso", name: "Anillo de compromiso", desc: "Encargos +%\u{2009}% de premio", effect: .quests, per: 20, maxLevel: 15, baseCost: 80, growth: 1.7, color: "#e6e8ec", bracelet: false),
+        RingDef(id: "amatista", name: "Anillo de amatista", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 30, maxLevel: 25, baseCost: 120, growth: 1.6, color: "#8a5cc2", bracelet: false),
+        RingDef(id: "perla", name: "Anillo de perla", desc: "+%\u{2009}% de dinero", effect: .loot, per: 80, maxLevel: 50, baseCost: 800, growth: 1.5, color: "#f4efe6", bracelet: false),
+        RingDef(id: "obsidiana", name: "Anillo de obsidiana", desc: "+%\u{2009}% de daño", effect: .damage, per: 80, maxLevel: 50, baseCost: 800, growth: 1.5, color: "#1d1a17", bracelet: false),
+        RingDef(id: "topacio", name: "Anillo de topacio", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 10, maxLevel: 30, baseCost: 150, growth: 1.6, color: "#f0a020", bracelet: false),
+        RingDef(id: "ambar", name: "Colgante de ámbar", desc: "+%\u{2009}% de experiencia", effect: .xp, per: 15, maxLevel: 20, baseCost: 200, growth: 1.6, color: "#e8962a", bracelet: true),
+        RingDef(id: "luna", name: "Colgante de la luna", desc: "Las huchas suben de nivel un %\u{2009}% más rápido", effect: .pigXP, per: 10, maxLevel: 15, baseCost: 300, growth: 1.75, color: "#e6e8ec", bracelet: true),
         RingDef(id: "diamantes", name: "Anillo de diamantes", desc: "+%\u{2009}% de dinero", effect: .loot, per: 60, maxLevel: 50, baseCost: 500, growth: 1.5, color: "#f4fbff", bracelet: false),
     ]
 
@@ -431,6 +473,18 @@ enum Content {
         CoinDef(id: "galeon", name: "Doblón del galeón", line: "Del fondo del mar", rarity: .legendaria, metal: "#f2b632", mark: "⚓"),
         CoinDef(id: "chocolate", name: "Moneda de chocolate", line: "Sigue envuelta", rarity: .legendaria, metal: "#7a4a2a", mark: "C"),
         CoinDef(id: "primera", name: "La primera peseta", line: "1868. Única.", rarity: .legendaria, metal: "#e0b84a", mark: "I"),
+        CoinDef(id: "kopek", name: "Kópek", line: "Rusia, céntimo de rublo", rarity: .comun, metal: "#a5703a", mark: "k"),
+        CoinDef(id: "won", name: "Won", line: "Corea, con agujero", rarity: .comun, metal: "#c2c4c8", mark: "₩"),
+        CoinDef(id: "peso", name: "Peso", line: "México", rarity: .comun, metal: "#c9a24a", mark: "$"),
+        CoinDef(id: "thaler", name: "Tálero", line: "Bohemia, 1520", rarity: .rara, metal: "#d0d2d6", mark: "T"),
+        CoinDef(id: "denario", name: "Denario", line: "Roma, plata", rarity: .rara, metal: "#b9bcc2", mark: "X"),
+        CoinDef(id: "cruzado", name: "Cruzado", line: "Portugal, oro", rarity: .rara, metal: "#e0b84a", mark: "✚"),
+        CoinDef(id: "aureo", name: "Áureo", line: "Roma, oro puro", rarity: .epica, metal: "#f2b632", mark: "A"),
+        CoinDef(id: "solidus", name: "Sólido", line: "Bizancio", rarity: .epica, metal: "#e8c040", mark: "S"),
+        CoinDef(id: "ryo", name: "Ryō", line: "Japón, de los samuráis", rarity: .epica, metal: "#f2c94a", mark: "両"),
+        CoinDef(id: "lunar", name: "Moneda lunar", line: "Cayó de la Luna", rarity: .legendaria, metal: "#e6e8ec", mark: "☾"),
+        CoinDef(id: "maldito", name: "Doblón maldito", line: "Del capitán Cerdobarba", rarity: .legendaria, metal: "#4a4552", mark: "☠"),
+        CoinDef(id: "huchaoro", name: "La hucha de oro", line: "La madre de todas", rarity: .legendaria, metal: "#f2b632", mark: "♥"),
     ]
 }
 
@@ -479,6 +533,8 @@ extension PigKind {
         case .hielo: "cristal"
         case .millonaria: "oro"
         case .titan: "hierro"
+        case .momia: "normal"
+        case .agujero: "bomba"
         default: "normal"
         }
     }

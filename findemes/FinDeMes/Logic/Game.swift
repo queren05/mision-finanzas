@@ -29,6 +29,9 @@ struct HitStats {
     var frenzyExtra = 0.0
     var frenzyEarly = 0
     var frenzyMoney = 0.0
+    var pet: PetDef? = nil
+    var petLevel = 0
+    var petMult = 1.0
 }
 
 struct DayReport: Identifiable {
@@ -187,6 +190,10 @@ final class Game {
             case .critDamage: st.critMult += v / 100
             case .frenzy: st.frenzyExtra += v
             case .golden: st.golden += v / 100
+            case .radius: radiusPct += v
+            case .chest: st.chest += v / 100
+            case .frenzyMoney: st.frenzyMoney += v / 100
+            case .pierce: st.pierce += v / 100
             }
         }
         // los tótems puestos
@@ -203,7 +210,10 @@ final class Game {
             case .stamina: st.stamina += 10 * l; st.drainSave += 0.02 * l
             case .frenzy: st.frenzyExtra += l; st.frenzyMoney += 0.25 * l
             case .dragon: lootMul *= 1 + 0.6 * l; dmgMul *= 1 + 0.6 * l; staminaMul *= 0.7
-            case .casino, .pigXP, .discount: break
+            case .startPigs: st.startPigs += Int(8 * l)
+            case .combo: st.frenzyEarly += Int(2 * l)
+            case .pet: st.petMult += 0.4 * l
+            case .casino, .pigXP, .discount, .legacy: break
             }
         }
         // cada moneda de la colección da dinero para siempre
@@ -229,8 +239,14 @@ final class Game {
         case .cosmic: st.frenzyEarly += 10
         case .goldFlop: st.loot *= 1.5; st.chest *= 2
         case .viking: st.crit += 0.25; st.critMult += 1.5
+        case .plunger: st.maxPigs += 25; st.startPigs += 10
+        case .swatter: st.speed *= 1.4
+        case .pan: st.crit += 0.3; st.chest *= 3
+        case .bat: st.radius *= 1.4; st.collateral += 0.6
+        case .choco: st.loot *= 3
         default: break
         }
+        if let p = Content.pets.first(where: { $0.id == s.pet }), let l = s.pets[p.id], l > 0 { st.pet = p; st.petLevel = l }
         stats = st
     }
 
@@ -281,7 +297,7 @@ final class Game {
     // MARK: - Bancarrota (prestigio)
 
     /// 1 punto de herencia por cada 50 € pagados en facturas
-    var legacyGain: Double { floor(s.paidThisCycle / 200 * (1 + ringValue(.legacy) / 100)) }
+    var legacyGain: Double { floor(s.paidThisCycle / 200 * (1 + ringValue(.legacy) / 100 + totemValue(.legacy) * 0.15)) }
     var startCash: Double {
         let l = ringValue(.startCash)
         return l > 0 ? 50 * pow(4, l - 1) : 0

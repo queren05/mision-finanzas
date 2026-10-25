@@ -20,6 +20,12 @@ extension HammerStyle {
         case .ice: "Congelación"
         case .viking: "Furia vikinga"
         case .anvil: "Temblor"
+        case .plunger: "Ventosa"
+        case .swatter: "Descarga"
+        case .pan: "Sartenazo"
+        case .bat: "Home run"
+        case .choco: "Bombón"
+        case .gavel: "Sentencia"
         }
     }
     var perk: String {
@@ -40,7 +46,13 @@ extension HammerStyle {
         case .ice: "Las huchas golpeadas se congelan y reciben +30 % de daño"
         case .viking: "+25 % de crítico y críticos +150 %"
         case .anvil: "Cada golpe hace temblar toda la mesa"
+        case .plunger: "+25 huchas a la vez y +10 al empezar"
+        case .swatter: "Rayos y +40 % de velocidad"
+        case .pan: "+30 % de crítico y el triple de sobres"
+        case .bat: "+40 % de alcance y golpea fuerte a las de alrededor"
+        case .choco: "×3 de dinero"
+        case .gavel: "8 % de romper una hucha de un golpe"
         }
     }
-    var lightning: Bool { self == .thunder || self == .thunderGold }
+    var lightning: Bool { self == .thunder || self == .thunderGold || self == .swatter }
 }

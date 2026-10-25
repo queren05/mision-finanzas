@@ -85,13 +85,22 @@ final class Desk {
     private var lastPop = -10.0
     private var nextPart = 0
     /// sucesos al azar durante el día
-    enum Happening { case lluvia, horaFeliz, terremoto, invasion, rebajas }
+    enum Happening { case lluvia, horaFeliz, terremoto, invasion, rebajas, desfile, visita, estampida }
     private(set) var happening: Happening? = nil
     private(set) var happeningUntil = -10.0
     private var nextHappening = Double.random(in: 10...22)
     /// aguante que se puede recuperar en un día (para que las partidas terminen)
     private var regainLeft = 0.0
     private var nextFrenzy = Desk.frenzyAt
+    /// la mascota: dónde está, a quién persigue y cuándo vuelve a golpear
+    private(set) var petPos = CGPoint(x: 60, y: 400)
+    private(set) var petFacing = 1.0
+    private(set) var petHitAt = -10.0
+    private(set) var petMoving = false
+    private var petTarget: Int? = nil
+    private var petReady = 0.0
+    /// multiplica el dinero de lo que se rompe ahora mismo (el loro)
+    private var valueBoost = 1.0
     /// imágenes ya preparadas para este fotograma
     private var frameImgs: [String: GraphicsContext.ResolvedImage] = [:]
 
@@ -227,6 +236,7 @@ final class Desk {
         if pigs[i].hp >= pigs[i].maxHP { d *= 1 + stats.firstHit }
         if pigs[i].kind == .acorazada || pigs[i].kind == .robot { d *= min(1, 0.4 + stats.pierce) }
         if time < pigs[i].frozenUntil { d *= 1.3 }
+        if hammer.style == .gavel && Double.random(in: 0..<1) < 0.08 { d = max(d, pigs[i].hp) }
         pigs[i].hp -= d
         pigs[i].hitAt = time
         if hammer.style == .fire { pigs[i].burnUntil = time + 3 }
@@ -279,7 +289,7 @@ final class Desk {
             floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
         }
         report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
-        var value = pig.value * stats.loot * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : 1)
+        var value = pig.value * stats.loot * valueBoost * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : (happening == .estampida ? 2 : 1))
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
@@ -349,9 +359,27 @@ final class Desk {
         case .titan:
             explode(at: pig.pos, power: pig.maxHP * 0.5)
             shake = max(shake, 14)
+        case .alien:
+            let taken = pigs.indices.filter { !pigs[$0].dead && pigs[$0].kind != .rey && pigs[$0].kind != .reina }.shuffled().prefix(3)
+            for j in taken { blasts.append(Blast(pos: pigs[j].pos, born: time, radius: 40)); breakPig(j) }
+            if !taken.isEmpty && floaters.count < 16 { floaters.append(Floater(text: "¡ABDUCIDAS!", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 50), born: time, color: Color(hex: "#8fe36a"), size: 20)) }
+        case .nube:
+            for _ in 0..<3 { spawn(.dorada, at: pig.pos, scale: 0.8) }
+        case .fenix:
+            if pig.size > PigKind.fenix.size * 0.85 * 0.95 {
+                spawn(.fenix, at: pig.pos, scale: 0.9)
+                if floaters.count < 16 { floaters.append(Floater(text: "¡RENACE!", pos: CGPoint(x: pig.pos.x, y: pig.pos.y - 50), born: time, color: Ink.red, size: 20)) }
+            }
+        case .agujero:
+            blasts.append(Blast(pos: pig.pos, born: time, radius: 220))
+            var sucked: [Int] = []
+            for j in pigs.indices where !pigs[j].dead && hypot(pigs[j].pos.x - pig.pos.x, pigs[j].pos.y - pig.pos.y) < 220 && pigs[j].kind != .rey && pigs[j].kind != .reina { sucked.append(j) }
+            for j in sucked { breakPig(j) }
+            shake = max(shake, 18)
+            Sound.shared.boom()
         default: break
         }
-        let chestChance = pig.kind == .pirata ? 1 : pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
+        let chestChance = pig.kind == .pirata || pig.kind == .reina ? 1 : pig.kind == .arcoiris ? 0.7 : pig.kind == .cosmica ? 0.5 : stats.chest * (pig.kind == .dorada ? 6 : (pig.kind == .rey ? 30 : 1))
         if Double.random(in: 0..<1) < chestChance {
             let r = Game.shared.rollChest()
             report.chests.append(r)
@@ -366,7 +394,7 @@ final class Desk {
     }
 
     private func startHappening() {
-        let all: [Happening] = [.lluvia, .horaFeliz, .terremoto, .invasion, .rebajas]
+        let all: [Happening] = [.lluvia, .horaFeliz, .terremoto, .invasion, .rebajas, .desfile, .visita, .estampida]
         let h = all.randomElement()!
         let mid = CGPoint(x: size.width / 2, y: top + 150)
         Sound.shared.fanfare()
@@ -396,6 +424,15 @@ final class Desk {
         case .rebajas:
             floaters.append(Floater(text: "¡REBAJAS! +aguante", pos: mid, born: time, color: Ink.blue, size: 36))
             stamina = min(stats.stamina, stamina + (stats.stamina * 0.15).rounded())
+        case .desfile:
+            floaters.append(Floater(text: "¡DESFILE DORADO!", pos: mid, born: time, color: Ink.gold, size: 38))
+            for _ in 0..<8 { spawn(.dorada) }
+        case .visita:
+            floaters.append(Floater(text: "¡VISITA REAL!", pos: mid, born: time, color: Ink.purple, size: 40))
+            spawn(tier >= PigKind.reina.minTier && Bool.random() ? .reina : .rey)
+        case .estampida:
+            happening = h; happeningUntil = time + 8
+            floaters.append(Floater(text: "¡ESTAMPIDA! ×2", pos: mid, born: time, color: Ink.red, size: 40))
         }
     }
 
@@ -425,6 +462,77 @@ final class Desk {
         for i in killed { breakPig(i) }
     }
 
+    // MARK: - Mascota
+
+    var pet: PetDef? { stats.pet }
+
+    private func updatePet(_ dt: Double) {
+        guard let pet, !finished else { petMoving = false; return }
+        let active = stamina > 0 || frenzy
+        petReady -= dt * (frenzy ? 2 : 1)
+        if !active { petMoving = false; return }
+        // elige a quién perseguir
+        if petTarget == nil || !pigs.contains(where: { $0.id == petTarget && !$0.dead }) {
+            let alive = pigs.filter { !$0.dead }
+            if pet.skill == .richest {
+                petTarget = alive.max { $0.value < $1.value }?.id
+            } else {
+                petTarget = alive.min { hypot($0.pos.x - petPos.x, $0.pos.y - petPos.y) < hypot($1.pos.x - petPos.x, $1.pos.y - petPos.y) }?.id
+            }
+        }
+        guard let tid = petTarget, let i = pigs.firstIndex(where: { $0.id == tid }) else { petMoving = false; return }
+        let dx = pigs[i].pos.x - petPos.x, dy = pigs[i].pos.y - petPos.y
+        let d = hypot(dx, dy)
+        let reach = 24 + pigs[i].size * 0.4
+        if d > reach {
+            let step = min(d - reach + 1, pet.speed * (frenzy ? 1.6 : 1) * dt)
+            petPos.x += dx / d * step; petPos.y += dy / d * step
+            petMoving = true
+            if abs(dx) > 4 { petFacing = dx > 0 ? 1 : -1 }
+        } else {
+            petMoving = false
+            if petReady <= 0 { petAttack(i) }
+        }
+    }
+
+    private func petAttack(_ i: Int) {
+        guard let pet else { return }
+        let l = stats.petLevel
+        petReady = pet.interval(l)
+        petHitAt = time
+        swingKills = 0; swingEarned = 0
+        let base = stats.damage * pet.dmg(l) * stats.petMult
+        let crit = Double.random(in: 0..<1) < stats.crit
+        let at = pigs[i].pos
+        var killed: [Int] = []
+        var targets = [i]
+        switch pet.skill {
+        case .triple:
+            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead }.shuffled().prefix(2)
+        case .octopus:
+            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead && hypot(pigs[$0].pos.x - at.x, pigs[$0].pos.y - at.y) < 120 }
+        default: break
+        }
+        for j in targets where !pigs[j].dead {
+            if damage(j, base: base, crit: crit, at: pigs[j].pos, quiet: j != i) { killed.append(j) }
+        }
+        if pet.skill == .money { valueBoost = 2 }
+        for j in killed where !pigs[j].dead {
+            breakPig(j)
+            if pet.skill == .chests && Double.random(in: 0..<1) < 0.04 {
+                let r = Game.shared.rollChest()
+                report.chests.append(r)
+                floaters.append(Floater(text: "¡Sobre \(r.name.lowercased())!", pos: CGPoint(x: petPos.x, y: petPos.y - 50), born: time, color: r == .comun ? Ink.soft : r.color, size: 18))
+            }
+        }
+        valueBoost = 1
+        if pet.skill == .fire { explode(at: at, power: base * 0.5) }
+        pigs.removeAll { $0.dead }
+        if swingKills > 0 { Sound.shared.smash(big: false) } else { Sound.shared.hit(crit: crit) }
+        petTarget = nil
+        markDirty()
+    }
+
     private func markDirty() {
         guard !dirty else { return }
         dirty = true
@@ -450,6 +558,7 @@ final class Desk {
                 for _ in 0..<stats.startPigs { spawn() }
             }
             spawnTimer = stats.spawnEvery
+            petPos = CGPoint(x: size.width / 2, y: size.height - bottom - 30)
             if tier >= PigKind.rey.minTier && Double.random(in: 0..<1) < 0.25 + stats.king { kingDone = true; spawn(.rey) }
         }
         // parón de impacto: el tiempo casi se detiene un instante al romper
@@ -472,6 +581,7 @@ final class Desk {
             nextHappening = time + Double.random(in: 16...30)
             startHappening()
         }
+        updatePet(dt)
         if combo > 0 && time - comboAt > Desk.comboWindow && !frenzy { combo = 0; nextFrenzy = frenzyBase + 12 * report.frenzies }
 
         // se mueven
@@ -1055,6 +1165,12 @@ enum HammerArt {
         .ice: ("m_hielo", 192, 345, 96, 72),
         .viking: ("m_vikingo", 140, 319, 81, 81),
         .anvil: ("m_yunque", 244, 348, 126, 74),
+        .plunger: ("m_desatascador", 168, 348, 84, 61),
+        .swatter: ("m_matamoscas", 139, 324, 70, 95),
+        .pan: ("m_sarten", 188, 328, 94, 97),
+        .bat: ("m_bate", 98, 340, 49, 54),
+        .choco: ("m_chocolate", 222, 341, 111, 79),
+        .gavel: ("m_juez", 188, 338, 94, 67),
     ]
     static func image(_ h: HammerDef) -> Image? { ItemArt.image(meta[h.style]!.file) }
 

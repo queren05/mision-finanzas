@@ -48,7 +48,7 @@ struct Quest: Codable, Identifiable, Hashable {
 // MARK: - Logros: cada uno da +3 % de dinero para siempre
 
 enum AchMetric {
-    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts
+    case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts, pets
 }
 
 struct AchDef: Identifiable {
@@ -82,6 +82,7 @@ struct AchDef: Identifiable {
         case .scratches: return "Rasca \(n) rascas"
         case .totems: return "Ten \(n) tótems"
         case .parts: return "Sube \(n) niveles en el taller en una partida"
+        case .pets: return "Ten \(n) \(target == 1 ? "mascota" : "mascotas")"
         }
     }
 }
@@ -115,6 +116,11 @@ enum Meta {
             + tiers(.scratches, "rascas", [(1, "Rasca, rasca"), (30, "Uña de oro"), (200, "Lotero")])
             + tiers(.totems, "totems", [(1, "Chamán"), (6, "Bosque de tótems"), (12, "Todos los tótems")])
             + tiers(.parts, "taller", [(10, "Bricolaje"), (100, "Manitas de Paco"), (500, "Martillo tuneado")])
+            + tiers(.pets, "mascotas", [(1, "Compañía"), (4, "Zoo en casa"), (8, "Arca de las mascotas")])
+            + tiers(.coins, "album2", [(36, "Álbum ampliado")])
+            + tiers(.hammers, "martillos3", [(19, "Sartenazo"), (22, "El juez ha hablado")])
+            + tiers(.pigLevel, "huchas2", [(180, "En las nubes"), (220, "Agujero negro")])
+            + tiers(.totems, "totems2", [(16, "Bosque sagrado")])
             + tiers(.quests, "encargos", [(5, "Recadero"), (50, "Eficiente"), (250, "Indispensable"), (1_000, "Hombre para todo")])
     }()
 
@@ -135,7 +141,7 @@ enum Meta {
 
 /// lo que se desbloquea poco a poco (para no abrumar al principio)
 enum Feature {
-    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar
+    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar, mascotas
 
     var hint: String {
         switch self {
@@ -149,6 +155,7 @@ enum Feature {
         case .taller: "Paga tu primera factura"
         case .totems: "Arruínate una vez"
         case .bar: "Juega 3 días"
+        case .mascotas: "Arruínate una vez"
         }
     }
 }
@@ -167,6 +174,7 @@ extension Game {
         case .taller: return st.billsPaid >= 1 || veteran
         case .totems: return veteran
         case .bar: return st.days >= 3 || veteran
+        case .mascotas: return veteran
         }
     }
 
@@ -295,6 +303,7 @@ extension Game {
         case .scratches: return st.scratches
         case .totems: return Double(s.totems.count)
         case .parts: return Double(s.parts.values.reduce(0, +))
+        case .pets: return Double(s.pets.count)
         }
     }
 

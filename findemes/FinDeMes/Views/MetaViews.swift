@@ -375,7 +375,7 @@ struct KindIcon: View {
         .hueRotation(.degrees(kind == .arcoiris ? 120 : 0))
         .saturation(kind == .diamante || kind == .arcoiris ? 1.7 : 1)
         .overlay(alignment: .top) {
-            if kind == .rey { Image(systemName: "crown.fill").font(.system(size: size * 0.28)).foregroundStyle(Ink.gold).offset(y: -size * 0.12) }
+            if kind == .rey || kind == .reina { Image(systemName: "crown.fill").font(.system(size: size * 0.28)).foregroundStyle(Ink.gold).offset(y: -size * 0.12) }
         }
     }
 }
@@ -393,6 +393,10 @@ extension KindIcon {
         case .payaso: Color(hex: "#ffd9a0")
         case .pirata: Color(hex: "#e0b88a")
         case .vampiro: Color(hex: "#c05060")
+        case .momia: Color(hex: "#efe4c4")
+        case .alien: Color(hex: "#9fe87a")
+        case .fenix: Color(hex: "#ff9a5a")
+        case .agujero: Color(hex: "#6a5a90")
         default: .white
         }
     }

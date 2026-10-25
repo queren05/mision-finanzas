@@ -89,6 +89,29 @@ extension Game {
         save()
     }
 
+    // MARK: - Mascotas
+
+    func petLevel(_ p: PetDef) -> Int { s.pets[p.id] ?? 0 }
+
+    func buyPet(_ p: PetDef) {
+        let l = petLevel(p)
+        guard l < PetDef.maxLevel, s.legacy >= p.cost(l) else { Sound.shared.denied(); return }
+        s.legacy -= p.cost(l)
+        s.pets[p.id] = l + 1
+        if l == 0 { s.pet = p.id }
+        recompute()
+        Sound.shared.till()
+        save()
+    }
+
+    func pickPet(_ p: PetDef) {
+        guard petLevel(p) > 0 else { return }
+        s.pet = s.pet == p.id ? "" : p.id
+        Sound.shared.click()
+        recompute()
+        save()
+    }
+
     // MARK: - El bar
 
     var casinoBoost: Double { 1 + totemValue(.casino) * 0.03 }

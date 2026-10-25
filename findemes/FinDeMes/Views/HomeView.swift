@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar
+    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar, pets
     var id: String { rawValue }
 }
 
@@ -55,6 +55,7 @@ struct HomeView: View {
             case .workshop: WorkshopView()
             case .totems: TotemsView()
             case .bar: BarView()
+            case .pets: PetsView()
             }
         }
         .onAppear {
@@ -69,6 +70,7 @@ struct HomeView: View {
             if args.contains("-taller") { sheet = .workshop }
             if args.contains("-totems") { sheet = .totems }
             if args.contains("-bar") { sheet = .bar }
+            if args.contains("-mascotas") { sheet = .pets }
         }
     }
 
@@ -197,6 +199,7 @@ struct HomeView: View {
             drawer("Tótems", "\(game.s.totemsOn.count) de \(game.totemSlots) puestos", "pawprint.fill", Ink.green, badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, .totems) { sheet = .totems }
             drawer("Logros", "\(game.s.achievements.count) de \(Meta.achievements.count)", "rosette", Ink.gold, badge: game.achievementsReady > 0, .logros) { sheet = .achievements }
             drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
+            drawer("Mascotas", game.stats.pet?.name ?? "Ninguna", "pawprint.circle.fill", Ink.blue, badge: Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }, .mascotas) { sheet = .pets }
             drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
             drawer("Personajes", Content.skin(game.s.skin).name, "theatermasks.fill", Ink.green, badge: skinAvailable, .personajes) { sheet = .skins }
         }

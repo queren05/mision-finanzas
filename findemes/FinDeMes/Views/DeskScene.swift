@@ -221,6 +221,8 @@ final class DeskScene: SKScene {
     private let tutLow2 = SKSpriteNode()
     private var lastCombo = -1
     private let happNode = SKSpriteNode()
+    private let petNode = SKSpriteNode()
+    private let petShadow = SKSpriteNode()
     private var lastHapp = ""
     private var lastComboColor = ""
 
@@ -236,6 +238,19 @@ final class DeskScene: SKScene {
         bg.texture = Tex.item("mesa", ext: "jpg")
         world.addChild(bg)
         happNode.zPosition = 620
+        if let pet = desk.pet, let tex = Tex.item("pet_" + pet.id) {
+            petNode.texture = tex
+            let h = 62.0
+            petNode.size = CGSize(width: tex.size().width / tex.size().height * h, height: h)
+            petNode.anchorPoint = CGPoint(x: 0.5, y: 0.08)
+            petNode.zPosition = 450
+            petShadow.texture = Tex.ring(UIColor(Ink.ink), width: 30)
+            petShadow.size = CGSize(width: petNode.size.width * 0.7, height: 14)
+            petShadow.alpha = 0.18
+            petShadow.zPosition = 449
+            world.addChild(petShadow)
+            world.addChild(petNode)
+        }
         for n in [happNode, comboNode, multNode, comboBar, frenzyTint, frenzyBack, frenzyFill, tutRing, tutText, tutHand, tutLow1, tutLow2] {
             n.isHidden = true
             addChild(n)
@@ -299,6 +314,7 @@ final class DeskScene: SKScene {
         syncBlasts()
         syncFloaters()
         syncHUD()
+        syncPet()
         syncTutorial()
     }
 
@@ -365,6 +381,18 @@ final class DeskScene: SKScene {
                     n.body.color = UIColor(red: 0.8, green: 0.6, blue: 0.38, alpha: 1); n.body.colorBlendFactor = 0.45
                 case .vampiro:
                     n.body.color = UIColor(red: 0.6, green: 0.12, blue: 0.2, alpha: 1); n.body.colorBlendFactor = 0.6
+                case .momia:
+                    n.body.color = UIColor(red: 0.93, green: 0.88, blue: 0.74, alpha: 1); n.body.colorBlendFactor = 0.6
+                case .alien:
+                    n.body.color = UIColor(red: 0.5, green: 0.9, blue: 0.4, alpha: 1); n.body.colorBlendFactor = 0.55
+                case .nube:
+                    n.body.color = .white; n.body.colorBlendFactor = 0.65
+                case .reina:
+                    n.body.color = UIColor(red: 1, green: 0.75, blue: 0.85, alpha: 1); n.body.colorBlendFactor = 0.3
+                case .fenix:
+                    n.body.color = UIColor(red: 1, green: 0.45 + 0.2 * sin(t * 5 + Double(p.id)), blue: 0.15, alpha: 1); n.body.colorBlendFactor = 0.55
+                case .agujero:
+                    n.body.color = UIColor(hue: 0.75, saturation: 0.6, brightness: 0.3 + 0.1 * sin(t * 3), alpha: 1); n.body.colorBlendFactor = 0.7
                 default:
                     n.body.colorBlendFactor = 0
                 }
@@ -436,7 +464,7 @@ final class DeskScene: SKScene {
         let hx = skin.drawn ? dw * 0.12 : -dw / 2 + skin.head.x / skin.w * dw
         let hy = skin.drawn ? dh * 0.85 : (dh - skin.head.y / skin.h * dh) + n.body.position.y
         switch p.kind {
-        case .rey:
+        case .rey, .reina:
             let c = SKSpriteNode(texture: Tex.crown, size: CGSize(width: s * 0.42, height: s * 0.24))
             c.anchorPoint = CGPoint(x: 0.5, y: 0.15)
             c.position = CGPoint(x: hx, y: hy - s * 0.04)
@@ -624,6 +652,20 @@ final class DeskScene: SKScene {
         recycle(&floatMap, keep: keep)
     }
 
+    @MainActor private func syncPet() {
+        guard desk.pet != nil else { return }
+        let t = desk.time
+        let p = desk.petPos
+        let hop = desk.petMoving ? abs(sin(t * 14)) * 8 : 0
+        let hit = t - desk.petHitAt
+        let squash = hit < 0.18 ? 1 - 0.25 * sin(hit / 0.18 * .pi) : 1
+        petNode.position = P(p.x, p.y - hop)
+        petNode.xScale = desk.petFacing * (2 - squash)
+        petNode.yScale = squash
+        petNode.zRotation = hit < 0.18 ? -0.4 * desk.petFacing * sin(hit / 0.18 * .pi) : 0
+        petShadow.position = P(p.x, p.y + 2)
+    }
+
     @MainActor private func syncHUD() {
         let t = desk.time
         let w = size.width
@@ -649,6 +691,7 @@ final class DeskScene: SKScene {
             switch h {
             case .lluvia: name = "Lluvia de oro"
             case .horaFeliz: name = "Hora feliz ×3"
+            case .estampida: name = "Estampida ×2"
             default: name = ""
             }
             let key = "\(name) \(left)"

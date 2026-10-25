@@ -406,3 +406,67 @@ struct ScratchView: View {
         if card.prize != nil { claimed = game.claimScratch(card.prize) } else { Sound.shared.denied() }
     }
 }
+
+// MARK: - Mascotas
+
+struct PetsView: View {
+    @Environment(Game.self) private var game
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color(hex: "#3a5a7a").ignoresSafeArea()
+            VStack(spacing: 0) {
+                SheetHeader(title: "Mascotas", subtitle: "Rompen huchas por su cuenta")
+                CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(Content.pets) { p in PetRow(def: p) }
+                    }
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+    }
+}
+
+struct PetRow: View {
+    @Environment(Game.self) private var game
+    let def: PetDef
+    var body: some View {
+        let l = game.petLevel(def)
+        let on = game.s.pet == def.id && l > 0
+        let maxed = l >= PetDef.maxLevel
+        let cost = def.cost(l)
+        let shown = max(1, l)
+        HStack(spacing: 12) {
+            ItemImage(name: "pet_" + def.id).frame(width: 86, height: 80).opacity(l == 0 ? 0.55 : 1)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(def.name).font(.chunky(19)).foregroundStyle(Ink.ink)
+                    Text(l == 0 ? "Sin adoptar" : "Nv. \(l)/\(PetDef.maxLevel)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                }
+                Text(def.line).font(.typewriter(11)).foregroundStyle(Ink.soft)
+                HStack(alignment: .top, spacing: 5) {
+                    Image(systemName: "star.fill").font(.system(size: 11, weight: .black)).foregroundStyle(Ink.gold)
+                    Text(def.skillText).font(.typewriter(11, bold: true)).foregroundStyle(Ink.ink)
+                }
+                Text("Golpea con el \(Int(def.dmg(shown) * 100)) % de tu daño cada \(Fmt.dec(def.interval(shown), 1)) s")
+                    .font(.typewriter(11)).foregroundStyle(Ink.ink)
+                HStack(spacing: 8) {
+                    Button { game.buyPet(def) } label: {
+                        Text(maxed ? "MÁX." : (l == 0 ? "Adoptar · \(Fmt.num(cost))" : "Subir · \(Fmt.num(cost))")).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(ChunkyButton(color: Color(hex: "#f2d58a"), size: 14, radius: 10))
+                    .disabled(maxed || game.s.legacy < cost)
+                    if l > 0 {
+                        Button { game.pickPet(def) } label: { Text(on ? "Contigo" : "Llevar") }
+                            .buttonStyle(ChunkyButton(color: on ? Ink.paperDark : Ink.green, text: on ? Ink.ink : Ink.paper, size: 14, radius: 10))
+                    }
+                }
+                .padding(.top, 3)
+            }
+        }
+        .padding(10)
+        .paper(on ? Color(hex: "#fff6c8") : Ink.paper)
+    }
+}
