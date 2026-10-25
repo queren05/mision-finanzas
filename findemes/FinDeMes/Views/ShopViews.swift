@@ -394,7 +394,7 @@ struct SkinCard: View {
     @Environment(Game.self) private var game
     let def: SkinDef
     var body: some View {
-        let owned = game.s.skinsOwned.contains(def.id)
+        let owned = game.s.skinsOwned.contains(def.id) || def.cost == 0
         let using = game.s.skin == def.id
         let can = owned || game.s.legacy >= def.cost
         VStack(spacing: 8) {

@@ -567,10 +567,10 @@ extension Content {
     static let skins: [SkinDef] = [
         SkinDef(id: "vaca", name: "Vaca", cost: 0, w: 300, h: 226, head: CGPoint(x: 178, y: 46), shards: ["#ffffff", "#3a3a3a"], singular: "vaca", plural: "vacas", female: true),
         SkinDef(id: "cerdo", name: "Cerdito", cost: 0, w: 296, h: 211, head: CGPoint(x: 176, y: 39), shards: ["#f4b8c4", "#e48aa0"], singular: "cerdo", plural: "cerdos", female: false),
-        SkinDef(id: "carlino", name: "Carlino", cost: 20, w: 274, h: 251, head: CGPoint(x: 232, y: 35), shards: ["#f3e6c4", "#6b4a3a"], singular: "carlino", plural: "carlinos", female: false),
-        SkinDef(id: "llama", name: "Llama", cost: 30, w: 264, h: 307, head: CGPoint(x: 208, y: 12), shards: ["#a77b5a", "#ffffff"], singular: "llama", plural: "llamas", female: true),
-        SkinDef(id: "caballo", name: "Caballo", cost: 35, w: 294, h: 235, head: CGPoint(x: 258, y: 12), shards: ["#a0673e", "#3a2a20"], singular: "caballo", plural: "caballos", female: false),
-        SkinDef(id: "cebra", name: "Cebra", cost: 45, w: 292, h: 238, head: CGPoint(x: 260, y: 10), shards: ["#ffffff", "#1d1a17"], singular: "cebra", plural: "cebras", female: true),
+        SkinDef(id: "carlino", name: "Carlino", cost: 0, w: 274, h: 251, head: CGPoint(x: 232, y: 35), shards: ["#f3e6c4", "#6b4a3a"], singular: "carlino", plural: "carlinos", female: false),
+        SkinDef(id: "llama", name: "Llama", cost: 0, w: 264, h: 307, head: CGPoint(x: 208, y: 12), shards: ["#a77b5a", "#ffffff"], singular: "llama", plural: "llamas", female: true),
+        SkinDef(id: "caballo", name: "Caballo", cost: 0, w: 294, h: 235, head: CGPoint(x: 258, y: 12), shards: ["#a0673e", "#3a2a20"], singular: "caballo", plural: "caballos", female: false),
+        SkinDef(id: "cebra", name: "Cebra", cost: 0, w: 292, h: 238, head: CGPoint(x: 260, y: 10), shards: ["#ffffff", "#1d1a17"], singular: "cebra", plural: "cebras", female: true),
     ]
     static func skin(_ id: String) -> SkinDef { skins.first { $0.id == id } ?? skins[0] }
     static func playing(_ id: String) -> SkinDef { skin(id) }

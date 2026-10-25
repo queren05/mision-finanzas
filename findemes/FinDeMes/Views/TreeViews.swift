@@ -1,149 +1,237 @@
 import SwiftUI
 
-/// El árbol de mejoras (y el familiar): un tronco abajo y cinco ramas que crecen hacia arriba, una por color.
+/// Dónde va cada nota: la primera mejora en el centro y una estrella de cinco rayos (uno por rama)
+/// que se curvan un poco; las notas de cada rayo van en zigzag para que los largos no se alarguen tanto.
+struct Galaxy {
+    let size: CGSize
+    let center: CGPoint
+    /// centro de cada nota, por rama
+    let points: [[CGPoint]]
+    /// por dónde pasa el centro de cada rayo (para pintar el haz de color)
+    let rays: [[CGPoint]]
+
+    static let r0: CGFloat = 180     // distancia del centro a la primera nota de cada rayo
+    static let dr: CGFloat = 64      // lo que avanza el rayo en cada nota
+    static let zig: CGFloat = 44     // lo que se aparta cada nota a un lado y a otro
+    static let twist: CGFloat = 0.012
+
+    init(_ tree: SkillTree) {
+        let n = CGFloat(max(1, tree.branches.count))
+        func axis(_ b: Int, _ j: CGFloat) -> (CGPoint, CGFloat) {
+            let r = Galaxy.r0 + j * Galaxy.dr
+            let ang = -CGFloat.pi / 2 + CGFloat(b) * 2 * .pi / n + Galaxy.twist * j
+            return (CGPoint(x: r * cos(ang), y: r * sin(ang)), ang)
+        }
+        var pts: [[CGPoint]] = [], rays: [[CGPoint]] = []
+        for (b, list) in tree.branches.enumerated() {
+            pts.append(list.indices.map { j in
+                let (c, ang) = axis(b, CGFloat(j))
+                let side: CGFloat = j % 2 == 0 ? -Galaxy.zig : Galaxy.zig
+                return CGPoint(x: c.x - sin(ang) * side, y: c.y + cos(ang) * side)
+            })
+            rays.append([.zero] + (0...max(0, list.count - 1)).map { axis(b, CGFloat($0)).0 })
+        }
+        let all = pts.flatMap { $0 } + [.zero]
+        let pad: CGFloat = 90
+        let minX = (all.map(\.x).min() ?? 0) - pad, maxX = (all.map(\.x).max() ?? 0) + pad
+        let minY = (all.map(\.y).min() ?? 0) - pad, maxY = (all.map(\.y).max() ?? 0) + pad
+        size = CGSize(width: maxX - minX, height: maxY - minY)
+        center = CGPoint(x: -minX, y: -minY)
+        let o = center
+        points = pts.map { $0.map { CGPoint(x: $0.x + o.x, y: $0.y + o.y) } }
+        self.rays = rays.map { $0.map { CGPoint(x: $0.x + o.x, y: $0.y + o.y) } }
+    }
+
+    /// dónde empieza la vista (en el centro de la estrella)
+    var anchor: UnitPoint { UnitPoint(x: center.x / size.width, y: center.y / size.height) }
+
+    static let corcho = Galaxy(.corcho)
+    static let family = Galaxy(.family)
+}
+
+/// El árbol de mejoras (y el familiar): notas clavadas en el corcho con chinchetas y unidas con hilo, en forma de galaxia.
 struct TreeView: View {
     @Environment(Game.self) private var game
     var family = false
     @State private var picked: String? = nil
     @State private var bought = 0
     @State private var boughtKey = 0
+    @State private var zoom: CGFloat = 0.72
+    @State private var baseZoom: CGFloat = 0.72
 
     private var tree: SkillTree { family ? .family : .corcho }
+    private var galaxy: Galaxy { family ? .family : .corcho }
     private var defs: [SkillDef] { family ? Content.family : Content.skills }
-    private let rowH: CGFloat = 100
-    private let node: CGFloat = 58
-    private let base: CGFloat = 170
+    private let card: CGFloat = 86
 
     var body: some View {
-        let longest = tree.branches.map(\.count).max() ?? 0
+        let size = galaxy.size
         ZStack(alignment: .top) {
             CorkBackground(family: family)
             VStack(spacing: 0) {
                 SheetHeader(title: family ? "Árbol familiar" : "Árbol de mejoras", subtitle: family ? "Se queda para siempre" : "Se pierde con la bancarrota")
-                Group {
+                HStack(spacing: 10) {
                     if family { CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")) }
                     else { CashPill(value: Fmt.money(game.s.cash)) }
+                    Spacer()
+                    Button { setZoom(zoom - 0.15) } label: { Image(systemName: "minus.magnifyingglass").font(.system(size: 16, weight: .black)) }
+                        .buttonStyle(ChunkyButton(color: Ink.paper, size: 15, radius: 10))
+                    Button { setZoom(zoom + 0.15) } label: { Image(systemName: "plus.magnifyingglass").font(.system(size: 16, weight: .black)) }
+                        .buttonStyle(ChunkyButton(color: Ink.paper, size: 15, radius: 10))
                 }
-                .padding(.bottom, 6)
+                .padding(.horizontal, 16).padding(.bottom, 8)
                 legend.padding(.horizontal, 10).padding(.bottom, 4)
-                GeometryReader { g in
-                    let w = g.size.width
-                    let h = CGFloat(longest) * rowH + base + 40
-                    ScrollView(.vertical) {
-                        ZStack(alignment: .topLeading) {
-                            Canvas { ctx, _ in drawTree(ctx, w: w, h: h) }
-                                .frame(width: w, height: h)
-                            nodeView(tree.root).position(rootPos(w, h))
-                            ForEach(tree.branches.indices, id: \.self) { b in
-                                ForEach(tree.branches[b].indices, id: \.self) { j in
-                                    nodeView(tree.branches[b][j]).position(pos(b, j, w, h))
-                                }
+                ScrollView([.horizontal, .vertical]) {
+                    ZStack(alignment: .topLeading) {
+                        Canvas { ctx, _ in drawBoard(ctx) }
+                            .frame(width: size.width, height: size.height)
+                        note(tree.root, root: true).position(galaxy.center)
+                        ForEach(tree.branches.indices, id: \.self) { b in
+                            ForEach(tree.branches[b].indices, id: \.self) { j in
+                                note(tree.branches[b][j]).position(galaxy.points[b][j])
                             }
                         }
-                        .frame(width: w, height: h)
                     }
-                    .defaultScrollAnchor(.bottom)
-                    .scrollIndicators(.hidden)
+                    .frame(width: size.width, height: size.height)
+                    .scaleEffect(zoom, anchor: .topLeading)
+                    .frame(width: size.width * zoom, height: size.height * zoom, alignment: .topLeading)
                 }
+                .defaultScrollAnchor(galaxy.anchor)
+                .scrollIndicators(.hidden)
+                .simultaneousGesture(
+                    MagnifyGesture()
+                        .onChanged { v in zoom = min(1.4, max(0.35, baseZoom * v.magnification)) }
+                        .onEnded { _ in baseZoom = zoom }
+                )
                 panel
             }
         }
     }
 
-    // MARK: dibujo
-
-    private func colX(_ b: Int, _ w: CGFloat) -> CGFloat { w * (CGFloat(b) + 0.5) / CGFloat(Branch.allCases.count) }
-    private func rootPos(_ w: CGFloat, _ h: CGFloat) -> CGPoint { CGPoint(x: w / 2, y: h - 62) }
-    private func pos(_ b: Int, _ j: Int, _ w: CGFloat, _ h: CGFloat) -> CGPoint {
-        CGPoint(x: colX(b, w), y: h - base - CGFloat(j) * rowH)
+    private func setZoom(_ z: CGFloat) {
+        Sound.shared.click()
+        withAnimation(.snappy) { zoom = min(1.4, max(0.35, z)) }
+        baseZoom = zoom
     }
 
-    private func drawTree(_ ctx: GraphicsContext, w: CGFloat, h: CGFloat) {
-        let wood = Color(hex: "#7a4a2a"), woodLight = Color(hex: "#9a6438")
-        // el tronco
-        var trunk = Path()
-        trunk.move(to: CGPoint(x: w / 2 - 26, y: h))
-        trunk.addQuadCurve(to: CGPoint(x: w / 2 - 12, y: h - 120), control: CGPoint(x: w / 2 - 10, y: h - 50))
-        trunk.addLine(to: CGPoint(x: w / 2 + 12, y: h - 120))
-        trunk.addQuadCurve(to: CGPoint(x: w / 2 + 26, y: h), control: CGPoint(x: w / 2 + 10, y: h - 50))
-        trunk.closeSubpath()
-        ctx.fill(trunk, with: .color(woodLight))
-        ctx.stroke(trunk, with: .color(Ink.ink), lineWidth: 3)
-        for (b, list) in tree.branches.enumerated() {
-            guard !list.isEmpty else { continue }
-            let x = colX(b, w)
-            let start = CGPoint(x: w / 2, y: h - 110)
-            let first = pos(b, 0, w, h)
-            let last = pos(b, list.count - 1, w, h)
+    // MARK: el corcho: estrella a lápiz e hilos
+
+    private func pin(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x, y: p.y - card / 2 + 4) }
+
+    private func drawBoard(_ ctx: GraphicsContext) {
+        let c = galaxy.center
+        let pencil = Ink.ink.opacity(0.22)
+        // los rayos de la estrella: un haz de color muy suave detrás de cada rama
+        for (b, ray) in galaxy.rays.enumerated() where ray.count > 1 {
             var p = Path()
-            p.move(to: start)
-            p.addQuadCurve(to: first, control: CGPoint(x: x, y: start.y))
-            p.addLine(to: last)
-            ctx.stroke(p, with: .color(Ink.ink), style: StrokeStyle(lineWidth: 13, lineCap: .round, lineJoin: .round))
-            ctx.stroke(p, with: .color(wood), style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
-            // lo comprado se pinta del color de la rama
-            let top = list.lastIndex { game.level($0) > 0 }
-            if let top {
-                var lit = Path()
-                lit.move(to: start)
-                lit.addQuadCurve(to: first, control: CGPoint(x: x, y: start.y))
-                lit.addLine(to: pos(b, top, w, h))
-                ctx.stroke(lit, with: .color(Branch(rawValue: b)!.color), style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-            }
-            // hojitas a los lados
-            for j in 0..<list.count {
-                let c = pos(b, j, w, h)
-                let side: CGFloat = j % 2 == 0 ? 1 : -1
-                let leaf = Path(ellipseIn: CGRect(x: c.x + side * 18 - 7, y: c.y + rowH / 2 - 5, width: 14, height: 9))
-                ctx.fill(leaf, with: .color(Color(hex: "#5fa04a")))
-                ctx.stroke(leaf, with: .color(Ink.ink), lineWidth: 1.5)
+            p.addLines(ray)
+            let col = Branch(rawValue: b)!.color
+            ctx.stroke(p, with: .color(col.opacity(0.13)), style: StrokeStyle(lineWidth: 190, lineCap: .round, lineJoin: .round))
+            ctx.stroke(p, with: .color(Ink.paper.opacity(0.10)), style: StrokeStyle(lineWidth: 120, lineCap: .round, lineJoin: .round))
+        }
+        // estrella de cinco puntas dibujada a lápiz detrás de la primera nota, cada punta hacia su rayo
+        var star = Path()
+        for i in 0..<10 {
+            let r: CGFloat = i % 2 == 0 ? Galaxy.r0 - 50 : Galaxy.r0 * 0.36
+            let ang = -CGFloat.pi / 2 + CGFloat(i) * .pi / 5
+            let p = CGPoint(x: c.x + r * cos(ang), y: c.y + r * sin(ang))
+            if i == 0 { star.move(to: p) } else { star.addLine(to: p) }
+        }
+        star.closeSubpath()
+        ctx.fill(star, with: .color(Ink.paper.opacity(0.35)))
+        ctx.stroke(star, with: .color(pencil), style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
+        ctx.stroke(star.applying(CGAffineTransform(translationX: 2, y: -1.5)), with: .color(pencil.opacity(0.6)), style: StrokeStyle(lineWidth: 1.2, lineJoin: .round))
+
+        // hilos: de la chincheta de la anterior a la chincheta de cada nota, colgando un poco
+        for (b, list) in tree.branches.enumerated() {
+            let col = Branch(rawValue: b)!.color
+            for j in list.indices {
+                let k = list[j]
+                let from = j == 0 ? pin(c) : pin(galaxy.points[b][j - 1])
+                let to = pin(galaxy.points[b][j])
+                var p = Path()
+                p.move(to: from)
+                p.addQuadCurve(to: to, control: CGPoint(x: (from.x + to.x) / 2, y: max(from.y, to.y) + 16))
+                let bought = game.level(k) > 0
+                let open = game.isVisible(k)
+                if bought {
+                    ctx.stroke(p.applying(CGAffineTransform(translationX: 1.5, y: 3)), with: .color(Ink.ink.opacity(0.3)), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                    ctx.stroke(p, with: .color(Ink.ink), style: StrokeStyle(lineWidth: 5.5, lineCap: .round))
+                    ctx.stroke(p, with: .color(col), style: StrokeStyle(lineWidth: 3.2, lineCap: .round))
+                } else if open {
+                    ctx.stroke(p, with: .color(col.opacity(0.8)), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [7, 6]))
+                } else {
+                    ctx.stroke(p, with: .color(Ink.ink.opacity(0.2)), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, dash: [3, 6]))
+                }
             }
         }
     }
 
-    private func branchColor(_ k: SkillDef) -> Color { k.id == tree.root.id ? Ink.wood : Branch.of(k.effect).color }
+    // MARK: cada nota
 
-    private func nodeView(_ k: SkillDef) -> some View {
+    private func branchColor(_ k: SkillDef) -> Color { k.id == tree.root.id ? Ink.red : Branch.of(k.effect).color }
+
+    /// inclinación fija para cada nota (no cambia entre aperturas)
+    private func tilt(_ k: SkillDef) -> Double {
+        let h = k.id.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }
+        return Double(abs(h) % 7) - 3
+    }
+
+    @ViewBuilder
+    private func note(_ k: SkillDef, root: Bool = false) -> some View {
         let l = game.level(k)
         let vis = game.isVisible(k)
         let can = game.canGet(k)
         let maxed = l >= k.maxLevel
         let col = branchColor(k)
         let sel = picked == k.id
-        return VStack(spacing: 1) {
-            ZStack {
-                Circle().fill(vis ? (l > 0 ? col.opacity(0.22) : Ink.paper) : Ink.paperDark)
-                Circle()
-                    .trim(from: 0, to: CGFloat(l) / CGFloat(max(1, k.maxLevel)))
-                    .stroke(col, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .padding(4)
-                Circle().strokeBorder(can ? Ink.gold : Ink.ink, lineWidth: can ? 4 : 3)
-                Image(systemName: vis ? k.icon : "lock.fill")
-                    .font(.system(size: 21, weight: .black))
-                    .foregroundStyle(vis ? (l > 0 ? col : Ink.ink) : Ink.soft)
-                if maxed {
-                    Image(systemName: "checkmark.circle.fill").font(.system(size: 18, weight: .black)).foregroundStyle(Ink.green)
-                        .background(Circle().fill(Ink.paper)).offset(x: 22, y: -22)
+        let size = root ? card + 18 : (vis ? card : card - 22)
+        ZStack(alignment: .top) {
+            Group {
+                if vis {
+                    VStack(spacing: 2) {
+                        Image(systemName: k.icon)
+                            .font(.system(size: root ? 26 : 21, weight: .black))
+                            .foregroundStyle(l > 0 ? col : Ink.ink)
+                            .padding(.top, 13)
+                        Text(k.name).font(.chunky(root ? 14 : 12)).foregroundStyle(Ink.ink)
+                            .lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.7)
+                        Spacer(minLength: 0)
+                        HStack(spacing: 3) {
+                            Text("\(l)/\(k.maxLevel)")
+                                .font(.typewriter(10, bold: true)).foregroundStyle(Ink.paper)
+                                .padding(.horizontal, 4).padding(.vertical, 1)
+                                .background(maxed ? Ink.green : (l > 0 ? col : Ink.soft), in: Capsule())
+                            if !maxed {
+                                Text(game.price(k, game.cost(k)))
+                                    .font(.typewriter(10, bold: true)).foregroundStyle(can ? Ink.ink : Ink.soft)
+                                    .lineLimit(1).minimumScaleFactor(0.6)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 5).padding(.bottom, 7)
+                } else {
+                    Image(systemName: "questionmark").font(.system(size: 20, weight: .black)).foregroundStyle(Ink.soft)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(width: node, height: node)
-            .background(Circle().fill(Ink.ink).offset(x: 2, y: 3))
-            .scaleEffect(sel ? 1.15 : 1)
-            Text(vis ? k.name : "???")
-                .font(.chunky(11)).foregroundStyle(Ink.ink)
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .padding(.horizontal, 4)
-                .background(Ink.paper.opacity(0.9), in: Capsule())
-                .frame(width: 76)
-            if vis {
-                Text(maxed ? "MÁX." : game.price(k, game.cost(k)))
-                    .font(.typewriter(10, bold: true))
-                    .foregroundStyle(maxed ? Ink.green : (can ? Ink.ink : Ink.soft))
-                    .padding(.horizontal, 4)
-                    .background(can ? Color(hex: "#fff6c8") : Ink.paper.opacity(0.8), in: Capsule())
+            .frame(width: size, height: size)
+            .paper(can ? Color(hex: "#fff6c8") : (vis ? Ink.paper : Ink.paperDark), tilt: tilt(k), shadow: vis ? 4 : 2)
+            .overlay {
+                if maxed { Stamp(text: "MÁX.", color: Ink.green).scaleEffect(0.6).offset(x: 18, y: 4) }
             }
+            .overlay {
+                if sel { Rectangle().strokeBorder(Ink.gold, lineWidth: 4).rotationEffect(.degrees(tilt(k))).padding(-5) }
+            }
+            .opacity(vis ? 1 : 0.75)
+            // chincheta
+            Circle().fill(can ? Ink.gold : col)
+                .frame(width: 15, height: 15)
+                .overlay(Circle().fill(.white.opacity(0.55)).frame(width: 5, height: 5).offset(x: -2, y: -2))
+                .overlay(Circle().strokeBorder(Ink.ink, lineWidth: 2))
+                .offset(y: -6)
         }
+        .scaleEffect(sel ? 1.08 : 1)
         .phaseAnimator([0.0, can ? 1.0 : 0.0]) { v, a in v.scaleEffect(1 + a * 0.05) } animation: { _ in .easeInOut(duration: 0.7) }
         .contentShape(Rectangle())
         .onTapGesture {

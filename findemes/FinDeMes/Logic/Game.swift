@@ -512,7 +512,7 @@ final class Game {
     }
 
     func pickSkin(_ k: SkinDef) {
-        if s.skinsOwned.contains(k.id) { s.skin = k.id; Animal.use(k); Sound.shared.click(); save(); return }
+        if s.skinsOwned.contains(k.id) || k.cost == 0 { s.skinsOwned.insert(k.id); s.skin = k.id; Animal.use(k); Sound.shared.click(); save(); return }
         guard s.legacy >= k.cost else { Sound.shared.denied(); return }
         s.legacy -= k.cost
         s.skinsOwned.insert(k.id)
