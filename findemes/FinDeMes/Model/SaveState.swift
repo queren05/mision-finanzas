@@ -67,14 +67,13 @@ struct SaveState: Codable {
     var seenIntro = false
     var skin = "cerdo"
     var skinsOwned: Set<String> = ["cerdo", "gamba", "dibujo"]
-    // lo que engancha: nivel, encargos, logros, premio diario y la hucha de casa
+    // lo que engancha: nivel, encargos, logros, y premio diario
     var level = 1
     var xp = 0.0
     var quests: [Quest] = []
     var achievements: Set<String> = []
     var streak = 0
     var lastDaily = ""
-    var bankSince: Date? = nil
     var tutorial = 0
     /// el nivel de las huchas es `tier`; esto es lo que lleva hacia el siguiente
     var pigXP = 0.0
@@ -104,7 +103,7 @@ struct SaveState: Codable {
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
-        case level, xp, quests, achievements, streak, lastDaily, bankSince, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
+        case level, xp, quests, achievements, streak, lastDaily, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
         case family, billsThisRun, scratchesToday, autoBuy, races
     }
     // tolera partidas de versiones anteriores
@@ -121,7 +120,7 @@ struct SaveState: Codable {
         skin = v(.skin, x.skin); skinsOwned = v(.skinsOwned, x.skinsOwned).union(x.skinsOwned)
         if !Content.skins.contains(where: { $0.id == skin }) { skin = x.skin }
         level = max(1, v(.level, 1)); xp = v(.xp, 0.0); quests = v(.quests, [Quest]()); achievements = v(.achievements, Set<String>())
-        streak = v(.streak, 0); lastDaily = v(.lastDaily, ""); bankSince = try? c.decodeIfPresent(Date.self, forKey: .bankSince)
+        streak = v(.streak, 0); lastDaily = v(.lastDaily, "")
         // las partidas de antes ya saben jugar
         tutorial = v(.tutorial, seenIntro ? 9 : 0)
         pigXP = v(.pigXP, 0.0); brokenByKind = v(.brokenByKind, [String: Double]())
@@ -131,6 +130,11 @@ struct SaveState: Codable {
         pets = v(.pets, [String: Int]()); pet = v(.pet, "")
         family = v(.family, [String: Int]()); billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
         scratchesToday = v(.scratchesToday, 0); autoBuy = v(.autoBuy, true); races = v(.races, 0.0)
+        // el llavero de la hucha de casa ya no existe: se devuelven sus puntos
+        if let l = rings["llavero"] {
+            for i in 0..<l { legacy += (35 * pow(1.7, Double(i))).rounded() }
+            rings["llavero"] = nil
+        }
         if !cash.isFinite { cash = 0 }
         if hammer >= Content.hammers.count { hammer = 0 }
         billIndex = min(billIndex, Content.bills.count - 1)

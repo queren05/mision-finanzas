@@ -25,7 +25,6 @@ struct HomeView: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                     if game.unlocked(.encargos) && !game.s.quests.isEmpty { QuestsCard() }
-                    if game.unlocked(.hucha) { BankCard() }
                     bestiaryCard
                     drawers
                     barCard

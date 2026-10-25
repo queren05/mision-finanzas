@@ -66,38 +66,6 @@ struct QuestRow: View {
     }
 }
 
-// MARK: - Hucha de casa: se llena sola
-
-struct BankCard: View {
-    @Environment(Game.self) private var game
-    @State private var smash = 0
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { tl in
-            let v = game.bankAmount(tl.date)
-            let cap = game.bankCap
-            HStack(spacing: 12) {
-                SkinIcon(id: "cerdo", size: 58, look: v >= cap ? "oro" : "normal")
-                    .keyframeAnimator(initialValue: 0.0, trigger: smash) { c, a in c.rotationEffect(.degrees(a)) } keyframes: { _ in
-                        CubicKeyframe(-12, duration: 0.06); CubicKeyframe(12, duration: 0.08); CubicKeyframe(0, duration: 0.1)
-                    }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Hucha de casa").font(.chunky(18)).foregroundStyle(Ink.ink)
-                    Text(Fmt.money(v)).font(.chunky(22)).foregroundStyle(Ink.green)
-                        .contentTransition(.numericText(value: v))
-                    InkBar(value: v / max(1, cap), color: v >= cap ? Ink.red : Ink.green, height: 8)
-                    if v >= cap { Text("¡Llena! Ya no cabe más").font(.typewriter(11, bold: true)).foregroundStyle(Ink.red) }
-                }
-                Spacer(minLength: 4)
-                Button { smash += 1; withAnimation(.snappy) { game.collectBank() } } label: { Text("ROMPER") }
-                    .buttonStyle(ChunkyButton(color: Ink.gold, size: 15, radius: 10))
-                    .disabled(v < 1)
-            }
-            .padding(12)
-            .paper(tilt: -0.5)
-        }
-    }
-}
-
 // MARK: - Sobres sin abrir
 
 struct ChestsButton: View {

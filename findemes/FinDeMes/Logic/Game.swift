@@ -102,7 +102,6 @@ final class Game {
         applySettings()
         recompute()
         refillQuests()
-        startBankIfNeeded()
     }
 
     func applySettings() {
@@ -190,7 +189,7 @@ final class Game {
             case .maxPigs: st.maxPigs += Int(v)
             case .spawn: spawnPct += v
             case .frenzy: st.frenzyExtra += v
-            case .startCash, .extraDays, .legacy, .bills, .xp, .pigXP, .bankHours, .quests: break
+            case .startCash, .extraDays, .legacy, .bills, .xp, .pigXP, .quests: break
             }
         }
         // las piezas del taller
@@ -386,7 +385,6 @@ final class Game {
         report = r
         addXP(r.xp)
         refillQuests()
-        startBankIfNeeded()
         save()
     }
 

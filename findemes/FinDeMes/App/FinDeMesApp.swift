@@ -80,7 +80,6 @@ enum Demo {
         s.tutorial = 9; s.level = 12; s.xp = 410; s.tier = 13; s.pigXP = 260
         s.lastDaily = args.contains("-daily") ? "" : Game.dayKey(Date())
         s.streak = 3
-        s.bankSince = Date().addingTimeInterval(-2.5 * 3600)
         s.achievements = ["rotas-10", "rotas-100", "rotas-1000", "ganado-1000", "facturas-1", "facturas-12", "dias-7", "dias-30", "doradas-1", "combo-10"]
         s.brokenByKind = ["normal": 1420, "gorda": 260, "ruedas": 90, "cristal": 51, "acorazada": 38, "bomba": 12, "dorada": 9]
         s.stats.bestCombo = 22; s.stats.missions = 14; s.stats.chests = 6

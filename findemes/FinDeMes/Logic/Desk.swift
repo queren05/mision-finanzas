@@ -604,6 +604,12 @@ final class Desk {
         if hitStop > 0 { hitStop -= dt; dt *= 0.08 }
         time += dt
 
+        // el aguante se va gastando solo (menos en frenesí); empieza a contar con el primer golpe
+        if !frenzy && !finished && !tutorial && report.swings > 0 && stamina > 0 {
+            let before = Int(stamina)
+            stamina = max(0, stamina - max(0.4, stats.stamina / 45) * dt)
+            if Int(stamina) != before { markDirty() }
+        }
         if let p = pending, time - lastSwing >= cooldown, stamina > 0 || frenzy { swing(at: p) }
         // con el dedo puesto se sigue golpeando donde esté
         if let h = holding, pending == nil, !finished, time - lastSwing >= cooldown, stamina > 0 || frenzy, h.y > top - 30, h.y < size.height - bottom + 30 { swing(at: h) }

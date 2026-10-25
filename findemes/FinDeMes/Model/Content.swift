@@ -284,7 +284,7 @@ struct SkillDef: Identifiable {
 
 // MARK: - Joyas (puntos de herencia: se quedan tras la bancarrota)
 
-enum RingEffect { case loot, damage, crit, stamina, golden, startCash, extraDays, radius, chest, legacy, bills, speed, critDamage, startPigs, maxPigs, spawn, frenzy, xp, pigXP, bankHours, quests }
+enum RingEffect { case loot, damage, crit, stamina, golden, startCash, extraDays, radius, chest, legacy, bills, speed, critDamage, startPigs, maxPigs, spawn, frenzy, xp, pigXP, quests }
 
 struct RingDef: Identifiable {
     let id: String
@@ -495,7 +495,6 @@ enum Content {
         RingDef(id: "relojoro", name: "Reloj de oro", desc: "El frenesí dura +% s", effect: .frenzy, per: 0.5, maxLevel: 20, baseCost: 90, growth: 1.8, color: "#f2b632", bracelet: true),
         RingDef(id: "gargantilla", name: "Gargantilla", desc: "+%\u{2009}% de experiencia", effect: .xp, per: 10, maxLevel: 20, baseCost: 50, growth: 1.6, color: "#c8323c", bracelet: true),
         RingDef(id: "diadema", name: "Diadema", desc: "Las huchas suben de nivel un %\u{2009}% más rápido", effect: .pigXP, per: 8, maxLevel: 15, baseCost: 120, growth: 1.75, color: "#8a5cc2", bracelet: true),
-        RingDef(id: "llavero", name: "Llavero de casa", desc: "En la hucha de casa caben +% h más", effect: .bankHours, per: 1, maxLevel: 12, baseCost: 35, growth: 1.7, color: "#d9a441", bracelet: true),
         RingDef(id: "compromiso", name: "Anillo de compromiso", desc: "Encargos +%\u{2009}% de premio", effect: .quests, per: 20, maxLevel: 15, baseCost: 80, growth: 1.7, color: "#e6e8ec", bracelet: false),
         RingDef(id: "amatista", name: "Anillo de amatista", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 30, maxLevel: 25, baseCost: 120, growth: 1.6, color: "#8a5cc2", bracelet: false),
         RingDef(id: "perla", name: "Anillo de perla", desc: "+%\u{2009}% de dinero", effect: .loot, per: 80, maxLevel: 50, baseCost: 800, growth: 1.5, color: "#f4efe6", bracelet: false),

@@ -138,15 +138,11 @@ enum Meta {
         ("Dinero", nil, 40, 0), ("Sobre", .comun, 0, 0), ("Dinero", nil, 120, 0), ("Sobre raro", .rara, 0, 0),
         ("Mucho dinero", nil, 300, 0), ("Sobre épico", .epica, 0, 0), ("¡Sobre legendario!", .legendaria, 0, 10),
     ]
-
-    /// la hucha de casa: huchas por minuto y horas que caben
-    static let bankRate = 0.15
-    static let bankHours = 6.0
 }
 
 /// lo que se desbloquea poco a poco (para no abrumar al principio)
 enum Feature {
-    case mejoras, martillos, encargos, logros, hucha, joyero, monedas, personajes, taller, totems, bar, mascotas, familia
+    case mejoras, martillos, encargos, logros, joyero, monedas, personajes, taller, totems, bar, mascotas, familia
 
     var hint: String {
         switch self {
@@ -154,7 +150,6 @@ enum Feature {
         case .martillos: "Paga tu primera factura"
         case .encargos: "Termina tu primer día"
         case .logros: "Juega 2 días"
-        case .hucha: "Juega 2 días"
         case .joyero, .personajes: "Arruínate una vez"
         case .monedas: "Abre tu primer sobre"
         case .taller: "Paga tu primera factura"
@@ -174,7 +169,7 @@ extension Game {
         switch f {
         case .mejoras, .encargos: return st.days >= 1 || veteran
         case .martillos: return st.billsPaid >= 1 || veteran
-        case .logros, .hucha: return st.days >= 2 || veteran
+        case .logros: return st.days >= 2 || veteran
         case .joyero, .personajes: return veteran
         case .monedas: return st.chests > 0 || !s.coins.isEmpty || veteran
         case .taller: return st.billsPaid >= 1 || veteran
@@ -356,26 +351,5 @@ extension Game {
         s.lastDaily = Game.dayKey(Date())
         Sound.shared.fanfare()
         save()
-    }
-
-    // MARK: hucha de casa (se llena sola mientras no juegas)
-
-    var bankCap: Double { (pigWorth * Meta.bankRate * 60 * (Meta.bankHours + ringValue(.bankHours))).rounded() }
-    func bankAmount(_ now: Date) -> Double {
-        guard let since = s.bankSince else { return 0 }
-        let mins = max(0, now.timeIntervalSince(since) / 60)
-        return min(bankCap, (mins * Meta.bankRate * pigWorth).rounded(.down))
-    }
-    func collectBank() {
-        let v = bankAmount(Date())
-        s.bankSince = Date()
-        guard v > 0 else { return }
-        s.cash += v
-        s.stats.earned += v
-        Sound.shared.smash(big: true)
-        save()
-    }
-    func startBankIfNeeded() {
-        if s.bankSince == nil && unlocked(.hucha) { s.bankSince = Date() }
     }
 }
