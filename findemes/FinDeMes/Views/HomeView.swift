@@ -208,6 +208,7 @@ struct HomeView: View {
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: grid.count)
     }
+}
 
 /// la hucha en pequeño (para botones e iconos)
 struct PigIcon: View {
