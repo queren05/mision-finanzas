@@ -136,7 +136,7 @@ struct MortgageCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(game.mortgageName.uppercased()).font(.typewriter(15, bold: true))
                 Spacer()
-                Text(Fmt.money(game.mortgageTotal)).font(.chunky(18))
+                Text(Mortgage.words(game.mortgageTotal)).font(.chunky(18))
             }
             // barra de lo pagado, como una regla de papel
             GeometryReader { g in
@@ -279,7 +279,7 @@ struct MilestoneView: View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { close() }
             VStack(spacing: 6) {
-                Text(name.hasPrefix("MIL") ? "TUS PRIMEROS" : "TU PRIMER")
+                Text(name.hasPrefix("MIL ") ? "TUS PRIMEROS" : "TU PRIMER")
                     .font(.typewriter(16, bold: true))
                 Text(name).font(.chunky(k >= 3 ? 40 : 54)).foregroundStyle(Ink.gold)
                     .multilineTextAlignment(.center)

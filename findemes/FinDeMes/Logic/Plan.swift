@@ -47,6 +47,15 @@ enum Mortgage {
     static func name(_ level: Int) -> String { level < names.count ? names[level] : "El banco (\(level - names.count + 2))" }
     /// lo que cuesta: la primera, mil trillones; cada una, diez mil veces la anterior
     static func total(_ level: Int) -> Double { 1e21 * pow(1e4, Double(level)) }
+    /// la cifra en palabras: «Mil trillones €», «10 cuatrillones €»
+    static func words(_ v: Double) -> String {
+        let names = ["", "mil", "millones", "mil millones", "billones", "mil billones", "trillones", "mil trillones",
+                     "cuatrillones", "mil cuatrillones", "quintillones", "mil quintillones", "sextillones"]
+        let e3 = min(names.count - 1, Int(floor(log10(max(1, v)) / 3)))
+        let m = (v / pow(1000, Double(e3))).rounded()
+        if m == 1 && names[e3].hasPrefix("mil") { return names[e3].capitalizedFirst + " €" }
+        return Fmt.num(m) + " " + names[e3] + " €"
+    }
 }
 
 @MainActor
