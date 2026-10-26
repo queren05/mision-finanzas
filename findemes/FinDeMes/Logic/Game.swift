@@ -102,6 +102,7 @@ final class Game {
         applySettings()
         Animal.use(Content.skin(s.skin))
         recompute()
+        wake()
         refillQuests()
     }
 
@@ -111,7 +112,10 @@ final class Game {
         Music.shared.on = s.settings.music
     }
 
-    func save() { Persistence.save(s) }
+    func save() {
+        s.lastPlayed = Date().timeIntervalSince1970
+        Persistence.save(s)
+    }
 
     // MARK: - Estadísticas
 
@@ -199,8 +203,8 @@ final class Game {
             guard l > 0 else { continue }
             let v = p.value(l)
             switch p.effect {
-            case .damage: dmgMul *= v
-            case .loot: lootMul *= v
+            case .damage: dmgPct += v
+            case .loot: lootPct += v
             case .speed: speedPct += v
             case .spawn: spawnPct += v
             case .maxPigs: st.maxPigs += Int(v)
@@ -238,13 +242,14 @@ final class Game {
         }
         // cada moneda de la colección da dinero para siempre
         for c in Content.coins where (s.coins[c.id] ?? 0) > 0 { lootPct += c.rarity.bonus * 100 }
-        // cada nivel da +2 % y cada logro +3 % de dinero, para siempre
-        lootPct += Double(s.level - 1) * 2 + Double(s.achievements.count) * 3
+        // cada nivel y cada logro dan +1 % de dinero, para siempre
+        lootPct += Double(s.level - 1) + Double(s.achievements.count)
         st.damage *= (1 + dmgPct / 100) * dmgMul
         st.stamina = (st.stamina * staminaMul).rounded()
         st.speed *= 1 + speedPct / 100
         st.radius *= 1 + radiusPct / 100
-        st.loot = (1 + lootPct / 100) * lootMul
+        // cada hipoteca pagada multiplica el dinero para siempre
+        st.loot = (1 + lootPct / 100) * lootMul * Double(1 + s.richLevel)
         // cuanto más rápido salen, menos se nota cada mejora (si no, la mesa se desborda y el dinero se dispara)
         st.spawnEvery = 0.6 / (1 + spawnPct / 100).squareRoot()
         // la habilidad del martillo en la mano
@@ -332,7 +337,7 @@ final class Game {
     /// puntos de herencia: según el nivel de las huchas y las facturas pagadas en esta partida
     var legacyGain: Double {
         // crece mucho con cada factura pagada: llegar más lejos compensa de verdad
-        let base = 8 * pow(1.2, Double(s.billsThisRun))
+        let base = 8 * pow(1.12, Double(s.billsThisRun))
         return floor(base * (1 + ringValue(.legacy) / 100 + totemValue(.legacy) * 0.15 + familyValue(.legacyPct) / 100))
     }
     var startCash: Double {
@@ -342,6 +347,9 @@ final class Game {
 
     func bankruptcy(forced: Bool = false) {
         let g = legacyGain
+        // lo que quedaba en la cartera se lo lleva el banco: va a la hipoteca
+        mortgageAdded = max(0, s.cash)
+        addToMortgage(mortgageAdded)
         s.legacy += g
         s.stats.bankruptcies += 1
         s.cash = 0
@@ -397,6 +405,7 @@ final class Game {
         if s.tutorial < 9 { s.tutorial = 9 }
         if familyValue(.autoBuy) > 0 && s.autoBuy { autoBuyAll() }
         report = r
+        s.lastDayEarned = r.earned
         addXP(r.xp)
         refillQuests()
         save()
@@ -412,6 +421,12 @@ final class Game {
     }
     /// para enseñar el sello cuando una factura se paga sola
     var autoPaid: String? = nil
+    /// la hipoteca recién pagada (nivel), lo ganado sin jugar, el número grande recién alcanzado
+    /// y lo que fue a la hipoteca con la última bancarrota
+    var finale: Int? = nil
+    var away: AwayPrize? = nil
+    var milestoneShow: Int? = nil
+    var mortgageAdded = 0.0
 
     /// dinero que entra durante el día (lo llama la mesa)
     func earn(_ v: Double) {

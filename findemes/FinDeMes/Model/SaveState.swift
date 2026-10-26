@@ -102,6 +102,16 @@ struct SaveState: Codable {
     var autoBuy = true
     /// apuestas de la carrera de cerdos
     var races = 0.0
+    /// puertas de la cocina que ya has abierto (las nuevas llevan el sello «NUEVO»)
+    var seenDoors: Set<String> = []
+    /// lo abonado a la hipoteca de ahora (se queda aunque te arruines) y las ya pagadas
+    var mortgage = 0.0
+    var richLevel = 0
+    /// cuándo se jugó por última vez y lo que se ganó el último día (para lo ganado sin jugar)
+    var lastPlayed = 0.0
+    var lastDayEarned = 0.0
+    /// el último número grande celebrado (1 = mil, 2 = millón, 3 = mil millones…)
+    var milestone = 0
 
     init() {}
 
@@ -110,6 +120,7 @@ struct SaveState: Codable {
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
         case level, xp, quests, achievements, streak, lastDaily, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
         case family, billsThisRun, scratchesToday, autoBuy, races, billTier
+        case seenDoors, mortgage, richLevel, lastPlayed, lastDayEarned, milestone
     }
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
@@ -136,6 +147,11 @@ struct SaveState: Codable {
         family = v(.family, [String: Int]()); billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
         scratchesToday = v(.scratchesToday, 0); autoBuy = v(.autoBuy, true); races = v(.races, 0.0)
         billTier = v(.billTier, tier)
+        // quien ya jugaba conoce todas las puertas y sus números grandes
+        seenDoors = v(.seenDoors, seenIntro ? Set(["mejoras", "martillo", "album", "bar", "herencia"]) : Set<String>())
+        mortgage = v(.mortgage, 0.0); richLevel = v(.richLevel, 0)
+        lastPlayed = v(.lastPlayed, 0.0); lastDayEarned = v(.lastDayEarned, 0.0)
+        milestone = v(.milestone, max(0, Int(floor(log10(max(1, max(cash, stats.bestDay))) / 3))))
         // el llavero de la hucha de casa ya no existe: se devuelven sus puntos
         if let l = rings["llavero"] {
             for i in 0..<l { legacy += (35 * pow(1.7, Double(i))).rounded() }

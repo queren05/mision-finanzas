@@ -45,7 +45,7 @@ struct Quest: Codable, Identifiable, Hashable {
     var done: Bool { progress >= target }
 }
 
-// MARK: - Logros: cada uno da +3 % de dinero para siempre
+// MARK: - Logros: cada uno da +1 % de dinero para siempre
 
 enum AchMetric {
     case broken, earned, bills, bankruptcies, days, golden, kings, chests, crits, combo, frenzies, level, coins, skins, hammers, quests, bestDay, pigLevel, spins, jackpots, scratches, totems, parts, pets, family, races
@@ -172,7 +172,7 @@ extension Game {
         case .logros: return st.days >= 2 || veteran
         case .joyero, .personajes: return veteran
         case .monedas: return st.chests > 0 || !s.coins.isEmpty || veteran
-        case .taller: return st.billsPaid >= 1 || veteran
+        case .taller: return st.billsPaid >= 3 || veteran
         case .totems: return veteran
         case .bar: return st.days >= 3 || veteran
         case .mascotas, .familia: return veteran

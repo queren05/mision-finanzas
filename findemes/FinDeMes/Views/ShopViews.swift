@@ -107,6 +107,7 @@ struct HammerRow: View {
         }
         .padding(12)
         .paper(equipped ? Color(hex: "#fff6c8") : Ink.paper, tilt: def.id % 2 == 0 ? -0.6 : 0.6)
+        .overlay(alignment: .topLeading) { if game.bestHammer == def.id { GoldPin().offset(x: -6, y: -8) } }
     }
     private func stat(_ l: String, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -141,7 +142,7 @@ struct JewelryView: View {
             Button("Sí, en bancarrota (+\(Fmt.num(game.legacyGain)) puntos)", role: .destructive) { game.bankruptcy() }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Pierdes el dinero, los martillos, el taller y las mejoras del corcho. Te quedas con las joyas, los tótems, las monedas y los puntos de herencia.")
+            Text("Pierdes el dinero, los martillos, el taller y las mejoras. Tu dinero va a la hipoteca.")
         }
     }
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 enum HomeSheet: String, Identifiable {
     case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar, pets, family
+    case martillo, herencia, album
     var id: String { rawValue }
 }
 
@@ -19,15 +20,15 @@ struct HomeView: View {
                     topBar
                     LevelStrip()
                     billCard
+                    MortgageCard()
                     playButton
+                    PigLevelStrip().padding(.horizontal, 14).padding(.vertical, 9).paper(shadow: 3)
                     if !game.s.pendingChests.isEmpty {
                         ChestsButton(open: Binding(get: { sheet == .chests }, set: { sheet = $0 ? .chests : nil }))
                             .transition(.scale.combined(with: .opacity))
                     }
                     if game.unlocked(.encargos) && !game.s.quests.isEmpty { QuestsCard() }
-                    bestiaryCard
-                    drawers
-                    barCard
+                    doors
                     if let next = game.nextBill {
                         HStack(spacing: 6) {
                             Text("Después:").font(.typewriter(13, bold: true))
@@ -56,6 +57,9 @@ struct HomeView: View {
             case .bar: BarView()
             case .pets: PetsView()
             case .family: TreeView(family: true)
+            case .martillo: HammerDoor()
+            case .herencia: LegacyDoor()
+            case .album: AlbumDoor()
             }
         }
         .onAppear {
@@ -72,6 +76,9 @@ struct HomeView: View {
             if args.contains("-bar") { sheet = .bar }
             if args.contains("-mascotas") { sheet = .pets }
             if args.contains("-familia") { sheet = .family }
+            if args.contains("-puerta-martillo") { sheet = .martillo }
+            if args.contains("-puerta-herencia") { sheet = .herencia }
+            if args.contains("-puerta-album") { sheet = .album }
         }
     }
 
@@ -170,77 +177,37 @@ struct HomeView: View {
         .buttonStyle(ChunkyButton(color: Ink.gold, size: 24, radius: 18))
     }
 
-    private var bestiaryCard: some View {
-        Button { Sound.shared.click(); sheet = .bestiary } label: {
-            HStack(spacing: 12) {
-                KindIcon(kind: PigKind.allCases.filter { game.s.bestTier >= $0.minTier }.max { $0.minTier < $1.minTier } ?? .normal, size: 52)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("El establo").font(.chunky(20)).foregroundStyle(Ink.ink)
-                    PigLevelStrip()
+    // MARK: las puertas (aparecen poco a poco)
+
+    private var doors: some View {
+        let grid = [Door.mejoras, .martillo, .album, .herencia].filter { game.doorOpen($0) }
+        let kinds = PigKind.allCases.filter { game.s.bestTier >= $0.minTier }.count
+        let legacyBuy = Content.family.contains { game.canBuyFamily($0) }
+            || Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }
+            || Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }
+            || Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }
+        return VStack(spacing: 14) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                ForEach(grid, id: \.rawValue) { d in
+                    switch d {
+                    case .mejoras:
+                        DoorCard(door: d, subtitle: "Árbol de mejoras", badge: game.bestSkill(Content.skills) != nil) { sheet = .tree }
+                    case .martillo:
+                        DoorCard(door: d, subtitle: Content.hammers[game.s.hammer].name, badge: game.bestHammer != nil || ((game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0) && game.bestPart != nil)) { sheet = .martillo }
+                    case .album:
+                        DoorCard(door: d, subtitle: "\(kinds) {huchas} · \(game.s.achievements.count) logros", badge: game.achievementsReady > 0) { sheet = .album }
+                    case .herencia:
+                        DoorCard(door: d, subtitle: "\(Fmt.num(game.s.legacy)) puntos", badge: legacyBuy) { sheet = .herencia }
+                    case .bar: EmptyView()
+                    }
                 }
-                Image(systemName: "chevron.right").font(.system(size: 16, weight: .black)).foregroundStyle(Ink.ink)
             }
-            .padding(.horizontal, 12).padding(.vertical, 4)
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(ChunkyButton(color: Ink.paper, size: 18, radius: 16))
-    }
-
-    // MARK: cajones
-
-    private var drawers: some View {
-        let skillsAvailable = Content.skills.contains { game.canBuy($0) }
-        let hammerAvailable = Content.hammers.contains { !game.s.hammersOwned.contains($0.id) && game.s.cash >= game.hammerCost($0) }
-        let found = Content.coins.filter { (game.s.coins[$0.id] ?? 0) > 0 }.count
-        return LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-            drawer("Mejoras", "Árbol de mejoras", "leaf.fill", Ink.red, badge: skillsAvailable, .mejoras) { sheet = .tree }
-            drawer("Martillos", Content.hammers[game.s.hammer].name, "hammer.fill", Ink.blue, badge: hammerAvailable, .martillos) { sheet = .hammers }
-            drawer("Taller", "Piezas para el martillo", "wrench.and.screwdriver.fill", Ink.wood, badge: Content.parts.contains { game.canBuyPart($0) }, .taller) { sheet = .workshop }
-            drawer("Tótems", "\(game.s.totemsOn.count) de \(game.totemSlots) puestos", "pawprint.fill", Ink.green, badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, .totems) { sheet = .totems }
-            drawer("Logros", "\(game.s.achievements.count) de \(Meta.achievements.count)", "rosette", Ink.gold, badge: game.achievementsReady > 0, .logros) { sheet = .achievements }
-            drawer("Familia", "Árbol familiar", "tree.fill", Ink.wood, badge: Content.family.contains { game.canBuyFamily($0) }, .familia) { sheet = .family }
-            drawer("Joyero", "\(Fmt.num(game.s.legacy)) puntos", "sparkles", Ink.purple, badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, .joyero) { sheet = .jewelry }
-            drawer("Mascotas", game.stats.pet?.name ?? "Ninguna", "pawprint.circle.fill", Ink.blue, badge: Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }, .mascotas) { sheet = .pets }
-            drawer("Monedas", "\(found) de \(Content.coins.count)", "circle.circle.fill", Ink.gold, badge: false, .monedas) { sheet = .coins }
-        }
-    }
-
-    private var barCard: some View {
-        let open = game.unlocked(.bar)
-        return Button { Sound.shared.click(); if open { sheet = .bar } else { Sound.shared.denied() } } label: {
-            HStack(spacing: 12) {
-                Image(systemName: open ? "dice.fill" : "lock.fill").font(.system(size: 26, weight: .black)).foregroundStyle(open ? Ink.red : Ink.soft)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("El bar de Manolo").font(.chunky(22)).foregroundStyle(open ? Ink.ink : Ink.soft)
-                    Text(open ? "Tragaperras y rasca" : Feature.bar.hint).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
-                }
-                Spacer()
-                if open && game.freeScratch { Text("¡Rasca gratis!").font(.chunky(14)).foregroundStyle(Ink.paper).padding(.horizontal, 8).padding(.vertical, 2).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
+            if game.doorOpen(.bar) {
+                DoorCard(door: .bar, subtitle: game.freeScratch ? "¡Rasca gratis!" : "Tragaperras, rasca y carreras", badge: game.freeScratch) { sheet = .bar }
             }
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(ChunkyButton(color: open ? Ink.paper : Ink.paperDark, size: 18, radius: 16))
+        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: grid.count)
     }
-
-    private func drawer(_ title: String, _ sub: String, _ icon: String, _ color: Color, badge: Bool, _ feature: Feature, _ action: @escaping () -> Void) -> some View {
-        let open = game.unlocked(feature)
-        return Button { Sound.shared.click(); if open { action() } else { Sound.shared.denied() } } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: open ? icon : "lock.fill").font(.system(size: 20, weight: .black)).foregroundStyle(open ? color : Ink.soft)
-                    Spacer()
-                    if badge && open { Text("¡!").font(.chunky(15)).foregroundStyle(Ink.paper).padding(.horizontal, 7).background(Ink.red, in: Capsule()).overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2)) }
-                }
-                Text(title).font(.chunky(22)).foregroundStyle(open ? Ink.ink : Ink.soft)
-                Text(open ? sub : feature.hint).font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft).lineLimit(1).minimumScaleFactor(0.7)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(ChunkyButton(color: open ? Ink.paper : Ink.paperDark, size: 18, radius: 16))
-    }
-}
 
 /// la hucha en pequeño (para botones e iconos)
 struct PigIcon: View {

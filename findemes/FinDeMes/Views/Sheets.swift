@@ -264,8 +264,6 @@ struct EventView: View {
                     Text("No pagaste a \(Content.bills[min(game.s.billIndex, Content.bills.count - 1)].company.lowercased()) a tiempo. Se lo han llevado todo: el dinero, los martillos y las mejoras.")
                         .font(.typewriter(15)).multilineTextAlignment(.center)
                     legacyLine(legacy)
-                    Text("Las joyas y las monedas siguen siendo tuyas. Gástate los puntos en el joyero y vuelve más fuerte.")
-                        .font(.typewriter(13)).foregroundStyle(Ink.soft).multilineTextAlignment(.center)
                     Button { close() } label: { Text("Empezar de nuevo").frame(maxWidth: .infinity) }
                         .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
                 case .taxes:
@@ -308,6 +306,19 @@ struct EventView: View {
         }
         .padding(.vertical, 6).padding(.horizontal, 12)
         .outlined(12, color: Color(hex: "#f2d58a"), shadow: 3)
+        .overlay(alignment: .bottom) {
+            // lo que quedaba en la cartera se va a la hipoteca
+            if game.mortgageAdded > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "house.fill").foregroundStyle(Ink.green)
+                    Text("+\(Fmt.money(game.mortgageAdded)) a \(game.mortgageName.lowercased())").font(.typewriter(13, bold: true))
+                }
+                .foregroundStyle(Ink.ink)
+                .fixedSize()
+                .offset(y: 30)
+            }
+        }
+        .padding(.bottom, game.mortgageAdded > 0 ? 26 : 0)
     }
 
     private func close() {

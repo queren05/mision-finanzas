@@ -14,7 +14,7 @@ struct PartDef: Identifiable {
     let base: Double          // en huchas del nivel de ahora
     let growth: Double
     /// el daño y el dinero se multiplican nivel a nivel (×1,10 cada uno)
-    var compound: Bool { effect == .damage || effect == .loot }
+    var compound: Bool { false }
     func value(_ l: Int) -> Double { compound ? pow(1 + per / 100, Double(l)) : per * Double(l) }
 }
 
@@ -87,8 +87,8 @@ enum ScratchPrize: Int, CaseIterable {
 
 extension Content {
     static let parts: [PartDef] = [
-        PartDef(id: "contrapeso", name: "Contrapeso de plomo", desc: "×% de daño", effect: .damage, per: 10, maxLevel: 60, base: 30, growth: 1.45),
-        PartDef(id: "iman", name: "Imán de nevera", desc: "×% de dinero", effect: .loot, per: 10, maxLevel: 60, base: 40, growth: 1.45),
+        PartDef(id: "contrapeso", name: "Contrapeso de plomo", desc: "+% de daño", effect: .damage, per: 10, maxLevel: 60, base: 30, growth: 1.45),
+        PartDef(id: "iman", name: "Imán de nevera", desc: "+% de dinero", effect: .loot, per: 10, maxLevel: 60, base: 40, growth: 1.45),
         PartDef(id: "mango", name: "Mango de goma", desc: "+%\u{2009}% de velocidad", effect: .speed, per: 5, maxLevel: 40, base: 35, growth: 1.3),
         PartDef(id: "silbato", name: "Silbato", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 8, maxLevel: 50, base: 35, growth: 1.28),
         PartDef(id: "cajon", name: "Cajón de fruta", desc: "+% {huchas} a la vez", effect: .maxPigs, per: 3, maxLevel: 50, base: 60, growth: 1.3),

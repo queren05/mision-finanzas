@@ -58,6 +58,7 @@ struct PartRow: View {
         }
         .padding(10)
         .paper()
+        .overlay(alignment: .topLeading) { if game.bestPart == def.id { GoldPin().offset(x: -6, y: -8) } }
     }
     private var perLevel: String {
         def.compound ? def.desc.filling(Fmt.dec(1 + def.per / 100, 2)) + " por nivel" : def.desc.filling(Fmt.num(def.per)) + " por nivel"

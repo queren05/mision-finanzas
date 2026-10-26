@@ -12,7 +12,7 @@ struct FinDeMesApp: App {
                 .onAppear { Demo.apply(game); Music.shared.resume() }
                 .onChange(of: phase) { _, p in
                     if p == .background { game.save(); Sound.shared.stop(); Music.shared.pause() }
-                    if p == .active { Music.shared.resume() }
+                    if p == .active { Music.shared.resume(); game.wake() }
                 }
         }
     }
@@ -41,7 +41,14 @@ struct RootView: View {
             if !game.s.seenIntro && !game.inRun {
                 IntroView().transition(.opacity).zIndex(7)
             }
-            if calm, let k = game.newKinds.first {
+            if let f = game.finale {
+                FinaleView(level: f).transition(.opacity).zIndex(9)
+            }
+            if calm && game.finale == nil, let a = game.away {
+                AwayView(prize: a).transition(.opacity).zIndex(8)
+            } else if calm && game.finale == nil, let k = game.milestoneShow {
+                MilestoneView(k: k).id(k).transition(.opacity).zIndex(8)
+            } else if calm, let k = game.newKinds.first {
                 NewKindView(kind: k).id(k).transition(.opacity).zIndex(8)
             } else if calm, let l = game.levelUp {
                 LevelUpView(level: l).transition(.opacity).zIndex(8)
@@ -50,6 +57,9 @@ struct RootView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: game.inRun)
+        .onChange(of: calm) { _, c in if c { game.checkMilestone() } }
+        .onChange(of: game.s.cash) { _, _ in if calm { game.checkMilestone() } }
+        .onAppear { if calm { game.checkMilestone() } }
         .preferredColorScheme(.light)
         .statusBarHidden(game.inRun)
     }
@@ -63,6 +73,8 @@ enum Demo {
         guard args.contains("-demo") else { return }
         var s = SaveState()
         s.seenIntro = true
+        s.milestone = 9
+        s.seenDoors = Set(Door.allCases.map(\.rawValue))
         s.cash = 2_340
         s.day = 9
         s.billIndex = 6
@@ -100,5 +112,9 @@ enum Demo {
         if args.contains("-nivel") { game.levelUp = 13 }
         if args.contains("-nueva") { game.newKinds = [.bomba] }
         if args.contains("-intro") { game.s.seenIntro = false }
+        if args.contains("-final") { game.finale = 0 }
+        if args.contains("-fuera") { game.away = AwayPrize(minutes: 95, cash: 18_400, cows: 2_350) }
+        if args.contains("-hito") { game.milestoneShow = 2 }
+        if args.contains("-hipoteca") { game.s.mortgage = 3.4e17 }
     }
 }

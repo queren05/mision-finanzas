@@ -110,7 +110,7 @@ struct AchievementsView: View {
         ZStack(alignment: .top) {
             Color(hex: "#5c3a1e").ignoresSafeArea()
             VStack(spacing: 0) {
-                SheetHeader(title: "Logros", subtitle: "\(game.s.achievements.count) de \(Meta.achievements.count) · +\(game.s.achievements.count * 3) % de dinero")
+                SheetHeader(title: "Logros", subtitle: "\(game.s.achievements.count) de \(Meta.achievements.count) · +\(game.s.achievements.count) % de dinero")
                 ScrollView {
                     VStack(spacing: 10) {
                         ForEach(list) { a in AchRow(def: a) }
@@ -147,7 +147,7 @@ struct AchRow: View {
             }
             Spacer(minLength: 4)
             if ready {
-                Button { withAnimation(.spring) { game.claim(def) } } label: { Text("+3 %") }
+                Button { withAnimation(.spring) { game.claim(def) } } label: { Text("+1 %") }
                     .buttonStyle(ChunkyButton(color: Ink.green, text: Ink.paper, size: 15, radius: 10))
             } else if got {
                 Stamp(text: "HECHO", color: Ink.green).scaleEffect(0.7)
@@ -223,7 +223,7 @@ struct LevelUpView: View {
                 Text(Meta.title(level)).font(.chunky(22)).foregroundStyle(Ink.ink)
                 HStack(spacing: 10) {
                     EnvelopeArt(rarity: level % 10 == 0 ? .legendaria : (level % 5 == 0 ? .epica : .comun)).frame(width: 60, height: 42)
-                    Text("+2 % de dinero para siempre").font(.typewriter(13, bold: true))
+                    Text("+1 % de dinero para siempre").font(.typewriter(13, bold: true))
                 }
                 Button { close() } label: { Text("¡Seguimos!").frame(maxWidth: .infinity) }
                     .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
@@ -394,7 +394,6 @@ struct BestiaryView: View {
                     Text("NIVEL DE {LAS} {HUCHAS}: \(game.s.tier)".a).font(.chunky(18)).foregroundStyle(Ink.ink)
                     Text("Récord: nivel \(game.s.bestTier)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                     PigLevelStrip()
-                    Text("Suben rompiéndolas y vuelven a empezar con cada bancarrota").font(.typewriter(11)).foregroundStyle(Ink.soft)
                 }
                 .padding(12).paper().padding(.horizontal, 18).padding(.bottom, 8)
                 ScrollView {

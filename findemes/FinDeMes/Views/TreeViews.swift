@@ -251,10 +251,13 @@ struct TreeView: View {
     }
 
     private func chincheta(_ k: SkillDef) -> some View {
-        Circle().fill(game.canGet(k) ? Ink.gold : branchColor(k))
-            .frame(width: 15, height: 15)
-            .overlay(Circle().fill(.white.opacity(0.55)).frame(width: 5, height: 5).offset(x: -2, y: -2))
+        // la dorada, solo en la mejor compra de ahora
+        let best = game.bestSkill(defs) == k.id
+        return Circle().fill(best ? Ink.gold : branchColor(k))
+            .frame(width: best ? 19 : 15, height: best ? 19 : 15)
+            .overlay(Circle().fill(.white.opacity(0.6)).frame(width: best ? 7 : 5, height: best ? 7 : 5).offset(x: -2, y: -2))
             .overlay(Circle().strokeBorder(Ink.ink, lineWidth: 2))
+            .background { if best { GoldGlow() } }
             .offset(y: -6)
     }
 

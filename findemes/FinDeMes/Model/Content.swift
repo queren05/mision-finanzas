@@ -228,7 +228,7 @@ enum PigKind: String, Codable, CaseIterable {
 
 /// el nivel de las huchas: sube muy poco a poco con cada hucha rota
 enum PigLevel {
-    static func needed(_ level: Int) -> Double { (60 * pow(1.08, Double(level))).rounded() }
+    static func needed(_ level: Int) -> Double { (90 * pow(1.12, Double(level))).rounded() }
 }
 
 // MARK: - Facturas
@@ -313,7 +313,7 @@ enum Rarity: String, Codable, CaseIterable {
     }
     /// bonus permanente de dinero por tener la moneda
     var bonus: Double {
-        switch self { case .comun: 0.03; case .rara: 0.06; case .epica: 0.12; case .legendaria: 0.30 }
+        switch self { case .comun: 0.01; case .rara: 0.02; case .epica: 0.05; case .legendaria: 0.12 }
     }
     /// lo que vale una moneda repetida (en huchas ×50)
     var duplicate: Double {
@@ -380,12 +380,12 @@ enum Content {
     ]
     /// lo que cuesta la factura número n (contando todos los años), en vacas del nivel de cuando llega:
     /// suben poco al principio y luego cada una vale el triple que la anterior
-    static func billUnits(_ n: Int) -> Double { 40 * pow(1.4, Double(min(n, 10))) * pow(3, Double(max(0, n - 10))) }
+    static func billUnits(_ n: Int) -> Double { 40 * pow(1.4, Double(min(n, 10))) * pow(1.6, Double(max(0, n - 10))) }
     /// los martillos también se pagan en vacas
     static func hammerUnits(_ id: Int) -> Double { id == 0 ? 0 : 1_000 * pow(4, Double(id - 1)) }
 
     static func pigHP(_ tier: Int) -> Double { 8 * pow(1.3, Double(tier)) }
-    static func pigValue(_ tier: Int) -> Double { 0.9 * pow(1.25, Double(tier)) }
+    static func pigValue(_ tier: Int) -> Double { 0.9 * pow(1.12, Double(tier)) }
 
     static let skills: [SkillDef] = [
         // centro: daño
