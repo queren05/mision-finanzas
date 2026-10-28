@@ -153,21 +153,6 @@ enum Tex {
         }
     }
 
-    static var crown: SKTexture? {
-        cached("crown") {
-            draw(CGSize(width: 90, height: 50)) { c in
-                var pts = [CGPoint(x: 5, y: 45)]
-                for k in 0..<7 { pts.append(CGPoint(x: 5 + Double(k) * 80 / 6, y: k % 2 == 1 ? 32 : 5)) }
-                pts.append(CGPoint(x: 85, y: 45))
-                c.addLines(between: pts); c.closePath()
-                c.setFillColor(UIColor(Ink.gold).cgColor); c.setStrokeColor(ink.cgColor); c.setLineWidth(4); c.setLineJoin(.round)
-                c.drawPath(using: .fillStroke)
-                c.setFillColor(UIColor(Ink.red).cgColor)
-                for k in [1, 3, 5] { c.fillEllipse(in: CGRect(x: 5 + Double(k) * 80 / 6 - 5, y: 30, width: 10, height: 10)) }
-            }
-        }
-    }
-
     static var fuse: SKTexture? {
         cached("fuse") {
             draw(CGSize(width: 50, height: 50)) { c in
@@ -498,13 +483,15 @@ final class DeskScene: SKScene {
         // cabeza (para la corona y la mecha)
         let hx = skin.drawn ? dw * 0.12 : -dw / 2 + skin.head.x / skin.w * dw
         let hy = skin.drawn ? dh * 0.85 : (dh - skin.head.y / skin.h * dh) + n.body.position.y
-        switch p.kind {
-        case .rey, .reina:
-            let c = SKSpriteNode(texture: Tex.crown, size: CGSize(width: s * 0.42, height: s * 0.24))
-            c.anchorPoint = CGPoint(x: 0.5, y: 0.15)
-            c.position = CGPoint(x: hx, y: hy - s * 0.04)
+        if let h = Hat.spec(p.kind), let t = Tex.cached("hat|\(p.kind.rawValue)", { Hat.image(p.kind) }) {
+            let w = s * h.width
+            let c = SKSpriteNode(texture: t, size: CGSize(width: w, height: w * h.h / h.w))
+            c.anchorPoint = CGPoint(x: h.ax, y: 1 - h.ay)
+            c.position = h.onBody ? CGPoint(x: 0, y: dh * 0.45 + n.body.position.y) : CGPoint(x: hx + h.dx * s, y: hy - h.dy * s)
             c.zPosition = 3
             n.addChild(c)
+        }
+        switch p.kind {
         case .bomba:
             let f = SKSpriteNode(texture: Tex.fuse, size: CGSize(width: s * 0.3, height: s * 0.3))
             f.anchorPoint = CGPoint(x: 0.6, y: 0.08)

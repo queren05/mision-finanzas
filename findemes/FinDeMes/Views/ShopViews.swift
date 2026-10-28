@@ -353,7 +353,7 @@ struct SettingsView: View {
                     stat("Facturas pagadas", Fmt.num(game.s.stats.billsPaid))
                     stat("Días", Fmt.num(game.s.stats.days))
                     stat("Mejor {hucha} en un día", Fmt.money(game.s.stats.bestDay))
-                    stat("Reyes Cerdito", Fmt.num(game.s.stats.kings))
+                    stat("Reyes {Hucha}".a, Fmt.num(game.s.stats.kings))
                     stat("Bancarrotas", Fmt.num(game.s.stats.bankruptcies))
                 }
                 .foregroundStyle(Ink.ink)

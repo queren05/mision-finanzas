@@ -51,7 +51,7 @@ enum BillTwist {
         case .gordas: "Más {huchas} gord{as}"
         case .doradas: "Doradas ×2"
         case .cansado: "−25 % aguante · +50 % dinero"
-        case .rey: "Viene el Rey Cerdito"
+        case .rey: "Viene el Rey {Hucha}"
         }
     }
     var icon: String {

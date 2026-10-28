@@ -241,7 +241,7 @@ struct TreeView: View {
             HStack(spacing: 8) {
                 if vis && !maxed {
                     Button { game.get(k) } label: {
-                        Text(game.canGet(k) ? "+1 · \(Fmt.money(game.cost(k)))" : "Faltan \(Fmt.money(game.missing(k)))").frame(maxWidth: .infinity)
+                        Text("+1 · \(Fmt.money(game.cost(k)))").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ChunkyButton(color: Ink.gold, size: 16, radius: 12))
                     .disabled(!game.canGet(k))

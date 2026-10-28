@@ -307,9 +307,21 @@ struct KindIcon: View {
         .opacity(kind == .fantasma ? 0.55 : 1)
         .hueRotation(.degrees(kind == .arcoiris ? 120 : 0))
         .saturation(kind == .diamante || kind == .arcoiris ? 1.7 : 1)
-        .overlay(alignment: .top) {
-            if kind == .rey || kind == .reina { Image(systemName: "crown.fill").font(.system(size: size * 0.28)).foregroundStyle(Ink.gold).offset(y: -size * 0.12) }
+        .overlay {
+            if let h = Hat.spec(kind), let img = Hat.image(kind) {
+                // en el mismo sitio que en la mesa: la hucha mide 1,5 veces su tamaño de ancho
+                let k = skin.drawn ? 1 : min(size / skin.w, size / skin.h)
+                let iw = skin.drawn ? size : skin.w * k, ih = skin.drawn ? size : skin.h * k
+                let s = iw / 1.5
+                let w = s * h.width, hh = w * h.h / h.w
+                let head = skin.drawn ? CGPoint(x: size * 0.62, y: size * 0.15)
+                    : CGPoint(x: (size - iw) / 2 + skin.head.x * k, y: (size - ih) / 2 + skin.head.y * k)
+                let c = h.onBody ? CGPoint(x: size / 2, y: size / 2 + ih * 0.05)
+                    : CGPoint(x: head.x + h.dx * s + (0.5 - h.ax) * w, y: head.y + h.dy * s + (0.5 - h.ay) * hh)
+                Image(uiImage: img).resizable().frame(width: w, height: hh).position(c)
+            }
         }
+        .frame(width: size, height: size)
     }
 }
 

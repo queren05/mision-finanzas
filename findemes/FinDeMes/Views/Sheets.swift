@@ -15,7 +15,7 @@ struct ReportView: View {
             ("CRÍTICOS", "\(report.crits)"),
         ]
         if report.golden > 0 { l.append(("{HUCHAS} DORAD{AS}", "\(report.golden)")) }
-        if report.kings > 0 { l.append(("REY CERDITO", "\(report.kings)")) }
+        if report.kings > 0 { l.append(("REY {HUCHA}".a, "\(report.kings)")) }
         if !report.coins.isEmpty { l.append(("MONEDAS RARAS", "\(report.coins.count)")) }
         if report.best > 0 { l.append(("MEJOR {HUCHA}", Fmt.money(report.best))) }
         if report.bestCombo >= 3 { l.append(("MEJOR COMBO", "×\(report.bestCombo)")) }

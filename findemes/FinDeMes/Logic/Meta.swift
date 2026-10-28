@@ -65,7 +65,7 @@ struct AchDef: Identifiable {
         case .bankruptcies: return "Declárate en bancarrota \(n) \(target == 1 ? "vez" : "veces")"
         case .days: return "Juega \(n) días"
         case .golden: return "Rompe \(n) {huchas} dorad{as}"
-        case .kings: return "Derrota al Rey Cerdito \(n) \(target == 1 ? "vez" : "veces")"
+        case .kings: return "Derrota al Rey {Hucha} \(n) \(target == 1 ? "vez" : "veces")"
         case .chests: return "Abre \(n) sobres"
         case .crits: return "Da \(n) golpes críticos"
         case .combo: return "Haz un combo de \(n)"

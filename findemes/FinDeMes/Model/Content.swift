@@ -34,7 +34,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .acorazada: "{Hucha} acorazad{a}"
         case .bomba: "{Hucha} bomba"
         case .dorada: "{Hucha} dorad{a}"
-        case .rey: "Rey Cerdito"
+        case .rey: "Rey {Hucha}"
         case .gigante: "{Hucha} gigante"
         case .fantasma: "{Hucha} fantasma"
         case .madre: "Mamá {hucha}"
@@ -55,7 +55,7 @@ enum PigKind: String, Codable, CaseIterable {
         case .momia: "{Hucha} momia"
         case .alien: "{Hucha} alienígena"
         case .nube: "{Hucha} nube"
-        case .reina: "Reina Cerdita"
+        case .reina: "Reina {Hucha}"
         case .fenix: "{Hucha} fénix"
         case .agujero: "{Hucha} agujero negro"
         }
@@ -515,7 +515,7 @@ enum Content {
         CoinDef(id: "sestercio", name: "Sestercio", line: "Roma imperial", rarity: .epica, metal: "#b0873a", mark: "S"),
         CoinDef(id: "ducado", name: "Ducado", line: "Venecia", rarity: .epica, metal: "#f2b632", mark: "Du"),
         CoinDef(id: "maravedi", name: "Maravedí de oro", line: "Castilla", rarity: .epica, metal: "#f2b632", mark: "M"),
-        CoinDef(id: "reycerdito", name: "Moneda del Rey Cerdito", line: "Acuñada en su honor", rarity: .legendaria, metal: "#f5a7b8", mark: "♛"),
+        CoinDef(id: "reycerdito", name: "Moneda del Rey", line: "Acuñada en su honor", rarity: .legendaria, metal: "#f5a7b8", mark: "♛"),
         CoinDef(id: "galeon", name: "Doblón del galeón", line: "Del fondo del mar", rarity: .legendaria, metal: "#f2b632", mark: "⚓"),
         CoinDef(id: "chocolate", name: "Moneda de chocolate", line: "Sigue envuelta", rarity: .legendaria, metal: "#7a4a2a", mark: "C"),
         CoinDef(id: "primera", name: "La primera peseta", line: "1868. Única.", rarity: .legendaria, metal: "#e0b84a", mark: "I"),
