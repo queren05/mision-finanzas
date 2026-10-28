@@ -131,7 +131,7 @@ struct HeritageView: View {
         ZStack(alignment: .top) {
             Color(hex: "#6b1f2e").ignoresSafeArea()
             VStack(spacing: 0) {
-                SheetHeader(title: "Herencia", subtitle: "Recuerdos del abuelo · se quedan siempre")
+                SheetHeader(title: "Herencia", subtitle: "Recuerdos del abuelo")
                 CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
                 ScrollView {
                     VStack(spacing: 12) {

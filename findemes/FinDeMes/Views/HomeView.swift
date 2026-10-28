@@ -93,8 +93,6 @@ struct HomeView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "magnifyingglass").font(.system(size: 12, weight: .black))
                         Text("INSPECCIÓN DE HACIENDA · ×2").font(.typewriter(13, bold: true))
-                        Spacer(minLength: 4)
-                        EnvelopeArt(rarity: .legendaria).frame(width: 34, height: 24)
                     }
                     .foregroundStyle(Ink.red)
                 } else if game.twist != .none {
