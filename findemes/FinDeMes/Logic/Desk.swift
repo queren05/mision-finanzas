@@ -507,6 +507,7 @@ final class Desk {
                 for k in PigKind.allCases { spawn(k) }
             } else {
                 for _ in 0..<min(Desk.maxOnDesk, stats.startPigs) { spawn() }
+                if CommandLine.arguments.contains("-desfile") { for k in PigKind.allCases where Hat.spec(k) != nil { spawn(k) } }
             }
             spawnTimer = stats.spawnEvery
             if tier >= PigKind.rey.minTier && Double.random(in: 0..<1) < 0.25 + stats.king { kingDone = true; spawn(.rey) }
