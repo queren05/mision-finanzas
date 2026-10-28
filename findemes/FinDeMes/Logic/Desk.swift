@@ -95,6 +95,8 @@ final class Desk {
     /// aguante que se puede recuperar en un día (para que las partidas terminen)
     private var regainLeft = 0.0
     private var nextFrenzy = Desk.frenzyAt
+    /// imágenes ya preparadas para este fotograma
+    private var frameImgs: [String: GraphicsContext.ResolvedImage] = [:]
     init(stats: HitStats, tier: Int, hammer: HammerDef, day: Int, skin: SkinDef = Content.skins[0]) {
         self.skin = skin
         self.stats = stats
@@ -309,7 +311,7 @@ final class Desk {
             floaters.append(Floater(text: "¡FRENESÍ!", pos: CGPoint(x: size.width / 2, y: top + 120), born: time, color: Ink.gold, size: 46))
         }
         report.xp += pig.kind == .rey ? 120 : (pig.kind == .dorada ? 12 : (pig.kind == .normal ? 1 : 2))
-        var value = pig.value * (pig.kind == .dorada ? stats.goldenValue : 1) * stats.loot * valueBoost * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : (happening == .estampida ? 2 : 1))
+        var value = pig.value * (pig.kind == .dorada ? stats.goldenValue : 1) * stats.loot * comboMult * (frenzy ? frenzyGain : 1) * (happening == .horaFeliz ? 3 : (happening == .estampida ? 2 : 1))
         var jackpot = false
         if Double.random(in: 0..<1) < stats.jackpot { value *= 20; jackpot = true }
         report.earned += value
