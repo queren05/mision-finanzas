@@ -95,18 +95,6 @@ final class Desk {
     /// aguante que se puede recuperar en un día (para que las partidas terminen)
     private var regainLeft = 0.0
     private var nextFrenzy = Desk.frenzyAt
-    /// la mascota: dónde está, a quién persigue y cuándo vuelve a golpear
-    private(set) var petPos = CGPoint(x: 60, y: 400)
-    private(set) var petFacing = 1.0
-    private(set) var petHitAt = -10.0
-    private(set) var petMoving = false
-    private var petTarget: Int? = nil
-    private var petReady = 0.0
-    /// multiplica el dinero de lo que se rompe ahora mismo (el loro)
-    private var valueBoost = 1.0
-    /// imágenes ya preparadas para este fotograma
-    private var frameImgs: [String: GraphicsContext.ResolvedImage] = [:]
-
     init(stats: HitStats, tier: Int, hammer: HammerDef, day: Int, skin: SkinDef = Content.skins[0]) {
         self.skin = skin
         self.stats = stats
@@ -494,88 +482,6 @@ final class Desk {
         for i in killed { breakPig(i) }
     }
 
-    // MARK: - Mascota
-
-    var pet: PetDef? { stats.pet }
-
-    private func updatePet(_ dt: Double) {
-        guard let pet, !finished else { petMoving = false; return }
-        let active = stamina > 0 || frenzy
-        petReady -= dt * (frenzy ? 2 : 1)
-        if !active { petMoving = false; return }
-        // elige a quién perseguir
-        if petTarget == nil || !pigs.contains(where: { $0.id == petTarget && !$0.dead }) {
-            let alive = pigs.filter { !$0.dead }
-            if pet.skill == .richest {
-                petTarget = alive.max { $0.value < $1.value }?.id
-            } else {
-                petTarget = alive.min { hypot($0.pos.x - petPos.x, $0.pos.y - petPos.y) < hypot($1.pos.x - petPos.x, $1.pos.y - petPos.y) }?.id
-            }
-        }
-        guard let tid = petTarget, let i = pigs.firstIndex(where: { $0.id == tid }) else { petMoving = false; return }
-        let dx = pigs[i].pos.x - petPos.x, dy = pigs[i].pos.y - petPos.y
-        let d = hypot(dx, dy)
-        let reach = 24 + pigs[i].size * 0.4
-        if d > reach {
-            let step = min(d - reach + 1, pet.speed * (frenzy ? 1.6 : 1) * dt)
-            petPos.x += dx / d * step; petPos.y += dy / d * step
-            petMoving = true
-            if abs(dx) > 4 { petFacing = dx > 0 ? 1 : -1 }
-        } else {
-            petMoving = false
-            if petReady <= 0 { petAttack(i) }
-        }
-    }
-
-    private func petAttack(_ i: Int) {
-        guard let pet else { return }
-        let l = stats.petLevel
-        petReady = pet.interval(l)
-        petHitAt = time
-        swingKills = 0; swingEarned = 0
-        let base = stats.damage * pet.dmg(l) * stats.petMult
-        let crit = Double.random(in: 0..<1) < stats.crit
-        let at = pigs[i].pos
-        var killed: [Int] = []
-        var targets = [i]
-        switch pet.skill {
-        case .triple:
-            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead }.shuffled().prefix(2)
-        case .octopus:
-            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead && hypot(pigs[$0].pos.x - at.x, pigs[$0].pos.y - at.y) < 120 }
-        case .swarm:
-            targets += pigs.indices.filter { $0 != i && !pigs[$0].dead }.shuffled().prefix(4)
-        case .freeze:
-            for j in pigs.indices where !pigs[j].dead && hypot(pigs[j].pos.x - at.x, pigs[j].pos.y - at.y) < 140 { pigs[j].frozenUntil = time + 3 }
-            blasts.append(Blast(pos: at, born: time, radius: 140))
-        case .stamina:
-            regain(1, at: at)
-        default: break
-        }
-        for j in targets where !pigs[j].dead {
-            if damage(j, base: base, crit: crit, at: pigs[j].pos, quiet: j != i) { killed.append(j) }
-        }
-        if pet.skill == .money { valueBoost = 2 }
-        if pet.skill == .unicorn {
-            valueBoost = 3
-            if !killed.isEmpty && Double.random(in: 0..<1) < 0.06, let c = Game.shared.goldenCoinDrop() { report.coins.append(c) }
-        }
-        for j in killed where !pigs[j].dead {
-            breakPig(j)
-            if pet.skill == .chests && Double.random(in: 0..<1) < 0.04 {
-                let r = Game.shared.rollChest()
-                report.chests.append(r)
-                floaters.append(Floater(text: "¡Sobre \(r.name.lowercased())!", pos: CGPoint(x: petPos.x, y: petPos.y - 50), born: time, color: r == .comun ? Ink.soft : r.color, size: 18))
-            }
-        }
-        valueBoost = 1
-        if pet.skill == .fire { explode(at: at, power: base * 0.5) }
-        pigs.removeAll { $0.dead }
-        if swingKills > 0 { Sound.shared.smash(big: false) } else { Sound.shared.hit(crit: crit) }
-        petTarget = nil
-        markDirty()
-    }
-
     private func markDirty() {
         guard !dirty else { return }
         dirty = true
@@ -601,7 +507,6 @@ final class Desk {
                 for _ in 0..<min(Desk.maxOnDesk, stats.startPigs) { spawn() }
             }
             spawnTimer = stats.spawnEvery
-            petPos = CGPoint(x: size.width / 2, y: size.height - bottom - 30)
             if tier >= PigKind.rey.minTier && Double.random(in: 0..<1) < 0.25 + stats.king { kingDone = true; spawn(.rey) }
         }
         // parón de impacto: el tiempo casi se detiene un instante al romper
@@ -632,7 +537,6 @@ final class Desk {
             nextHappening = time + Double.random(in: 16...30)
             startHappening()
         }
-        updatePet(dt)
         if combo > 0 && time - comboAt > Desk.comboWindow + stats.comboTime && !frenzy { combo = 0; nextFrenzy = frenzyBase + 15 * report.frenzies * report.frenzies }
 
         // se mueven

@@ -1,122 +1,31 @@
 import SwiftUI
 
-/// Las tres formas de ver el árbol de mejoras (se elige arriba del árbol o en Ajustes)
-enum TreeStyle: Int, CaseIterable {
-    case corcho, columnas, cajones
-    var name: String {
-        switch self {
-        case .corcho: "Corcho"
-        case .columnas: "Columnas"
-        case .cajones: "Cajones"
-        }
-    }
-    var icon: String {
-        switch self {
-        case .corcho: "pin.fill"
-        case .columnas: "chart.bar.fill"
-        case .cajones: "tray.full.fill"
-        }
-    }
-}
-
-/// El árbol de mejoras (y el familiar): notas de papel clavadas en el corcho con chinchetas y unidas con hilo.
+/// El árbol de mejoras: cinco columnas de diez notas clavadas en el corcho, unidas con hilo, de abajo arriba.
 struct TreeView: View {
     @Environment(Game.self) private var game
-    var family = false
     @State private var picked: String? = nil
     @State private var bought = 0
     @State private var boughtKey = 0
-    @State private var zoom: CGFloat = 0.75
-    @State private var baseZoom: CGFloat = 0.75
-    @State private var drawer: Branch = .dano
 
-    private var tree: SkillTree { family ? .family : .corcho }
-    private var defs: [SkillDef] { family ? Content.family : Content.skills }
-    private var style: TreeStyle { TreeStyle(rawValue: game.s.settings.treeStyle) ?? .corcho }
+    private var tree: SkillTree { .main }
+    private var defs: [SkillDef] { Content.skills }
 
     var body: some View {
         ZStack(alignment: .top) {
-            CorkBackground(family: family)
+            CorkBackground()
             VStack(spacing: 0) {
-                SheetHeader(title: family ? "Árbol familiar" : "Árbol de mejoras", subtitle: family ? "Se queda para siempre" : "Se pierde con la bancarrota")
-                HStack(spacing: 8) {
-                    if family { CashPill(value: "\(Fmt.num(game.s.legacy)) puntos", color: Color(hex: "#f2d58a")) }
-                    else { CashPill(value: Fmt.money(game.s.cash)) }
-                    Spacer(minLength: 4)
-                    if style == .corcho {
-                        Button { setZoom(zoom - 0.15) } label: { Image(systemName: "minus.magnifyingglass").font(.system(size: 15, weight: .black)) }
-                            .buttonStyle(ChunkyButton(color: Ink.paper, size: 14, radius: 10))
-                        Button { setZoom(zoom + 0.15) } label: { Image(systemName: "plus.magnifyingglass").font(.system(size: 15, weight: .black)) }
-                            .buttonStyle(ChunkyButton(color: Ink.paper, size: 14, radius: 10))
-                    }
-                }
-                .padding(.horizontal, 16).padding(.bottom, 8)
-                TreeStylePicker().padding(.horizontal, 16).padding(.bottom, 8)
-                switch style {
-                case .corcho: corkboard
-                case .columnas:
-                    legend.padding(.horizontal, 10).padding(.bottom, 4)
-                    columns
-                case .cajones:
-                    drawerTabs.padding(.horizontal, 10).padding(.bottom, 6)
-                    drawers
-                }
+                SheetHeader(title: "Árbol de mejoras", subtitle: "Se pierde con la bancarrota")
+                CashPill(value: Fmt.money(game.s.cash)).padding(.bottom, 8)
+                legend.padding(.horizontal, 10).padding(.bottom, 4)
+                columns
                 panel
             }
         }
-        .task {
-            // capturas automáticas: -treestyle 0|1|2
-            let args = ProcessInfo.processInfo.arguments
-            if let i = args.firstIndex(of: "-treestyle"), i + 1 < args.count, let n = Int(args[i + 1]) { game.s.settings.treeStyle = n }
-        }
     }
-
-    private func setZoom(_ z: CGFloat) {
-        Sound.shared.click()
-        withAnimation(.snappy) { zoom = min(1.6, max(0.45, z)) }
-        baseZoom = zoom
-    }
-
-    // MARK: 1 · el corcho de antes (cada nota en su sitio y un hilo rojo a la que la desbloquea)
 
     private let cell: CGFloat = 92
 
-    private func corkCenter(_ k: SkillDef) -> CGPoint {
-        CGPoint(x: 20 + CGFloat(k.col) * (cell + 16) + cell / 2, y: 26 + CGFloat(k.row) * (cell + 26) + cell / 2)
-    }
-
-    private var corkboard: some View {
-        let cols = (defs.map(\.col).max() ?? 0) + 1
-        let rows = (defs.map(\.row).max() ?? 0) + 1
-        let w = CGFloat(cols) * cell + CGFloat(cols - 1) * 16 + 40
-        let h = CGFloat(rows) * cell + CGFloat(rows - 1) * 26 + 52
-        return ScrollView([.horizontal, .vertical]) {
-            ZStack(alignment: .topLeading) {
-                Canvas { ctx, _ in
-                    for k in defs {
-                        guard let pid = tree.parent[k.id], let p = defs.first(where: { $0.id == pid }),
-                              game.isVisible(k) || game.isVisible(p) else { continue }
-                        thread(ctx, from: pin(corkCenter(p), cell), to: pin(corkCenter(k), cell), color: Ink.red, state: threadState(k), sag: 14)
-                    }
-                }
-                .frame(width: w, height: h)
-                ForEach(defs) { k in note(k, size: cell).position(corkCenter(k)) }
-            }
-            .frame(width: w, height: h)
-            .scaleEffect(zoom, anchor: .topLeading)
-            .frame(width: w * zoom, height: h * zoom, alignment: .topLeading)
-            .frame(minWidth: UIScreen.main.bounds.width)
-        }
-        .defaultScrollAnchor(.top)
-        .scrollIndicators(.hidden)
-        .simultaneousGesture(
-            MagnifyGesture()
-                .onChanged { v in zoom = min(1.6, max(0.45, baseZoom * v.magnification)) }
-                .onEnded { _ in baseZoom = zoom }
-        )
-    }
-
-    // MARK: 2 · cinco columnas, una por color, de abajo arriba
+    // MARK: cinco columnas, una por color, de abajo arriba (todas con las mismas notas: las filas cuadran)
 
     private var columns: some View {
         let card: CGFloat = 70
@@ -128,7 +37,7 @@ struct TreeView: View {
             let colW = w / CGFloat(Branch.allCases.count)
             let root = CGPoint(x: w / 2, y: h - 66)
             let at = { (b: Int, j: Int) -> CGPoint in
-                CGPoint(x: colW * (CGFloat(b) + 0.5), y: h - 200 - CGFloat(j) * rowH + (b % 2 == 1 ? 20 : 0))
+                CGPoint(x: colW * (CGFloat(b) + 0.5), y: h - 200 - CGFloat(j) * rowH)
             }
             ScrollView(.vertical) {
                 ZStack(alignment: .topLeading) {
@@ -151,66 +60,6 @@ struct TreeView: View {
                 .frame(width: w, height: h)
             }
             .defaultScrollAnchor(.bottom)
-            .scrollIndicators(.hidden)
-        }
-    }
-
-    // MARK: 3 · cajones: un color cada vez, notas grandes en zigzag
-
-    private var drawerTabs: some View {
-        HStack(spacing: 5) {
-            ForEach(Branch.allCases, id: \.rawValue) { b in
-                let n = tree.branches[b.rawValue].filter { game.canGet($0) }.count
-                let on = drawer == b
-                Button {
-                    Sound.shared.click()
-                    withAnimation(.snappy) { drawer = b }
-                } label: {
-                    Text(b.name(family: family)).font(.chunky(13)).lineLimit(1).minimumScaleFactor(0.6)
-                        .foregroundStyle(on ? Ink.paper : Ink.ink)
-                        .shadow(color: on ? Ink.ink : .clear, radius: 0, x: 1, y: 1)
-                        .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(on ? b.color : Ink.paper))
-                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Ink.ink, lineWidth: 2.5))
-                        .offset(y: on ? 3 : 0)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Ink.ink).offset(y: 4))
-                        .overlay(alignment: .topTrailing) {
-                            if n > 0 {
-                                Text("\(n)").font(.chunky(10)).foregroundStyle(Ink.paper)
-                                    .frame(minWidth: 16, minHeight: 16)
-                                    .background(Circle().fill(Ink.red)).overlay(Circle().strokeBorder(Ink.ink, lineWidth: 1.5))
-                                    .offset(x: 5, y: -6)
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var drawers: some View {
-        let list = [tree.root] + tree.branches[drawer.rawValue]
-        let rowH: CGFloat = 112
-        return GeometryReader { g in
-            let w = g.size.width
-            let cardW = min(300, w * 0.74)
-            let h = CGFloat(list.count) * rowH + 40
-            let at = { (j: Int) -> CGPoint in CGPoint(x: w * (j % 2 == 0 ? 0.42 : 0.58), y: 62 + CGFloat(j) * rowH) }
-            ScrollView(.vertical) {
-                ZStack(alignment: .topLeading) {
-                    Canvas { ctx, _ in
-                        for j in list.indices.dropFirst() {
-                            thread(ctx, from: pin(at(j - 1), 78), to: pin(at(j), 78), color: drawer.color, state: threadState(list[j]), sag: 26)
-                        }
-                    }
-                    .frame(width: w, height: h)
-                    ForEach(list.indices, id: \.self) { j in
-                        wideNote(list[j], width: cardW, tilt: j % 2 == 0 ? 1.5 : -1.5).position(at(j))
-                    }
-                }
-                .frame(width: w, height: h)
-                .id(drawer)
-            }
             .scrollIndicators(.hidden)
         }
     }
@@ -261,6 +110,14 @@ struct TreeView: View {
             .offset(y: -6)
     }
 
+    /// la marca de la rama en la esquina (estrella, euro, corazón, rejilla o rayo)
+    private func branchMark(_ k: SkillDef) -> some View {
+        let b = Branch.of(k.effect)
+        return Image(systemName: b.icon).font(.system(size: 8, weight: .black)).foregroundStyle(b.color)
+            .padding(.top, 5).padding(.trailing, 5)
+            .rotationEffect(.degrees(tilt(k)))
+    }
+
     private func levelTag(_ k: SkillDef, _ size: CGFloat) -> some View {
         let l = game.level(k)
         let maxed = l >= k.maxLevel
@@ -277,7 +134,7 @@ struct TreeView: View {
         withAnimation(.snappy) { picked = k.id }
     }
 
-    /// nota cuadrada (corcho y columnas)
+    /// nota cuadrada: el icono suelto, el nombre, el nivel y el precio; abajo a la derecha, la marca de su rama
     private func note(_ k: SkillDef, size: CGFloat) -> some View {
         let l = game.level(k)
         let vis = game.isVisible(k)
@@ -301,7 +158,7 @@ struct TreeView: View {
                         else {
                             HStack(spacing: 3) {
                                 levelTag(k, small ? 8.5 : 10)
-                                Text(game.price(k, game.cost(k)))
+                                Text(Fmt.money(game.cost(k)))
                                     .font(.typewriter(small ? 8.5 : 10, bold: true)).foregroundStyle(can ? Ink.ink : Ink.soft)
                                     .lineLimit(1).minimumScaleFactor(0.5)
                             }
@@ -316,51 +173,12 @@ struct TreeView: View {
             .frame(width: side, height: side)
             .paper(can ? Color(hex: "#fff6c8") : (vis ? Ink.paper : Ink.paperDark), tilt: tilt(k), shadow: vis ? 4 : 2)
             .overlay { if sel { Rectangle().strokeBorder(Ink.gold, lineWidth: 4).padding(-5).rotationEffect(.degrees(tilt(k))) } }
+            .overlay(alignment: .topTrailing) { if vis && k.id != tree.root.id { branchMark(k) } }
             .opacity(vis ? 1 : 0.8)
             chincheta(k)
         }
         .scaleEffect(sel ? 1.08 : 1)
         .phaseAnimator([0.0, can ? 1.0 : 0.0]) { v, a in v.scaleEffect(1 + a * 0.05) } animation: { _ in .easeInOut(duration: 0.7) }
-        .contentShape(Rectangle())
-        .onTapGesture { tap(k) }
-    }
-
-    /// nota apaisada con lo que hace (cajones)
-    private func wideNote(_ k: SkillDef, width: CGFloat, tilt: Double) -> some View {
-        let l = game.level(k)
-        let vis = game.isVisible(k)
-        let can = game.canGet(k)
-        let maxed = l >= k.maxLevel
-        let sel = picked == k.id
-        let col = branchColor(k)
-        return ZStack(alignment: .top) {
-            HStack(spacing: 12) {
-                Image(systemName: vis ? k.icon : "questionmark")
-                    .font(.system(size: 30, weight: .black))
-                    .foregroundStyle(vis ? (l > 0 ? col : Ink.ink) : Ink.soft)
-                    .frame(width: 46)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(vis ? k.name : "???").font(.chunky(16)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
-                    Text(vis ? k.perText + " por nivel" : "Compra antes la de arriba").font(.typewriter(10.5, bold: true)).foregroundStyle(Ink.soft)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                    HStack {
-                        levelTag(k, 10.5)
-                        Spacer(minLength: 4)
-                        if vis && !maxed {
-                            Text(game.price(k, game.cost(k))).font(.typewriter(12, bold: true)).foregroundStyle(can ? Ink.ink : Ink.soft)
-                                .lineLimit(1).minimumScaleFactor(0.6)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 10)
-            .frame(width: width, height: 78)
-            .paper(can ? Color(hex: "#fff6c8") : (vis ? Ink.paper : Ink.paperDark), tilt: tilt, shadow: 4)
-            .overlay { if sel { Rectangle().strokeBorder(Ink.gold, lineWidth: 4).padding(-5).rotationEffect(.degrees(tilt)) } }
-            .opacity(vis ? 1 : 0.85)
-            chincheta(k)
-        }
-        .phaseAnimator([0.0, can ? 1.0 : 0.0]) { v, a in v.scaleEffect(1 + a * 0.03) } animation: { _ in .easeInOut(duration: 0.7) }
         .contentShape(Rectangle())
         .onTapGesture { tap(k) }
     }
@@ -372,8 +190,8 @@ struct TreeView: View {
             ForEach(Branch.allCases, id: \.rawValue) { b in
                 let n = tree.branches[b.rawValue].filter { game.canGet($0) }.count
                 HStack(spacing: 3) {
-                    Circle().fill(b.color).frame(width: 9, height: 9).overlay(Circle().strokeBorder(Ink.ink, lineWidth: 1.5))
-                    Text(b.name(family: family)).font(.typewriter(10, bold: true)).lineLimit(1).minimumScaleFactor(0.6)
+                    Image(systemName: b.icon).font(.system(size: 9, weight: .black)).foregroundStyle(b.color)
+                    Text(b.name.a).font(.typewriter(10, bold: true)).lineLimit(1).minimumScaleFactor(0.6)
                     if n > 0 { Text("\(n)").font(.chunky(10)).foregroundStyle(Ink.paper).padding(.horizontal, 4).background(Ink.red, in: Capsule()) }
                 }
                 .foregroundStyle(Ink.ink)
@@ -387,8 +205,7 @@ struct TreeView: View {
 
     private var selected: SkillDef {
         if let id = picked, let k = defs.first(where: { $0.id == id }) { return k }
-        let pool = style == .cajones ? [tree.root] + tree.branches[drawer.rawValue] : defs
-        return pool.filter { game.canGet($0) }.min { game.cost($0) < game.cost($1) } ?? (style == .cajones ? pool.last { game.isVisible($0) } ?? tree.root : tree.root)
+        return defs.filter { game.canGet($0) }.min { game.cost($0) < game.cost($1) } ?? tree.root
     }
 
     private var panel: some View {
@@ -424,7 +241,7 @@ struct TreeView: View {
             HStack(spacing: 8) {
                 if vis && !maxed {
                     Button { game.get(k) } label: {
-                        Text(game.canGet(k) ? "+1 · \(game.price(k, game.cost(k)))" : "Faltan \(game.price(k, game.missing(k)))").frame(maxWidth: .infinity)
+                        Text(game.canGet(k) ? "+1 · \(Fmt.money(game.cost(k)))" : "Faltan \(Fmt.money(game.missing(k)))").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ChunkyButton(color: Ink.gold, size: 16, radius: 12))
                     .disabled(!game.canGet(k))
@@ -470,32 +287,5 @@ struct TreeView: View {
         }
         if n > 0 { game.save(); Sound.shared.till() }
         withAnimation(.spring) { bought = n; boughtKey += 1 }
-    }
-}
-
-/// selector de la forma del árbol (arriba del árbol y en Ajustes)
-struct TreeStylePicker: View {
-    @Environment(Game.self) private var game
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(TreeStyle.allCases, id: \.rawValue) { t in
-                let on = game.s.settings.treeStyle == t.rawValue
-                Button {
-                    Sound.shared.click()
-                    withAnimation(.snappy) { game.s.settings.treeStyle = t.rawValue }
-                    game.save()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: t.icon).font(.system(size: 12, weight: .black))
-                        Text(t.name).font(.chunky(14)).lineLimit(1).minimumScaleFactor(0.7)
-                    }
-                    .foregroundStyle(on ? Ink.paper : Ink.ink)
-                    .frame(maxWidth: .infinity).padding(.vertical, 6)
-                    .background(Capsule().fill(on ? Ink.ink : Ink.paper))
-                    .overlay(Capsule().strokeBorder(Ink.ink, lineWidth: 2))
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
 }

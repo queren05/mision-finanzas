@@ -66,41 +66,6 @@ struct QuestRow: View {
     }
 }
 
-// MARK: - Sobres sin abrir
-
-struct ChestsButton: View {
-    @Environment(Game.self) private var game
-    @Binding var open: Bool
-    var body: some View {
-        let n = game.s.pendingChests.count
-        Button { Sound.shared.click(); open = true } label: {
-            HStack(spacing: 12) {
-                EnvelopeArt(rarity: game.s.pendingChests.max { $0.order < $1.order } ?? .comun).frame(width: 64, height: 44)
-                Text(n == 1 ? "1 sobre sin abrir" : "\(n) sobres sin abrir").font(.chunky(20))
-                Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 16, weight: .black))
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(ChunkyButton(color: Ink.paper, size: 18, radius: 16))
-        .phaseAnimator([0.0, -2.0, 2.0, 0.0]) { v, a in v.rotationEffect(.degrees(a)) } animation: { _ in .easeInOut(duration: 0.12) }
-    }
-}
-
-struct ChestSheet: View {
-    @Environment(Game.self) private var game
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        ZStack(alignment: .top) {
-            Color(hex: "#3d2b5c").ignoresSafeArea()
-            VStack(spacing: 0) {
-                SheetHeader(title: "Sobres", subtitle: "Toca para abrir")
-                ScrollView { ChestOpener().padding(20) }.scrollIndicators(.hidden)
-            }
-        }
-    }
-}
-
 // MARK: - Logros
 
 struct AchievementsView: View {

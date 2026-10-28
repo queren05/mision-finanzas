@@ -88,7 +88,7 @@ enum Demo {
         s.rings = ["abuela": 3, "oro": 2, "cuero": 4]
         s.coins = ["peseta": 2, "duro": 1, "yen": 1, "reala8": 1, "doblon": 1]
         s.stats.bankruptcies = 2; s.stats.billsPaid = 30; s.stats.broken = 1_830; s.stats.days = 41
-        s.skinsOwned = ["cerdo", "gamba", "dibujo", "chaqueta", "vaca"]
+        s.skinsOwned = ["cerdo", "vaca"]
         s.tutorial = 9; s.level = 12; s.xp = 410; s.tier = 13; s.pigXP = 260
         s.lastDaily = args.contains("-daily") ? "" : Game.dayKey(Date())
         s.streak = 3
@@ -97,6 +97,7 @@ enum Demo {
         s.stats.bestCombo = 22; s.stats.missions = 14; s.stats.chests = 6
         s.quests = [Quest(kind: .romper, target: 160, progress: 160, reward: 70, xp: 160), Quest(kind: .combo, target: 28, progress: 22, reward: 60, xp: 160), Quest(kind: .ganar, target: 9_000, progress: 3_100, reward: 80, xp: 160)]
         if args.contains("-sobres") { s.pendingChests = [.comun, .rara, .epica] }
+        if args.contains("-inspeccion") { s.billIndex = 4; s.billDue = 11 }
         if let i = args.firstIndex(of: "-skin"), i + 1 < args.count { s.skin = args[i + 1] }
         game.s = s
         game.recompute()

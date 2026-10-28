@@ -148,7 +148,6 @@ struct ChestOpener: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(opening)
-                Text("Toca para abrir").font(.typewriter(13, bold: true)).foregroundStyle(Ink.paper)
                 if game.s.pendingChests.count >= 2 {
                     Button { openAll() } label: { Text("Abrir los \(game.s.pendingChests.count) de golpe").frame(maxWidth: .infinity) }
                         .buttonStyle(ChunkyButton(color: Ink.gold, size: 18))
@@ -279,7 +278,7 @@ struct EventView: View {
                     Text("BANCARROTA").font(.chunky(36)).foregroundStyle(Ink.ink)
                     Text("Vuelves a empezar con la chancla, pero con más experiencia.").font(.typewriter(15)).multilineTextAlignment(.center)
                     legacyLine(legacy)
-                    Button { close() } label: { Text("Al joyero y a por otra").frame(maxWidth: .infinity) }
+                    Button { close() } label: { Text("A la herencia y a por otra").frame(maxWidth: .infinity) }
                         .buttonStyle(ChunkyButton(color: Ink.gold, size: 20))
                 }
             }

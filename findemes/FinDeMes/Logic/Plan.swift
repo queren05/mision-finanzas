@@ -9,7 +9,7 @@ enum Door: String, CaseIterable {
         case .mejoras: "Mejoras"
         case .martillo: "Martillo"
         case .album: "Álbum"
-        case .bar: "El bar de Manolo"
+        case .bar: "La feria"
         case .herencia: "Herencia"
         }
     }
@@ -18,7 +18,7 @@ enum Door: String, CaseIterable {
         case .mejoras: "leaf.fill"
         case .martillo: "hammer.fill"
         case .album: "book.closed.fill"
-        case .bar: "dice.fill"
+        case .bar: "ticket.fill"
         case .herencia: "crown.fill"
         }
     }
@@ -29,6 +29,40 @@ enum Door: String, CaseIterable {
         case .album: Ink.gold
         case .bar: Ink.red
         case .herencia: Ink.purple
+        }
+    }
+}
+
+/// lo que trae cada factura a la mesa mientras está pegada en la nevera
+enum BillTwist {
+    case none, prisa, frenesi, gordas, doradas, cansado, rey
+
+    /// cada empresa trae lo suyo
+    static func of(_ bill: Int) -> BillTwist {
+        let list: [BillTwist] = [.none, .prisa, .frenesi, .gordas, .rey, .doradas, .cansado, .prisa, .rey,
+                                 .gordas, .gordas, .frenesi, .doradas, .cansado, .prisa, .rey, .prisa, .none]
+        return bill < list.count ? list[bill] : .none
+    }
+    var title: String {
+        switch self {
+        case .none: ""
+        case .prisa: "Salen más rápido"
+        case .frenesi: "Frenesí antes"
+        case .gordas: "Más {huchas} gord{as}"
+        case .doradas: "Doradas ×2"
+        case .cansado: "−25 % aguante · +50 % dinero"
+        case .rey: "Viene el Rey Cerdito"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .none: ""
+        case .prisa: "hare.fill"
+        case .frenesi: "bolt.fill"
+        case .gordas: "circle.fill"
+        case .doradas: "star.fill"
+        case .cansado: "bed.double.fill"
+        case .rey: "crown.fill"
         }
     }
 }
@@ -60,6 +94,15 @@ enum Mortgage {
 
 @MainActor
 extension Game {
+    // MARK: facturas: cada una trae algo y cada cinco, inspección de Hacienda
+
+    /// la quinta, la décima… (menos la última del año, que ya es Hacienda)
+    func isInspection(_ id: Int) -> Bool {
+        (s.year * Content.bills.count + id) % 5 == 4 && id < Content.bills.count - 1
+    }
+    var inspection: Bool { isInspection(s.billIndex) }
+    var twist: BillTwist { inspection ? .none : BillTwist.of(s.billIndex) }
+
     // MARK: puertas (se abren poco a poco)
 
     func doorOpen(_ d: Door) -> Bool {
@@ -111,7 +154,7 @@ extension Game {
 
     // MARK: lo ganado mientras no juegas
 
-    /// al abrir la app: si ha pasado un rato, la mascota (o el abuelo) ha seguido rompiendo
+    /// al abrir la app: si ha pasado un rato, el abuelo ha seguido rompiendo
     func wake() {
         let now = Date().timeIntervalSince1970
         defer { s.lastPlayed = now }

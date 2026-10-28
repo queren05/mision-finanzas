@@ -1,8 +1,7 @@
 import SwiftUI
 
 enum HomeSheet: String, Identifiable {
-    case tree, hammers, jewelry, coins, settings, skins, achievements, bestiary, chests, workshop, totems, bar, pets, family
-    case martillo, herencia, album
+    case tree, hammers, herencia, album, bar, settings
     var id: String { rawValue }
 }
 
@@ -22,11 +21,6 @@ struct HomeView: View {
                     billCard
                     MortgageCard()
                     playButton
-                    PigLevelStrip().padding(.horizontal, 14).padding(.vertical, 9).paper(shadow: 3)
-                    if !game.s.pendingChests.isEmpty {
-                        ChestsButton(open: Binding(get: { sheet == .chests }, set: { sheet = $0 ? .chests : nil }))
-                            .transition(.scale.combined(with: .opacity))
-                    }
                     if game.unlocked(.encargos) && !game.s.quests.isEmpty { QuestsCard() }
                     doors
                     if let next = game.nextBill {
@@ -45,40 +39,21 @@ struct HomeView: View {
             switch s {
             case .tree: TreeView()
             case .hammers: HammersView()
-            case .jewelry: JewelryView()
-            case .coins: CoinsView()
-            case .settings: SettingsView()
-            case .skins: SkinsView()
-            case .achievements: AchievementsView()
-            case .bestiary: BestiaryView()
-            case .chests: ChestSheet()
-            case .workshop: WorkshopView()
-            case .totems: TotemsView()
-            case .bar: BarView()
-            case .pets: PetsView()
-            case .family: TreeView(family: true)
-            case .martillo: HammerDoor()
-            case .herencia: LegacyDoor()
+            case .herencia: HeritageView()
             case .album: AlbumDoor()
+            case .bar: BarView()
+            case .settings: SettingsView()
             }
         }
         .onAppear {
+            // capturas automáticas
             let args = ProcessInfo.processInfo.arguments
             if args.contains("-tree") { sheet = .tree }
             if args.contains("-hammers") { sheet = .hammers }
-            if args.contains("-jewelry") { sheet = .jewelry }
-            if args.contains("-coins") { sheet = .coins }
-            if args.contains("-skins") { sheet = .skins }
-            if args.contains("-logros") { sheet = .achievements }
-            if args.contains("-huchario") { sheet = .bestiary }
-            if args.contains("-taller") { sheet = .workshop }
-            if args.contains("-totems") { sheet = .totems }
+            if args.contains("-herencia") { sheet = .herencia }
+            if args.contains("-album") { sheet = .album }
             if args.contains("-bar") { sheet = .bar }
-            if args.contains("-mascotas") { sheet = .pets }
-            if args.contains("-familia") { sheet = .family }
-            if args.contains("-puerta-martillo") { sheet = .martillo }
-            if args.contains("-puerta-herencia") { sheet = .herencia }
-            if args.contains("-puerta-album") { sheet = .album }
+            if args.contains("-ajustes") { sheet = .settings }
         }
     }
 
@@ -114,6 +89,21 @@ struct HomeView: View {
                     Text("Nº \(String(format: "%04d", Int(game.s.stats.billsPaid) + 1))").font(.typewriter(12))
                 }
                 Text(b.concept).font(.typewriter(14))
+                if game.inspection {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass").font(.system(size: 12, weight: .black))
+                        Text("INSPECCIÓN DE HACIENDA · ×2").font(.typewriter(13, bold: true))
+                        Spacer(minLength: 4)
+                        EnvelopeArt(rarity: .legendaria).frame(width: 34, height: 24)
+                    }
+                    .foregroundStyle(Ink.red)
+                } else if game.twist != .none {
+                    HStack(spacing: 6) {
+                        Image(systemName: game.twist.icon).font(.system(size: 12, weight: .black))
+                        Text(game.twist.title.a).font(.typewriter(13, bold: true))
+                    }
+                    .foregroundStyle(Ink.purple)
+                }
                 Rectangle().fill(Ink.ink).frame(height: 1.5).opacity(0.6)
                     .overlay(Rectangle().stroke(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])).foregroundStyle(Ink.paper))
                 HStack(alignment: .lastTextBaseline) {
@@ -142,6 +132,7 @@ struct HomeView: View {
             .paper(tilt: -1.2)
             .overlay(alignment: .topTrailing) {
                 if left == 0 { Stamp(text: "ÚLTIMO DÍA").offset(x: -12, y: 36) }
+                else if game.inspection { Stamp(text: "HACIENDA").offset(x: -12, y: 36) }
             }
             .keyframeAnimator(initialValue: 0.0, trigger: paidStamp) { v, x in
                 v.offset(x: x)
@@ -182,10 +173,7 @@ struct HomeView: View {
     private var doors: some View {
         let grid = [Door.mejoras, .martillo, .album, .herencia].filter { game.doorOpen($0) }
         let kinds = PigKind.allCases.filter { game.s.bestTier >= $0.minTier }.count
-        let legacyBuy = Content.family.contains { game.canBuyFamily($0) }
-            || Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }
-            || Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }
-            || Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }
+        let legacyBuy = Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }
         return VStack(spacing: 14) {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
                 ForEach(grid, id: \.rawValue) { d in
@@ -193,9 +181,9 @@ struct HomeView: View {
                     case .mejoras:
                         DoorCard(door: d, subtitle: "Árbol de mejoras", badge: game.bestSkill(Content.skills) != nil) { sheet = .tree }
                     case .martillo:
-                        DoorCard(door: d, subtitle: Content.hammers[game.s.hammer].name, badge: game.bestHammer != nil || ((game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0) && game.bestPart != nil)) { sheet = .martillo }
+                        DoorCard(door: d, subtitle: Content.hammers[game.s.hammer].name, badge: game.bestHammer != nil || ((game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0) && game.bestPart != nil)) { sheet = .hammers }
                     case .album:
-                        DoorCard(door: d, subtitle: "\(kinds) {huchas} · \(game.s.achievements.count) logros", badge: game.achievementsReady > 0) { sheet = .album }
+                        DoorCard(door: d, subtitle: "\(kinds) {huchas} · \(game.s.achievements.count) logros", badge: game.achievementsReady > 0 || !game.s.pendingChests.isEmpty) { sheet = .album }
                     case .herencia:
                         DoorCard(door: d, subtitle: "\(Fmt.num(game.s.legacy)) puntos", badge: legacyBuy) { sheet = .herencia }
                     case .bar: EmptyView()
@@ -203,7 +191,7 @@ struct HomeView: View {
                 }
             }
             if game.doorOpen(.bar) {
-                DoorCard(door: .bar, subtitle: game.freeScratch ? "¡Rasca gratis!" : "Tragaperras, rasca y carreras", badge: game.freeScratch) { sheet = .bar }
+                DoorCard(door: .bar, subtitle: "Tragaperras y rasca", badge: game.freeSpins > 0 || game.freeScratch) { sheet = .bar }
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: grid.count)

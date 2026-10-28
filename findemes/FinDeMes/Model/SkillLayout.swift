@@ -4,18 +4,6 @@ import SwiftUI
 enum Branch: Int, CaseIterable {
     case dano, dinero, aguante, rebano, frenesi
 
-    func name(family: Bool) -> String {
-        if family {
-            switch self {
-            case .dano: return "Fuerza"
-            case .dinero: return "Dinero"
-            case .aguante: return "Ventajas"
-            case .rebano: return "{Huchas}"
-            case .frenesi: return "Ritmo"
-            }
-        }
-        return name
-    }
     var name: String {
         switch self {
         case .dano: "Daño"
@@ -36,7 +24,7 @@ enum Branch: Int, CaseIterable {
     }
     var icon: String {
         switch self {
-        case .dano: "hammer.fill"
+        case .dano: "burst.fill"
         case .dinero: "eurosign.circle.fill"
         case .aguante: "heart.fill"
         case .rebano: "square.grid.3x3.fill"
@@ -46,11 +34,11 @@ enum Branch: Int, CaseIterable {
 
     static func of(_ e: SkillEffect) -> Branch {
         switch e {
-        case .damageFlat, .damagePct, .damageMul, .crit, .critDamage, .pierce, .firstHit, .collateral, .bomb, .bothMul: .dano
-        case .lootPct, .lootMul, .golden, .goldenValue, .jackpot, .chest, .chestValue, .king, .legacyPct, .scratch: .dinero
-        case .stamina, .killStamina, .drainSave, .glass, .keepTier, .keepParts, .startHammer: .aguante
-        case .startPigs, .spawnPct, .maxPigs, .fat, .pigXPMul, .totemSlot, .autoBuy: .rebano
-        case .speedPct, .radiusPct, .frenzyEarly, .frenzyTime, .frenzyMoney, .comboCap, .comboTime, .petDamage: .frenesi
+        case .damageFlat, .damagePct, .crit, .critDamage, .pierce: .dano
+        case .lootPct, .golden, .goldenValue, .jackpot, .chest: .dinero
+        case .stamina, .killStamina, .drainSave, .glass: .aguante
+        case .startPigs, .spawnPct, .maxPigs, .fat, .pigXPMul, .bomb, .king: .rebano
+        case .speedPct, .radiusPct, .collateral, .frenzyEarly, .frenzyTime, .frenzyMoney, .comboCap, .comboTime: .frenesi
         }
     }
 }
@@ -62,7 +50,7 @@ struct SkillTree {
     let parent: [String: String]
 
     init(_ defs: [SkillDef]) {
-        let root = defs.first { $0.parent == nil } ?? defs[0]
+        let root = defs[0]
         self.root = root
         var b = Array(repeating: [SkillDef](), count: Branch.allCases.count)
         for k in defs where k.id != root.id { b[Branch.of(k.effect).rawValue].append(k) }
@@ -81,7 +69,5 @@ struct SkillTree {
         parent = p
     }
 
-    static let corcho = SkillTree(Content.skills)
-    static let family = SkillTree(Content.family)
-    static func of(_ k: SkillDef) -> SkillTree { k.family ? family : corcho }
+    static let main = SkillTree(Content.skills)
 }

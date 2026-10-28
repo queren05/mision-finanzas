@@ -57,6 +57,11 @@ struct TabbedDoor: View {
         let current = tabs.first { $0.id == picked } ?? tabs[0]
         current.content
             .id(current.id)
+            .task {
+                // capturas automáticas: -tab <pestaña>
+                let args = ProcessInfo.processInfo.arguments
+                if picked.isEmpty, let i = args.firstIndex(of: "-tab"), i + 1 < args.count { picked = args[i + 1] }
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if tabs.count > 1 { bar(current.id) }
             }
@@ -90,36 +95,13 @@ struct TabbedDoor: View {
     }
 }
 
-/// las tres puertas con pestañas
-struct HammerDoor: View {
-    @Environment(Game.self) private var game
-    var body: some View {
-        var tabs = [DoorTab(id: "martillos", name: "Martillos", icon: "hammer.fill", badge: game.bestHammer != nil, content: AnyView(HammersView()))]
-        if game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0 {
-            tabs.append(DoorTab(id: "taller", name: "Taller", icon: "wrench.and.screwdriver.fill", badge: game.bestPart != nil, content: AnyView(WorkshopView())))
-        }
-        return TabbedDoor(tabs: tabs)
-    }
-}
-
-struct LegacyDoor: View {
-    @Environment(Game.self) private var game
-    var body: some View {
-        TabbedDoor(tabs: [
-            DoorTab(id: "familia", name: "Familia", icon: "tree.fill", badge: Content.family.contains { game.canBuyFamily($0) }, content: AnyView(TreeView(family: true))),
-            DoorTab(id: "joyas", name: "Joyas", icon: "sparkles", badge: Content.rings.contains { game.ringLevel($0) < $0.maxLevel && game.s.legacy >= $0.cost(game.ringLevel($0)) }, content: AnyView(JewelryView())),
-            DoorTab(id: "totems", name: "Tótems", icon: "pawprint.fill", badge: Content.totems.contains { game.totemLevel($0) < TotemDef.maxLevel && game.s.legacy >= $0.cost(game.totemLevel($0)) }, content: AnyView(TotemsView())),
-            DoorTab(id: "mascotas", name: "Mascotas", icon: "pawprint.circle.fill", badge: Content.pets.contains { game.petLevel($0) < PetDef.maxLevel && game.s.legacy >= $0.cost(game.petLevel($0)) }, content: AnyView(PetsView())),
-        ])
-    }
-}
-
+/// el álbum: el establo, los logros y las monedas (con los sobres sin abrir)
 struct AlbumDoor: View {
     @Environment(Game.self) private var game
     var body: some View {
         var tabs = [DoorTab(id: "establo", name: "Establo", icon: "house.fill", content: AnyView(BestiaryView()))]
         if game.unlocked(.logros) { tabs.append(DoorTab(id: "logros", name: "Logros", icon: "rosette", badge: game.achievementsReady > 0, content: AnyView(AchievementsView()))) }
-        if game.unlocked(.monedas) { tabs.append(DoorTab(id: "monedas", name: "Monedas", icon: "circle.circle.fill", content: AnyView(CoinsView()))) }
+        if game.unlocked(.monedas) { tabs.append(DoorTab(id: "monedas", name: "Monedas", icon: "circle.circle.fill", badge: !game.s.pendingChests.isEmpty, content: AnyView(CoinsView()))) }
         return TabbedDoor(tabs: tabs)
     }
 }
@@ -319,7 +301,7 @@ struct GoldGlow: View {
     }
 }
 
-/// chincheta dorada para filas (martillos, taller)
+/// chincheta dorada para filas (martillos y sus mejoras)
 struct GoldPin: View {
     var body: some View {
         Circle().fill(Ink.gold)

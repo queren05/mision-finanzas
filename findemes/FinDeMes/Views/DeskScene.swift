@@ -257,8 +257,6 @@ final class DeskScene: SKScene {
     private let tutLow2 = SKSpriteNode()
     private var lastCombo = -1
     private let happNode = SKSpriteNode()
-    private let petNode = SKSpriteNode()
-    private let petShadow = SKSpriteNode()
     private var lastHapp = ""
     private var lastComboColor = ""
 
@@ -274,19 +272,6 @@ final class DeskScene: SKScene {
         bg.texture = Tex.item("mesa", ext: "jpg")
         world.addChild(bg)
         happNode.zPosition = 620
-        if let pet = desk.pet, let tex = Tex.item("pet_" + pet.id) {
-            petNode.texture = tex
-            let h = 62.0
-            petNode.size = CGSize(width: tex.size().width / tex.size().height * h, height: h)
-            petNode.anchorPoint = CGPoint(x: 0.5, y: 0.08)
-            petNode.zPosition = 450
-            petShadow.texture = Tex.ring(UIColor(Ink.ink), width: 30)
-            petShadow.size = CGSize(width: petNode.size.width * 0.7, height: 14)
-            petShadow.alpha = 0.18
-            petShadow.zPosition = 449
-            world.addChild(petShadow)
-            world.addChild(petNode)
-        }
         for n in [happNode, comboNode, multNode, comboBar, frenzyTint, frenzyBack, frenzyFill, tutRing, tutText, tutHand, tutLow1, tutLow2] {
             n.isHidden = true
             addChild(n)
@@ -365,7 +350,6 @@ final class DeskScene: SKScene {
         syncBlasts()
         syncFloaters()
         syncHUD()
-        syncPet()
         syncTutorial()
     }
 
@@ -706,20 +690,6 @@ final class DeskScene: SKScene {
             n.alpha = min(1, (1.1 - age) * 3)
         }
         recycle(&floatMap, keep: keep)
-    }
-
-    @MainActor private func syncPet() {
-        guard desk.pet != nil else { return }
-        let t = desk.time
-        let p = desk.petPos
-        let hop = desk.petMoving ? abs(sin(t * 14)) * 8 : 0
-        let hit = t - desk.petHitAt
-        let squash = hit < 0.18 ? 1 - 0.25 * sin(hit / 0.18 * .pi) : 1
-        petNode.position = P(p.x, p.y - hop)
-        petNode.xScale = desk.petFacing * (2 - squash)
-        petNode.yScale = squash
-        petNode.zRotation = hit < 0.18 ? -0.4 * desk.petFacing * sin(hit / 0.18 * .pi) : 0
-        petShadow.position = P(p.x, p.y + 2)
     }
 
     @MainActor private func syncHUD() {

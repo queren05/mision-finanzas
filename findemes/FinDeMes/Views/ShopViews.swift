@@ -33,10 +33,9 @@ struct CashPill: View {
 // MARK: - El corcho: árbol de mejoras
 
 struct CorkBackground: View {
-    var family = false
     var body: some View {
         Canvas { ctx, size in
-            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: family ? "#8a6a4a" : "#c48d58")))
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: "#c48d58")))
             for i in 0..<900 {
                 let x = Double((i * 7919) % 1000) / 1000 * size.width
                 let y = Double((i * 104_729) % 1000) / 1000 * size.height
@@ -48,7 +47,7 @@ struct CorkBackground: View {
     }
 }
 
-// MARK: - Ferretería: martillos
+// MARK: - Ferretería: martillos y sus tres mejoras
 
 struct HammersView: View {
     @Environment(Game.self) private var game
@@ -60,6 +59,12 @@ struct HammersView: View {
                 CashPill(value: Fmt.money(game.s.cash)).padding(.bottom, 8)
                 ScrollView {
                     VStack(spacing: 16) {
+                        if game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0 {
+                            VStack(spacing: 10) {
+                                ForEach(Content.parts) { p in PartRow(def: p) }
+                            }
+                            .padding(.bottom, 6)
+                        }
                         ForEach(Content.hammers) { h in HammerRow(def: h) }
                     }
                     .padding(.horizontal, 18).padding(.vertical, 10)
@@ -117,16 +122,16 @@ struct HammerRow: View {
     }
 }
 
-// MARK: - Joyero: lo que se queda para siempre
+// MARK: - Herencia: los recuerdos del abuelo (se quedan para siempre)
 
-struct JewelryView: View {
+struct HeritageView: View {
     @Environment(Game.self) private var game
     @State private var askBankrupt = false
     var body: some View {
         ZStack(alignment: .top) {
             Color(hex: "#6b1f2e").ignoresSafeArea()
             VStack(spacing: 0) {
-                SheetHeader(title: "El joyero", subtitle: "Se quedan aunque te arruines")
+                SheetHeader(title: "Herencia", subtitle: "Recuerdos del abuelo · se quedan siempre")
                 CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
                 ScrollView {
                     VStack(spacing: 12) {
@@ -142,7 +147,7 @@ struct JewelryView: View {
             Button("Sí, en bancarrota (+\(Fmt.num(game.legacyGain)) puntos)", role: .destructive) { game.bankruptcy() }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Pierdes el dinero, los martillos, el taller y las mejoras. Tu dinero va a la hipoteca.")
+            Text("Pierdes el dinero, los martillos y las mejoras. Tu dinero va a la hipoteca.")
         }
     }
 
@@ -168,13 +173,17 @@ struct RingRow: View {
         let maxed = l >= def.maxLevel
         let can = !maxed && game.s.legacy >= def.cost(l)
         HStack(spacing: 12) {
-            ItemImage(name: "j_" + def.id).frame(width: 56, height: 56)
+            Group {
+                if ItemArt.uiImage(def.image) != nil { ItemImage(name: def.image) }
+                else { Image(systemName: def.icon).font(.system(size: 28, weight: .black)).foregroundStyle(Ink.gold) }
+            }
+            .frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
-                    Text(def.name).font(.chunky(17)).foregroundStyle(Ink.ink)
+                    Text(def.name).font(.chunky(17)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
                     Text("\(l)/\(def.maxLevel)").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                 }
-                Text(def.desc.filling(Fmt.num(def.per)) + " por nivel").font(.typewriter(12)).foregroundStyle(Ink.soft)
+                Text(def.maxLevel == 1 ? def.desc : def.perText + " por nivel").font(.typewriter(12)).foregroundStyle(Ink.soft)
             }
             Spacer(minLength: 4)
             Button { game.buyRing(def) } label: { Text(maxed ? "MÁX." : Fmt.num(def.cost(l))) }
@@ -220,6 +229,8 @@ struct JewelIcon: View {
 struct CoinsView: View {
     @Environment(Game.self) private var game
     @State private var picked: CoinDef? = nil
+    /// se queda el resumen de los sobres recién abiertos
+    @State private var opened = false
     var body: some View {
         let found = Content.coins.filter { (game.s.coins[$0.id] ?? 0) > 0 }
         let bonus = found.reduce(0) { $0 + $1.rarity.bonus }
@@ -228,6 +239,11 @@ struct CoinsView: View {
             VStack(spacing: 0) {
                 SheetHeader(title: "El álbum", subtitle: "\(found.count) de \(Content.coins.count) · +\(Fmt.num(bonus * 100)) % de dinero para siempre")
                 ScrollView {
+                    // los sobres sin abrir se abren aquí
+                    if !game.s.pendingChests.isEmpty || opened {
+                        ChestOpener().padding(.horizontal, 18).padding(.top, 10)
+                            .onAppear { opened = true }
+                    }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                         ForEach(Content.coins) { c in
                             let n = game.s.coins[c.id] ?? 0
@@ -243,8 +259,6 @@ struct CoinsView: View {
                         }
                     }
                     .padding(18)
-                    Text("Salen de {las} {huchas} dorad{as} y de los sobres sorpresa. Las repetidas se cambian por dinero.".a)
-                        .font(.typewriter(12)).foregroundStyle(Ink.paper.opacity(0.85)).multilineTextAlignment(.center).padding(.horizontal, 24).padding(.bottom, 30)
                 }
                 .scrollIndicators(.hidden)
             }
@@ -331,14 +345,6 @@ struct SettingsView: View {
                 .padding(18)
                 .paper(Color(hex: "#fffaf0"))
                 .padding(.horizontal, 18).padding(.bottom, 18)
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("ÁRBOL DE MEJORAS").font(.typewriter(15, bold: true))
-                    TreeStylePicker()
-                }
-                .foregroundStyle(Ink.ink)
-                .padding(18)
-                .paper(Color(hex: "#fffaf0"))
-                .padding(.horizontal, 18).padding(.bottom, 18)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("ESTADÍSTICAS").font(.typewriter(15, bold: true))
                     stat("{Huchas} rot{as}", Fmt.num(game.s.stats.broken))
@@ -366,52 +372,35 @@ struct SettingsView: View {
         .confirmationDialog("¿Borrar toda la partida?", isPresented: $askErase, titleVisibility: .visible) {
             Button("Borrar todo", role: .destructive) { game.erase() }
             Button("Cancelar", role: .cancel) {}
-        } message: { Text("Se pierde todo, también las joyas y las monedas. No se puede deshacer.") }
+        } message: { Text("Se pierde todo, también la herencia y las monedas. No se puede deshacer.") }
     }
     private func stat(_ l: String, _ v: String) -> some View {
         HStack { Text(l).font(.typewriter(14)); Spacer(); Text(v).font(.typewriter(14, bold: true)) }
     }
 }
 
-// MARK: - Personajes
-
-struct SkinsView: View {
-    @Environment(Game.self) private var game
-    var body: some View {
-        ZStack(alignment: .top) {
-            Color(hex: "#2f5d50").ignoresSafeArea()
-            VStack(spacing: 0) {
-                SheetHeader(title: "Personajes", subtitle: "Lo que rompes a martillazos")
-                CashPill(value: "\(Fmt.num(game.s.legacy)) puntos de herencia", color: Color(hex: "#f2d58a")).padding(.bottom, 8)
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                        ForEach(Content.skins) { k in SkinCard(def: k) }
-                    }
-                    .padding(.horizontal, 18).padding(.vertical, 10)
-                }
-                .scrollIndicators(.hidden)
-            }
-        }
-    }
-}
+// MARK: - Animales (se ganan pagando facturas)
 
 struct SkinCard: View {
     @Environment(Game.self) private var game
     let def: SkinDef
     var body: some View {
-        let owned = game.s.skinsOwned.contains(def.id) || def.cost == 0
+        let owned = game.hasSkin(def)
         let using = game.s.skin == def.id
-        let can = owned || game.s.legacy >= def.cost
         VStack(spacing: 8) {
-            SkinIcon(id: def.id, size: 76)
-                .frame(height: 66)
-                .opacity(owned ? 1 : 0.85)
-            Text(def.name).font(.chunky(15)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
-            Button { game.pickSkin(def) } label: {
-                Text(using ? "EN USO" : (owned ? "USAR" : "\(Fmt.num(def.cost)) puntos")).frame(maxWidth: .infinity)
+            ZStack {
+                SkinIcon(id: def.id, size: 76)
+                    .brightness(owned ? 0 : -1)
+                    .opacity(owned ? 1 : 0.3)
+                if !owned { Image(systemName: "lock.fill").font(.system(size: 20, weight: .black)).foregroundStyle(Ink.ink) }
             }
-            .buttonStyle(ChunkyButton(color: using ? Ink.green : (owned ? Ink.paper : Color(hex: "#f2d58a")), text: using ? Ink.paper : Ink.ink, size: 13, radius: 10))
-            .disabled(using || !can)
+            .frame(height: 66)
+            Text(owned ? def.name : "???").font(.chunky(15)).foregroundStyle(Ink.ink).lineLimit(1).minimumScaleFactor(0.7)
+            Button { game.pickSkin(def) } label: {
+                Text(using ? "EN USO" : (owned ? "USAR" : "\(Int(def.bills)) facturas")).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(ChunkyButton(color: using ? Ink.green : (owned ? Ink.paper : Ink.paperDark), text: using ? Ink.paper : Ink.ink, size: 13, radius: 10))
+            .disabled(using || !owned)
         }
         .padding(8)
         .paper()

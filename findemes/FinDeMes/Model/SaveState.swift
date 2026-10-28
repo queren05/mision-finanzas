@@ -34,15 +34,12 @@ struct Settings: Codable, Hashable {
     var sound = true
     var haptics = true
     var music = true
-    /// cómo se ve el árbol de mejoras (TreeStyle)
-    var treeStyle = 0
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         sound = (try? c.decodeIfPresent(Bool.self, forKey: .sound)) ?? true
         haptics = (try? c.decodeIfPresent(Bool.self, forKey: .haptics)) ?? true
         music = (try? c.decodeIfPresent(Bool.self, forKey: .music)) ?? true
-        treeStyle = (try? c.decodeIfPresent(Int.self, forKey: .treeStyle)) ?? 0
     }
 }
 
@@ -84,24 +81,17 @@ struct SaveState: Codable {
     var bestTier = 0
     /// piezas del taller (se pierden con la bancarrota, como los martillos)
     var parts: [String: Int] = [:]
-    /// tótems comprados (nivel) y los que están puestos
-    var totems: [String: Int] = [:]
-    var totemsOn: [String] = []
     /// último día en que se rascó el rasca gratis
     var lastScratch = ""
-    /// mascotas compradas (nivel) y la que te acompaña
-    var pets: [String: Int] = [:]
-    var pet = ""
     var brokenByKind: [String: Double] = [:]
-    /// árbol familiar (para siempre) y facturas pagadas en esta partida
-    var family: [String: Int] = [:]
+    /// facturas pagadas en esta partida
     var billsThisRun = 0
     /// nivel de las vacas cuando llegó la factura de ahora (lo que vale)
     var billTier = 0
-    var scratchesToday = 0
     var autoBuy = true
-    /// apuestas de la carrera de cerdos
-    var races = 0.0
+    /// tiradas gratis de la tragaperras: el día y cuántas van
+    var lastSpin = ""
+    var spinsToday = 0
     /// puertas de la cocina que ya has abierto (las nuevas llevan el sello «NUEVO»)
     var seenDoors: Set<String> = []
     /// lo abonado a la hipoteca de ahora (se queda aunque te arruines) y las ya pagadas
@@ -118,10 +108,31 @@ struct SaveState: Codable {
     enum CodingKeys: String, CodingKey {
         case cash, day, year, billIndex, billDue, paidThisCycle, tier, hammer, hammersOwned, skills, pendingChests, awaitingTaxChoice
         case legacy, rings, coins, stats, settings, seenIntro, skin, skinsOwned
-        case level, xp, quests, achievements, streak, lastDaily, tutorial, pigXP, brokenByKind, bestTier, parts, totems, totemsOn, lastScratch, pets, pet
-        case family, billsThisRun, scratchesToday, autoBuy, races, billTier
+        case level, xp, quests, achievements, streak, lastDaily, tutorial, pigXP, brokenByKind, bestTier, parts, lastScratch
+        case billsThisRun, autoBuy, billTier, lastSpin, spinsToday
+        // de versiones anteriores: solo se leen para devolver los puntos
+        case totems, pets, family
         case seenDoors, mortgage, richLevel, lastPlayed, lastDayEarned, milestone
     }
+    func encode(to e: Encoder) throws {
+        var c = e.container(keyedBy: CodingKeys.self)
+        try c.encode(cash, forKey: .cash); try c.encode(day, forKey: .day); try c.encode(year, forKey: .year)
+        try c.encode(billIndex, forKey: .billIndex); try c.encode(billDue, forKey: .billDue); try c.encode(paidThisCycle, forKey: .paidThisCycle)
+        try c.encode(tier, forKey: .tier); try c.encode(hammer, forKey: .hammer); try c.encode(hammersOwned, forKey: .hammersOwned)
+        try c.encode(skills, forKey: .skills); try c.encode(pendingChests, forKey: .pendingChests); try c.encode(awaitingTaxChoice, forKey: .awaitingTaxChoice)
+        try c.encode(legacy, forKey: .legacy); try c.encode(rings, forKey: .rings); try c.encode(coins, forKey: .coins)
+        try c.encode(stats, forKey: .stats); try c.encode(settings, forKey: .settings); try c.encode(seenIntro, forKey: .seenIntro)
+        try c.encode(skin, forKey: .skin); try c.encode(skinsOwned, forKey: .skinsOwned)
+        try c.encode(level, forKey: .level); try c.encode(xp, forKey: .xp); try c.encode(quests, forKey: .quests)
+        try c.encode(achievements, forKey: .achievements); try c.encode(streak, forKey: .streak); try c.encode(lastDaily, forKey: .lastDaily)
+        try c.encode(tutorial, forKey: .tutorial); try c.encode(pigXP, forKey: .pigXP); try c.encode(brokenByKind, forKey: .brokenByKind)
+        try c.encode(bestTier, forKey: .bestTier); try c.encode(parts, forKey: .parts); try c.encode(lastScratch, forKey: .lastScratch)
+        try c.encode(billsThisRun, forKey: .billsThisRun); try c.encode(autoBuy, forKey: .autoBuy); try c.encode(billTier, forKey: .billTier)
+        try c.encode(lastSpin, forKey: .lastSpin); try c.encode(spinsToday, forKey: .spinsToday)
+        try c.encode(seenDoors, forKey: .seenDoors); try c.encode(mortgage, forKey: .mortgage); try c.encode(richLevel, forKey: .richLevel)
+        try c.encode(lastPlayed, forKey: .lastPlayed); try c.encode(lastDayEarned, forKey: .lastDayEarned); try c.encode(milestone, forKey: .milestone)
+    }
+
     // tolera partidas de versiones anteriores
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -141,12 +152,12 @@ struct SaveState: Codable {
         tutorial = v(.tutorial, seenIntro ? 9 : 0)
         pigXP = v(.pigXP, 0.0); brokenByKind = v(.brokenByKind, [String: Double]())
         bestTier = max(v(.bestTier, 0), tier)
-        parts = v(.parts, [String: Int]()); totems = v(.totems, [String: Int]())
-        totemsOn = v(.totemsOn, [String]()).filter { totems[$0] != nil }; lastScratch = v(.lastScratch, "")
-        pets = v(.pets, [String: Int]()); pet = v(.pet, "")
-        family = v(.family, [String: Int]()); billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
-        scratchesToday = v(.scratchesToday, 0); autoBuy = v(.autoBuy, true); races = v(.races, 0.0)
+        parts = v(.parts, [String: Int]()).filter { k, _ in Content.parts.contains { $0.id == k } }
+        lastScratch = v(.lastScratch, "")
+        billsThisRun = v(.billsThisRun, billIndex + year * Content.bills.count)
+        autoBuy = v(.autoBuy, true); lastSpin = v(.lastSpin, ""); spinsToday = v(.spinsToday, 0)
         billTier = v(.billTier, tier)
+        Migration.v22(&self, totems: v(.totems, [String: Int]()), pets: v(.pets, [String: Int]()), family: v(.family, [String: Int]()))
         // quien ya jugaba conoce todas las puertas y sus números grandes
         seenDoors = v(.seenDoors, seenIntro ? Set(["mejoras", "martillo", "album", "bar", "herencia"]) : Set<String>())
         mortgage = v(.mortgage, 0.0); richLevel = v(.richLevel, 0)
@@ -188,5 +199,46 @@ enum Persistence {
     static func erase() {
         try? FileManager.default.removeItem(at: main)
         try? FileManager.default.removeItem(at: backup)
+    }
+}
+
+/// la 2.2 quitó la familia, los tótems, las mascotas y algunas joyas: lo útil pasa a la herencia y el resto se devuelve en puntos
+enum Migration {
+    /// (base, crecimiento) de lo que ya no existe: lo gastado se devuelve entero
+    private static let oldRings: [String: (Double, Double)] = [
+        "pinchos": (30, 1.7), "gargantilla": (50, 1.6), "amatista": (120, 1.6), "perla": (800, 1.5), "obsidiana": (800, 1.5),
+        "topacio": (150, 1.6), "ambar": (200, 1.6), "luna": (300, 1.75), "diamantes": (500, 1.5),
+    ]
+    private static let oldTotems: [String: Double] = [
+        "cerdo": 20, "urraca": 25, "toro": 25, "buho": 30, "liebre": 25, "oso": 20, "gato": 35, "tortuga": 40,
+        "elefante": 50, "zorro": 30, "rana": 15, "pulpo": 30, "lobo": 40, "ballena": 60, "fenix": 80, "dragon": 150,
+    ]
+    private static let oldPets: [String: Double] = [
+        "gato": 25, "perro": 40, "hamster": 50, "loro": 60, "mapache": 80, "cuervo": 140, "pulpo": 220, "dragon": 400,
+        "pinguino": 600, "abeja": 900, "tortuga": 1_300, "unicornio": 2_000,
+    ]
+    private static let oldFamily: [String: (Double, Double)] = [
+        "f_tio": (10, 1.45), "f_rosi": (8, 1.35), "f_jonatan": (10, 1.4), "f_vane": (12, 1.4), "f_tomas": (15, 1.45),
+        "f_gemelos": (10, 1.38), "f_sobrino": (20, 1.45), "f_lotera": (80, 4), "f_mecanico": (60, 1.9), "f_padrino": (300, 6),
+        "f_notario": (50, 1.5), "f_oro": (40, 1.5), "f_tatara": (500, 1.6), "f_fiesta": (40, 1.6),
+    ]
+    /// los de la familia que siguen, ahora como recuerdos del abuelo (mismo precio)
+    private static let moved = ["f_abuelo": "cartera", "f_abuela": "chancla", "f_bisabuela": "foto", "f_herrero": "martillo", "f_cunado": "libreta"]
+
+    private static func spent(_ levels: Int, _ cost: (Int) -> Double) -> Double { (0..<max(0, levels)).reduce(0) { $0 + cost($1) } }
+
+    static func v22(_ s: inout SaveState, totems: [String: Int], pets: [String: Int], family: [String: Int]) {
+        var back = 0.0
+        for (id, (b, g)) in oldRings { if let l = s.rings[id] { back += spent(l) { (b * pow(g, Double($0))).rounded() }; s.rings[id] = nil } }
+        for (id, l) in totems { if let b = oldTotems[id] { back += spent(l) { (b * pow(2, Double($0))).rounded() } } }
+        for (id, l) in pets { if let b = oldPets[id] { back += spent(l) { (b * pow(1.8, Double($0))).rounded() } } }
+        for (id, l) in family {
+            if let to = moved[id] { s.rings[to] = max(s.rings[to] ?? 0, l) }
+            else if let (b, g) = oldFamily[id] { back += spent(l) { (b * pow(g, Double($0))).rounded() } }
+        }
+        s.legacy += back
+        // los logros que ya no existen se quitan
+        let ids = Set(Meta.achievements.map(\.id))
+        s.achievements = s.achievements.filter { ids.contains($0) }
     }
 }
