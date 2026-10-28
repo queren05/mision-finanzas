@@ -202,12 +202,15 @@ enum Persistence {
     }
 }
 
-/// la 2.2 quitó la familia, los tótems, las mascotas y algunas joyas: lo útil pasa a la herencia y el resto se devuelve en puntos
+/// la 2.2 quitó la familia, los tótems, las mascotas y las joyas repetidas: lo útil pasa a la herencia y el resto se devuelve en puntos
 enum Migration {
     /// (base, crecimiento) de lo que ya no existe: lo gastado se devuelve entero
     private static let oldRings: [String: (Double, Double)] = [
         "pinchos": (30, 1.7), "gargantilla": (50, 1.6), "amatista": (120, 1.6), "perla": (800, 1.5), "obsidiana": (800, 1.5),
         "topacio": (150, 1.6), "ambar": (200, 1.6), "luna": (300, 1.75), "diamantes": (500, 1.5),
+        // los que hacían lo mismo que otro (2.2, segunda vuelta)
+        "abuela": (5, 1.45), "oro": (5, 1.45), "esmeralda": (40, 1.6), "zafiro": (45, 1.6), "tobillera": (55, 1.6),
+        "collar": (60, 1.7), "broche": (70, 1.65), "compromiso": (80, 1.7), "relojoro": (90, 1.8), "diadema": (120, 1.75),
     ]
     private static let oldTotems: [String: Double] = [
         "cerdo": 20, "urraca": 25, "toro": 25, "buho": 30, "liebre": 25, "oso": 20, "gato": 35, "tortuga": 40,

@@ -83,9 +83,9 @@ enum Demo {
         s.paidThisCycle = 1_620
         s.hammer = 2
         s.hammersOwned = [0, 1, 2]
-        s.skills = ["golpe": 4, "muneca": 5, "certero": 2, "desayuno": 6, "gimnasio": 3, "sofa": 5, "mas": 3, "brazo": 3, "repartidor": 4, "reflejos": 2, "mesa": 1]
+        s.skills = ["golpe": 4, "muneca": 5, "certero": 2, "desayuno": 9, "sofa": 5, "mas": 3, "brazo": 3, "repartidor": 4, "reflejos": 2, "mesa": 1]
         s.legacy = 86
-        s.rings = ["abuela": 3, "oro": 2, "cuero": 4]
+        s.rings = ["cartera": 3, "chancla": 2, "cuero": 4]
         s.coins = ["peseta": 2, "duro": 1, "yen": 1, "reala8": 1, "doblon": 1]
         s.stats.bankruptcies = 2; s.stats.billsPaid = 30; s.stats.broken = 1_830; s.stats.days = 41
         s.skinsOwned = ["cerdo", "vaca"]

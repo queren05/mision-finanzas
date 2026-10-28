@@ -128,11 +128,13 @@ final class Game {
         for k in Content.skills {
             let l = Double(level(k))
             guard l > 0 else { continue }
-            let v = k.per * l
-            let m = pow(1 + k.per / 100, l)
+            let v = k.value(Int(l))
+            let m = v
             switch k.effect {
             case .pigXPMul: st.pigXP *= m
             case .goldenValue: st.goldenValue += v / 100
+            case .chestValue: st.chestValue += v / 100
+            case .firstHit: st.firstHit += v / 100
             case .comboCap: st.comboCap += Int(v)
             case .comboTime: st.comboTime += v
             case .damageFlat: st.damage += v
@@ -169,19 +171,11 @@ final class Game {
             switch r.effect {
             case .lootMul: lootMul *= r.value(Int(l))
             case .damageMul: dmgMul *= r.value(Int(l))
-            case .loot: lootPct += v
-            case .damage: dmgPct += v
             case .crit: st.crit += v / 100
             case .stamina: st.stamina += v
             case .golden: st.golden += v / 100
             case .chest: st.chest += v / 100; st.chestLuck += Int(l)
-            case .speed: speedPct += v
-            case .critDamage: st.critMult += v / 100
-            case .startPigs: st.startPigs += Int(v)
-            case .maxPigs: st.maxPigs += Int(v)
-            case .spawn: spawnPct += v
-            case .frenzy: st.frenzyExtra += v
-            case .startCash, .extraDays, .legacy, .bills, .pigXP, .quests, .keepTier, .startHammer, .autoBuy: break
+            case .startCash, .extraDays, .legacy, .bills, .keepTier, .startHammer, .autoBuy: break
             }
         }
         // las mejoras del martillo

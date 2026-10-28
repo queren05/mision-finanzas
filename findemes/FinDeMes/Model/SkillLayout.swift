@@ -34,11 +34,11 @@ enum Branch: Int, CaseIterable {
 
     static func of(_ e: SkillEffect) -> Branch {
         switch e {
-        case .damageFlat, .damagePct, .crit, .critDamage, .pierce: .dano
-        case .lootPct, .golden, .goldenValue, .jackpot, .chest: .dinero
-        case .stamina, .killStamina, .drainSave, .glass: .aguante
-        case .startPigs, .spawnPct, .maxPigs, .fat, .pigXPMul, .bomb, .king: .rebano
-        case .speedPct, .radiusPct, .collateral, .frenzyEarly, .frenzyTime, .frenzyMoney, .comboCap, .comboTime: .frenesi
+        case .damageFlat, .damagePct, .crit, .critDamage, .pierce, .firstHit, .collateral: .dano
+        case .lootPct, .golden, .goldenValue, .jackpot, .chest, .chestValue: .dinero
+        case .stamina, .killStamina, .drainSave, .glass, .speedPct, .radiusPct: .aguante
+        case .startPigs, .spawnPct, .maxPigs, .fat, .pigXPMul, .king: .rebano
+        case .frenzyEarly, .frenzyTime, .frenzyMoney, .comboCap, .comboTime, .bomb: .frenesi
         }
     }
 }

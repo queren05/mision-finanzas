@@ -221,7 +221,7 @@ struct TreeView: View {
                     .frame(width: 40, height: 40).background(Circle().fill(col.opacity(0.18))).overlay(Circle().strokeBorder(Ink.ink, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 0) {
                     Text(vis ? k.name : "Bloqueada").font(.chunky(19)).foregroundStyle(Ink.ink)
-                    Text(vis ? k.perText + " por nivel" : "Compra antes «\(parentName(k))»").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
+                    Text(vis ? k.perText(l) + " por nivel" : "Compra antes «\(parentName(k))»").font(.typewriter(12, bold: true)).foregroundStyle(Ink.soft)
                 }
                 Spacer(minLength: 4)
                 Text("\(l)/\(k.maxLevel)").font(.chunky(16)).foregroundStyle(Ink.paper)

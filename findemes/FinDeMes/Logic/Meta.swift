@@ -175,7 +175,7 @@ extension Game {
     var pigNeeded: Double { PigLevel.needed(s.tier) }
 
     func addPigXP(_ v: Double) {
-        s.pigXP += v * (1 + ringValue(.pigXP) / 100) * stats.pigXP
+        s.pigXP += v * stats.pigXP
         var fresh: [PigKind] = []
         while s.pigXP >= PigLevel.needed(s.tier) {
             s.pigXP -= PigLevel.needed(s.tier)
@@ -228,7 +228,7 @@ extension Game {
         }
     }
 
-    func questReward(_ q: Quest) -> Double { (q.reward * pigWorth * (1 + ringValue(.quests) / 100)).rounded() }
+    func questReward(_ q: Quest) -> Double { (q.reward * pigWorth).rounded() }
 
     func claim(_ q: Quest) {
         guard let i = s.quests.firstIndex(where: { $0.id == q.id }), s.quests[i].done else { return }

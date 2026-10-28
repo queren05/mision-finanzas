@@ -245,36 +245,87 @@ struct BillDef: Identifiable {
 
 enum SkillEffect {
     case damageFlat, damagePct, speedPct, radiusPct, stamina, killStamina, drainSave, startPigs, spawnPct, maxPigs
-    case lootPct, golden, crit, critDamage, collateral, chest, jackpot, pierce, fat, bomb, king, glass
+    case lootPct, golden, crit, critDamage, collateral, chest, jackpot, pierce, firstHit, fat, bomb, king, glass
     case frenzyEarly, frenzyTime, frenzyMoney
-    case pigXPMul, goldenValue, comboCap, comboTime
+    case pigXPMul, goldenValue, chestValue, comboCap, comboTime
 }
 
+/// un tramo de una mejora: cuánto da cada nivel y lo que cuesta
+struct SkillStep {
+    let per: Double
+    let levels: Int
+    let baseCost: Double
+    let growth: Double
+    /// en vacas: el juego lo multiplica por lo que vale una vaca ahora (Game.cost)
+    func cost(_ k: Int) -> Double { pow(baseCost, 0.6) * 2.5 * pow(growth + 0.1, Double(k)) }
+}
+
+/// Cada mejora hace una sola cosa. Las que tienen varios tramos dan más por nivel según suben
+/// (+15 %, luego +25 %, +50 %…), y cada tramo dura hasta que el siguiente sale más a cuenta.
 struct SkillDef: Identifiable {
     let id: String
     let name: String
-    let desc: String          // «%» se cambia por el valor por nivel
+    let desc: String          // «%» se cambia por el valor
     let effect: SkillEffect
-    let per: Double
-    let maxLevel: Int
-    let baseCost: Double
-    let growth: Double
     let icon: String
+    let steps: [SkillStep]
 
-    /// en vacas: el juego lo multiplica por lo que vale una vaca ahora (Game.cost)
-    func cost(_ level: Int) -> Double { pow(baseCost, 0.6) * 2.5 * pow(growth + 0.1, Double(level)) }
+    /// tramos: (por nivel, niveles, precio base, crecimiento)
+    init(id: String, name: String, desc: String, effect: SkillEffect, icon: String, _ raw: (Double, Int, Double, Double)...) {
+        self.id = id; self.name = name; self.desc = desc; self.effect = effect; self.icon = icon
+        var list: [SkillStep] = []
+        for (i, r) in raw.enumerated() {
+            var n = r.1
+            if i + 1 < raw.count {
+                let next = SkillStep(per: raw[i + 1].0, levels: 0, baseCost: raw[i + 1].2, growth: raw[i + 1].3)
+                let step = SkillStep(per: r.0, levels: 0, baseCost: r.2, growth: r.3)
+                var k = 0
+                while k < n && step.cost(k) < next.cost(0) { k += 1 }
+                n = max(3, k)
+            }
+            list.append(SkillStep(per: r.0, levels: n, baseCost: r.2, growth: r.3))
+        }
+        steps = list
+    }
+
+    var maxLevel: Int { steps.reduce(0) { $0 + $1.levels } }
+    var baseCost: Double { steps[0].baseCost }
     var compound: Bool { effect == .pigXPMul }
-    var perText: String { compound ? desc.filling(Fmt.dec(1 + per / 100, 2)) : desc.filling(Fmt.num(per)) }
+
+    /// el tramo del nivel l (el que se compra al subir desde l) y el nivel dentro de él
+    private func step(_ l: Int) -> (SkillStep, Int) {
+        var k = l
+        for s in steps { if k < s.levels { return (s, k) }; k -= s.levels }
+        return (steps[steps.count - 1], steps[steps.count - 1].levels)
+    }
+    func cost(_ l: Int) -> Double { let (s, k) = step(l); return s.cost(k) }
+
+    /// lo que da en el nivel l
+    func value(_ l: Int) -> Double {
+        var left = l
+        var v = compound ? 1.0 : 0.0
+        for s in steps {
+            let n = min(left, s.levels)
+            if compound { v *= pow(1 + s.per / 100, Double(n)) } else { v += s.per * Double(n) }
+            left -= n
+        }
+        return v
+    }
     /// lo que da en el nivel l, ya escrito
     func text(_ l: Int) -> String {
-        if compound { let v = pow(1 + per / 100, Double(l)); return desc.filling(v < 100 ? Fmt.dec(v, 2) : Fmt.num(v)) }
-        return desc.filling(Fmt.num(per * Double(l)))
+        let v = value(l)
+        return desc.filling(compound ? (v < 100 ? Fmt.dec(v, 2) : Fmt.num(v)) : Fmt.num(v))
+    }
+    /// lo que da el siguiente nivel
+    func perText(_ l: Int) -> String {
+        let per = step(min(l, maxLevel - 1)).0.per
+        return desc.filling(compound ? Fmt.dec(1 + per / 100, 2) : Fmt.num(per))
     }
 }
 
 // MARK: - Herencia: los recuerdos del abuelo (puntos de herencia: se quedan tras la bancarrota)
 
-enum RingEffect { case loot, damage, crit, stamina, golden, startCash, extraDays, chest, legacy, bills, speed, critDamage, startPigs, maxPigs, spawn, frenzy, pigXP, quests, lootMul, damageMul, keepTier, startHammer, autoBuy }
+enum RingEffect { case crit, stamina, golden, startCash, extraDays, chest, legacy, bills, lootMul, damageMul, keepTier, startHammer, autoBuy }
 
 struct RingDef: Identifiable {
     let id: String
@@ -382,88 +433,63 @@ enum Content {
     static func pigHP(_ tier: Int) -> Double { 8 * pow(1.3, Double(tier)) }
     static func pigValue(_ tier: Int) -> Double { 0.9 * pow(1.12, Double(tier)) }
 
-    /// el árbol de mejoras: el tronco y cinco ramas de diez, cada rama de la más barata a la más cara
+    /// el árbol de mejoras: el tronco y cinco ramas de seis, cada una hace una sola cosa
     static let skills: [SkillDef] = [
-        SkillDef(id: "golpe", name: "Primer golpe", desc: "+% de daño", effect: .damageFlat, per: 2, maxLevel: 5, baseCost: 10, growth: 1.7, icon: "hammer.fill"),
+        SkillDef(id: "golpe", name: "Primer golpe", desc: "+% de daño", effect: .damageFlat, icon: "hammer.fill", (2, 5, 10, 1.7)),
         // daño
-        SkillDef(id: "muneca", name: "Muñeca fuerte", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 15, maxLevel: 30, baseCost: 40, growth: 1.55, icon: "hand.raised.fill"),
-        SkillDef(id: "certero", name: "Golpe certero", desc: "+%\u{2009}% de crítico", effect: .crit, per: 4, maxLevel: 8, baseCost: 150, growth: 1.8, icon: "scope"),
-        SkillDef(id: "rompe", name: "Rompe{huchas}", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 50, maxLevel: 5, baseCost: 600, growth: 1.9, icon: "burst.fill"),
-        SkillDef(id: "bruta", name: "Fuerza bruta", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 25, maxLevel: 30, baseCost: 3_000, growth: 1.6, icon: "figure.strengthtraining.traditional"),
-        SkillDef(id: "abrelatas", name: "Abrelatas", desc: "Atraviesa el +%\u{2009}% de la coraza", effect: .pierce, per: 15, maxLevel: 4, baseCost: 60_000, growth: 2.2, icon: "shield.slash.fill"),
-        SkillDef(id: "maestro", name: "Golpe maestro", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 50, maxLevel: 40, baseCost: 400_000, growth: 1.7, icon: "star.fill"),
-        SkillDef(id: "martillazo", name: "Martillazo", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 100, maxLevel: 50, baseCost: 4e7, growth: 1.5, icon: "hammer.circle.fill"),
-        SkillDef(id: "demoledor", name: "Demoledor", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 200, maxLevel: 60, baseCost: 1e10, growth: 1.45, icon: "hammer.circle"),
-        SkillDef(id: "brutal", name: "Golpe brutal", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 100, maxLevel: 30, baseCost: 5e10, growth: 1.55, icon: "bolt.circle.fill"),
-        SkillDef(id: "omega", name: "El martillazo final", desc: "+%\u{2009}% de daño", effect: .damagePct, per: 600, maxLevel: 50, baseCost: 1e14, growth: 1.5, icon: "sparkle"),
+        SkillDef(id: "muneca", name: "Muñeca fuerte", desc: "+%\u{2009}% de daño", effect: .damagePct, icon: "hand.raised.fill",
+                 (15, 30, 40, 1.55), (25, 30, 3_000, 1.6), (50, 40, 4e5, 1.7), (100, 50, 4e7, 1.5), (200, 60, 1e10, 1.45), (600, 50, 1e14, 1.5)),
+        SkillDef(id: "certero", name: "Golpe certero", desc: "+%\u{2009}% de crítico", effect: .crit, icon: "scope", (4, 5, 150, 1.8), (5, 5, 3e6, 2)),
+        SkillDef(id: "rompe", name: "Rompe{huchas}", desc: "Críticos +%\u{2009}%", effect: .critDamage, icon: "burst.fill", (50, 5, 600, 1.9), (100, 30, 5e10, 1.55)),
+        SkillDef(id: "onda", name: "Onda expansiva", desc: "Las de al lado reciben un %\u{2009}%", effect: .collateral, icon: "dot.radiowaves.left.and.right", (10, 5, 3_500, 1.9), (10, 10, 2e11, 1.9)),
+        SkillDef(id: "primero", name: "Primer impacto", desc: "+%\u{2009}% al primer golpe", effect: .firstHit, icon: "1.circle.fill", (100, 5, 15_000, 1.9)),
+        SkillDef(id: "abrelatas", name: "Abrelatas", desc: "Atraviesa el +%\u{2009}% de la coraza", effect: .pierce, icon: "shield.slash.fill", (15, 4, 60_000, 2.2)),
         // dinero
-        SkillDef(id: "sofa", name: "Rebuscar en el sofá", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 20, maxLevel: 30, baseCost: 80, growth: 1.55, icon: "sofa.fill"),
-        SkillDef(id: "ojo", name: "Ojo para el oro", desc: "+%\u{2009}% de {huchas} dorad{as}", effect: .golden, per: 1, maxLevel: 5, baseCost: 2_000, growth: 2, icon: "eye.fill"),
-        SkillDef(id: "sobres", name: "Sobres sorpresa", desc: "+%\u{2009}% de sobres", effect: .chest, per: 1, maxLevel: 5, baseCost: 40_000, growth: 2, icon: "envelope.fill"),
-        SkillDef(id: "midas", name: "Toque de Midas", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 40, maxLevel: 40, baseCost: 50_000, growth: 1.65, icon: "sparkles"),
-        SkillDef(id: "bote", name: "El bote", desc: "%\u{2009}% de que {una} {hucha} dé ×20", effect: .jackpot, per: 0.5, maxLevel: 4, baseCost: 2e6, growth: 2.2, icon: "dollarsign.circle.fill"),
-        SkillDef(id: "tesoro", name: "El tesoro", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 100, maxLevel: 50, baseCost: 6e7, growth: 1.5, icon: "crown.fill"),
-        SkillDef(id: "banquero", name: "Amigo banquero", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 200, maxLevel: 60, baseCost: 1.5e10, growth: 1.45, icon: "banknote.fill"),
-        SkillDef(id: "orfebre", name: "Orfebre", desc: "Las doradas valen +%\u{2009}%", effect: .goldenValue, per: 50, maxLevel: 20, baseCost: 4e10, growth: 1.6, icon: "seal.fill"),
-        SkillDef(id: "lluvia", name: "Lluvia de oro", desc: "+%\u{2009}% de {huchas} dorad{as}", effect: .golden, per: 0.5, maxLevel: 10, baseCost: 1e11, growth: 1.8, icon: "cloud.rain.fill"),
-        SkillDef(id: "fortuna", name: "La gran fortuna", desc: "+%\u{2009}% de dinero", effect: .lootPct, per: 600, maxLevel: 50, baseCost: 1e14, growth: 1.5, icon: "crown"),
-        // aguante
-        SkillDef(id: "desayuno", name: "Desayuno fuerte", desc: "+% de aguante", effect: .stamina, per: 5, maxLevel: 20, baseCost: 25, growth: 1.5, icon: "cup.and.saucer.fill"),
-        SkillDef(id: "gimnasio", name: "Ir al gimnasio", desc: "+% de aguante", effect: .stamina, per: 8, maxLevel: 20, baseCost: 300, growth: 1.55, icon: "dumbbell.fill"),
-        SkillDef(id: "segundo", name: "Segundo aire", desc: "%\u{2009}% de recuperar 1 al romper", effect: .killStamina, per: 6, maxLevel: 5, baseCost: 1_200, growth: 1.8, icon: "wind"),
-        SkillDef(id: "respira", name: "Respirar hondo", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, per: 4, maxLevel: 5, baseCost: 5_000, growth: 1.9, icon: "lungs.fill"),
-        SkillDef(id: "cafe", name: "Café doble", desc: "+% de aguante", effect: .stamina, per: 5, maxLevel: 20, baseCost: 30_000, growth: 1.6, icon: "mug.fill"),
-        SkillDef(id: "cristalero", name: "Cristalero", desc: "Las de cristal dan +% de aguante", effect: .glass, per: 1, maxLevel: 3, baseCost: 80_000, growth: 2.5, icon: "drop.fill"),
-        SkillDef(id: "maraton", name: "Maratón", desc: "+% de aguante", effect: .stamina, per: 9, maxLevel: 25, baseCost: 700_000, growth: 1.7, icon: "figure.run"),
-        SkillDef(id: "hormigon", name: "Pulmones de hormigón", desc: "+% de aguante", effect: .stamina, per: 15, maxLevel: 20, baseCost: 3e7, growth: 1.6, icon: "figure.strengthtraining.functional"),
-        SkillDef(id: "vitaminas", name: "Vitaminas", desc: "+% de aguante", effect: .stamina, per: 20, maxLevel: 25, baseCost: 5e10, growth: 1.6, icon: "pills.fill"),
-        SkillDef(id: "siesta", name: "La siesta", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, per: 3, maxLevel: 5, baseCost: 1e13, growth: 2, icon: "bed.double.fill"),
+        SkillDef(id: "sofa", name: "Rebuscar en el sofá", desc: "+%\u{2009}% de dinero", effect: .lootPct, icon: "sofa.fill",
+                 (20, 30, 80, 1.55), (40, 40, 5e4, 1.65), (100, 50, 6e7, 1.5), (200, 60, 1.5e10, 1.45), (600, 50, 1e14, 1.5)),
+        SkillDef(id: "ojo", name: "Ojo para el oro", desc: "+%\u{2009}% de {huchas} dorad{as}", effect: .golden, icon: "eye.fill", (1, 5, 2_000, 2), (0.5, 10, 1e11, 1.8)),
+        SkillDef(id: "sobres", name: "Sobres sorpresa", desc: "+%\u{2009}% de sobres", effect: .chest, icon: "envelope.fill", (1, 5, 40_000, 2)),
+        SkillDef(id: "bote", name: "El bote", desc: "%\u{2009}% de que {una} {hucha} dé ×20", effect: .jackpot, icon: "dollarsign.circle.fill", (0.5, 4, 2e6, 2.2)),
+        SkillDef(id: "cartero", name: "El cartero", desc: "Los sobres dan +%\u{2009}% de dinero", effect: .chestValue, icon: "envelope.open.fill", (50, 20, 2e10, 1.6)),
+        SkillDef(id: "orfebre", name: "Orfebre", desc: "Las doradas valen +%\u{2009}%", effect: .goldenValue, icon: "seal.fill", (50, 20, 4e10, 1.6)),
+        // aguante y cuerpo
+        SkillDef(id: "desayuno", name: "Desayuno fuerte", desc: "+% de aguante", effect: .stamina, icon: "cup.and.saucer.fill",
+                 (5, 20, 25, 1.5), (8, 20, 300, 1.55), (9, 25, 7e5, 1.7), (15, 20, 3e7, 1.6), (20, 25, 5e10, 1.6)),
+        SkillDef(id: "brazo", name: "Brazo largo", desc: "+%\u{2009}% de alcance", effect: .radiusPct, icon: "arrow.up.left.and.arrow.down.right", (10, 6, 120, 1.75)),
+        SkillDef(id: "reflejos", name: "Reflejos", desc: "+%\u{2009}% de velocidad", effect: .speedPct, icon: "bolt.fill", (8, 25, 500, 1.6), (15, 5, 2.5e6, 2)),
+        SkillDef(id: "segundo", name: "Segundo aire", desc: "%\u{2009}% de recuperar 1 al romper", effect: .killStamina, icon: "wind", (6, 5, 1_200, 1.8)),
+        SkillDef(id: "respira", name: "Respirar hondo", desc: "%\u{2009}% de golpes gratis", effect: .drainSave, icon: "lungs.fill", (4, 5, 5_000, 1.9), (3, 5, 1e13, 2)),
+        SkillDef(id: "cristalero", name: "Cristalero", desc: "Las de cristal dan +% de aguante", effect: .glass, icon: "drop.fill", (1, 3, 80_000, 2.5)),
         // huchas
-        SkillDef(id: "mas", name: "Más {huchas}", desc: "+% {huchas} al empezar", effect: .startPigs, per: 3, maxLevel: 15, baseCost: 30, growth: 1.8, icon: "plus.circle.fill"),
-        SkillDef(id: "repartidor", name: "El repartidor", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 12, maxLevel: 25, baseCost: 250, growth: 1.6, icon: "shippingbox.fill"),
-        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% {huchas} a la vez", effect: .maxPigs, per: 4, maxLevel: 20, baseCost: 1_000, growth: 1.9, icon: "rectangle.expand.vertical"),
-        SkillDef(id: "gordas", name: "{Huchas} gord{as}", desc: "+%\u{2009}% de {huchas} gord{as}", effect: .fat, per: 5, maxLevel: 4, baseCost: 4_000, growth: 2, icon: "circle.fill"),
-        SkillDef(id: "fabrica", name: "Fábrica de {huchas}", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 15, maxLevel: 35, baseCost: 25_000, growth: 1.65, icon: "building.2.fill"),
-        SkillDef(id: "bombas", name: "Pólvora", desc: "Explosiones +%\u{2009}%", effect: .bomb, per: 50, maxLevel: 8, baseCost: 90_000, growth: 2, icon: "flame.circle.fill"),
-        SkillDef(id: "corte", name: "La corte del rey", desc: "+%\u{2009}% de que venga el Rey", effect: .king, per: 10, maxLevel: 5, baseCost: 1e6, growth: 2, icon: "crown.fill"),
-        SkillDef(id: "manada", name: "Manada", desc: "+% {huchas} a la vez", effect: .maxPigs, per: 15, maxLevel: 50, baseCost: 5e9, growth: 1.5, icon: "square.grid.3x3.fill"),
-        SkillDef(id: "criadero", name: "Criadero", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, per: 40, maxLevel: 45, baseCost: 2e10, growth: 1.5, icon: "arrow.triangle.2.circlepath"),
-        SkillDef(id: "granja", name: "Granja de {huchas}", desc: "{Las} {huchas} suben de nivel ×%", effect: .pigXPMul, per: 8, maxLevel: 30, baseCost: 1e11, growth: 1.7, icon: "leaf.fill"),
+        SkillDef(id: "mas", name: "Más {huchas}", desc: "+% {huchas} al empezar", effect: .startPigs, icon: "plus.circle.fill", (3, 15, 30, 1.8), (5, 15, 2e8, 1.6)),
+        SkillDef(id: "repartidor", name: "El repartidor", desc: "Salen un %\u{2009}% más rápido", effect: .spawnPct, icon: "shippingbox.fill",
+                 (12, 25, 250, 1.6), (15, 35, 25_000, 1.65), (25, 30, 6e8, 1.55), (40, 30, 2e10, 1.5)),
+        SkillDef(id: "mesa", name: "Mesa más grande", desc: "+% {huchas} a la vez", effect: .maxPigs, icon: "rectangle.expand.vertical",
+                 (4, 20, 1_000, 1.9), (4, 25, 5e7, 1.55), (15, 30, 5e9, 1.5), (25, 20, 1e13, 1.6)),
+        SkillDef(id: "gordas", name: "{Huchas} gord{as}", desc: "+%\u{2009}% de {huchas} gord{as}", effect: .fat, icon: "circle.fill", (5, 4, 4_000, 2)),
+        SkillDef(id: "corte", name: "La corte del rey", desc: "+%\u{2009}% de que venga el Rey", effect: .king, icon: "crown.fill", (10, 5, 1e6, 2)),
+        SkillDef(id: "granja", name: "Granja de {huchas}", desc: "{Las} {huchas} suben de nivel ×%", effect: .pigXPMul, icon: "leaf.fill", (8, 30, 1e11, 1.7)),
         // frenesí
-        SkillDef(id: "brazo", name: "Brazo largo", desc: "+%\u{2009}% de alcance", effect: .radiusPct, per: 10, maxLevel: 6, baseCost: 120, growth: 1.75, icon: "arrow.up.left.and.arrow.down.right"),
-        SkillDef(id: "reflejos", name: "Reflejos", desc: "+%\u{2009}% de velocidad", effect: .speedPct, per: 8, maxLevel: 25, baseCost: 500, growth: 1.6, icon: "bolt.fill"),
-        SkillDef(id: "onda", name: "Onda expansiva", desc: "Las de al lado reciben un %\u{2009}%", effect: .collateral, per: 10, maxLevel: 10, baseCost: 3_500, growth: 1.9, icon: "dot.radiowaves.left.and.right"),
-        SkillDef(id: "huracan", name: "Huracán", desc: "+%\u{2009}% de velocidad", effect: .speedPct, per: 15, maxLevel: 5, baseCost: 2.5e6, growth: 2, icon: "tornado"),
-        SkillDef(id: "horapunta", name: "Hora punta", desc: "Frenesí con % {huchas} menos de combo", effect: .frenzyEarly, per: 2, maxLevel: 8, baseCost: 8e7, growth: 1.8, icon: "timer"),
-        SkillDef(id: "fiesta", name: "Fiesta", desc: "El frenesí dura +% s", effect: .frenzyTime, per: 1, maxLevel: 12, baseCost: 3e8, growth: 1.75, icon: "party.popper.fill"),
-        SkillDef(id: "locura", name: "Locura", desc: "En frenesí, +%\u{2009}% de dinero", effect: .frenzyMoney, per: 50, maxLevel: 25, baseCost: 1e9, growth: 1.6, icon: "sparkles"),
-        SkillDef(id: "comboloco", name: "Combo loco", desc: "El combo llega +% más alto", effect: .comboCap, per: 10, maxLevel: 10, baseCost: 3e10, growth: 2, icon: "flame"),
-        SkillDef(id: "pegamento", name: "Combo pegajoso", desc: "El combo aguanta +% s", effect: .comboTime, per: 0.15, maxLevel: 8, baseCost: 6e10, growth: 2, icon: "timer"),
-        SkillDef(id: "eterno", name: "Frenesí eterno", desc: "El frenesí dura +% s", effect: .frenzyTime, per: 1, maxLevel: 15, baseCost: 5e12, growth: 1.7, icon: "hourglass"),
+        SkillDef(id: "bombas", name: "Pólvora", desc: "Explosiones +%\u{2009}%", effect: .bomb, icon: "flame.circle.fill", (50, 4, 90_000, 2.2), (100, 10, 2e11, 1.9)),
+        SkillDef(id: "horapunta", name: "Hora punta", desc: "Frenesí con % {huchas} menos de combo", effect: .frenzyEarly, icon: "timer", (2, 8, 8e7, 1.8)),
+        SkillDef(id: "fiesta", name: "Fiesta", desc: "El frenesí dura +% s", effect: .frenzyTime, icon: "party.popper.fill", (1, 12, 3e8, 1.75), (1, 15, 5e12, 1.7)),
+        SkillDef(id: "locura", name: "Locura", desc: "En frenesí, +%\u{2009}% de dinero", effect: .frenzyMoney, icon: "sparkles", (50, 25, 1e9, 1.6)),
+        SkillDef(id: "comboloco", name: "Combo loco", desc: "El combo llega +% más alto", effect: .comboCap, icon: "flame", (10, 10, 3e10, 2)),
+        SkillDef(id: "pegamento", name: "Combo pegajoso", desc: "El combo aguanta +% s", effect: .comboTime, icon: "hourglass", (0.15, 8, 6e10, 2)),
     ]
 
     static let rings: [RingDef] = [
         RingDef(id: "cartera", name: "La cartera del abuelo", desc: "×% de dinero", effect: .lootMul, per: 25, maxLevel: 60, baseCost: 5, growth: 1.3, art: "billete"),
         RingDef(id: "chancla", name: "La chancla de la abuela", desc: "×% de daño", effect: .damageMul, per: 25, maxLevel: 60, baseCost: 5, growth: 1.3, art: "m_chancla"),
-        RingDef(id: "abuela", name: "Anillo de la abuela", desc: "+%\u{2009}% de dinero", effect: .loot, per: 25, maxLevel: 60, baseCost: 5, growth: 1.45),
-        RingDef(id: "oro", name: "Anillo de oro", desc: "+%\u{2009}% de daño", effect: .damage, per: 20, maxLevel: 60, baseCost: 5, growth: 1.45),
         RingDef(id: "cuero", name: "Pulsera de cuero", desc: "+% de aguante", effect: .stamina, per: 5, maxLevel: 50, baseCost: 8, growth: 1.45),
         RingDef(id: "rubi", name: "Anillo de rubí", desc: "+%\u{2009}% de crítico", effect: .crit, per: 3, maxLevel: 20, baseCost: 15, growth: 1.7),
         RingDef(id: "trebol", name: "Pulsera del trébol", desc: "+%\u{2009}% de {huchas} dorad{as}", effect: .golden, per: 1, maxLevel: 20, baseCost: 20, growth: 1.8),
         RingDef(id: "sello", name: "Anillo de sello", desc: "Empiezas con más dinero", effect: .startCash, per: 1, maxLevel: 20, baseCost: 25, growth: 2),
         RingDef(id: "foto", name: "La foto de la bisabuela", desc: "Empiezas con {las} {huchas} al %\u{2009}% de tu récord", effect: .keepTier, per: 5, maxLevel: 10, baseCost: 30, growth: 1.9, icon: "photo.fill"),
         RingDef(id: "gemelos", name: "Pulsera de la suerte", desc: "+%\u{2009}% de sobres y mejores", effect: .chest, per: 1, maxLevel: 5, baseCost: 40, growth: 2),
-        RingDef(id: "esmeralda", name: "Anillo de esmeralda", desc: "+%\u{2009}% de velocidad", effect: .speed, per: 4, maxLevel: 20, baseCost: 40, growth: 1.6),
         RingDef(id: "martillo", name: "El martillo del bisabuelo", desc: "Empiezas con los % primeros martillos", effect: .startHammer, per: 1, maxLevel: 12, baseCost: 40, growth: 1.8, icon: "hammer.fill"),
-        RingDef(id: "zafiro", name: "Anillo de zafiro", desc: "Críticos +%\u{2009}%", effect: .critDamage, per: 20, maxLevel: 20, baseCost: 45, growth: 1.6),
         RingDef(id: "alianza", name: "Alianza", desc: "+%\u{2009}% de puntos de herencia", effect: .legacy, per: 10, maxLevel: 25, baseCost: 50, growth: 2),
-        RingDef(id: "tobillera", name: "Tobillera", desc: "Salen un %\u{2009}% más rápido", effect: .spawn, per: 8, maxLevel: 40, baseCost: 55, growth: 1.6),
         RingDef(id: "reloj", name: "Reloj de bolsillo", desc: "+% días para cada factura", effect: .extraDays, per: 1, maxLevel: 3, baseCost: 60, growth: 4),
-        RingDef(id: "collar", name: "Collar de perlas", desc: "+% {huchas} al empezar", effect: .startPigs, per: 2, maxLevel: 20, baseCost: 60, growth: 1.7),
-        RingDef(id: "broche", name: "Broche de flor", desc: "+% {huchas} a la vez", effect: .maxPigs, per: 2, maxLevel: 30, baseCost: 70, growth: 1.65),
-        RingDef(id: "compromiso", name: "Anillo de compromiso", desc: "Encargos +%\u{2009}% de premio", effect: .quests, per: 20, maxLevel: 15, baseCost: 80, growth: 1.7),
-        RingDef(id: "relojoro", name: "Reloj de oro", desc: "El frenesí dura +% s", effect: .frenzy, per: 0.5, maxLevel: 20, baseCost: 90, growth: 1.8),
-        RingDef(id: "diadema", name: "Diadema", desc: "{Las} {huchas} suben de nivel un %\u{2009}% más rápido", effect: .pigXP, per: 8, maxLevel: 15, baseCost: 120, growth: 1.75),
         RingDef(id: "libreta", name: "La libreta del cuñado", desc: "Al acabar el día compra solo lo más barato", effect: .autoBuy, per: 1, maxLevel: 1, baseCost: 150, growth: 1, icon: "list.clipboard.fill"),
         RingDef(id: "rey", name: "Anillo del rey", desc: "Facturas un %\u{2009}% más baratas", effect: .bills, per: 5, maxLevel: 6, baseCost: 200, growth: 2.5),
     ]
