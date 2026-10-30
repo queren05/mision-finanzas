@@ -376,6 +376,12 @@ extension Store {
                                   amount: t.type == .income ? t.amount : -t.amount, date: t.date)
         }
         w.accent = state.settings.accent
+        w.name = state.settings.name
+        let a = allowance()
+        w.perDay = a.perDay; w.left = a.left; w.daysLeft = a.daysLeft
+        w.mood = mood.rawValue
+        w.mascotColor = Look.shared.mascotColor.hexString
+        w.mascotHat = state.settings.mascotHat
         return w
     }
     /// manda el resumen al servidor (agrupando cambios seguidos) y avisa a los widgets; sigue aunque la app pase a segundo plano

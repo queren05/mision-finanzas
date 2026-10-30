@@ -88,6 +88,7 @@ jobs:
           shot -tab home -portfolio -lookdemo; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/21-muestra-agua.png"
           shot -tab invest -portfolio; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/22-muestra-inversiones.png"
           shot -tab txs -portfolio; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/23-muestra-movimientos.png"
+          shot -portfolio -widgets; sleep 3; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/24-widgets.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

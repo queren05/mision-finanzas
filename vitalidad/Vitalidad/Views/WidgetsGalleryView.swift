@@ -60,7 +60,8 @@ struct WidgetsGalleryView: View {
             .padding(16)
             .frame(width: small ? 158 : nil, height: small ? 158 : height)
             .frame(maxWidth: small ? nil : .infinity)
-            .background(WBackground(mood: d.mood), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(WBackground(mood: d.mood))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .environment(\.colorScheme, .dark)
     }
 }

@@ -8,6 +8,7 @@ struct MoreView: View {
     @State private var askReset = false
     @State private var askErase = false
     @State private var personalize = false
+    @State private var widgets = false
 
     var body: some View {
         @Bindable var store = store
@@ -68,7 +69,11 @@ struct MoreView: View {
             .appList()
             .navigationTitle("Más")
             .navigationDestination(isPresented: $personalize) { PersonalizeView() }
-            .task { if ProcessInfo.processInfo.arguments.contains("-personalize") { personalize = true } }
+            .navigationDestination(isPresented: $widgets) { WidgetsGallery() }
+            .task {
+                if ProcessInfo.processInfo.arguments.contains("-personalize") { personalize = true }
+                if ProcessInfo.processInfo.arguments.contains("-widgets") { widgets = true }
+            }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
                 guard case .success(let url) = result else { return }
                 let ok = url.startAccessingSecurityScopedResource()

@@ -105,6 +105,23 @@ struct RootView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: tab)
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: store.lastDeleted)
         .sheet(isPresented: $newTx) { TxEditor(original: nil) }
+        // al tocar un widget: caudal://nuevo · caudal://tab/txs|invest|debts|home|more
+        .onOpenURL { url in
+            switch url.host {
+            case "nuevo":
+                newTx = true
+            case "tab":
+                let t = url.pathComponents.filter { $0 != "/" }.first ?? "home"
+                switch t {
+                case "txs": tab = .txs
+                case "invest": tab = .invest
+                case "debts": tab = .debts
+                case "more": tab = .more
+                default: tab = .home
+                }
+            default: break
+            }
+        }
         .task {
             // (capturas automáticas: -tab txs|invest|stats|more, -new abre el teclado de apuntar)
             let args = ProcessInfo.processInfo.arguments
@@ -118,6 +135,7 @@ struct RootView: View {
                 }
             }
             if args.contains("-new") { newTx = true }
+            if args.contains("-widgets") { tab = .more }
             if args.contains("-lookdemo") {   // (solo para las capturas del simulador)
                 store.state.settings.background = "agua"
                 store.state.settings.cardStyle = "cristal"

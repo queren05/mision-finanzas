@@ -9,16 +9,19 @@ struct WidgetsGallery: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 steps
+                title("Disponible hoy")
+                HStack(spacing: 14) { box(small: true, d) { WAllowanceSmall(d: d) }; Spacer() }
+                box(d) { WAllowanceMedium(d: d) }
                 title("Cuentas")
-                HStack(spacing: 14) { box(small: true) { WBalanceSmall(d: d) }; box(small: true) { WSpentSmall(d: d) } }
-                box { WAccounts(d: d) }
+                HStack(spacing: 14) { box(small: true, d) { WBalanceSmall(d: d) }; box(small: true, d) { WSpentSmall(d: d) } }
+                box(d) { WAccounts(d: d) }
                 title("Gastos del mes")
-                box { WSpentMedium(d: d) }
+                box(d) { WSpentMedium(d: d) }
                 title("Inversiones")
-                HStack(spacing: 14) { box(small: true) { WInvest(d: d, showList: false) }; Spacer() }
-                box { WInvest(d: d) }
+                HStack(spacing: 14) { box(small: true, d) { WInvest(d: d, showList: false) }; Spacer() }
+                box(d) { WInvest(d: d) }
                 title("Grande")
-                box(height: 340) { WLarge(d: d) }
+                box(height: 360, d) { WLarge(d: d) }
             }
             .padding(16)
         }
@@ -43,13 +46,16 @@ struct WidgetsGallery: View {
         .card()
     }
     private func title(_ t: String) -> some View { Text(t).font(.headline).padding(.top, 4) }
-    private func box<C: View>(small: Bool = false, height: CGFloat = 158, @ViewBuilder _ c: () -> C) -> some View {
+    private func box<C: View>(small: Bool = false, height: CGFloat = 158, _ d: WidgetData, @ViewBuilder _ c: () -> C) -> some View {
         c().padding(16)
+            .foregroundStyle(.white)
+            .fontDesign(.rounded)
             .frame(width: small ? 158 : nil, height: small ? 158 : height)
             .frame(maxWidth: small ? nil : .infinity)
-            .background(LinearGradient(colors: [Color(hex: "#1c1b22"), Color(hex: "#111014")], startPoint: .top, endPoint: .bottom),
-                        in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(WBackground(accent: d.accent))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.08)))
+            .environment(\.colorScheme, .dark)
     }
 }
 

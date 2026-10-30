@@ -20,6 +20,9 @@ targets:
     info:
       path: Caudal/Info.plist
       properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: es.david.caudal
+            CFBundleURLSchemes: [caudal]
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         UILaunchScreen:

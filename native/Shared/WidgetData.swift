@@ -22,6 +22,14 @@ struct WidgetData: Codable {
     var positions: [Pos] = []
     var recent: [Mov] = []
     var accent = "#e4b3cb"
+    // Añadidos después: opcionales para poder leer los resúmenes antiguos.
+    var name: String?
+    var mood: String?
+    var mascotColor: String?
+    var mascotHat: String?
+    var perDay: Double?
+    var left: Double?
+    var daysLeft: Int?
 
     /// el servidor de casa (solo se llega por Tailscale y solo responde a los aparatos de David)
     static let server = URL(string: "http://100.99.241.98:8790/caudal/widget")!
@@ -69,7 +77,8 @@ struct WidgetData: Codable {
         cats: [Cat(name: "Comida", icon: "🍔", color: "#ff9f7a", total: 160), Cat(name: "Súper", icon: "🛒", color: "#6fd49b", total: 120),
                Cat(name: "Transporte", icon: "⛽️", color: "#7ac8ff", total: 80), Cat(name: "Ocio", icon: "🎮", color: "#b39cff", total: 45)],
         positions: [Pos(name: "MSCI World", value: 1200, change: 0.9), Pos(name: "Bitcoin", value: 399.82, change: -1.2)],
-        recent: [Mov(title: "KFC", icon: "🍔", amount: -10.53, date: "2026-10-20"), Mov(title: "Monster", icon: "☕️", amount: -2, date: "2026-10-20")])
+        recent: [Mov(title: "KFC", icon: "🍔", amount: -10.53, date: "2026-10-20"), Mov(title: "Monster", icon: "☕️", amount: -2, date: "2026-10-20")],
+        name: "David", mood: "happy", perDay: 14.20, left: 127.80, daysLeft: 9)
 }
 
 enum WMoney {
@@ -91,138 +100,3 @@ extension Color {
     static let wRed = Color(wHex: "#ff8686")
 }
 
-// MARK: - Vistas de los widgets (también se enseñan dentro de la app, en Más → Widgets)
-
-struct WBalanceSmall: View {
-    var d: WidgetData
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Patrimonio", systemImage: "drop.fill").font(.caption2.weight(.bold)).foregroundStyle(Color(wHex: d.accent))
-            Spacer(minLength: 0)
-            Text(WMoney.eur(d.netWorth)).font(.system(size: 22, weight: .bold, design: .rounded)).minimumScaleFactor(0.5).lineLimit(1)
-            Text("Efectivo \(WMoney.eur(d.cash))").font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
-            Text("Invertido \(WMoney.eur(d.invest))").font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-}
-
-struct WAccounts: View {
-    var d: WidgetData
-    var rows = 4
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Label("Cuentas", systemImage: "drop.fill").font(.caption.weight(.bold)).foregroundStyle(Color(wHex: d.accent))
-                Spacer()
-                Text(WMoney.eur(d.netWorth)).font(.caption.weight(.bold)).monospacedDigit()
-            }
-            ForEach(d.accounts.prefix(rows), id: \.self) { a in
-                HStack(spacing: 8) {
-                    Text(a.icon).font(.callout)
-                    Text(a.name).font(.subheadline.weight(.medium)).lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(WMoney.eur(a.value)).font(.subheadline.weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-                }
-            }
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-struct WSpentSmall: View {
-    var d: WidgetData
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Gastos · \(d.month)", systemImage: "arrow.down.circle.fill").font(.caption2.weight(.bold)).foregroundStyle(Color.wRed).lineLimit(1)
-            Spacer(minLength: 0)
-            Text(WMoney.eur(d.spent)).font(.system(size: 22, weight: .bold, design: .rounded)).minimumScaleFactor(0.5).lineLimit(1)
-            if d.budget > 0 {
-                ProgressView(value: min(d.spent / d.budget, 1)).tint(d.spent > d.budget ? Color.wRed : Color(wHex: d.accent))
-                Text("de \(WMoney.eur(d.budget))").font(.caption2).foregroundStyle(.secondary)
-            } else {
-                Text("Ingresos \(WMoney.eur(d.earned))").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-}
-
-struct WSpentMedium: View {
-    var d: WidgetData
-    var body: some View {
-        HStack(spacing: 14) {
-            WSpentSmall(d: d).frame(width: 120)
-            VStack(alignment: .leading, spacing: 6) {
-                let total = max(d.cats.reduce(0) { $0 + $1.total }, 0.01)
-                ForEach(d.cats.prefix(4), id: \.self) { c in
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Text(c.icon).font(.caption)
-                            Text(c.name).font(.caption.weight(.medium)).lineLimit(1)
-                            Spacer(minLength: 2)
-                            Text(WMoney.eur(c.total)).font(.caption.weight(.semibold)).monospacedDigit().lineLimit(1)
-                        }
-                        GeometryReader { g in
-                            Capsule().fill(Color(wHex: c.color)).frame(width: max(4, g.size.width * c.total / total))
-                        }
-                        .frame(height: 4)
-                    }
-                }
-                if d.cats.isEmpty { Text("Sin gastos este mes").font(.caption).foregroundStyle(.secondary) }
-                Spacer(minLength: 0)
-            }
-        }
-    }
-}
-
-struct WInvest: View {
-    var d: WidgetData
-    var showList = true
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Inversiones", systemImage: "chart.line.uptrend.xyaxis").font(.caption2.weight(.bold)).foregroundStyle(Color.wGreen)
-            Spacer(minLength: 0)
-            Text(WMoney.eur(d.invest)).font(.system(size: 22, weight: .bold, design: .rounded)).minimumScaleFactor(0.5).lineLimit(1)
-            if let c = d.investChange {
-                Text("\(WMoney.pct(c)) hoy").font(.caption.weight(.bold)).foregroundStyle(c >= 0 ? Color.wGreen : Color.wRed)
-            }
-            if showList {
-                ForEach(d.positions.prefix(3), id: \.self) { p in
-                    HStack {
-                        Text(p.name).font(.caption).lineLimit(1)
-                        Spacer(minLength: 4)
-                        if let c = p.change { Text(WMoney.pct(c)).font(.caption2.weight(.bold)).foregroundStyle(c >= 0 ? Color.wGreen : Color.wRed) }
-                        Text(WMoney.eur(p.value)).font(.caption.weight(.semibold)).monospacedDigit()
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-}
-
-struct WLarge: View {
-    var d: WidgetData
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            WAccounts(d: d, rows: 5).frame(maxHeight: 150)
-            Divider()
-            HStack {
-                VStack(alignment: .leading) { Text("Gastado en \(d.month.lowercased())").font(.caption).foregroundStyle(.secondary); Text(WMoney.eur(d.spent)).font(.headline).foregroundStyle(Color.wRed) }
-                Spacer()
-                VStack(alignment: .trailing) { Text("Ingresado").font(.caption).foregroundStyle(.secondary); Text(WMoney.eur(d.earned)).font(.headline).foregroundStyle(Color.wGreen) }
-            }
-            Divider()
-            ForEach(d.recent.prefix(4), id: \.self) { m in
-                HStack(spacing: 8) {
-                    Text(m.icon)
-                    Text(m.title).font(.subheadline).lineLimit(1)
-                    Spacer()
-                    Text(WMoney.eur(m.amount)).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(m.amount >= 0 ? Color.wGreen : Color.primary)
-                }
-            }
-            Spacer(minLength: 0)
-        }
-    }
-}
