@@ -178,3 +178,25 @@ enum Launch {
         return args[i + 1]
     }
 }
+
+// MARK: - Transición de zoom (iOS 18+)
+
+extension View {
+    @ViewBuilder
+    func zoomSource<ID: Hashable>(_ id: ID, _ ns: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            self.matchedTransitionSource(id: id, in: ns)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func zoomDestination<ID: Hashable>(_ id: ID, _ ns: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            self.navigationTransition(.zoom(sourceID: id, in: ns))
+        } else {
+            self
+        }
+    }
+}
