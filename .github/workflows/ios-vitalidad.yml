@@ -111,6 +111,9 @@ jobs:
           shot -demo -tab trends;       snap 6-tendencias
           shot -demo -detail hrv;       snap 7-detalle
           shot -demo -settings;         snap 8-ajustes
+          shot -demo -estilo grid;      snap 10-hoy-cuadricula
+          shot -demo -estilo grouped;   snap 11-hoy-agrupado
+          shot -demo -personalizar;     snap 12-personalizar
           xcrun simctl ui "$DEV" appearance light
           shot -demo;                   snap 9-hoy-claro
           ls -la "$GITHUB_WORKSPACE/out"

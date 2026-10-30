@@ -88,6 +88,10 @@ enum ScoreEngine {
     // MARK: Informe del día
 
     static func report(_ store: HealthStore) -> DayReport {
+        store.remember("report") { computeReport(store) }
+    }
+
+    private static func computeReport(_ store: HealthStore) -> DayReport {
         let night = store.lastNight
         var sleepScore: Score?
         var sleepParts: [String: Double] = [:]

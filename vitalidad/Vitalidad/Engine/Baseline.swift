@@ -88,6 +88,10 @@ enum Status: String {
 extension HealthStore {
     /// Lo normal en ti, con los 30 días anteriores a `day` (sin contar ese día).
     func baseline(_ m: Metric, before day: Date? = nil) -> Baseline? {
+        remember("base|\(m.rawValue)|\(day?.timeIntervalSince1970 ?? 0)") { computeBaseline(m, before: day) }
+    }
+
+    private func computeBaseline(_ m: Metric, before day: Date?) -> Baseline? {
         let cal = Calendar.current
         let end = cal.startOfDay(for: day ?? today)
         let start = cal.date(byAdding: .day, value: -30, to: end)!

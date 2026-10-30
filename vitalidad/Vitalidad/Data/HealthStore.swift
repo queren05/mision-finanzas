@@ -118,6 +118,25 @@ final class HealthStore {
         if full { cache.prune() }
     }
 
+    // MARK: - Memoria de cálculos
+
+    @ObservationIgnored private var memo: [String: Any] = [:]
+    @ObservationIgnored private var memoKey = ""
+
+    /// Guarda un cálculo hasta que lleguen datos nuevos (o pasen 5 minutos, porque algunas frases dependen de la hora).
+    /// Así las pantallas no recalculan medias y frases en cada fotograma de una animación.
+    func remember<T>(_ key: String, _ make: () -> T) -> T {
+        let k = "\(revision)|\(Int(Date.now.timeIntervalSince1970 / 300))|\(Fmt.energyUnit)"
+        if k != memoKey {
+            memo = [:]
+            memoKey = k
+        }
+        if let v = memo[key] as? T { return v }
+        let v = make()
+        memo[key] = v
+        return v
+    }
+
     // MARK: - Consultas
 
     var today: Date { Calendar.current.startOfDay(for: .now) }
@@ -126,6 +145,10 @@ final class HealthStore {
 
     /// El último valor disponible (hoy o, si no hay, el más reciente) y su día.
     func latest(_ m: Metric, within days: Int = 30) -> (day: Date, value: Double)? {
+        remember("latest|\(m.rawValue)|\(days)") { computeLatest(m, within: days) }
+    }
+
+    private func computeLatest(_ m: Metric, within days: Int) -> (day: Date, value: Double)? {
         guard let dict = values[m], !dict.isEmpty else { return nil }
         let limit = Calendar.current.date(byAdding: .day, value: -days, to: today)!
         return dict.filter { $0.key >= limit }.max { $0.key < $1.key }.map { ($0.key, $0.value) }

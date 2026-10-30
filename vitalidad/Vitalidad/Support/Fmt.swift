@@ -10,12 +10,17 @@ enum Fmt {
 
     /// 5.200 · 12.345 · 7,5 (siempre con punto de miles, también con 4 cifras).
     static func number(_ v: Double, decimals: Int = 0) -> String {
-        let f = NumberFormatter()
-        f.locale = Locale(identifier: "es_ES")
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 0
-        f.maximumFractionDigits = decimals
-        f.usesGroupingSeparator = false
+        // Crear formateadores es caro: se guardan y se reutilizan.
+        let f = numberFormatters[decimals] ?? {
+            let f = NumberFormatter()
+            f.locale = Locale(identifier: "es_ES")
+            f.numberStyle = .decimal
+            f.minimumFractionDigits = 0
+            f.maximumFractionDigits = decimals
+            f.usesGroupingSeparator = false
+            numberFormatters[decimals] = f
+            return f
+        }()
         let s = f.string(from: NSNumber(value: v)) ?? "\(v)"
         // El español no agrupa los números de 4 cifras; aquí sí, para que se lean mejor.
         let parts = s.split(separator: ",", maxSplits: 1).map(String.init)
@@ -39,20 +44,22 @@ enum Fmt {
     }
 
     /// 23:40
-    static func clock(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "es_ES")
-        f.dateFormat = "H:mm"
-        return f.string(from: d)
-    }
+    static func clock(_ d: Date) -> String { day(d, style: "H:mm") }
 
     /// «lunes 3» · «3 oct»
     static func day(_ d: Date, style: String = "EEEE d") -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "es_ES")
-        f.dateFormat = style
+        let f = dateFormatters[style] ?? {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "es_ES")
+            f.dateFormat = style
+            dateFormatters[style] = f
+            return f
+        }()
         return f.string(from: d)
     }
+
+    nonisolated(unsafe) private static var numberFormatters: [Int: NumberFormatter] = [:]
+    nonisolated(unsafe) private static var dateFormatters: [String: DateFormatter] = [:]
 
     /// Valor de una métrica listo para pintar, sin la unidad.
     static func value(_ m: Metric, _ v: Double) -> String {

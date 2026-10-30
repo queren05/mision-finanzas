@@ -66,16 +66,13 @@ enum Mood: Equatable {
 struct MoodBackground: View {
     var mood: Mood
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         let colors = mood.mesh(scheme)
         Group {
             if #available(iOS 18.0, *) {
-                TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { tl in
-                    let t = reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate
-                    MeshGradient(width: 3, height: 3, points: Self.points(t), colors: colors)
-                }
+                // Quieta: una malla que se mueve obliga al cristal de todas las tarjetas a redibujarse en cada fotograma.
+                MeshGradient(width: 3, height: 3, points: Self.points(2.2), colors: colors)
+                    .drawingGroup()
             } else {
                 ZStack {
                     LinearGradient(colors: [colors[1], colors[4], colors[7]], startPoint: .top, endPoint: .bottom)
@@ -140,9 +137,8 @@ extension View {
     func scrollFade() -> some View {
         scrollTransition(.animated(.smooth)) { content, phase in
             content
-                .opacity(phase.isIdentity ? 1 : 0.35)
+                .opacity(phase.isIdentity ? 1 : 0.4)
                 .scaleEffect(phase.isIdentity ? 1 : 0.96)
-                .blur(radius: phase.isIdentity ? 0 : 1.5)
         }
     }
 }

@@ -19,6 +19,10 @@ struct Insight: Identifiable {
 @MainActor
 enum Explainer {
     static func insight(_ m: Metric, store: HealthStore) -> Insight? {
+        store.remember("insight|\(m.rawValue)") { compute(m, store: store) }
+    }
+
+    private static func compute(_ m: Metric, store: HealthStore) -> Insight? {
         guard let latest = store.latest(m, within: m == .weight || m == .vo2max ? 30 : 2) else { return nil }
         let cal = Calendar.current
         let isToday = cal.isDateInToday(latest.day)

@@ -4,13 +4,16 @@ struct TodayView: View {
     @Environment(HealthStore.self) private var store
     @State private var settings = Launch.args.contains("-settings")
     @State private var opened: Metric? = Launch.value("-detail").flatMap(Metric.init(rawValue:))
+    @State private var personalize = Launch.args.contains("-personalizar")
     @Namespace private var zoom
-
-    private let cards: [Metric] = [.steps, .activeEnergy, .exerciseMinutes, .restingHR, .hrv, .respiratoryRate, .calories]
+    @AppStorage("hoyEstilo") private var style = TodayStyle(rawValue: Launch.value("-estilo") ?? "") ?? .cards
+    @AppStorage("hoyTarjetas") private var cardsRaw = TodayCards.defaultString
+    @AppStorage("hoyResumen") private var showSummary = true
+    @AppStorage("hoyPuntuaciones") private var showScores = true
 
     var body: some View {
         let report = ScoreEngine.report(store)
-        let insights = cards.compactMap { Explainer.insight($0, store: store) }
+        let insights = TodayCards.decode(cardsRaw).compactMap { Explainer.insight($0, store: store) }
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").capitalizedFirst)
@@ -18,26 +21,20 @@ struct TodayView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, Space.xs)
 
-                Text(report.summary)
-                    .font(.title3.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, Space.xs)
-                    .padding(.bottom, Space.xs)
-                    .stagger(0)
+                if showSummary {
+                    Text(report.summary)
+                        .font(.title3.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, Space.xs)
+                        .padding(.bottom, Space.xs)
+                        .stagger(0)
+                }
 
-                if !report.scores.isEmpty {
+                if showScores && !report.scores.isEmpty {
                     ScoresCard(scores: report.scores).stagger(1)
                 }
 
-                ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
-                    NavigationLink(value: ins.metric) {
-                        InsightCard(insight: ins)
-                            .zoomSource(ins.metric, zoom)
-                    }
-                    .buttonStyle(.plain)
-                    .stagger(i + 2)
-                    .scrollFade()
-                }
+                cards(insights)
 
                 if let updated = store.updated {
                     Text("Actualizado a las \(Fmt.clock(updated))")
@@ -60,11 +57,49 @@ struct TodayView: View {
         }
         .refreshable { await store.refresh(full: false) }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button { personalize = true } label: { Image(systemName: "square.grid.2x2") }
+                    .accessibilityLabel("Personalizar Hoy")
                 Button { settings = true } label: { Image(systemName: "gearshape") }
+                    .accessibilityLabel("Ajustes")
             }
         }
         .sheet(isPresented: $settings) { SettingsView() }
+        .sheet(isPresented: $personalize) { PersonalizeTodayView() }
+        .animation(.snappy, value: style)
+    }
+
+    @ViewBuilder
+    private func cards(_ insights: [Insight]) -> some View {
+        switch style {
+        case .cards:
+            ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
+                NavigationLink(value: ins.metric) {
+                    InsightCard(insight: ins).zoomSource(ins.metric, zoom)
+                }
+                .buttonStyle(.plain)
+                .stagger(i + 2)
+                .scrollFade()
+            }
+        case .grid:
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: Space.m), GridItem(.flexible(), spacing: Space.m)], spacing: Space.m) {
+                ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
+                    NavigationLink(value: ins.metric) {
+                        GridTile(insight: ins).zoomSource(ins.metric, zoom)
+                    }
+                    .buttonStyle(.plain)
+                    .stagger(i + 2)
+                }
+            }
+        case .grouped:
+            // Los módulos salen en el orden en que aparece su primera métrica.
+            let groups = insights.map(\.metric.group).reduce(into: [MetricGroup]()) { if !$0.contains($1) { $0.append($1) } }
+            ForEach(Array(groups.enumerated()), id: \.element) { i, g in
+                GroupCard(group: g, insights: insights.filter { $0.metric.group == g }, zoom: zoom)
+                    .stagger(i + 2)
+                    .scrollFade()
+            }
+        }
     }
 }
 
