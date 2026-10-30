@@ -1,0 +1,129 @@
+# Vitalidad (app de salud en SwiftUI que lee Apple Salud y explica los datos).
+# Compila siempre un .ipa SIN FIRMAR (para KSign) y, si están los secretos VITALIDAD_P12, VITALIDAD_P12_PASSWORD
+# y VITALIDAD_PROFILE, otro FIRMADO con tu certificado y tu perfil (con HealthKit). Los publica en la release «vitalidad-latest».
+name: Vitalidad (IPA)
+
+on:
+  push:
+    branches: [caudal]
+    paths: ["vitalidad/**", ".github/workflows/ios-vitalidad.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Usar el Xcode más reciente (SDK de iOS 26, Liquid Glass)"
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); [ -n "$X" ] || X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"; xcodebuild -version
+
+      - name: Generar el proyecto (XcodeGen)
+        working-directory: vitalidad
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Compilar sin firma
+        working-directory: vitalidad
+        run: |
+          set -o pipefail
+          xcodebuild -project Vitalidad.xcodeproj -scheme Vitalidad -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: unre|BUILD" || true
+          grep -q "BUILD SUCCEEDED" "$RUNNER_TEMP/build.log" || { grep -E "error:" "$RUNNER_TEMP/build.log" | head -60; exit 1; }
+
+      - name: Empaquetar el .ipa sin firmar
+        run: |
+          APP=$(find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 2 -name 'Vitalidad.app' -type d | head -1)
+          test -d "$APP"
+          mkdir -p "$RUNNER_TEMP/pkg/Payload" out
+          cp -R "$APP" "$RUNNER_TEMP/pkg/Payload/"
+          (cd "$RUNNER_TEMP/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Vitalidad.ipa" Payload)
+          ls -la out
+
+      - name: Firmar con tu certificado (si están los secretos)
+        env:
+          P12: ${{ secrets.VITALIDAD_P12 }}
+          P12_PASSWORD: ${{ secrets.VITALIDAD_P12_PASSWORD }}
+          PROFILE: ${{ secrets.VITALIDAD_PROFILE }}
+        run: |
+          if [ -z "$P12" ] || [ -z "$PROFILE" ]; then echo "Sin secretos de firma: solo se publica el .ipa sin firmar."; exit 0; fi
+          set -e
+          T="$RUNNER_TEMP/firma"; mkdir -p "$T"
+          KC="$T/firma.keychain-db"
+          security create-keychain -p clave "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p clave "$KC"
+          echo "$P12" | base64 --decode > "$T/cert.p12"
+          security import "$T/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          security set-key-partition-list -S apple-tool:,apple: -s -k clave "$KC" >/dev/null
+          echo "$PROFILE" | base64 --decode > "$T/perfil.mobileprovision"
+          security cms -D -i "$T/perfil.mobileprovision" > "$T/perfil.plist"
+          /usr/libexec/PlistBuddy -x -c "Print :Entitlements" "$T/perfil.plist" > "$T/ent.plist"
+          echo "Permisos del perfil:"; plutil -p "$T/ent.plist"
+          grep -q "com.apple.developer.healthkit" "$T/ent.plist" || echo "::warning::El perfil NO incluye HealthKit: la app no podrá leer Salud."
+          IDENT=$(security find-identity -v -p codesigning "$KC" | grep -m1 -oE '[0-9A-F]{40}')
+          APPID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" "$T/perfil.plist")
+          BID="${APPID#*.}"
+          mkdir -p "$T/pkg"; cp -R "$RUNNER_TEMP/pkg/Payload" "$T/pkg/"
+          APP="$T/pkg/Payload/Vitalidad.app"
+          if [ "$BID" != "*" ] && [ "$BID" != "com.david.salud" ]; then
+            echo "El perfil es para $BID: se cambia el identificador de la app."
+            /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BID" "$APP/Info.plist"
+          fi
+          cp "$T/perfil.mobileprovision" "$APP/embedded.mobileprovision"
+          codesign -f -s "$IDENT" --entitlements "$T/ent.plist" --timestamp=none "$APP"
+          codesign -dv --entitlements - "$APP" 2>&1 | head -40
+          (cd "$T/pkg" && zip -qry "$GITHUB_WORKSPACE/out/Vitalidad-firmada.ipa" Payload)
+          security delete-keychain "$KC"
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Capturas en el simulador
+        working-directory: vitalidad
+        continue-on-error: true
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];l=[x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone') and 'Pro' in x['name'] and 'Max' not in x['name']];print(l[-1]['udid'])")
+          xcodebuild -project Vitalidad.xcodeproj -scheme Vitalidad -configuration Debug -destination "id=$DEV" -derivedDataPath "$RUNNER_TEMP/sim" build -quiet
+          xcrun simctl boot "$DEV"; sleep 15
+          xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          APP=$(find "$RUNNER_TEMP/sim/Build/Products" -name 'Vitalidad.app' -type d | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          B=com.david.salud
+          shot() { xcrun simctl terminate "$DEV" $B 2>/dev/null || true; xcrun simctl launch "$DEV" $B "$@" >/dev/null || true; sleep 9; }
+          snap() { xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/$1.png"; }
+          shot;                         snap 1-bienvenida
+          shot -demo;                   snap 2-hoy
+          shot -demo -tab sleep;        snap 3-sueno
+          shot -demo -tab activity;     snap 4-actividad
+          shot -demo -tab nutrition;    snap 5-nutricion
+          shot -demo -tab trends;       snap 6-tendencias
+          shot -demo -detail hrv;       snap 7-detalle
+          shot -demo -settings;         snap 8-ajustes
+          xcrun simctl ui "$DEV" appearance light
+          shot -demo;                   snap 9-hoy-claro
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vitalidad
+          path: out/*.ipa
+
+      - name: Publicar como descarga directa
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete vitalidad-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create vitalidad-latest out/*.ipa $(ls out/*.png 2>/dev/null) --target "$GITHUB_SHA" --title "Vitalidad · IPA" \
+            --notes "Build ${{ github.run_number }} · Vitalidad.ipa sin firmar (KSign) y, si hay secretos, Vitalidad-firmada.ipa"
