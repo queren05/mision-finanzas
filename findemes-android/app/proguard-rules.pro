@@ -1,0 +1,1 @@
+-keep class es.david.findemes.model.** { *; }
