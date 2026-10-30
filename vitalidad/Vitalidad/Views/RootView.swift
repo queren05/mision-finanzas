@@ -42,7 +42,10 @@ struct RootView: View {
 
     @ViewBuilder
     private func screen(_ t: AppTab) -> some View {
-        PlaceholderScreen(tab: t)
+        switch t {
+        case .today: TodayView()
+        default: PlaceholderScreen(tab: t)
+        }
     }
 }
 

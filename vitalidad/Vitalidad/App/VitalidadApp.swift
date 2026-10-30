@@ -4,6 +4,13 @@ import SwiftUI
 struct VitalidadApp: App {
     @AppStorage("onboarded") private var onboarded = false
     @AppStorage("tema") private var theme = Theme.auto
+    @State private var store = HealthStore.shared
+    @Environment(\.scenePhase) private var phase
+
+    init() {
+        // Las consultas que vigilan Salud tienen que quedar puestas al arrancar, también cuando iOS abre la app en segundo plano.
+        if UserDefaults.standard.bool(forKey: "onboarded") || Launch.demo { HealthStore.shared.start() }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -11,8 +18,15 @@ struct VitalidadApp: App {
                 if onboarded || Launch.demo {
                     RootView()
                 } else {
-                    WelcomeView { withAnimation(.smooth) { onboarded = true } }
+                    WelcomeView {
+                        withAnimation(.smooth) { onboarded = true }
+                        store.start()
+                    }
                 }
+            }
+            .environment(store)
+            .onChange(of: phase) { _, p in
+                if p == .active && onboarded { Task { await store.refresh(full: false) } }
             }
             .fontDesign(.rounded)
             .environment(\.locale, Locale(identifier: "es_ES"))
