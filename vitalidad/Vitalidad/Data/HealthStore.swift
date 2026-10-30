@@ -131,7 +131,8 @@ final class HealthStore {
             memo = [:]
             memoKey = k
         }
-        if let v = memo[key] as? T { return v }
+        // Ojo: `memo[key] as? T` daría «nil» sin calcular cuando T es opcional y la clave no existe.
+        if let boxed = memo[key], let v = boxed as? T { return v }
         let v = make()
         memo[key] = v
         return v
