@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.money.Reward
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -223,6 +224,7 @@ fun AwayView(prize: AwayPrize) {
             T("${Fmt.num(prize.cows)} {huchas} rot{as}", chunky(22.0))
             T("+" + Fmt.money(prize.cash), chunky(40.0).hardShadow(2.0, 3.0), Modifier.scale(sc), color = Ink.green, maxLines = 1, minScale = 0.5f)
             ChunkyText("Cobrar", { game.collectAway() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
+            RewardButton("Cobrar el doble", Reward.doblar, Modifier.fillMaxWidth()) { game.collectAway(double = true) }
         }
     }
 }

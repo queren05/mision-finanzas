@@ -22,7 +22,10 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
-        versionName = "2.2"
+        versionName = "2.3"
+        // AdMob: sin las claves de verdad se usan los anuncios de prueba de Google
+        manifestPlaceholders["admobAppId"] = System.getenv("FDM_ADMOB_APP_ID")?.takeIf { it.isNotBlank() } ?: "ca-app-pub-3940256099942544~3347511713"
+        buildConfigField("String", "ADMOB_REWARDED", "\"" + (System.getenv("FDM_ADMOB_REWARDED")?.takeIf { it.isNotBlank() } ?: "ca-app-pub-3940256099942544/5224354917") + "\"")
     }
 
     signingConfigs {
@@ -64,6 +67,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -88,6 +92,9 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.play.ads)
+    implementation(libs.ump)
+    implementation(libs.billing)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
 }

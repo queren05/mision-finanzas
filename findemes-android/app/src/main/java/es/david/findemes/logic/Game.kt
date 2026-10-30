@@ -20,6 +20,9 @@ import es.david.findemes.model.SkillDef
 import es.david.findemes.model.SkillEffect
 import es.david.findemes.model.SkillTree
 import es.david.findemes.model.SkinDef
+import es.david.findemes.money.Money
+import es.david.findemes.money.Reward
+import es.david.findemes.money.Shop
 import es.david.findemes.support.Animal
 import es.david.findemes.support.rnd
 import java.util.UUID
@@ -90,6 +93,8 @@ class ChestPrize(val rarity: Rarity, val cash: Double, val coin: CoinDef?, val d
 
 sealed class GameEvent(val id: String) {
     class Collector(val legacy: Double) : GameEvent("collector")
+    /** llama el cobrador: si quieres, te da un día más */
+    object Warning : GameEvent("warning")
     object Taxes : GameEvent("taxes")
     class Bankrupt(val legacy: Double) : GameEvent("bankrupt")
 }
@@ -356,6 +361,8 @@ class Game private constructor() {
 
     fun startDay() {
         if (inRun || s.awaitingTaxChoice) return
+        // la factura venció y se cerró el juego antes de decidir: primero, el cobrador
+        if (s.day > s.billDue) { afterReport(); return }
         recompute()
         inRun = true
         Sound.click()
@@ -399,6 +406,7 @@ class Game private constructor() {
         if (s.day <= s.billDue || s.awaitingTaxChoice) return
         // la factura vencía ayer: se paga sola si llega el dinero; si no, viene el cobrador
         if (s.cash >= billAmount) { autoPaid = bill.company; payBill() }
+        else if (Money.canUse(Reward.prorroga)) event = GameEvent.Warning
         else bankruptcy(forced = true)
     }
 
@@ -476,7 +484,15 @@ class Game private constructor() {
     }
 
     /** los animales se ganan pagando facturas */
-    fun hasSkin(k: SkinDef): Boolean = k.id in s.skinsOwned || s.stats.billsPaid >= k.bills
+    fun hasSkin(k: SkinDef): Boolean = k.id in s.skinsOwned || (k.product?.let { Shop.owns(it) } ?: (s.stats.billsPaid >= k.bills))
+
+    /** el cobrador da un día más para pagar */
+    fun reprieve() {
+        s.billDue = s.day
+        event = null
+        Sound.till()
+        save()
+    }
     fun pickSkin(k: SkinDef) {
         if (!hasSkin(k)) { Sound.denied(); return }
         s.skinsOwned = s.skinsOwned + k.id; s.skin = k.id; Animal.use(k); Sound.click(); save()

@@ -1,6 +1,7 @@
 package es.david.findemes.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -309,4 +310,32 @@ fun AlertDialog(visible: Boolean, title: String, message: String?, actions: List
 fun Overlay(dim: Double = 0.5, onTap: (() -> Unit)? = null, content: @Composable BoxScope.() -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim.toFloat()))
         .clickable(remember { MutableInteractionSource() }, null) { onTap?.invoke() }, contentAlignment = Alignment.Center, content = content)
+}
+
+// MARK: - Premios por anuncio (siempre a elegir)
+
+/** botón de premio: con «Sin anuncios» no lleva el icono del vídeo */
+@Composable
+fun RewardButton(label: String, reward: es.david.findemes.money.Reward, modifier: Modifier = Modifier, color: Color = Ink.paper, size: Double = 17.0, grant: () -> Unit) {
+    val left = es.david.findemes.money.Money.usesLeft(reward)
+    ChunkyButton({ es.david.findemes.money.Money.claim(reward, grant) }, modifier, color, Ink.ink, size, 14.0, enabled = left > 0) { st ->
+        Spacer(Modifier.weight(1f))
+        if (!es.david.findemes.money.Shop.noAds) SymIcon("play.rectangle.fill", size * 1.1, if (left > 0) Ink.ink else Ink.soft, Modifier.padding(end = 8.dp))
+        T(label, st, maxLines = 1, minScale = 0.5f, align = TextAlign.Center)
+        Spacer(Modifier.weight(1f))
+    }
+}
+
+/** el aviso corto de abajo (compras, anuncios que no llegan…) */
+@Composable
+fun NoticeStrip() {
+    val text = es.david.findemes.money.Money.notice
+    LaunchedEffect(text) { if (text != null) { kotlinx.coroutines.delay(2600); es.david.findemes.money.Money.notice = null } }
+    AnimatedVisibility(text != null, enter = fadeIn(), exit = fadeOut()) {
+        Box(Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 40.dp, start = 24.dp, end = 24.dp), contentAlignment = Alignment.BottomCenter) {
+            Box(Modifier.paper(tilt = -0.6).padding(horizontal = 18.dp, vertical = 12.dp)) {
+                T(text ?: "", typewriter(15.0, true), align = TextAlign.Center)
+            }
+        }
+    }
 }

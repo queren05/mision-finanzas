@@ -234,6 +234,7 @@ class SkinDef(
     val head: Pt,             // dónde va la corona o la mecha (en píxeles de la imagen)
     val shards: List<String>, // colores de los pedazos al romperse
     val singular: String = "hucha", val plural: String = "huchas", val female: Boolean = true,
+    val product: String? = null,    // los de pago: el producto de Google Play que lo da
 ) {
     val bills = bills.toDouble()
     val w = w.toDouble()
@@ -396,6 +397,12 @@ object Content {
         SkinDef(id = "llama", name = "Llama", bills = 15, w = 264, h = 307, head = Pt(208.0, 12.0), shards = listOf("#a77b5a", "#ffffff"), singular = "llama", plural = "llamas", female = true),
         SkinDef(id = "caballo", name = "Caballo", bills = 30, w = 294, h = 235, head = Pt(258.0, 12.0), shards = listOf("#a0673e", "#3a2a20"), singular = "caballo", plural = "caballos", female = false),
         SkinDef(id = "cebra", name = "Cebra", bills = 60, w = 292, h = 238, head = Pt(260.0, 10.0), shards = listOf("#ffffff", "#1d1a17"), singular = "cebra", plural = "cebras", female = true),
+        // de pago (solo aspecto, no dan ventaja)
+        SkinDef(id = "oveja", name = "Oveja", bills = 0, w = 310, h = 272, head = Pt(241.0, 34.0), shards = listOf("#ffffff", "#1d1a17"), singular = "oveja", plural = "ovejas", female = true, product = "paquete_inicio"),
+        SkinDef(id = "perro", name = "Perro", bills = 0, w = 297, h = 236, head = Pt(254.0, 23.0), shards = listOf("#e8b37a", "#b9824f"), singular = "perro", plural = "perros", female = false, product = "animal_perro"),
+        SkinDef(id = "gato", name = "Gato", bills = 0, w = 297, h = 294, head = Pt(257.0, 105.0), shards = listOf("#cfc9c4", "#f2a5b4"), singular = "gato", plural = "gatos", female = false, product = "animal_gato"),
+        SkinDef(id = "zorro", name = "Zorro", bills = 0, w = 295, h = 173, head = Pt(271.0, 17.0), shards = listOf("#f07a2a", "#ffffff"), singular = "zorro", plural = "zorros", female = false, product = "animal_zorro"),
+        SkinDef(id = "pollito", name = "Pollito", bills = 0, w = 297, h = 296, head = Pt(223.0, 8.0), shards = listOf("#ffd84a", "#f58d1e"), singular = "pollito", plural = "pollitos", female = false, product = "animal_pollito"),
     )
     fun skin(id: String): SkinDef = skins.firstOrNull { it.id == id } ?: skins[0]
     fun playing(id: String): SkinDef = skin(id)

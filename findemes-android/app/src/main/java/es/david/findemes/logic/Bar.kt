@@ -56,10 +56,13 @@ val todayKey: String
 const val dailySpins = 3
 val Game.freeSpins: Int get() = if (s.lastSpin != todayKey) dailySpins else max(0, dailySpins - s.spinsToday)
 
-fun Game.spin(): SpinResult? {
-    if (freeSpins <= 0) { Sound.denied(); return null }
-    if (s.lastSpin != todayKey) { s.lastSpin = todayKey; s.spinsToday = 0 }
-    s.spinsToday += 1
+/** `extra`: la tirada que se gana con un anuncio (no gasta las gratis) */
+fun Game.spin(extra: Boolean = false): SpinResult? {
+    if (!extra) {
+        if (freeSpins <= 0) { Sound.denied(); return null }
+        if (s.lastSpin != todayKey) { s.lastSpin = todayKey; s.spinsToday = 0 }
+        s.spinsToday += 1
+    }
     s.stats.spins += 1
     val reels = List(3) { SlotSymbol.random() }
     // cada premio pequeño vale cinco huchas de las de ahora

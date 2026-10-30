@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.money.Reward
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
@@ -292,6 +293,15 @@ fun EventView(event: GameEvent) {
                             typewriter(15.0), align = TextAlign.Center)
                         LegacyLine(event.legacy)
                         ChunkyText("Empezar de nuevo", { close() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
+                    }
+                    GameEvent.Warning -> {
+                        val company = Content.bills[minOf(game.s.billIndex, Content.bills.size - 1)].company
+                        T("¡LLAMA EL COBRADOR!", chunky(32.0), color = Ink.red, align = TextAlign.Center)
+                        T("No te llega para pagar a ${company.lowercase()}. Hoy está de buenas: si quieres, te da un día más.",
+                            typewriter(15.0), align = TextAlign.Center)
+                        T(Fmt.money(game.billAmount), chunky(30.0), color = Ink.red, maxLines = 1, minScale = 0.5f)
+                        RewardButton("Un día más", Reward.prorroga, Modifier.fillMaxWidth(), color = Ink.gold, size = 20.0) { game.reprieve() }
+                        ChunkyText("Que se lo lleve todo", { game.event = null; game.bankruptcy(forced = true) }, Modifier.fillMaxWidth(), color = Ink.paper, size = 18.0, fill = true)
                     }
                     GameEvent.Taxes -> {
                         T("¡HACIENDA PAGADA!", chunky(32.0), color = Ink.green, align = TextAlign.Center)

@@ -97,6 +97,11 @@ object Sym {
         "eurosign.circle.fill" -> Icons.Filled.Euro
         "gift.fill" -> Icons.Filled.Redeem
         "ticket" -> Icons.Outlined.TicketOutline
+        "play.rectangle.fill" -> Icons.Filled.SmartDisplay
+        "cart.fill" -> Icons.Filled.ShoppingCart
+        "arrow.clockwise" -> Icons.Filled.Refresh
+        "hand.raised.slash.fill" -> Icons.Filled.Block
+        "lock.shield.fill" -> Icons.Filled.PrivacyTip
         else -> Icons.Filled.AutoAwesome
     }
 }

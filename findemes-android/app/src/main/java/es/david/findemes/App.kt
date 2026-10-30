@@ -53,11 +53,17 @@ import es.david.findemes.ui.IntroView
 import es.david.findemes.ui.LevelUpView
 import es.david.findemes.ui.MilestoneView
 import es.david.findemes.ui.NewKindView
+import es.david.findemes.ui.NoticeStrip
+import es.david.findemes.money.Ads
+import es.david.findemes.money.Money
+import es.david.findemes.money.Shop
 import es.david.findemes.ui.Pt
 import es.david.findemes.ui.ReportView
 import es.david.findemes.ui.Tex
 
 class MainActivity : ComponentActivity() {
+    override fun onResume() { super.onResume(); Money.attach(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.light(0, 0), navigationBarStyle = SystemBarStyle.light(0, 0))
@@ -72,6 +78,10 @@ class MainActivity : ComponentActivity() {
         val args = (intent?.getStringExtra("args") ?: "").split(" ").filter { it.isNotBlank() }
         val game = Game.shared
         Demo.apply(game, args)
+        Money.attach(this)
+        Shop.init(this)
+        // en las capturas automáticas no sale el aviso de privacidad
+        if ("-demo" !in args || "-anuncios" in args) Ads.start(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(LifecycleEventObserver { _, e ->
             if (e == Lifecycle.Event.ON_STOP) { game.save(); Sound.stop(); Music.pause() }
             if (e == Lifecycle.Event.ON_START) { Music.resume(); game.wake() }
@@ -124,6 +134,7 @@ fun Root(args: List<String>) {
             calm && game.levelUp != null -> LevelUpView(game.levelUp!!)
             calm && game.dailyReady -> DailyView()
         }
+        NoticeStrip()
     }
 }
 
@@ -172,6 +183,9 @@ object Demo {
             game.report = r
         }
         if ("-collector" in args) game.event = GameEvent.Collector(32.0)
+        if ("-sintiradas" in args) { s.lastSpin = es.david.findemes.logic.todayKey; s.spinsToday = 3 }
+        if ("-cobrador" in args) game.event = GameEvent.Warning
+        if ("-tienda" in args) Money.say("¡Gracias por tu compra!")
         if ("-nivel" in args) game.levelUp = 13
         if ("-nueva" in args) game.newKinds = listOf(PigKind.bomba)
         if ("-intro" in args) game.s.seenIntro = false

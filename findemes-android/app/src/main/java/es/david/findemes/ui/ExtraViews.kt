@@ -1,5 +1,7 @@
 package es.david.findemes.ui
 
+import es.david.findemes.money.Money
+import es.david.findemes.money.Reward
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -138,8 +140,8 @@ fun SlotMachineView() {
     val unit = game.pigWorth * 5
     LaunchedEffect(busy) { while (busy) { withFrameMillis { clock = it } } }
 
-    fun pull() {
-        val r = game.spin() ?: return
+    fun pull(extra: Boolean = false) {
+        val r = game.spin(extra) ?: return
         Sound.swing()
         result = r
         for (i in 0 until 3) spinning[i] = true
@@ -189,7 +191,8 @@ fun SlotMachineView() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (i in 0 until dailySpins) SymIcon(if (i < game.freeSpins) "ticket.fill" else "ticket", 28.0, if (i < game.freeSpins) Ink.gold else Ink.paper.copy(alpha = 0.4f))
         }
-        ChunkyText("¡TIRAR!", { pull() }, Modifier.fillMaxWidth(), color = Ink.red, text = Ink.paper, size = 24.0, enabled = !(busy || game.freeSpins == 0 || game.inRun), fill = true)
+        if (game.freeSpins > 0 || busy) ChunkyText("¡TIRAR!", { pull() }, Modifier.fillMaxWidth(), color = Ink.red, text = Ink.paper, size = 24.0, enabled = !(busy || game.freeSpins == 0 || game.inRun), fill = true)
+        else RewardButton("Tirada extra · ${Money.usesLeft(Reward.tirada)}", Reward.tirada, Modifier.fillMaxWidth(), color = Ink.gold, size = 22.0) { pull(extra = true) }
 
         // la tabla de premios
         Column(Modifier.fillMaxWidth().paper().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

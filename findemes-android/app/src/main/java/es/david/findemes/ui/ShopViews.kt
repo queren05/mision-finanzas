@@ -1,5 +1,9 @@
 package es.david.findemes.ui
 
+import es.david.findemes.money.Ads
+import es.david.findemes.money.Money
+import es.david.findemes.money.Reward
+import es.david.findemes.money.Shop
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -245,6 +249,10 @@ fun CoinsView(onClose: () -> Unit) {
                     Box(Modifier.padding(horizontal = 18.dp).padding(top = 10.dp)) { ChestOpener() }
                 }
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    RewardButton("Sobre de regalo · ${Money.usesLeft(Reward.sobre)}", Reward.sobre, Modifier.fillMaxWidth(), color = Ink.gold) {
+                        game.s.pendingChests = game.s.pendingChests + game.rollChest()
+                        Sound.coin()
+                    }
                     for (row in Content.coins.chunked(3)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             for (c in row) {
@@ -308,6 +316,7 @@ fun SettingsView() {
                 T("Música: «Lobby Time», «Local Forecast - Elevator», «Bossa Antigua» y «Easy Lemon» de Kevin MacLeod (incompetech.com), licencia CC BY 4.0. Personajes: Quaternius (CC0).",
                     typewriter(11.0), color = Ink.soft)
             }
+            ShopCard()
             // el animal que se rompe (los textos también cambian: vacas, cerdos, llamas…)
             Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 18.dp).fillMaxWidth().paper(hex("#fffaf0")).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 T("ANIMAL", typewriter(15.0, true))
@@ -354,22 +363,57 @@ fun ToggleRow(label: String, on: Boolean, set: (Boolean) -> Unit) {
     }
 }
 
-// MARK: - Animales (se ganan pagando facturas)
+// MARK: - La tienda (nada que haga ir más rápido)
+
+@Composable
+private fun ShopCard() {
+    Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 18.dp).fillMaxWidth().paper(hex("#fffaf0")).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        T("TIENDA", typewriter(15.0, true))
+        ShopRow(Shop.NO_ADS, "Sin anuncios", "Los premios, sin ver vídeos") { SymIcon("hand.raised.slash.fill", 34.0, Ink.red) }
+        ShopRow(Shop.STARTER, "Paquete de inicio", "La oveja y 3 sobres épicos") { SkinIcon("oveja", 48.0) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ChunkyText("Restaurar compras", { Shop.restore() }, Modifier.weight(1f), color = Ink.paper, size = 13.0, radius = 10.0, fill = true)
+            if (Ads.privacyButton) ChunkyText("Privacidad", { Money.activity?.let { Ads.showPrivacy(it) } }, Modifier.weight(1f), color = Ink.paper, size = 13.0, radius = 10.0, fill = true)
+        }
+    }
+}
+
+@Composable
+private fun ShopRow(id: String, title: String, line: String, icon: @Composable () -> Unit) {
+    val owned = Shop.owns(id)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) { icon() }
+        Column(Modifier.weight(1f)) {
+            T(title, chunky(19.0), maxLines = 1, minScale = 0.7f)
+            T(line, typewriter(12.0), color = Ink.soft, maxLines = 2)
+        }
+        ChunkyText(if (owned) "TUYO" else Shop.price(id), { Money.activity?.let { Shop.buy(it, id) } }, Modifier.width(96.dp),
+            color = if (owned) Ink.green else Ink.gold, text = if (owned) Ink.paper else Ink.ink, size = 15.0, radius = 10.0, enabled = !owned, fill = true)
+    }
+}
+
+// MARK: - Animales (se ganan pagando facturas o se compran)
 
 @Composable
 fun SkinCard(def: SkinDef) {
     val game = Game.shared
     val owned = game.hasSkin(def)
     val using = game.s.skin == def.id
+    val paid = def.product != null
     Column(Modifier.fillMaxWidth().paper().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.height(66.dp), contentAlignment = Alignment.Center) {
             val b = Assets.skin(def.id)
-            if (b != null) Image(remember(b) { b.asImageBitmap() }, null, Modifier.size(76.dp).alpha(if (owned) 1f else 0.3f),
-                colorFilter = if (owned) null else ColorFilter.tint(Color.Black, androidx.compose.ui.graphics.BlendMode.SrcIn), filterQuality = FilterQuality.High)
-            if (!owned) SymIcon("lock.fill", 24.0, Ink.ink)
+            // los de pago se ven enteros (los que se ganan, en sombra hasta tenerlos)
+            val shown = owned || paid
+            if (b != null) Image(remember(b) { b.asImageBitmap() }, null, Modifier.size(76.dp).alpha(if (shown) 1f else 0.3f),
+                colorFilter = if (shown) null else ColorFilter.tint(Color.Black, androidx.compose.ui.graphics.BlendMode.SrcIn), filterQuality = FilterQuality.High)
+            if (!shown) SymIcon("lock.fill", 24.0, Ink.ink)
         }
-        T(if (owned) def.name else "???", chunky(15.0), maxLines = 1, minScale = 0.7f)
-        ChunkyText(if (using) "EN USO" else if (owned) "USAR" else "${def.bills.toInt()} facturas", { game.pickSkin(def) }, Modifier.fillMaxWidth(),
+        T(if (owned || paid) def.name else "???", chunky(15.0), maxLines = 1, minScale = 0.7f)
+        if (paid && !owned) {
+            ChunkyText(Shop.price(def.product!!), { Money.activity?.let { Shop.buy(it, def.product) } }, Modifier.fillMaxWidth(),
+                color = Ink.gold, size = 13.0, radius = 10.0, fill = true)
+        } else ChunkyText(if (using) "EN USO" else if (owned) "USAR" else "${def.bills.toInt()} facturas", { game.pickSkin(def) }, Modifier.fillMaxWidth(),
             color = if (using) Ink.green else if (owned) Ink.paper else Ink.paperDark, text = if (using) Ink.paper else Ink.ink, size = 13.0, radius = 10.0,
             enabled = !(using || !owned), fill = true)
     }

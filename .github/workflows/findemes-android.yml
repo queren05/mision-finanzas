@@ -49,6 +49,9 @@ jobs:
           FDM_KEYSTORE_PASSWORD: ${{ secrets.FDM_KEYSTORE_PASSWORD }}
           FDM_KEY_ALIAS: ${{ secrets.FDM_KEY_ALIAS }}
           FDM_KEY_PASSWORD: ${{ secrets.FDM_KEY_PASSWORD }}
+          # AdMob de verdad (si no están, se usan los anuncios de prueba de Google)
+          FDM_ADMOB_APP_ID: ${{ secrets.FDM_ADMOB_APP_ID }}
+          FDM_ADMOB_REWARDED: ${{ secrets.FDM_ADMOB_REWARDED }}
         run: |
           ./gradlew :app:assembleRelease :app:bundleRelease
           mkdir -p out

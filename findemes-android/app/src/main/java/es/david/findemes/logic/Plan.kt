@@ -135,10 +135,11 @@ fun Game.wake() {
     }
 }
 
-fun Game.collectAway() {
+fun Game.collectAway(double: Boolean = false) {
     val a = away ?: return
-    s.cash += a.cash
-    s.stats.earned += a.cash
+    val v = if (double) a.cash * 2 else a.cash
+    s.cash += v
+    s.stats.earned += v
     away = null
     Sound.till()
     save()

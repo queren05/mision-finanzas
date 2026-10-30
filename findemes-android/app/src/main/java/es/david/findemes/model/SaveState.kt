@@ -132,6 +132,11 @@ class SaveState {
     var lastDayEarned by mutableDoubleStateOf(0.0)
     /** el último número grande celebrado (1 = mil, 2 = millón, 3 = mil millones…) */
     var milestone by mutableIntStateOf(0)
+    /** premios por anuncio: el día y cuántos de cada uno se han cobrado hoy */
+    var adDay by mutableStateOf("")
+    var adUses by mutableStateOf(mapOf<String, Int>())
+    /** los sobres del paquete de inicio ya se dieron */
+    var starterClaimed by mutableStateOf(false)
 
     fun toJson(): JSONObject = JSONObject().apply {
         put("cash", cash); put("day", day); put("year", year); put("billIndex", billIndex); put("billDue", billDue)
@@ -148,6 +153,7 @@ class SaveState {
         put("lastSpin", lastSpin); put("spinsToday", spinsToday)
         put("seenDoors", JSONArray(seenDoors.toList())); put("mortgage", mortgage); put("richLevel", richLevel)
         put("lastPlayed", lastPlayed); put("lastDayEarned", lastDayEarned); put("milestone", milestone)
+        put("adDay", adDay); put("adUses", JSONObject(adUses)); put("starterClaimed", starterClaimed)
     }
 
     companion object {
@@ -197,6 +203,7 @@ class SaveState {
             s.mortgage = d("mortgage", 0.0); s.richLevel = i("richLevel", 0)
             s.lastPlayed = d("lastPlayed", 0.0); s.lastDayEarned = d("lastDayEarned", 0.0)
             s.milestone = i("milestone", max(0, floor(log10(max(1.0, max(s.cash, s.stats.bestDay))) / 3).toInt()))
+            s.adDay = str("adDay", ""); s.adUses = intMap("adUses"); s.starterClaimed = b("starterClaimed", false)
             if (!s.cash.isFinite()) s.cash = 0.0
             if (s.hammer >= Content.hammers.size) s.hammer = 0
             s.billIndex = min(s.billIndex, Content.bills.size - 1)
