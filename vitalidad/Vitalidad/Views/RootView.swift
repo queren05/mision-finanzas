@@ -44,30 +44,10 @@ struct RootView: View {
     private func screen(_ t: AppTab) -> some View {
         switch t {
         case .today: TodayView()
-        default: PlaceholderScreen(tab: t)
+        case .sleep: SleepView()
+        case .activity: ActivityView()
+        case .nutrition: NutritionView()
+        case .trends: TrendsView()
         }
-    }
-}
-
-/// Pantalla provisional de la fase 1.
-struct PlaceholderScreen: View {
-    var tab: AppTab
-    @State private var settings = Launch.args.contains("-settings")
-
-    var body: some View {
-        ZStack {
-            MoodBackground(mood: .neutral)
-            VStack(spacing: Space.l) {
-                MetricGlyph(symbol: tab.symbol, color: Palette.recovery, size: 72)
-                Text(tab.title).font(.largeTitle.bold())
-            }
-        }
-        .navigationTitle(tab.title)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { settings = true } label: { Image(systemName: "gearshape") }
-            }
-        }
-        .sheet(isPresented: $settings) { SettingsView() }
     }
 }
