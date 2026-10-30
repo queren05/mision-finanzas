@@ -24,8 +24,10 @@ enum Palette {
 }
 
 /// Estado general del día; decide el color del fondo.
-enum Mood: Equatable {
+enum Mood: String, Equatable {
     case recovered, steady, easy, night, neutral
+
+    var key: String { rawValue }
 
     /// Nueve colores de la malla (3 × 3), de arriba abajo.
     func mesh(_ scheme: ColorScheme) -> [Color] {

@@ -14,7 +14,9 @@ targets:
   Vitalidad:
     type: application
     platform: iOS
-    sources: [Vitalidad]
+    sources: [Vitalidad, Shared]
+    dependencies:
+      - target: VitalidadWidgets
     entitlements:
       path: Vitalidad/Vitalidad.entitlements
       properties:
@@ -25,6 +27,8 @@ targets:
       path: Vitalidad/Info.plist
       properties:
         UIRequiredDeviceCapabilities: [healthkit]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.david.salud
@@ -41,3 +45,24 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+  VitalidadWidgets:
+    type: app-extension
+    platform: iOS
+    sources: [Widgets, Shared]
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Vitalidad
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.david.salud.widgets
+        PRODUCT_NAME: VitalidadWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+        DEVELOPMENT_LANGUAGE: es

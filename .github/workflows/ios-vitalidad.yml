@@ -55,6 +55,7 @@ jobs:
           P12: ${{ secrets.VITALIDAD_P12 }}
           P12_PASSWORD: ${{ secrets.VITALIDAD_P12_PASSWORD }}
           PROFILE: ${{ secrets.VITALIDAD_PROFILE }}
+          WPROFILE: ${{ secrets.VITALIDAD_WIDGET_PROFILE }}
         run: |
           if [ -z "$P12" ] || [ -z "$PROFILE" ]; then echo "Sin secretos de firma: solo se publica el .ipa sin firmar."; exit 0; fi
           set -e
@@ -80,6 +81,22 @@ jobs:
           if [ "$BID" != "*" ] && [ "$BID" != "com.david.salud" ]; then
             echo "El perfil es para $BID: se cambia el identificador de la app."
             /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BID" "$APP/Info.plist"
+          fi
+          # Los widgets van aparte, con su propio perfil (otro App ID: com.david.salud.widgets).
+          PLUG="$APP/PlugIns/VitalidadWidgets.appex"
+          if [ -d "$PLUG" ]; then
+            if [ -n "$WPROFILE" ]; then
+              echo "$WPROFILE" | base64 --decode > "$T/widgets.mobileprovision"
+              security cms -D -i "$T/widgets.mobileprovision" > "$T/widgets.plist"
+              /usr/libexec/PlistBuddy -x -c "Print :Entitlements" "$T/widgets.plist" > "$T/went.plist"
+              WID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" "$T/widgets.plist"); WID="${WID#*.}"
+              [ "$WID" != "*" ] && /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $WID" "$PLUG/Info.plist"
+              cp "$T/widgets.mobileprovision" "$PLUG/embedded.mobileprovision"
+              codesign -f -s "$IDENT" --entitlements "$T/went.plist" --timestamp=none "$PLUG"
+            else
+              echo "::warning::Falta VITALIDAD_WIDGET_PROFILE: la versión firmada va sin widgets."
+              rm -rf "$APP/PlugIns"
+            fi
           fi
           cp "$T/perfil.mobileprovision" "$APP/embedded.mobileprovision"
           codesign -f -s "$IDENT" --entitlements "$T/ent.plist" --timestamp=none "$APP"

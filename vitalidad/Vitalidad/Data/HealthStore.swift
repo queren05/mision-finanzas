@@ -65,6 +65,7 @@ final class HealthStore {
         loading = true
         await load(full: full)
         loading = false
+        await pushWidget()
         if let again = pending {
             pending = nil
             await refresh(full: again)
