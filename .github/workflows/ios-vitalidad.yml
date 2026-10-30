@@ -96,6 +96,7 @@ jobs:
           xcodebuild -project Vitalidad.xcodeproj -scheme Vitalidad -configuration Debug -destination "id=$DEV" -derivedDataPath "$RUNNER_TEMP/sim" build -quiet
           xcrun simctl boot "$DEV"; sleep 15
           xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          xcrun simctl ui "$DEV" appearance dark
           APP=$(find "$RUNNER_TEMP/sim/Build/Products" -name 'Vitalidad.app' -type d | head -1)
           xcrun simctl install "$DEV" "$APP"
           mkdir -p "$GITHUB_WORKSPACE/out"

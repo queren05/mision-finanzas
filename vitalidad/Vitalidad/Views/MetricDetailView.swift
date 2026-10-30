@@ -17,7 +17,7 @@ struct MetricDetailView: View {
                     VStack(alignment: .leading, spacing: Space.s) {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(insight.display)
-                                .font(.system(size: 56, weight: .bold, design: .rounded))
+                                .bigFont(56)
                                 .contentTransition(.numericText())
                             Text(metric.unit).font(.title3.weight(.semibold)).foregroundStyle(.secondary)
                         }
@@ -75,6 +75,7 @@ struct StatusPill: View {
 
     var body: some View {
         Label(status.title, systemImage: status.symbol)
+            .symbolEffect(.pulse, options: .repeating, isActive: status == .attention)
             .font(.caption.weight(.bold))
             .foregroundStyle(status.color)
             .padding(.horizontal, 10)

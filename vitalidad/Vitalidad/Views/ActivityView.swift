@@ -55,7 +55,7 @@ struct ActivityView: View {
         HStack(spacing: Space.l) {
             ZStack {
                 Ring(progress: Double(s.value) / 100, color: s.color, lineWidth: 12)
-                CountingNumber(value: s.value).font(.system(size: 30, weight: .bold, design: .rounded))
+                CountingNumber(value: s.value).bigFont(30)
             }
             .frame(width: 104, height: 104)
             VStack(alignment: .leading, spacing: Space.s) {
@@ -97,7 +97,7 @@ struct WeeklyLoadCard: View {
         VStack(alignment: .leading, spacing: Space.m) {
             Label("Carga semanal", systemImage: "chart.bar.fill").font(.headline).foregroundStyle(Palette.effort)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(Fmt.value(.activeEnergy, current)).font(.system(size: 36, weight: .bold, design: .rounded))
+                Text(Fmt.value(.activeEnergy, current)).bigFont(36)
                 Text("\(Fmt.energyUnit) en 7 días").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
             }
             Text(Self.sentence(current: current, usual: usual, minutes: w.last?.minutes ?? 0))
@@ -145,7 +145,7 @@ struct WorkoutRow: View {
             MetricGlyph(symbol: workout.symbol, color: Palette.effort, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(workout.name).font(.subheadline.weight(.semibold))
-                Text(Fmt.day(workout.start, style: "EEEE d · H:mm").capitalized)
+                Text(Fmt.day(workout.start, style: "EEEE d · H:mm").capitalizedFirst)
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

@@ -71,3 +71,8 @@ enum Fmt {
         return u.isEmpty ? value(m, v) : "\(value(m, v)) \(u)"
     }
 }
+
+extension String {
+    /// «viernes, 30 de octubre» → «Viernes, 30 de octubre».
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+}

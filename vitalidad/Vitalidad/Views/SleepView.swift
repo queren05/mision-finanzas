@@ -49,7 +49,7 @@ struct SleepView: View {
                 VStack(alignment: .leading, spacing: Space.xs) {
                     Text("Anoche").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.sleep)
                     Text(Fmt.duration(night.asleep))
-                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .bigFont(52)
                         .contentTransition(.numericText())
                     Text("\(Fmt.clock(night.start)) – \(Fmt.clock(night.end))")
                         .font(.subheadline).foregroundStyle(.secondary)
@@ -57,7 +57,7 @@ struct SleepView: View {
                 Spacer()
                 ZStack {
                     Ring(progress: Double(score) / 100, color: Palette.sleep, lineWidth: 10)
-                    CountingNumber(value: score).font(.system(size: 24, weight: .bold, design: .rounded))
+                    CountingNumber(value: score).bigFont(24)
                 }
                 .frame(width: 84, height: 84)
             }

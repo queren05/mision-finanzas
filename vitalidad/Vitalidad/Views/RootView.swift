@@ -26,6 +26,7 @@ enum AppTab: String, CaseIterable {
 
 struct RootView: View {
     @State private var tab: AppTab = AppTab(rawValue: Launch.value("-tab") ?? "") ?? .today
+    @AppStorage("energia") private var energy = EnergyUnit.kcal
 
     var body: some View {
         TabView(selection: $tab) {
@@ -38,6 +39,8 @@ struct RootView: View {
             }
         }
         .minimizingTabBar()
+        // Al cambiar de kcal a kJ se vuelven a pintar todas las pantallas.
+        .id(energy)
     }
 
     @ViewBuilder

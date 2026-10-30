@@ -28,7 +28,7 @@ struct WelcomeView: View {
 
                     VStack(spacing: Space.s) {
                         Text("Vitalidad")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .bigFont(44)
                         Text("Tus datos de salud, explicados y comparados contigo mismo.")
                             .font(.title3)
                             .foregroundStyle(.secondary)
@@ -97,8 +97,8 @@ struct WelcomeView: View {
                 asking = false
                 onDone()
             } catch {
-                asking = false
                 failed = true
+                asking = false
             }
         }
     }

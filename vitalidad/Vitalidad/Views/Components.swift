@@ -66,3 +66,17 @@ struct Stagger: ViewModifier {
 extension View {
     func stagger(_ index: Int) -> some View { modifier(Stagger(index: index)) }
 }
+
+/// Números grandes que también crecen con el tamaño de letra del sistema (con tope para que quepan).
+struct BigFont: ViewModifier {
+    var size: CGFloat
+    @ScaledMetric(relativeTo: .largeTitle) private var scale: CGFloat = 1
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size * min(scale, 1.5), weight: .bold, design: .rounded))
+    }
+}
+
+extension View {
+    func bigFont(_ size: CGFloat) -> some View { modifier(BigFont(size: size)) }
+}

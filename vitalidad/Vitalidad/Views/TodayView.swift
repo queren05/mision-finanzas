@@ -13,7 +13,7 @@ struct TodayView: View {
         let insights = cards.compactMap { Explainer.insight($0, store: store) }
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
-                Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").capitalized)
+                Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").capitalizedFirst)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, Space.xs)
@@ -80,7 +80,7 @@ struct ScoresCard: View {
                         ZStack {
                             Ring(progress: Double(s.value) / 100, color: s.color, lineWidth: 10)
                             CountingNumber(value: s.value)
-                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .bigFont(26)
                         }
                         .frame(width: 88, height: 88)
                         Text(s.title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ struct InsightCard: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(insight.display)
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .bigFont(40)
                     .contentTransition(.numericText())
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
@@ -153,6 +153,8 @@ struct InsightCard: View {
         }
         .card()
         .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Abre la gráfica y la explicación")
     }
 }
 

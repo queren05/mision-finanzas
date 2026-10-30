@@ -53,11 +53,25 @@ final class HealthStore {
         Task { await refresh(full: (lastFull.map { Date.now.timeIntervalSince($0) > 12 * 3600 } ?? true) || values.isEmpty) }
     }
 
+    /// Lectura pedida mientras otra estaba en marcha (`true` si alguna era completa).
+    private var pending: Bool?
+
     /// `full`: los últimos 120 días. Si no, solo la última semana.
     func refresh(full: Bool) async {
-        guard !loading else { return }
+        if loading {
+            pending = (pending ?? false) || full
+            return
+        }
         loading = true
-        defer { loading = false }
+        await load(full: full)
+        loading = false
+        if let again = pending {
+            pending = nil
+            await refresh(full: again)
+        }
+    }
+
+    private func load(full: Bool) async {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
         let from = cal.date(byAdding: .day, value: full ? -120 : -7, to: today)!

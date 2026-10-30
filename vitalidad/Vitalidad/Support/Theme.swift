@@ -10,9 +10,17 @@ enum Palette {
     static let breath = Color(red: 0.35, green: 0.78, blue: 1.00)
     static let body = Color(red: 0.70, green: 0.62, blue: 1.00)
 
-    static let good = Color(red: 0.25, green: 0.86, blue: 0.55)
-    static let normal = Color(red: 0.56, green: 0.72, blue: 0.98)
-    static let attention = Color(red: 1.00, green: 0.70, blue: 0.22)
+    static let good = adaptive(dark: (0.25, 0.86, 0.55), light: (0.05, 0.58, 0.32))
+    static let normal = adaptive(dark: (0.56, 0.72, 0.98), light: (0.20, 0.42, 0.85))
+    static let attention = adaptive(dark: (1.00, 0.70, 0.22), light: (0.80, 0.45, 0.00))
+
+    /// Más oscuro en modo claro para que el texto se lea bien.
+    static func adaptive(dark: (Double, Double, Double), light: (Double, Double, Double)) -> Color {
+        Color(UIColor { t in
+            let c = t.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
+        })
+    }
 }
 
 /// Estado general del día; decide el color del fondo.
@@ -23,7 +31,10 @@ enum Mood: Equatable {
     func mesh(_ scheme: ColorScheme) -> [Color] {
         let dark = scheme == .dark
         func c(_ r: Double, _ g: Double, _ b: Double) -> Color {
-            dark ? Color(red: r, green: g, blue: b) : Color(red: 1 - (1 - r) * 0.32, green: 1 - (1 - g) * 0.32, blue: 1 - (1 - b) * 0.32)
+            if dark { return Color(red: r, green: g, blue: b) }
+            // En claro: el mismo tono, a todo color y mezclado con blanco (pastel, nunca gris).
+            let m = max(r, g, b, 0.01)
+            return Color(red: 0.55 + 0.45 * r / m, green: 0.55 + 0.45 * g / m, blue: 0.55 + 0.45 * b / m)
         }
         let base = dark ? Color(red: 0.03, green: 0.04, blue: 0.07) : Color(red: 0.96, green: 0.97, blue: 0.98)
         switch self {

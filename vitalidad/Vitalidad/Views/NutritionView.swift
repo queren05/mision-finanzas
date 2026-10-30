@@ -57,7 +57,7 @@ struct NutritionView: View {
             MetricGlyph(symbol: Metric.water.symbol, color: Palette.breath, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(Fmt.value(.water, liters)).font(.system(size: 32, weight: .bold, design: .rounded))
+                    Text(Fmt.value(.water, liters)).bigFont(32)
                     Text("l de agua").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 }
                 Text(liters >= 2 ? "Bien hidratado." : liters >= 1.2 ? "Algo justo: un par de vasos más no vendrían mal." : "Poca agua apuntada. Bebe un poco más.")
@@ -84,7 +84,7 @@ struct BalanceCard: View {
                 ZStack {
                     Ring(progress: burned > 0 ? min(1, eaten / burned) : 0, color: Palette.nutrition, lineWidth: 12)
                     VStack(spacing: 0) {
-                        Text(Fmt.value(.calories, eaten)).font(.system(size: 24, weight: .bold, design: .rounded))
+                        Text(Fmt.value(.calories, eaten)).bigFont(24)
                             .minimumScaleFactor(0.6).lineLimit(1)
                         Text(Fmt.energyUnit).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                     }

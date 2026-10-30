@@ -55,11 +55,12 @@ enum ScoreEngine {
     static func sleep(_ night: SleepNight, store: HealthStore) -> (Int, [String: Double]) {
         let base = store.baseline(.sleep, before: night.day)
         let need = max(7 * 3600, min(9 * 3600, base?.median ?? 7.5 * 3600))
-        let duration = min(1, night.asleep / need)
+        // Cada hora que falta resta la mitad de esta parte.
+        let duration = min(1, max(0, 1 - (need - night.asleep) / 7200))
         let efficiency = min(1, max(0, (night.efficiency - 0.75) / 0.2))
         let restorative = night.hasStages ? min(1, (night.time(.deep) + night.time(.rem)) / max(1, night.asleep) / 0.4) : 0.8
         let regularity = 1 - min(1, abs(bedtimeShift(night, store: store)) / 90)
-        let total = 0.5 * duration + 0.15 * efficiency + 0.15 * restorative + 0.2 * regularity
+        let total = 0.55 * duration + 0.15 * efficiency + 0.15 * restorative + 0.15 * regularity
         return (Int((total * 100).rounded()), ["duracion": duration, "eficiencia": efficiency, "reparador": restorative, "regularidad": regularity])
     }
 
@@ -143,7 +144,7 @@ enum ScoreEngine {
         let d = Fmt.duration(night.asleep)
         let deep = night.hasStages ? Fmt.duration(night.time(.deep)) : nil
         let worst = parts.min { $0.value < $1.value }?.key
-        if v >= 80 {
+        if v >= 80 && (parts["duracion"] ?? 0) >= 0.9 {
             return deep.map { "Noche de calidad: \(d), con \($0) de sueño profundo." } ?? "Noche de calidad: \(d) bien aprovechadas."
         }
         switch worst {
