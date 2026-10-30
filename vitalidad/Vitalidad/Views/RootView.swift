@@ -27,6 +27,7 @@ enum AppTab: String, CaseIterable {
 struct RootView: View {
     @State private var tab: AppTab = AppTab(rawValue: Launch.value("-tab") ?? "") ?? .today
     @AppStorage("energia") private var energy = EnergyUnit.kcal
+    @State private var detail: Metric? = Launch.value("-detail").flatMap(Metric.init(rawValue:))
 
     var body: some View {
         TabView(selection: $tab) {
@@ -41,12 +42,26 @@ struct RootView: View {
         .minimizingTabBar()
         // Al cambiar de kcal a kJ se vuelven a pintar todas las pantallas.
         .id(energy)
+        // Al tocar un widget: vitalidad://tab/sleep · vitalidad://detalle/hrv
+        .onOpenURL { url in
+            let parts = url.pathComponents.filter { $0 != "/" }
+            switch url.host {
+            case "tab":
+                if let t = parts.first.flatMap(AppTab.init(rawValue:)) { tab = t }
+            case "detalle":
+                if let m = parts.first.flatMap(Metric.init(rawValue:)) {
+                    tab = .today
+                    detail = m
+                }
+            default: break
+            }
+        }
     }
 
     @ViewBuilder
     private func screen(_ t: AppTab) -> some View {
         switch t {
-        case .today: TodayView()
+        case .today: TodayView(opened: $detail)
         case .sleep: SleepView()
         case .activity: ActivityView()
         case .nutrition: NutritionView()

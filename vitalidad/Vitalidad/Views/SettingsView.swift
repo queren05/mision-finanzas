@@ -72,6 +72,14 @@ struct SettingsView: View {
                     .disabled(store.loading)
                 }
 
+                Section {
+                    NavigationLink {
+                        WidgetsGalleryView()
+                    } label: {
+                        Label("Widgets", systemImage: "square.grid.3x3.square")
+                    }
+                }
+
                 Section("Unidades") {
                     Picker("Energía", selection: $energy) {
                         Text("Kilocalorías").tag(EnergyUnit.kcal)

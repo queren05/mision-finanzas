@@ -3,7 +3,8 @@ import SwiftUI
 struct TodayView: View {
     @Environment(HealthStore.self) private var store
     @State private var settings = Launch.args.contains("-settings")
-    @State private var opened: Metric? = Launch.value("-detail").flatMap(Metric.init(rawValue:))
+    @Binding var opened: Metric?
+    @State private var widgets = Launch.args.contains("-widgets")
     @State private var personalize = Launch.args.contains("-personalizar")
     @Namespace private var zoom
     @AppStorage("hoyEstilo") private var style = TodayStyle(rawValue: Launch.value("-estilo") ?? "") ?? .cards
@@ -66,6 +67,7 @@ struct TodayView: View {
         }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(isPresented: $personalize) { PersonalizeTodayView() }
+        .sheet(isPresented: $widgets) { NavigationStack { WidgetsGalleryView() } }
         .animation(.snappy, value: style)
     }
 
@@ -194,7 +196,7 @@ struct InsightCard: View {
 }
 
 #Preview {
-    NavigationStack { TodayView() }
+    NavigationStack { TodayView(opened: .constant(nil)) }
         .environment(HealthStore.preview())
         .fontDesign(.rounded)
         .preferredColorScheme(.dark)

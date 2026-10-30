@@ -12,6 +12,11 @@ extension HealthStore {
         w.summary = r.summary
         w.mood = r.mood.key
         w.slept = lastNight.map { Fmt.duration($0.asleep) }
+        w.advice = r.advice
+        w.stepsNow = value(.steps, on: today)
+        w.stepsGoal = baseline(.steps)?.median
+        w.bedtime = ScoreEngine.usualBedtime(self)
+        w.night = r.mood == .night
         let cards = TodayCards.decode(UserDefaults.standard.string(forKey: "hoyTarjetas") ?? TodayCards.defaultString)
         w.items = cards.compactMap { Explainer.insight($0, store: self) }.map { i in
             WidgetData.Item(id: i.metric.rawValue, title: i.metric.title, symbol: i.metric.symbol, value: i.display,
@@ -24,7 +29,11 @@ extension HealthStore {
     func pushWidget() async {
         guard !Launch.demo else { return }
         if await widgetData().upload() {
+            widgetSent = .now
+            widgetFailed = false
             WidgetCenter.shared.reloadAllTimelines()
+        } else {
+            widgetFailed = true
         }
     }
 }

@@ -18,6 +18,9 @@ final class HealthStore {
     private(set) var loading = false
     /// Cambia cada vez que llegan datos nuevos (para refrescar las vistas que calculan cosas).
     private(set) var revision = 0
+    /// Cuándo llegó el resumen al servidor de casa (para los widgets).
+    var widgetSent: Date?
+    var widgetFailed = false
 
     private var lastFull: Date? {
         get { UserDefaults.standard.object(forKey: "ultimaLecturaCompleta") as? Date }

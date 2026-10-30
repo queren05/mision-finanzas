@@ -131,6 +131,7 @@ jobs:
           shot -demo -estilo grid;      snap 10-hoy-cuadricula
           shot -demo -estilo grouped;   snap 11-hoy-agrupado
           shot -demo -personalizar;     snap 12-personalizar
+          shot -demo -widgets;          snap 13-widgets
           xcrun simctl ui "$DEV" appearance light
           shot -demo;                   snap 9-hoy-claro
           ls -la "$GITHUB_WORKSPACE/out"

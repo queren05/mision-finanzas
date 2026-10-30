@@ -25,15 +25,18 @@ struct Provider: TimelineProvider {
 @main
 struct VitalidadWidgets: WidgetBundle {
     var body: some Widget {
-        ScoresWidget()
+        DayWidget()
+        AdviceWidget()
+        StepsWidget()
         DataWidget()
         LockWidget()
     }
 }
 
-/// Fondo y aviso si aún no ha llegado nada.
+/// Fondo, enlace al tocar y aviso si aún no ha llegado nada.
 struct Shell<C: View>: View {
     var entry: Entry
+    var url: URL = WLink.tab("today")
     @ViewBuilder var content: (WidgetData) -> C
 
     var body: some View {
@@ -42,108 +45,63 @@ struct Shell<C: View>: View {
                 content(d)
             } else {
                 VStack(spacing: 6) {
-                    Image(systemName: "heart.circle.fill").font(.title2).foregroundStyle(WTone.recovery)
+                    Latido(mood: .sleepy, size: 44)
                     Text("Abre Vitalidad").font(.caption.weight(.semibold))
                 }
             }
         }
         .fontDesign(.rounded)
         .foregroundStyle(.white)
-        .containerBackground(for: .widget) { WTone.background(entry.data?.mood ?? "neutral") }
+        .widgetURL(url)
+        .containerBackground(for: .widget) { WBackground(mood: entry.data?.mood ?? "neutral") }
     }
 }
 
-// MARK: - Puntuaciones
-
-struct ScoresWidget: Widget {
+struct DayWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "puntuaciones", provider: Provider()) { e in ScoresView(entry: e) }
+        StaticConfiguration(kind: "puntuaciones", provider: Provider()) { e in DayView(entry: e) }
             .configurationDisplayName("Tu día")
-            .description("Recuperación, sueño y esfuerzo, con el resumen del día.")
+            .description("Latido, tu recuperación, el sueño y el esfuerzo.")
             .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
-struct ScoresView: View {
+struct DayView: View {
     @Environment(\.widgetFamily) private var family
     var entry: Entry
 
     var body: some View {
         Shell(entry: entry) { d in
             switch family {
-            case .systemSmall: small(d)
-            case .systemLarge: large(d)
-            default: medium(d)
+            case .systemSmall: VWDaySmall(d: d)
+            case .systemLarge: VWDayLarge(d: d)
+            default: VWDayMedium(d: d)
             }
-        }
-    }
-
-    private func small(_ d: WidgetData) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top) {
-                WRing(value: d.recovery, color: WTone.recovery, line: 7, font: .system(size: 22, weight: .bold, design: .rounded))
-                    .frame(width: 66, height: 66)
-                Spacer(minLength: 0)
-            }
-            Text("Recuperación").font(.caption2.weight(.bold)).foregroundStyle(WTone.recovery)
-            HStack(spacing: 10) {
-                mini("moon.zzz.fill", d.sleep, WTone.sleep)
-                mini("flame.fill", d.effort, WTone.effort)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private func mini(_ symbol: String, _ v: Int?, _ c: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: symbol).font(.caption2).foregroundStyle(c)
-            Text(v.map(String.init) ?? "–").font(.caption.weight(.bold)).monospacedDigit()
-        }
-    }
-
-    private func rings(_ d: WidgetData, size: CGFloat) -> some View {
-        HStack(spacing: 10) {
-            ring("Recuperación", d.recovery, WTone.recovery, size)
-            ring("Sueño", d.sleep, WTone.sleep, size)
-            ring("Esfuerzo", d.effort, WTone.effort, size)
-        }
-    }
-
-    private func ring(_ title: String, _ v: Int?, _ c: Color, _ size: CGFloat) -> some View {
-        VStack(spacing: 4) {
-            WRing(value: v, color: c, line: size * 0.1, font: .system(size: size * 0.3, weight: .bold, design: .rounded))
-                .frame(width: size, height: size)
-            Text(title).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.7)).lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func medium(_ d: WidgetData) -> some View {
-        HStack(spacing: 14) {
-            rings(d, size: 52).frame(width: 190)
-            Text(d.summary)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.9))
-                .lineLimit(5)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func large(_ d: WidgetData) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            rings(d, size: 76)
-            Text(d.summary)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(3)
-                .minimumScaleFactor(0.85)
-            ItemRows(items: Array(d.items.prefix(4)))
-            Spacer(minLength: 0)
         }
     }
 }
 
-// MARK: - Datos
+struct AdviceWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "consejo", provider: Provider()) { e in
+            Shell(entry: e) { VWAdviceSmall(d: $0) }
+        }
+        .configurationDisplayName("Para hoy")
+        .description("Qué te conviene hoy, en una frase.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct StepsWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "pasos", provider: Provider()) { e in
+            Shell(entry: e, url: WLink.detail("steps")) { VWStepsSmall(d: $0) }
+        }
+        .configurationDisplayName("Pasos")
+        .description("Tus pasos de hoy frente a un día normal tuyo.")
+        .supportedFamilies([.systemSmall])
+    }
+}
 
 struct DataWidget: Widget {
     var body: some WidgetConfiguration {
@@ -160,63 +118,8 @@ struct DataView: View {
 
     var body: some View {
         Shell(entry: entry) { d in
-            if family == .systemSmall {
-                ItemRows(items: Array(d.items.prefix(3)), compact: true)
-            } else {
-                let items = Array(d.items.prefix(4))
-                Grid(horizontalSpacing: 10, verticalSpacing: 10) {
-                    GridRow {
-                        ForEach(items.prefix(2), id: \.self) { tile($0) }
-                    }
-                    if items.count > 2 {
-                        GridRow {
-                            ForEach(items.dropFirst(2), id: \.self) { tile($0) }
-                        }
-                    }
-                }
-            }
+            if family == .systemSmall { VWDataSmall(d: d) } else { VWDataMedium(d: d) }
         }
-    }
-
-    private func tile(_ i: WidgetData.Item) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Image(systemName: i.symbol).font(.caption.weight(.semibold)).foregroundStyle(Color(wHex: i.color))
-                Spacer()
-                Circle().fill(WTone.status(i.status)).frame(width: 7, height: 7)
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(i.value).font(.system(size: 20, weight: .bold, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
-                Text(i.unit).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
-            }
-            Text(i.title).font(.system(size: 10)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// Filas: icono, nombre, valor y punto de estado.
-struct ItemRows: View {
-    var items: [WidgetData.Item]
-    var compact = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
-            ForEach(items, id: \.self) { i in
-                HStack(spacing: 6) {
-                    Image(systemName: i.symbol).font(.caption.weight(.semibold)).foregroundStyle(Color(wHex: i.color)).frame(width: 16)
-                    if !compact {
-                        Text(i.title).font(.subheadline).lineLimit(1)
-                        Spacer(minLength: 4)
-                    }
-                    Text(i.value).font((compact ? Font.callout : .subheadline).weight(.bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-                    Text(i.unit).font(.caption2).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
-                    if compact { Spacer(minLength: 0) }
-                    Circle().fill(WTone.status(i.status)).frame(width: 7, height: 7)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -226,7 +129,7 @@ struct LockWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "bloqueo", provider: Provider()) { e in LockView(entry: e) }
             .configurationDisplayName("Recuperación")
-            .description("Tu recuperación en la pantalla de bloqueo.")
+            .description("Tu recuperación y tus pasos en la pantalla de bloqueo.")
             .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -245,19 +148,30 @@ struct LockView: View {
                 } currentValueLabel: {
                     Text(d?.recovery.map(String.init) ?? "–").fontDesign(.rounded)
                 }
-                .gaugeStyle(.accessoryCircular)
+                .gaugeStyle(.accessoryCircularCapacity)
             case .accessoryInline:
-                Text("Recuperación \(d?.recovery.map(String.init) ?? "–") · Sueño \(d?.sleep.map(String.init) ?? "–")")
+                Label("Recuperación \(d?.recovery.map(String.init) ?? "–") · Sueño \(d?.sleep.map(String.init) ?? "–")", systemImage: "heart.fill")
             default:
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Vitalidad").font(.headline).widgetAccentable()
-                    Text("Recuperación \(d?.recovery.map(String.init) ?? "–")")
-                    Text("Sueño \(d?.sleep.map(String.init) ?? "–") · Esfuerzo \(d?.effort.map(String.init) ?? "–")")
+                HStack(spacing: 8) {
+                    Gauge(value: Double(d?.recovery ?? 0), in: 0...100) {
+                        Image(systemName: "heart.fill")
+                    } currentValueLabel: {
+                        Text(d?.recovery.map(String.init) ?? "–")
+                    }
+                    .gaugeStyle(.accessoryCircularCapacity)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Sueño \(d?.sleep.map(String.init) ?? "–") · Esfuerzo \(d?.effort.map(String.init) ?? "–")")
+                            .font(.caption2.weight(.semibold))
+                        if let s = d?.stepsNow { Text("\(WNum.int(s)) pasos").font(.caption2) }
+                        Text(d?.advice ?? "").font(.caption2).lineLimit(1)
+                    }
+                    .widgetAccentable()
                 }
-                .font(.caption)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .fontDesign(.rounded)
+        .widgetURL(WLink.tab("today"))
         .containerBackground(for: .widget) { Color.clear }
     }
 }

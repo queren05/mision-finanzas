@@ -20,6 +20,14 @@ struct WidgetData: Codable {
     var mood = "neutral"
     var slept: String?
     var items: [Item] = []
+    // Añadidos después: opcionales para poder leer los resúmenes antiguos.
+    var advice: String?
+    var stepsNow: Double?
+    var stepsGoal: Double?
+    var bedtime: String?
+    var night: Bool?
+
+    var latido: LatidoMood { LatidoMood.from(recovery: recovery, night: night ?? false) }
 
     static let server = URL(string: "http://100.99.241.98:8790/vitalidad/widget")!
 
@@ -73,7 +81,8 @@ struct WidgetData: Codable {
             Item(id: "restingHR", title: "Pulso en reposo", symbol: "heart.fill", value: "56", unit: "lpm", status: "good", color: "#ff5261"),
             Item(id: "hrv", title: "Variabilidad", symbol: "waveform.path.ecg", value: "58", unit: "ms", status: "normal", color: "#38d994"),
             Item(id: "calories", title: "Calorías", symbol: "fork.knife", value: "1.540", unit: "kcal", status: "normal", color: "#ff669e"),
-        ])
+        ],
+        advice: "Estás recuperado: buen día para apretar si te apetece.", stepsNow: 6412, stepsGoal: 8200, bedtime: "23:30", night: false)
 }
 
 // MARK: - Colores y piezas compartidas
@@ -107,16 +116,48 @@ enum WTone {
         }
     }
 
-    /// Fondo del widget según cómo va el día.
-    static func background(_ mood: String) -> LinearGradient {
-        let top: Color = switch mood {
+    static func top(_ mood: String) -> Color {
+        switch mood {
         case "recovered": Color(red: 0.04, green: 0.30, blue: 0.27)
         case "steady": Color(red: 0.05, green: 0.20, blue: 0.33)
         case "easy": Color(red: 0.36, green: 0.20, blue: 0.04)
         case "night": Color(red: 0.20, green: 0.10, blue: 0.40)
         default: Color(red: 0.10, green: 0.14, blue: 0.22)
         }
-        return LinearGradient(colors: [top, Color(red: 0.03, green: 0.04, blue: 0.07)], startPoint: .top, endPoint: .bottom)
+    }
+
+    /// Color vivo del estado del día (para el brillo del fondo).
+    static func glow(_ mood: String) -> Color {
+        switch mood {
+        case "recovered": recovery
+        case "easy": effort
+        case "night": sleep
+        default: Color(red: 0.35, green: 0.6, blue: 1.0)
+        }
+    }
+}
+
+/// Fondo de los widgets: degradado oscuro con un brillo suave del color del día.
+struct WBackground: View {
+    var mood: String
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [WTone.top(mood), Color(red: 0.03, green: 0.04, blue: 0.07)], startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [WTone.glow(mood).opacity(0.35), .clear], center: .topTrailing, startRadius: 0, endRadius: 170)
+            RadialGradient(colors: [Color(red: 1, green: 0.42, blue: 0.5).opacity(0.12), .clear], center: .bottomLeading, startRadius: 0, endRadius: 150)
+        }
+    }
+}
+
+/// Enlaces que abren la app en el sitio justo.
+enum WLink {
+    static func tab(_ t: String) -> URL { URL(string: "vitalidad://tab/\(t)")! }
+    static func detail(_ m: String) -> URL { URL(string: "vitalidad://detalle/\(m)")! }
+
+    static func greeting(_ d: Date = .now) -> String {
+        let h = Calendar.current.component(.hour, from: d)
+        return h < 6 ? "Buenas noches" : h < 13 ? "Buenos días" : h < 21 ? "Buenas tardes" : "Buenas noches"
     }
 }
 

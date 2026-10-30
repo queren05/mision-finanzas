@@ -41,6 +41,8 @@ struct DayReport {
     var effort: Score?
     var summary: String
     var mood: Mood
+    /// El consejo del día (la frase de recomendación del resumen).
+    var advice: String?
 
     var scores: [Score] { [recovery, sleep, effort].compactMap { $0 } }
 }
@@ -139,7 +141,8 @@ enum ScoreEngine {
         }()
 
         return DayReport(recovery: recovery, sleep: sleepScore, effort: effort,
-                         summary: summary(night: night, recovery: recovery, effort: effort, store: store), mood: mood)
+                         summary: summary(night: night, recovery: recovery, effort: effort, store: store), mood: mood,
+                         advice: advice(recovery: recovery?.value, store: store))
     }
 
     // MARK: Frases de las puntuaciones
@@ -173,6 +176,29 @@ enum ScoreEngine {
 
     // MARK: Resumen de arriba (2-3 frases)
 
+    /// Usual hora de acostarse (mediana de las dos últimas semanas).
+    static func usualBedtime(_ store: HealthStore) -> String? {
+        let usual = store.recentNights(14).map { minutesFromMidnight($0.start) }.sorted()
+        return usual.isEmpty ? nil : clock(fromMinutes: usual[usual.count / 2])
+    }
+
+    /// Qué te conviene hoy (o, por la noche, a qué hora acostarte).
+    static func advice(recovery: Int?, store: HealthStore) -> String? {
+        let day = store.today
+        let h = Calendar.current.component(.hour, from: .now)
+        guard let r = recovery else { return nil }
+        if h >= 21 {
+            return usualBedtime(store).map { "Para mañana, intenta acostarte sobre las \($0)." }
+        }
+        if r >= 67 {
+            return Explainer.pick(["Estás recuperado: buen día para apretar si te apetece.", "Tu cuerpo está listo para un buen entreno."], "sum-r", day)
+        }
+        if r >= 40 {
+            return Explainer.pick(["Hoy, a tu ritmo: muévete sin pasarte.", "Día normal: entrena suave o moderado."], "sum-m", day)
+        }
+        return Explainer.pick(["Hoy mejor un día suave.", "Tu cuerpo pide descanso: paseo y a dormir pronto."], "sum-e", day)
+    }
+
     private static func summary(night: SleepNight?, recovery: Score?, effort: Score?, store: HealthStore) -> String {
         var parts: [String] = []
         let day = store.today
@@ -188,20 +214,7 @@ enum ScoreEngine {
             }
         }
         let h = Calendar.current.component(.hour, from: .now)
-        if let r = recovery?.value {
-            if h >= 21 {
-                let usual = store.recentNights(14).map { minutesFromMidnight($0.start) }.sorted()
-                if !usual.isEmpty {
-                    parts.append("Para mañana, intenta acostarte sobre las \(clock(fromMinutes: usual[usual.count / 2])).")
-                }
-            } else if r >= 67 {
-                parts.append(Explainer.pick(["Estás recuperado: buen día para apretar si te apetece.", "Tu cuerpo está listo para un buen entreno."], "sum-r", day))
-            } else if r >= 40 {
-                parts.append(Explainer.pick(["Hoy, a tu ritmo: muévete sin pasarte.", "Día normal: entrena suave o moderado."], "sum-m", day))
-            } else {
-                parts.append(Explainer.pick(["Hoy mejor un día suave.", "Tu cuerpo pide descanso: paseo y a dormir pronto."], "sum-e", day))
-            }
-        }
+        if let a = advice(recovery: recovery?.value, store: store) { parts.append(a) }
         if let e = effort?.value, e >= 80, h >= 12 {
             parts.append("Ya llevas un esfuerzo alto para ti.")
         }
