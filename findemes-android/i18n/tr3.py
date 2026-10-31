@@ -275,7 +275,7 @@ T = [
 ("Sin anuncios", "No ads", "Sem anúncios"),
 ("Los premios, sin ver vídeos", "Rewards without watching videos", "Os prêmios, sem ver vídeos"),
 ("Paquete de inicio", "Starter pack", "Pacote inicial"),
-("La oveja y 3 sobres épicos", "The sheep and 3 epic packs", "A ovelha e 3 pacotes épicos"),
+("La oveja y 3 sobres épicos (moneda rara 70 %, épica 30 %)", "The sheep and 3 epic packs (coin: rare 70%, epic 30%)", "A ovelha e 3 pacotes épicos (moeda rara 70%, épica 30%)"),
 ("Restaurar compras", "Restore purchases", "Restaurar compras"),
 ("Privacidad", "Privacy", "Privacidade"),
 ("TUYO", "OWNED", "SEU"),

@@ -32,6 +32,10 @@ Todos son productos **de compra única** (no consumibles). Los animales nuevos s
    - `FDM_ADMOB_APP_ID`: el id de la app (`ca-app-pub-…~…`);
    - `FDM_ADMOB_REWARDED`: el id del bloque (`ca-app-pub-…/…`).
    Mientras no estén, el juego usa los anuncios de prueba de Google.
-4. **Política de privacidad:** `PRIVACIDAD.md` es un borrador. Hay que ponerle un correo de contacto y publicarla en una web (por ejemplo, tu página de GitHub). Play pide el enlace en la ficha.
+4. **Política de privacidad:** ya está en `PRIVACIDAD.md`; el enlace para Play es https://github.com/queren05/mision-finanzas/blob/caudal/findemes-android/PRIVACIDAD.md
 
 Las compras solo funcionan cuando el juego se instala desde Google Play (aunque sea en la prueba cerrada). Con el APK instalado a mano, la tienda dice «La tienda abrirá cuando el juego esté en Google Play».
+
+## Subir a Google Play
+
+La clave de subida está fuera del repositorio (`~/claves-findemes`, y `keystore.properties` para compilar en el servidor). Todo lo de la ficha (AAB, icono, cabeceras, capturas, textos y las respuestas de la Play Console) está en `~/play-store-findemes`.

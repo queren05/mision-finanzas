@@ -397,7 +397,7 @@ private fun ShopCard() {
     Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 18.dp).fillMaxWidth().paper(hex("#fffaf0")).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         T("TIENDA", typewriter(15.0, true))
         ShopRow(Shop.NO_ADS, "Sin anuncios", "Los premios, sin ver vídeos") { SymIcon("hand.raised.slash.fill", 34.0, Ink.red) }
-        ShopRow(Shop.STARTER, "Paquete de inicio", "La oveja y 3 sobres épicos") { SkinIcon("oveja", 48.0) }
+        ShopRow(Shop.STARTER, "Paquete de inicio", "La oveja y 3 sobres épicos (moneda rara 70 %, épica 30 %)") { SkinIcon("oveja", 48.0) }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ChunkyText("Restaurar compras", { Shop.restore() }, Modifier.weight(1f), color = Ink.paper, size = 13.0, radius = 10.0, fill = true)
             if (Ads.privacyButton) ChunkyText("Privacidad", { Money.activity?.let { Ads.showPrivacy(it) } }, Modifier.weight(1f), color = Ink.paper, size = 13.0, radius = 10.0, fill = true)
@@ -412,7 +412,7 @@ private fun ShopRow(id: String, title: String, line: String, icon: @Composable (
         Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) { icon() }
         Column(Modifier.weight(1f)) {
             T(title, chunky(19.0), maxLines = 1, minScale = 0.7f)
-            T(line, typewriter(12.0), color = Ink.soft, maxLines = 2)
+            T(line, typewriter(12.0), color = Ink.soft, maxLines = 3)
         }
         ChunkyText(if (owned) "TUYO" else Shop.price(id), { Money.activity?.let { Shop.buy(it, id) } }, Modifier.width(96.dp),
             color = if (owned) Ink.green else Ink.gold, text = if (owned) Ink.paper else Ink.ink, size = 15.0, radius = 10.0, enabled = !owned, fill = true)
