@@ -35,7 +35,7 @@ T = [
 ("Rompe % {huchas} dorad{as}", "Break % golden {huchas}", "Quebre % {huchas} dourad{as}"),
 ("Da % golpes críticos", "Land % critical hits", "Dê % golpes críticos"),
 ("Gana % en un solo día", "Earn % in a single day", "Ganhe % em um só dia"),
-("Compra % mejoras del corcho", "Buy % upgrades from the board", "Compre % melhorias do mural"),
+("Compra % mejoras del árbol", "Buy % upgrades from the tree", "Compre % melhorias da árvore"),
 ("Paga % facturas", "Pay % bills", "Pague % contas"),
 ("Entra % veces en frenesí", "Go into a frenzy % times", "Entre em frenesi % vezes"),
 # logros

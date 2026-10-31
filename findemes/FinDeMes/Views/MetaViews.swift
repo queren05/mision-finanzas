@@ -256,23 +256,23 @@ struct IntroView: View {
         case 0:
             VStack(spacing: 4) {
                 Text("FACTURA").font(.typewriter(18, bold: true))
-                Text("TOTAL: 15 €").font(.typewriter(14))
+                Text("TOTAL: \(Fmt.money(game.billAmount))").font(.typewriter(14))
                 Stamp(text: "VENCE PRONTO")
             }
             .padding(14)
             .paper(tilt: -4)
         case 1:
             HStack(spacing: -30) {
-                SkinIcon(id: "cerdo", size: 90)
-                SkinIcon(id: "cerdo", size: 120, look: "oro")
-                SkinIcon(id: "cerdo", size: 90)
+                SkinIcon(id: game.s.skin, size: 90)
+                SkinIcon(id: game.s.skin, size: 120, look: "oro")
+                SkinIcon(id: game.s.skin, size: 90)
             }
         case 2:
             ItemImage(name: "m_chancla").rotationEffect(.degrees(-20))
         default:
             HStack(spacing: 0) {
                 ItemImage(name: "m_chancla").frame(width: 70).rotationEffect(.degrees(-35))
-                SkinIcon(id: "cerdo", size: 120)
+                SkinIcon(id: game.s.skin, size: 120)
             }
         }
     }

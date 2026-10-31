@@ -285,4 +285,10 @@ T = [
 ("Bloqueada", "Locked", "Bloqueada"),
 ("Compra antes «%1»", "Buy \"%1\" first", "Compre antes \"%1\""),
 ("+%1 mejoras", "+%1 upgrades", "+%1 melhorias"),
+("Premio diario listo", "Daily prize ready", "Prêmio diário pronto"),
+("Y tienes 3 tiradas gratis en la feria.", "Plus 3 free spins at the fair.", "E você tem 3 giros grátis na quermesse."),
+("Pasa a recogerlo y no pierdas la racha.", "Come grab it and keep your streak.", "Passe para pegar e não perca a sequência."),
+("El abuelo no ha parado", "Grandpa kept at it", "O vovô não parou"),
+("Ha juntado %1 rompiendo {huchas}. Ven a cobrarlo antes de que se lo gaste.", "He's saved up %1 smashing {huchas}. Come get it before he spends it.", "Ele juntou %1 quebrando {huchas}. Venha pegar antes que ele gaste."),
+("Avisos", "Notifications", "Avisos"),
 ]

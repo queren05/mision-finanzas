@@ -13,7 +13,7 @@ enum QuestKind: String, Codable, CaseIterable {
         case .doradas: "Rompe % {huchas} dorad{as}"
         case .criticos: "Da % golpes críticos"
         case .diaRico: "Gana % en un solo día"
-        case .mejoras: "Compra % mejoras del corcho"
+        case .mejoras: "Compra % mejoras del árbol"
         case .facturas: "Paga % facturas"
         case .frenesi: "Entra % veces en frenesí"
         }

@@ -272,19 +272,22 @@ fun IntroView() {
 
 @Composable
 private fun IntroArt(page: Int) {
+    // la factura de verdad y el animal que se va a romper
+    val game = Game.shared
+    val skin = game.s.skin
     when (page) {
         0 -> Column(Modifier.paper(tilt = -4.0).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             T("FACTURA", typewriter(18.0, true))
-            T("TOTAL: 15 €", typewriter(14.0))
+            T(tf("TOTAL: %1", Fmt.money(game.billAmount)), typewriter(14.0))
             Stamp("VENCE PRONTO")
         }
         1 -> Row(horizontalArrangement = Arrangement.spacedBy((-30).dp), verticalAlignment = Alignment.CenterVertically) {
-            SkinIcon("cerdo", 90.0); SkinIcon("cerdo", 120.0, "oro"); SkinIcon("cerdo", 90.0)
+            SkinIcon(skin, 90.0); SkinIcon(skin, 120.0, "oro"); SkinIcon(skin, 90.0)
         }
         2 -> ItemImage("m_chancla", Modifier.height(150.dp).rotate(-20f))
         else -> Row(verticalAlignment = Alignment.CenterVertically) {
             ItemImage("m_chancla", Modifier.width(70.dp).rotate(-35f))
-            SkinIcon("cerdo", 120.0)
+            SkinIcon(skin, 120.0)
         }
     }
 }

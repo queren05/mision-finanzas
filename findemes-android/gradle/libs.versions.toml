@@ -5,6 +5,7 @@ composeBom = "2026.09.00"
 activity = "1.13.0"
 lifecycle = "2.11.0"
 coreKtx = "1.19.1"
+fragment = "1.8.9"
 serialization = "1.12.0"
 junit = "4.13.2"
 ads = "25.4.0"
@@ -13,6 +14,8 @@ billing = "8.3.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+# la de los anuncios es vieja y rompe el pedir permisos
+androidx-fragment = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }

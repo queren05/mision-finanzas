@@ -316,6 +316,10 @@ fun SettingsView() {
                 ToggleRow("Música", st.music) { st.music = it; changed() }
                 ToggleRow("Sonido", st.sound) { st.sound = it; changed() }
                 ToggleRow("Vibración", st.haptics) { st.haptics = it; changed() }
+                ToggleRow("Avisos", st.reminders) {
+                    st.reminders = it; changed()
+                    if (it) Money.activity?.let { a -> if (!es.david.findemes.support.Reminders.allowed(a)) es.david.findemes.support.Reminders.ask?.invoke() }
+                }
                 T("Música: «Lobby Time», «Local Forecast - Elevator», «Bossa Antigua» y «Easy Lemon» de Kevin MacLeod (incompetech.com), licencia CC BY 4.0. Personajes: Quaternius (CC0).",
                     typewriter(11.0), color = Ink.soft)
             }

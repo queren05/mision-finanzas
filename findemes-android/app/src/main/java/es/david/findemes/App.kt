@@ -56,6 +56,7 @@ import es.david.findemes.ui.NewKindView
 import es.david.findemes.ui.NoticeStrip
 import es.david.findemes.money.Ads
 import es.david.findemes.support.L10n
+import es.david.findemes.support.Reminders
 import es.david.findemes.money.Money
 import es.david.findemes.money.Shop
 import es.david.findemes.ui.Pt
@@ -63,7 +64,17 @@ import es.david.findemes.ui.ReportView
 import es.david.findemes.ui.Tex
 
 class MainActivity : ComponentActivity() {
-    override fun onResume() { super.onResume(); Money.attach(this) }
+    private val askReminders = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
+
+    override fun onResume() {
+        super.onResume(); Money.attach(this)
+        // el permiso de avisos se pide una vez, tras pagar la primera factura (antes no hay nada que avisar)
+        val st = Game.shared.s.settings
+        if (android.os.Build.VERSION.SDK_INT >= 33 && !st.askedReminders && Game.shared.s.stats.billsPaid >= 1 && !Reminders.allowed(this)) {
+            st.askedReminders = true; Game.shared.save()
+            askReminders.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,11 +95,19 @@ class MainActivity : ComponentActivity() {
         es.david.findemes.support.Animal.use(es.david.findemes.model.Content.skin(game.s.skin))
         Money.attach(this)
         Shop.init(this)
+        Reminders.ask = {
+            // si ya lo negó dos veces, Android no vuelve a preguntar: se abren los ajustes del juego
+            if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) || !game.s.settings.askedReminders) {
+                game.s.settings.askedReminders = true; game.save()
+                askReminders.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            } else startActivity(android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName))
+        }
         // en las capturas automáticas no sale el aviso de privacidad
         if ("-demo" !in args || "-anuncios" in args) Ads.start(this)
+        if ("-avisos" in args) Reminders.demo(this, game)
         ProcessLifecycleOwner.get().lifecycle.addObserver(LifecycleEventObserver { _, e ->
-            if (e == Lifecycle.Event.ON_STOP) { game.save(); Sound.stop(); Music.pause() }
-            if (e == Lifecycle.Event.ON_START) { Music.resume(); game.wake() }
+            if (e == Lifecycle.Event.ON_STOP) { game.save(); Sound.stop(); Music.pause(); Reminders.schedule(this, game) }
+            if (e == Lifecycle.Event.ON_START) { Music.resume(); game.wake(); Reminders.cancel(this) }
         })
         setContent { Root(args) }
     }

@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- lo mete WorkManager (viene con los anuncios) y no se usa: Play pediría justificarlo -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
     <application
@@ -16,6 +17,7 @@
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             tools:node="remove" />
+        <receiver android:name=".support.ReminderReceiver" android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

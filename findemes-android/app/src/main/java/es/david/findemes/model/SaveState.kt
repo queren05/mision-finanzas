@@ -64,14 +64,19 @@ class Settings {
     var music by mutableStateOf(true)
     /** "auto" (el del teléfono), "es", "en" o "pt" */
     var lang by mutableStateOf("auto")
+    /** avisos al teléfono (dinero lleno y premio diario) */
+    var reminders by mutableStateOf(true)
+    /** ya se pidió el permiso de avisos una vez */
+    var askedReminders = false
 
-    fun toJson() = JSONObject().apply { put("sound", sound); put("haptics", haptics); put("music", music); put("lang", lang) }
+    fun toJson() = JSONObject().apply { put("sound", sound); put("haptics", haptics); put("music", music); put("lang", lang); put("reminders", reminders); put("askedReminders", askedReminders) }
 
     companion object {
         fun from(o: JSONObject?): Settings = Settings().apply {
             if (o == null) return@apply
             sound = o.optBoolean("sound", true); haptics = o.optBoolean("haptics", true); music = o.optBoolean("music", true)
             lang = o.optString("lang", "auto")
+            reminders = o.optBoolean("reminders", true); askedReminders = o.optBoolean("askedReminders", false)
         }
     }
 }

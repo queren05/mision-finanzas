@@ -24,7 +24,7 @@ enum class QuestKind(val text: String, val icon: String) {
     doradas("Rompe % {huchas} dorad{as}", "star.circle.fill"),
     criticos("Da % golpes críticos", "burst.fill"),
     diaRico("Gana % en un solo día", "sun.max.fill"),
-    mejoras("Compra % mejoras del corcho", "pin.fill"),
+    mejoras("Compra % mejoras del árbol", "pin.fill"),
     facturas("Paga % facturas", "doc.text.fill"),
     frenesi("Entra % veces en frenesí", "bolt.fill");
 

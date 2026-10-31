@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- martillo inclinado para la barra de avisos (una sola tinta: Android lo pinta de blanco) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <group android:rotation="-40" android:pivotX="12" android:pivotY="12">
+        <!-- cabeza con uña -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M5,3.5 L15,3.5 L15,8.5 L5,8.5 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M15,4.2 Q18.5,4 20,1.8 Q19.6,6.2 15,7.8 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M3.2,4.2 L5,4.2 L5,7.8 L3.2,7.8 Z" />
+        <!-- mango -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M8.6,8.5 L11.4,8.5 L11.9,21 Q11.9,22.5 10.4,22.5 L9.6,22.5 Q8.1,22.5 8.1,21 Z" />
+    </group>
+</vector>
