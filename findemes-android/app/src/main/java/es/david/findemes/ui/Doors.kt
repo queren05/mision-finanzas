@@ -1,5 +1,8 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tr
+import es.david.findemes.support.nm
+import es.david.findemes.support.tf
 import es.david.findemes.money.Reward
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -46,7 +49,9 @@ import es.david.findemes.logic.Sound
 import es.david.findemes.logic.achievementsReady
 import es.david.findemes.logic.collectAway
 import es.david.findemes.logic.isNew
-import es.david.findemes.logic.milestoneNames
+import es.david.findemes.logic.milestoneName
+import es.david.findemes.support.L10n
+import es.david.findemes.support.Lang
 import es.david.findemes.logic.mortgageName
 import es.david.findemes.logic.mortgageShare
 import es.david.findemes.logic.mortgageTotal
@@ -136,7 +141,7 @@ fun MortgageCard() {
     val share = game.mortgageShare
     Column(Modifier.fillMaxWidth().paper(hex("#fff6e0"), tilt = 1.2).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
-            T(game.mortgageName.uppercase(), typewriter(15.0, true), Modifier.padding(bottom = 2.dp))
+            T(tr(game.mortgageName).uppercase(), typewriter(15.0, true), Modifier.padding(bottom = 2.dp))
             Spacer(Modifier.weight(1f))
             T(Mortgage.words(game.mortgageTotal), chunky(18.0), maxLines = 1)
         }
@@ -153,14 +158,14 @@ fun MortgageCard() {
             drawRect(Ink.ink, Offset(lw / 2, lw / 2), Size(size.width - lw, size.height - lw), style = Stroke(lw))
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            T("Pagado: ${Fmt.money(game.s.mortgage)} · ${percent(share)}", typewriter(12.0, true), Modifier.weight(1f), color = Ink.soft, maxLines = 1, minScale = 0.6f)
+            T(tf("Pagado: %1 · %2", Fmt.money(game.s.mortgage), percent(share)), typewriter(12.0, true), Modifier.weight(1f), color = Ink.soft, maxLines = 1, minScale = 0.6f)
             Spacer(Modifier.size(6.dp))
             ChunkyText("Abonar", { ask = true }, color = Ink.paper, size = 14.0, radius = 10.0, enabled = game.s.cash >= 1)
         }
     }
-    ActionDialog(ask, "Abonar a ${game.mortgageName.lowercase()}", null, listOf(
-        DialogAction("La mitad (${Fmt.money(floor(game.s.cash / 2))})") { game.payMortgage(floor(game.s.cash / 2)) },
-        DialogAction("Todo (${Fmt.money(game.s.cash)})") { game.payMortgage(game.s.cash) },
+    ActionDialog(ask, tf("Abonar a %1", nm(game.mortgageName)), null, listOf(
+        DialogAction(tf("La mitad (%1)", Fmt.money(floor(game.s.cash / 2)))) { game.payMortgage(floor(game.s.cash / 2)) },
+        DialogAction(tf("Todo (%1)", Fmt.money(game.s.cash))) { game.payMortgage(game.s.cash) },
     )) { ask = false }
 }
 
@@ -194,9 +199,9 @@ fun FinaleView(level: Int) {
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                T("RICO DE PUEBLO ${level + 1}", chunky(22.0).hardShadow(2.0, 2.0), color = Ink.gold)
-                T("Todo da ×${level + 2} de dinero para siempre", typewriter(13.0, true))
-                T("Siguiente: ${Mortgage.name(level + 1)}", typewriter(13.0), color = Ink.soft)
+                T(tf("RICO DE PUEBLO %1", level + 1), chunky(22.0).hardShadow(2.0, 2.0), color = Ink.gold)
+                T(tf("Todo da ×%1 de dinero para siempre", level + 2), typewriter(13.0, true))
+                T(tf("Siguiente: %1", Mortgage.name(level + 1)), typewriter(13.0), color = Ink.soft)
             }
             ChunkyText("¡A seguir rompiendo!", { close() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
         }
@@ -212,16 +217,16 @@ fun AwayView(prize: AwayPrize) {
     LaunchedEffect(prize.id) { pop = true }
     val sc by animateFloatAsState(if (pop) 1f else 0.4f, spring(dampingRatio = 0.45f, stiffness = 250f), label = "s")
     fun time(m: Double): String {
-        if (m < 60) return "${m.toInt()} minutos"
+        if (m < 60) return tf("%1 minutos", m.toInt())
         val h = (m / 60).toInt(); val r = m.toInt() % 60
-        return if (r == 0 || h >= 4) "$h hora${if (h == 1) "" else "s"}" else "$h h y $r min"
+        return if (r == 0 || h >= 4) (if (h == 1) tf("%1 hora", h) else tf("%1 horas", h)) else tf("%1 h y %2 min", h, r)
     }
     Overlay(0.5) {
         Column(Modifier.padding(30.dp).paper(tilt = -0.6).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             T("MIENTRAS NO ESTABAS", typewriter(15.0, true))
             T(time(prize.minutes), typewriter(13.0), color = Ink.soft)
             SkinIcon(Content.playing(game.s.skin).id, 70.0)
-            T("${Fmt.num(prize.cows)} {huchas} rot{as}", chunky(22.0))
+            T(tf("%1 {huchas} rot{as}", Fmt.num(prize.cows)), chunky(22.0))
             T("+" + Fmt.money(prize.cash), chunky(40.0).hardShadow(2.0, 3.0), Modifier.scale(sc), color = Ink.green, maxLines = 1, minScale = 0.5f)
             ChunkyText("Cobrar", { game.collectAway() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
             RewardButton("Cobrar el doble", Reward.doblar, Modifier.fillMaxWidth()) { game.collectAway(double = true) }
@@ -234,14 +239,14 @@ fun AwayView(prize: AwayPrize) {
 @Composable
 fun MilestoneView(k: Int) {
     val game = Game.shared
-    val name = if (k < milestoneNames.size) milestoneNames[k] else "1e${k * 3} €"
+    val name = milestoneName(k)
     var pop by remember(k) { mutableStateOf(false) }
     LaunchedEffect(k) { pop = true }
     val p by animateFloatAsState(if (pop) 1f else 0f, spring(dampingRatio = 0.4f, stiffness = 200f), label = "p")
     fun close() { Sound.click(); game.milestoneShow = null }
     Overlay(0.5, { close() }) {
         Column(Modifier.padding(36.dp).paper(tilt = 0.8).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            T(if (name.startsWith("MIL ")) "TUS PRIMEROS" else "TU PRIMER", typewriter(16.0, true))
+            T(if (name.startsWith("MIL ")) "TUS PRIMEROS" else if (L10n.lang == Lang.pt && k == 1) "SEUS PRIMEIROS" else if (L10n.lang == Lang.pt) "SEU PRIMEIRO" else "TU PRIMER", typewriter(16.0, true))
             T(name, chunky(if (k >= 3) 40.0 else 54.0).hardShadow(3.0, 4.0), Modifier.scale(0.2f + 0.8f * p).rotate(20f - 24f * p), color = Ink.gold, align = TextAlign.Center)
             T(Fmt.money(1000.0.pow(k)), typewriter(14.0, true), color = Ink.soft)
             ChunkyText("¡Más!", { close() }, Modifier.fillMaxWidth().padding(top = 8.dp), size = 20.0, fill = true)

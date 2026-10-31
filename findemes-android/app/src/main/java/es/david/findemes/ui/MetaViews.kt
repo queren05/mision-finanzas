@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tf
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -110,7 +111,7 @@ fun QuestsCard() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             T("ENCARGOS", chunky(22.0))
             Spacer(Modifier.weight(1f))
-            T("${Fmt.num(game.s.stats.missions)} hechos", typewriter(12.0, true), color = Ink.soft)
+            T(tf("%1 hechos", Fmt.num(game.s.stats.missions)), typewriter(12.0, true), color = Ink.soft)
         }
         for (q in game.s.quests) androidx.compose.runtime.key(q.id) { QuestRow(q) }
     }
@@ -125,7 +126,7 @@ fun QuestRow(q: Quest) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             T(q.kind.text.filling(target), typewriter(13.0, true), maxLines = 1, minScale = 0.7f)
             InkBar(q.progress / maxOf(1.0, q.target), if (q.done) Ink.green else Ink.gold, 9.0)
-            T("+${Fmt.money(game.questReward(q))} · +${Fmt.num(q.xp)} exp", typewriter(11.0), color = Ink.soft, maxLines = 1, minScale = 0.7f)
+            T(tf("+%1 · +%2 exp", Fmt.money(game.questReward(q)), Fmt.num(q.xp)), typewriter(11.0), color = Ink.soft, maxLines = 1, minScale = 0.7f)
         }
         if (q.done) {
             val pulse by rememberInfiniteTransition(label = "q").animateFloat(1f, 1.08f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "p")
@@ -143,7 +144,7 @@ fun AchievementsView(onClose: () -> Unit) {
     fun order(a: AchDef): Int = if (a.id in game.s.achievements) 2 else if (game.metric(a.metric) >= a.target) 0 else 1
     val list = Meta.achievements.sortedBy { order(it) }
     Column(Modifier.fillMaxSize().background(hex("#5c3a1e"))) {
-        SheetHeader("Logros", "${game.s.achievements.size} de ${Meta.achievements.size} · +${game.s.achievements.size} % de dinero", onClose)
+        SheetHeader("Logros", tf("%1 de %2 · +%3 % de dinero", game.s.achievements.size, Meta.achievements.size, game.s.achievements.size), onClose)
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(list, key = { it.id }) { AchRow(it) }
         }
@@ -179,7 +180,7 @@ fun DailyView() {
     Overlay(0.55) {
         Column(Modifier.padding(22.dp).paper(tilt = -0.5).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             T("PREMIO DEL DÍA", chunky(30.0), color = Ink.red)
-            T(if (game.s.streak > 0 && today > 0) "Llevas $today día${if (today == 1) "" else "s"} seguido${if (today == 1) "" else "s"}" else "Vuelve cada día: el premio crece",
+            T(if (game.s.streak > 0 && today > 0) (if (today == 1) tf("Llevas %1 día seguido", today) else tf("Llevas %1 días seguidos", today)) else "Vuelve cada día: el premio crece",
                 typewriter(13.0, true), color = Ink.soft)
             for (row in listOf(0..3, 4..6)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -201,7 +202,7 @@ private fun DailyCell(i: Int, today: Int) {
     Box(Modifier.scale(if (now) 1.06f else 1f).background(if (now) Ink.gold else if (past) Ink.paperDark else Ink.paper)
         .border(if (now) 3.dp else 1.5.dp, Ink.ink).defaultMinSize(minHeight = 86.dp), contentAlignment = Alignment.Center) {
         Column(Modifier.fillMaxWidth().padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            T("Día ${i + 1}", typewriter(11.0, true))
+            T(tf("Día %1", i + 1), typewriter(11.0, true))
             if (r.chest != null) EnvelopeArt(r.chest, Modifier.width(40.dp).height(28.dp))
             else ItemImage("c_loot", Modifier.size(30.dp))
             T(if (r.chest != null) r.name else Fmt.money(rnd(r.pigs * game.pigWorth)), typewriter(10.0, true), maxLines = 1, minScale = 0.6f)
@@ -221,7 +222,7 @@ fun LevelUpView(level: Int) {
     fun close() { Sound.click(); game.levelUp = null }
     Overlay(0.5, { close() }) {
         Column(Modifier.padding(30.dp).paper(tilt = 0.6).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            T("¡NIVEL $level!", chunky(44.0).hardShadow(3.0, 3.0), Modifier.scale(sc), color = Ink.purple)
+            T(tf("¡NIVEL %1!", level), chunky(44.0).hardShadow(3.0, 3.0), Modifier.scale(sc), color = Ink.purple)
             T(Meta.title(level), chunky(22.0))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 EnvelopeArt(if (level % 10 == 0) Rarity.legendaria else if (level % 5 == 0) Rarity.epica else Rarity.comun, Modifier.width(60.dp).height(42.dp))
@@ -356,7 +357,7 @@ fun KindIcon(kind: PigKind, size: Double, dark: Boolean = false, modifier: Modif
 fun PigLevelStrip() {
     val game = Game.shared
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        T("{Huchas} nivel ${game.s.tier}", typewriter(12.0, true), maxLines = 1)
+        T(tf("{Huchas} nivel %1", game.s.tier), typewriter(12.0, true), maxLines = 1)
         Box(Modifier.weight(1f)) { InkBar(game.s.pigXP / maxOf(1.0, game.pigNeeded), Ink.pink, 8.0) }
         T("${Fmt.num(game.s.pigXP)}/${Fmt.num(game.pigNeeded)}", typewriter(11.0), color = Ink.soft, maxLines = 1)
     }
@@ -368,10 +369,10 @@ fun BestiaryView(onClose: () -> Unit) {
     val kinds = PigKind.entries.sortedBy { it.minTier }
     val found = kinds.count { game.s.bestTier >= it.minTier }
     Column(Modifier.fillMaxSize().background(hex("#7a2f45"))) {
-        SheetHeader("El establo", "$found de ${kinds.size} {huchas} descubiert{as}", onClose)
+        SheetHeader("El establo", tf("%1 de %2 {huchas} descubiert{as}", found, kinds.size), onClose)
         Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 8.dp).fillMaxWidth().paper().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            T("NIVEL DE {LAS} {HUCHAS}: ${game.s.tier}", chunky(18.0))
-            T("Récord: nivel ${game.s.bestTier}", typewriter(12.0, true), color = Ink.soft)
+            T(tf("NIVEL DE {LAS} {HUCHAS}: %1", game.s.tier), chunky(18.0))
+            T(tf("Récord: nivel %1", game.s.bestTier), typewriter(12.0, true), color = Ink.soft)
             PigLevelStrip()
         }
         LazyVerticalGrid(GridCells.Fixed(2), Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 10.dp),
@@ -392,7 +393,7 @@ private fun KindCell(k: PigKind) {
             if (!open) SymIcon("lock.fill", 30.0, Ink.paper)
         }
         T(if (open) k.title else "???", chunky(16.0), maxLines = 1, minScale = 0.7f)
-        T(if (open) k.line else "Sale en el nivel ${k.minTier}", typewriter(11.0), Modifier.defaultMinSize(minHeight = 28.dp), color = Ink.soft, maxLines = 2, align = TextAlign.Center)
+        T(if (open) k.line else tf("Sale en el nivel %1", k.minTier), typewriter(11.0), Modifier.defaultMinSize(minHeight = 28.dp), color = Ink.soft, maxLines = 2, align = TextAlign.Center)
         if (open) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) { SymIcon("hammer.fill", 14.0, Ink.ink); T(Fmt.num(n), typewriter(11.0, true)) }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) { SymIcon("eurosign.circle.fill", 14.0, Ink.ink); T("×" + Fmt.num(k.value), typewriter(11.0, true)) }
@@ -414,7 +415,7 @@ fun NewKindView(kind: PigKind) {
             KindIcon(kind, 150.0, modifier = Modifier.scale(0.2f + 0.8f * p).rotate(-30f * (1 - p)))
             T(kind.title, chunky(24.0))
             T(kind.line, typewriter(14.0), align = TextAlign.Center)
-            T("{Huchas} nivel ${game.s.tier}: más vida y más dinero", typewriter(12.0, true), color = Ink.soft, align = TextAlign.Center)
+            T(tf("{Huchas} nivel %1: más vida y más dinero", game.s.tier), typewriter(12.0, true), color = Ink.soft, align = TextAlign.Center)
             ChunkyText("¡A por ella!", { close() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
         }
     }

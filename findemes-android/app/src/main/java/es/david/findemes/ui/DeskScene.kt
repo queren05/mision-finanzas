@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tf
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorMatrix
@@ -319,8 +320,8 @@ class DeskScene(val desk: Desk) {
         if (combo < 3) return
         val since = t - desk.comboAt
         val color = if (combo >= 25) Ink.red else if (combo >= 10) Ink.gold else Ink.paper
-        centered(c, Tex.text("COMBO ×$combo", 26.0, color), w / 2, top + 22, 1 + 0.35 * exp(-since * 10))
-        centered(c, Tex.text("dinero ×" + Fmt.dec(desk.comboMult * (if (desk.frenzy) desk.frenzyGain else 1.0), 2), 15.0, Ink.paper), w / 2, top + 46)
+        centered(c, Tex.text(tf("COMBO ×%1", combo), 26.0, color), w / 2, top + 22, 1 + 0.35 * exp(-since * 10))
+        centered(c, Tex.text(tf("dinero ×%1", Fmt.dec(desk.comboMult * (if (desk.frenzy) desk.frenzyGain else 1.0), 2)), 15.0, Ink.paper), w / 2, top + 46)
         if (!desk.frenzy) {
             val k = max(0.0, 1 - since / Desk.COMBO_WINDOW)
             val bw = max(0.5, 90 * k)

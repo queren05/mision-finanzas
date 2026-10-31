@@ -1,5 +1,7 @@
 package es.david.findemes.logic
 
+import es.david.findemes.support.nm
+import es.david.findemes.support.tf
 import androidx.compose.ui.graphics.Color
 import es.david.findemes.model.Content
 import es.david.findemes.model.HammerDef
@@ -323,11 +325,11 @@ class Desk(val stats: HitStats, val tier: Int, val hammer: HammerDef, day: Int, 
         report.byKind[pig.kind.name] = (report.byKind[pig.kind.name] ?: 0) + 1
         combo += 1
         if (combo in listOf(10, 25, 50, 100, 200) && floaters.size < 30) {
-            floaters.add(Floater("COMBO ×$combo", P(width / 2, top + 60), time, Ink.gold, 30 + min(combo, 100) / 8.0))
+            floaters.add(Floater(tf("COMBO ×%1", combo), P(width / 2, top + 60), time, Ink.gold, 30 + min(combo, 100) / 8.0))
         }
         milestones.firstOrNull { it.first == report.broken + 1 }?.let { m ->
             report.chests.add(m.second)
-            floaters.add(Floater("¡${m.first} {HUCHAS}! Sobre ${m.second.title.lowercase()}", P(width / 2, top + 230), time, if (m.second == Rarity.comun) Ink.paper else m.second.color, 26.0))
+            floaters.add(Floater(tf("¡%1 {HUCHAS}! Sobre %2", m.first, nm(m.second.title)), P(width / 2, top + 230), time, if (m.second == Rarity.comun) Ink.paper else m.second.color, 26.0))
             Sound.fanfare()
         }
         comboAt = time
@@ -375,7 +377,7 @@ class Desk(val stats: HitStats, val tier: Int, val hammer: HammerDef, day: Int, 
             loot.add(Loot(pig.pos.copy(), V(cos(a) * rand(80.0, 260.0), sin(a) * rand(160.0, 360.0)), time + k * 0.015, k % 3 == 2, rand(0.0, 6.0)))
         }
         if (floaters.size < 10 || jackpot) {
-            floaters.add(Floater((if (jackpot) "¡BOTE! " else "+") + Fmt.money(value), P(pig.pos.x, pig.pos.y - 10),
+            floaters.add(Floater(if (jackpot) tf("¡BOTE! %1", Fmt.money(value)) else "+" + Fmt.money(value), P(pig.pos.x, pig.pos.y - 10),
                 time, if (jackpot) Ink.red else Ink.green, if (jackpot) 30.0 else 23.0))
         }
 
@@ -430,7 +432,7 @@ class Desk(val stats: HitStats, val tier: Int, val hammer: HammerDef, day: Int, 
         if (chance() < chestChance) {
             val r = Game.shared.rollChest()
             report.chests.add(r)
-            floaters.add(Floater("¡Sobre ${r.title.lowercase()}!", P(pig.pos.x, pig.pos.y - 70), time + 0.2, if (r == Rarity.comun) Ink.soft else r.color, 20.0))
+            floaters.add(Floater(tf("¡Sobre %1!", nm(r.title)), P(pig.pos.x, pig.pos.y - 70), time + 0.2, if (r == Rarity.comun) Ink.soft else r.color, 20.0))
         }
         if (endAt != null && stamina > 0) endAt = null
     }
@@ -499,7 +501,7 @@ class Desk(val stats: HitStats, val tier: Int, val hammer: HammerDef, day: Int, 
         if (g < 1) return
         regainLeft -= g
         stamina += g
-        if (floaters.size < 14) floaters.add(Floater("+${g.toInt()} aguante", P(p.x + 20, p.y - 40), time + 0.1, Ink.blue, 17.0))
+        if (floaters.size < 14) floaters.add(Floater(tf("+%1 aguante", g.toInt()), P(p.x + 20, p.y - 40), time + 0.1, Ink.blue, 17.0))
     }
 
     private fun explode(p: P, power: Double) {

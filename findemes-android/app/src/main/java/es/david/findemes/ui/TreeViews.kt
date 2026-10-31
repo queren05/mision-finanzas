@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tf
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -284,7 +285,7 @@ private fun TreePanel(picked: String?, onBuyAll: (Int) -> Unit) {
                 }
                 Column(Modifier.weight(1f)) {
                     T(if (vis) k.name else "Bloqueada", chunky(19.0), maxLines = 1, minScale = 0.6f)
-                    T(if (vis) k.perText(l) + " por nivel" else "Compra antes «${parentName()}»", typewriter(12.0, true), color = Ink.soft, maxLines = 2)
+                    T(if (vis) tf("%1 por nivel", k.perText(l)) else tf("Compra antes «%1»", parentName()), typewriter(12.0, true), color = Ink.soft, maxLines = 2)
                 }
                 Box(Modifier.background(if (maxed) Ink.green else if (l > 0) col else Ink.soft, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp)) {
                     T("$l/${k.maxLevel}", chunky(16.0), color = Ink.paper, maxLines = 1)
@@ -292,7 +293,7 @@ private fun TreePanel(picked: String?, onBuyAll: (Int) -> Unit) {
             }
             if (vis && l > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    T("Ahora: " + k.text(l), typewriter(11.0, true), Modifier.weight(1f, fill = false), maxLines = 1, minScale = 0.6f)
+                    T(tf("Ahora: %1", k.text(l)), typewriter(11.0, true), Modifier.weight(1f, fill = false), maxLines = 1, minScale = 0.6f)
                     if (!maxed) {
                         SymIcon("arrow.right", 12.0, Ink.ink)
                         T(k.text(l + 1), typewriter(11.0, true), Modifier.weight(1f, fill = false), color = Ink.green, maxLines = 1, minScale = 0.6f)
@@ -308,13 +309,13 @@ private fun TreePanel(picked: String?, onBuyAll: (Int) -> Unit) {
                         if (n > 0) { game.save(); Sound.till() }
                     }, color = Ink.green, text = Ink.paper, size = 16.0, radius = 12.0, enabled = game.canGet(k))
                 }
-                ChunkyText(if (affordable == 0) "Nada" else "Todo ($affordable)", { buyAll() }, if (vis && !maxed) Modifier else Modifier.weight(1f),
+                ChunkyText(if (affordable == 0) "Nada" else tf("Todo (%1)", affordable), { buyAll() }, if (vis && !maxed) Modifier else Modifier.weight(1f),
                     color = Ink.paper, size = 16.0, radius = 12.0, enabled = affordable > 0, fill = !(vis && !maxed))
             }
         }
         AnimatedVisibility(bought > 0, Modifier.align(Alignment.TopCenter).offset(y = (-30).dp), enter = scaleIn() + fadeIn(), exit = fadeOut()) {
             Box(Modifier.outlined(10.0, Ink.paper, shadow = 3.0).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                T("+$bought mejoras", chunky(20.0), color = Ink.green, maxLines = 1)
+                T(tf("+%1 mejoras", bought), chunky(20.0), color = Ink.green, maxLines = 1)
             }
         }
     }

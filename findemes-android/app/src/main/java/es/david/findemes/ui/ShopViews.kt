@@ -1,5 +1,8 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.Lang
+import es.david.findemes.support.tr
+import es.david.findemes.support.tf
 import es.david.findemes.money.Ads
 import es.david.findemes.money.Money
 import es.david.findemes.money.Reward
@@ -160,7 +163,7 @@ fun HammerRow(def: HammerDef) {
                 T(def.line, typewriter(12.0), color = Ink.soft)
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     SymIcon("star.fill", 13.0, Ink.gold, Modifier.padding(top = 1.dp))
-                    T("${def.style.perkName}: ${def.style.perk}", typewriter(11.0, true))
+                    T(tf("%1: %2", def.style.perkName, def.style.perk), typewriter(11.0, true))
                 }
                 Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     HStat("DAÑO", Fmt.num(def.damage)); HStat("GOLPES/S", Fmt.dec(def.speed, 1)); HStat("ALCANCE", "${def.radius.toInt()}")
@@ -192,19 +195,19 @@ fun HeritageView(onClose: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().background(hex("#6b1f2e")), horizontalAlignment = Alignment.CenterHorizontally) {
             SheetHeader("Herencia", "Recuerdos del abuelo", onClose)
-            CashPill("${Fmt.num(game.s.legacy)} puntos de herencia", hex("#f2d58a"), Modifier.padding(bottom = 8.dp))
+            CashPill(tf("%1 puntos de herencia", Fmt.num(game.s.legacy)), hex("#f2d58a"), Modifier.padding(bottom = 8.dp))
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 10.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 for (r in Content.rings) RingRow(r)
                 Column(Modifier.padding(top = 10.dp).fillMaxWidth().paper().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     T("BANCARROTA", chunky(24.0), color = Ink.red)
-                    T("{Huchas} a nivel ${game.s.tier} · ${game.s.billsThisRun} facturas pagadas", typewriter(13.0))
-                    ChunkyText("Declararme en bancarrota · +${Fmt.num(game.legacyGain)}", { askBankrupt = true }, Modifier.fillMaxWidth(),
+                    T(tf("{Huchas} a nivel %1 · %2 facturas pagadas", game.s.tier, game.s.billsThisRun), typewriter(13.0))
+                    ChunkyText(tf("Declararme en bancarrota · +%1", Fmt.num(game.legacyGain)), { askBankrupt = true }, Modifier.fillMaxWidth(),
                         color = Ink.red, text = Ink.paper, size = 17.0, enabled = game.legacyGain >= 1, fill = true)
                 }
             }
         }
         ActionDialog(askBankrupt, "¿Declararte en bancarrota?", "Pierdes el dinero, los martillos y las mejoras. Tu dinero va a la hipoteca.",
-            listOf(DialogAction("Sí, en bancarrota (+${Fmt.num(game.legacyGain)} puntos)", destructive = true) { game.bankruptcy() })) { askBankrupt = false }
+            listOf(DialogAction(tf("Sí, en bancarrota (+%1 puntos)", Fmt.num(game.legacyGain)), destructive = true) { game.bankruptcy() })) { askBankrupt = false }
     }
 }
 
@@ -223,7 +226,7 @@ fun RingRow(def: RingDef) {
                 T(def.name, chunky(17.0), Modifier.weight(1f, fill = false), maxLines = 1, minScale = 0.7f)
                 T("$l/${def.maxLevel}", typewriter(12.0, true), color = Ink.soft, maxLines = 1)
             }
-            T(if (def.maxLevel == 1) def.desc else def.perText + " por nivel", typewriter(12.0), color = Ink.soft)
+            T(if (def.maxLevel == 1) def.desc else tf("%1 por nivel", def.perText), typewriter(12.0), color = Ink.soft)
         }
         ChunkyText(if (maxed) "MÁX." else Fmt.num(def.cost(l)), { game.buyRing(def) }, color = hex("#f2d58a"), size = 16.0, radius = 10.0, enabled = can)
     }
@@ -241,7 +244,7 @@ fun CoinsView(onClose: () -> Unit) {
     val bonus = found.sumOf { it.rarity.bonus }
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().background(hex("#2f5d3f"))) {
-            SheetHeader("El álbum", "${found.size} de ${Content.coins.size} · +${Fmt.num(bonus * 100)} % de dinero para siempre", onClose)
+            SheetHeader("El álbum", tf("%1 de %2 · +%3 % de dinero para siempre", found.size, Content.coins.size, Fmt.num(bonus * 100)), onClose)
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 // los sobres sin abrir se abren aquí
                 if (game.s.pendingChests.isNotEmpty() || opened) {
@@ -249,7 +252,7 @@ fun CoinsView(onClose: () -> Unit) {
                     Box(Modifier.padding(horizontal = 18.dp).padding(top = 10.dp)) { ChestOpener() }
                 }
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    RewardButton("Sobre de regalo · ${Money.usesLeft(Reward.sobre)}", Reward.sobre, Modifier.fillMaxWidth(), color = Ink.gold) {
+                    RewardButton(tf("Sobre de regalo · %1", Money.usesLeft(Reward.sobre)), Reward.sobre, Modifier.fillMaxWidth(), color = Ink.gold) {
                         game.s.pendingChests = game.s.pendingChests + game.rollChest()
                         Sound.coin()
                     }
@@ -277,7 +280,7 @@ fun CoinsView(onClose: () -> Unit) {
                     CoinArt(c, true, Modifier.size(130.dp))
                     T(c.name, chunky(28.0))
                     T(c.line, typewriter(15.0), color = Ink.soft)
-                    T("${c.rarity.title} · +${Fmt.num(c.rarity.bonus * 100)} % de dinero", typewriter(14.0, true), color = c.rarity.color)
+                    T(tf("%1 · +%2 % de dinero", c.rarity.title, Fmt.num(c.rarity.bonus * 100)), typewriter(14.0, true), color = c.rarity.color)
                 }
             }
         }
@@ -316,6 +319,7 @@ fun SettingsView() {
                 T("Música: «Lobby Time», «Local Forecast - Elevator», «Bossa Antigua» y «Easy Lemon» de Kevin MacLeod (incompetech.com), licencia CC BY 4.0. Personajes: Quaternius (CC0).",
                     typewriter(11.0), color = Ink.soft)
             }
+            LanguageCard()
             ShopCard()
             // el animal que se rompe (los textos también cambian: vacas, cerdos, llamas…)
             Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 18.dp).fillMaxWidth().paper(hex("#fffaf0")).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -359,6 +363,29 @@ fun ToggleRow(label: String, on: Boolean, set: (Boolean) -> Unit) {
         val x by androidx.compose.animation.core.animateFloatAsState(if (on) 1f else 0f, label = "sw")
         Box(Modifier.width(51.dp).height(31.dp).background(androidx.compose.ui.graphics.lerp(Color(0xFFE9E9EA), Ink.green, x), RoundedCornerShape(16.dp))) {
             Box(Modifier.offset(x = (2 + 20 * x).dp, y = 2.dp).size(27.dp).background(Color.White, CircleShape).border(0.5.dp, Color(0x22000000), CircleShape))
+        }
+    }
+}
+
+// MARK: - Idioma
+
+@Composable
+private fun LanguageCard() {
+    val game = Game.shared
+    val now = game.s.settings.lang
+    Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 18.dp).fillMaxWidth().paper(hex("#fffaf0")).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        T("IDIOMA", typewriter(15.0, true))
+        val options = listOf("auto" to "Automático") + Lang.entries.map { it.name to it.title }
+        for (row in options.chunked(2)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                for ((code, title) in row) {
+                    val on = now == code
+                    // los nombres de los idiomas van siempre en su idioma (no se traducen)
+                    ChunkyButton({ if (!on) game.setLanguage(code) }, Modifier.weight(1f), if (on) Ink.green else Ink.paper, if (on) Ink.paper else Ink.ink, 15.0, 10.0) { st ->
+                        androidx.compose.material3.Text(if (code == "auto") tr(title) else title, Modifier.weight(1f), style = st.copy(textAlign = TextAlign.Center), maxLines = 1)
+                    }
+                }
+            }
         }
     }
 }
@@ -413,7 +440,7 @@ fun SkinCard(def: SkinDef) {
         if (paid && !owned) {
             ChunkyText(Shop.price(def.product!!), { Money.activity?.let { Shop.buy(it, def.product) } }, Modifier.fillMaxWidth(),
                 color = Ink.gold, size = 13.0, radius = 10.0, fill = true)
-        } else ChunkyText(if (using) "EN USO" else if (owned) "USAR" else "${def.bills.toInt()} facturas", { game.pickSkin(def) }, Modifier.fillMaxWidth(),
+        } else ChunkyText(if (using) "EN USO" else if (owned) "USAR" else tf("%1 facturas", def.bills.toInt()), { game.pickSkin(def) }, Modifier.fillMaxWidth(),
             color = if (using) Ink.green else if (owned) Ink.paper else Ink.paperDark, text = if (using) Ink.paper else Ink.ink, size = 13.0, radius = 10.0,
             enabled = !(using || !owned), fill = true)
     }

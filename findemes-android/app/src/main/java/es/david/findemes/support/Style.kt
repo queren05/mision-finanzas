@@ -50,10 +50,21 @@ object Fonts {
 // MARK: - Números
 
 object Fmt {
-    private val suffixes = listOf("", " mil", " M", " mil M", " B", " mil B", " T", " mil T", " Cu", " mil Cu", " Qi")
+    private val suffixesEs = listOf("", " mil", " M", " mil M", " B", " mil B", " T", " mil T", " Cu", " mil Cu", " Qi")
+    // inglés y portugués de Brasil cuentan de mil en mil (billion = mil millones)
+    private val suffixesEn = listOf("", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No")
+    private val suffixesPt = listOf("", " mil", " mi", " bi", " tri", " quatri", " quint", " sext", " sept", " oct", " non")
+    private val suffixes get() = when (L10n.lang) { Lang.es -> suffixesEs; Lang.en -> suffixesEn; Lang.pt -> suffixesPt }
 
-    /** dinero: 1.234 € · 12,5 mil € · 3,2 M € */
-    fun money(v: Double): String = num(v) + " €"
+    /** el símbolo de la moneda (en la moneda dibujada) */
+    val coin: String get() = if (L10n.lang == Lang.es) "€" else "$"
+
+    /** dinero: 1234 € · 12,5 mil € · $12.5K · R$ 12,5 mil */
+    fun money(v: Double): String = when (L10n.lang) {
+        Lang.es -> num(v) + " €"
+        Lang.en -> (if (v < 0) "-$" + num(-v) else "$" + num(v))
+        Lang.pt -> "R$ " + num(v)
+    }
 
     fun num(v: Double): String {
         if (!v.isFinite()) return "∞"
@@ -74,7 +85,7 @@ object Fmt {
 
     fun num(v: Int): String = num(v.toDouble())
 
-    fun dec(v: Double, d: Int): String = String.format(Locale.US, "%.${d}f", v).replace(".", ",")
+    fun dec(v: Double, d: Int): String = String.format(Locale.US, "%.${d}f", v).let { if (L10n.lang == Lang.en) it else it.replace(".", ",") }
 }
 
 /** redondeo como en Swift (`.rounded()`: los medios se alejan del cero); kotlin.math.round redondea al par */

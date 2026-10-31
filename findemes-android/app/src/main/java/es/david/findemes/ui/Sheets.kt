@@ -1,5 +1,8 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tr
+import es.david.findemes.support.nm
+import es.david.findemes.support.tf
 import es.david.findemes.money.Reward
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -107,7 +110,7 @@ fun ReportView(report: DayReport) {
                 Column(Modifier.fillMaxWidth().background(hex("#fffdf6")).padding(horizontal = 20.dp).padding(top = 18.dp, bottom = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     T("SUPERMERCADO DE {HUCHAS}", typewriter(13.0, true))
-                    T("TICKET DEL DÍA ${report.day}", typewriter(16.0, true))
+                    T(tf("TICKET DEL DÍA %1", report.day), typewriter(16.0, true))
                     Dashed()
                     for ((i, l) in lines.withIndex()) {
                         val on = i < shown
@@ -122,9 +125,9 @@ fun ReportView(report: DayReport) {
                         T("TOTAL", typewriter(18.0, true), Modifier.padding(bottom = 4.dp)); Spacer(Modifier.weight(1f)); T(Fmt.money(report.earned), chunky(32.0), maxLines = 1, minScale = 0.5f)
                     }
                     Dashed()
-                    T("En la cartera: ${Fmt.money(game.s.cash)}", typewriter(13.0, true))
+                    T(tf("En la cartera: %1", Fmt.money(game.s.cash)), typewriter(13.0, true))
                     val left = game.s.billDue - game.s.day
-                    T(if (left < 0) "¡LA FACTURA HA VENCIDO!" else if (left == 0) "La factura vence HOY" else "La factura vence en $left día${if (left == 1) "" else "s"}",
+                    T(if (left < 0) "¡LA FACTURA HA VENCIDO!" else if (left == 0) "La factura vence HOY" else (if (left == 1) tf("La factura vence en %1 día", left) else tf("La factura vence en %1 días", left)),
                         typewriter(13.0, true), color = if (left <= 0) Ink.red else Ink.ink)
                 }
                 // dientes de sierra del papel
@@ -132,7 +135,7 @@ fun ReportView(report: DayReport) {
             }
             if (report.record) Stamp("¡RÉCORD!", Ink.green, Modifier.scale(1.4f).alpha(if (done) 1f else 0f))
             if (report.xp > 0) {
-                T("+${Fmt.num(report.xp)} de experiencia", chunky(18.0).hardShadow(2.0, 2.0), Modifier.alpha(if (done) 1f else 0f), color = Ink.paper)
+                T(tf("+%1 de experiencia", Fmt.num(report.xp)), chunky(18.0).hardShadow(2.0, 2.0), Modifier.alpha(if (done) 1f else 0f), color = Ink.paper)
             }
             if (hadChests) ChestOpener()
             ChunkyText(if (game.s.pendingChests.isEmpty()) "A LA COCINA" else "Abrir los sobres luego", {
@@ -183,19 +186,19 @@ fun ChestOpener() {
     }
     val pending = game.s.pendingChests
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        T(if (pending.isEmpty()) "¡SOBRES ABIERTOS!" else "${pending.size} SOBRE${if (pending.size == 1) "" else "S"} SORPRESA", chunky(24.0).hardShadow(2.0, 2.0), color = Ink.paper)
+        T(if (pending.isEmpty()) "¡SOBRES ABIERTOS!" else (if (pending.size == 1) tf("%1 SOBRE SORPRESA", 1) else tf("%1 SOBRES SORPRESA", pending.size)), chunky(24.0).hardShadow(2.0, 2.0), color = Ink.paper)
         prize?.let { p ->
             key(p.id) {
                 AnimatedVisibility(true, enter = scaleIn(spring(dampingRatio = 0.6f, stiffness = 300f), 0.3f) + fadeIn()) {
                     Column(Modifier.fillMaxWidth().paper().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        T(p.rarity.title.uppercase(), chunky(18.0), color = if (p.rarity == Rarity.comun) Ink.ink else p.rarity.color)
+                        T(tr(p.rarity.title).uppercase(), chunky(18.0), color = if (p.rarity == Rarity.comun) Ink.ink else p.rarity.color)
                         T("+" + Fmt.money(p.cash), chunky(34.0), color = Ink.green, maxLines = 1, minScale = 0.5f)
                         p.coin?.let { c ->
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 CoinArt(c, true, Modifier.size(54.dp))
                                 Column {
                                     T(c.name, chunky(18.0))
-                                    T(if (p.duplicate) "Repetida: +${Fmt.money(p.legacy)}" else "¡Nueva para el álbum!", typewriter(12.0, true), color = if (p.duplicate) Ink.soft else Ink.purple)
+                                    T(if (p.duplicate) tf("Repetida: +%1", Fmt.money(p.legacy)) else "¡Nueva para el álbum!", typewriter(12.0, true), color = if (p.duplicate) Ink.soft else Ink.purple)
                                 }
                             }
                         }
@@ -219,7 +222,7 @@ fun ChestOpener() {
                     }
                 })
             if (pending.size >= 2) {
-                ChunkyText("Abrir los ${pending.size} de golpe", {
+                ChunkyText(tf("Abrir los %1 de golpe", pending.size), {
                     opening = true
                     shake()
                     val a = AllPrizes()
@@ -240,13 +243,13 @@ fun ChestOpener() {
         all?.let { a ->
             AnimatedVisibility(true, enter = scaleIn(spring(dampingRatio = 0.6f, stiffness = 300f), 0.3f) + fadeIn()) {
                 Column(Modifier.fillMaxWidth().paper().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    T("${a.count} SOBRES ABIERTOS", chunky(20.0), color = if (a.best == Rarity.comun) Ink.ink else a.best.color)
+                    T(tf("%1 SOBRES ABIERTOS", a.count), chunky(20.0), color = if (a.best == Rarity.comun) Ink.ink else a.best.color)
                     T("+" + Fmt.money(a.cash), chunky(34.0), color = Ink.green, maxLines = 1, minScale = 0.5f)
                     if (a.fresh.isNotEmpty()) {
                         T("¡Monedas nuevas para el álbum!", typewriter(12.0, true), color = Ink.purple)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { for (c in a.fresh.take(6)) CoinArt(c, true, Modifier.size(44.dp)) }
                     }
-                    if (a.legacy > 0) T("Repetidas: +${Fmt.money(a.legacy)}", typewriter(12.0, true), color = Ink.soft)
+                    if (a.legacy > 0) T(tf("Repetidas: +%1", Fmt.money(a.legacy)), typewriter(12.0, true), color = Ink.soft)
                 }
             }
         }
@@ -268,7 +271,7 @@ fun EnvelopeArt(rarity: Rarity, modifier: Modifier) {
         drawCircle(Ink.ink, 14 * d - 1.25f * d, c, style = Stroke(2.5f * d))
         drawContext.canvas.nativeCanvas.apply {
             val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { typeface = Tex.chunky; textSize = 16 * d; color = Ink.paper.toArgb(); textAlign = android.graphics.Paint.Align.CENTER }
-            drawText("€", c.x, c.y - (p.ascent() + p.descent()) / 2, p)
+            drawText(Fmt.coin, c.x, c.y - (p.ascent() + p.descent()) / 2, p)
         }
     }
 }
@@ -289,7 +292,7 @@ fun EventView(event: GameEvent) {
                 when (event) {
                     is GameEvent.Collector -> {
                         T("¡EL COBRADOR!", chunky(36.0), color = Ink.red)
-                        T("No pagaste a ${Content.bills[minOf(game.s.billIndex, Content.bills.size - 1)].company.lowercase()} a tiempo. Se lo han llevado todo: el dinero, los martillos y las mejoras.",
+                        T(tf("No pagaste a %1 a tiempo. Se lo han llevado todo: el dinero, los martillos y las mejoras.", nm(Content.bills[minOf(game.s.billIndex, Content.bills.size - 1)].company)),
                             typewriter(15.0), align = TextAlign.Center)
                         LegacyLine(event.legacy)
                         ChunkyText("Empezar de nuevo", { close() }, Modifier.fillMaxWidth(), size = 20.0, fill = true)
@@ -297,7 +300,7 @@ fun EventView(event: GameEvent) {
                     GameEvent.Warning -> {
                         val company = Content.bills[minOf(game.s.billIndex, Content.bills.size - 1)].company
                         T("¡LLAMA EL COBRADOR!", chunky(32.0), color = Ink.red, align = TextAlign.Center)
-                        T("No te llega para pagar a ${company.lowercase()}. Hoy está de buenas: si quieres, te da un día más.",
+                        T(tf("No te llega para pagar a %1. Hoy está de buenas: si quieres, te da un día más.", nm(company)),
                             typewriter(15.0), align = TextAlign.Center)
                         T(Fmt.money(game.billAmount), chunky(30.0), color = Ink.red, maxLines = 1, minScale = 0.5f)
                         RewardButton("Un día más", Reward.prorroga, Modifier.fillMaxWidth(), color = Ink.gold, size = 20.0) { game.reprieve() }
@@ -308,7 +311,7 @@ fun EventView(event: GameEvent) {
                         T("Has sobrevivido a un año entero de facturas. Ahora puedes declararte en bancarrota y cobrar tus puntos de herencia, o aguantar otro año con facturas todavía más caras (y {huchas} más ric{as}).",
                             typewriter(14.0), align = TextAlign.Center)
                         LegacyLine(game.legacyGain)
-                        ChunkyText("Bancarrota (+${Fmt.num(game.legacyGain)} puntos)", { game.bankruptcy() }, Modifier.fillMaxWidth(), size = 19.0, fill = true)
+                        ChunkyText(tf("Bancarrota (+%1 puntos)", Fmt.num(game.legacyGain)), { game.bankruptcy() }, Modifier.fillMaxWidth(), size = 19.0, fill = true)
                         ChunkyText("Otro año más", { game.anotherYear() }, Modifier.fillMaxWidth(), color = Ink.paper, size = 19.0, fill = true)
                     }
                     is GameEvent.Bankrupt -> {
@@ -333,13 +336,13 @@ private fun LegacyLine(v: Double) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.outlined(12.0, hex("#f2d58a"), shadow = 3.0).padding(vertical = 6.dp, horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SymIcon("sparkles", 20.0, Ink.purple)
-            T("+${Fmt.num(v)} puntos de herencia", chunky(22.0), maxLines = 1, minScale = 0.6f)
+            T(tf("+%1 puntos de herencia", Fmt.num(v)), chunky(22.0), maxLines = 1, minScale = 0.6f)
         }
         // lo que quedaba en la cartera se va a la hipoteca
         if (game.mortgageAdded > 0) {
             Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SymIcon("house.fill", 16.0, Ink.green)
-                T("+${Fmt.money(game.mortgageAdded)} a ${game.mortgageName.lowercase()}", typewriter(13.0, true), maxLines = 1)
+                T(tf("+%1 a %2", Fmt.money(game.mortgageAdded), nm(game.mortgageName)), typewriter(13.0, true), maxLines = 1)
             }
         }
     }

@@ -1,5 +1,6 @@
 package es.david.findemes.logic
 
+import es.david.findemes.support.tf
 import es.david.findemes.model.Content
 import es.david.findemes.model.PigKind
 import es.david.findemes.model.PigLevel
@@ -66,28 +67,28 @@ class AchDef(val id: String, val name: String, val metric: AchMetric, val target
             val n = Fmt.num(target)
             val vez = if (target == 1.0) "vez" else "veces"
             return when (metric) {
-                AchMetric.broken -> "Rompe $n {huchas}"
-                AchMetric.earned -> "Gana ${Fmt.money(target)} en total"
-                AchMetric.bills -> "Paga $n facturas"
-                AchMetric.bankruptcies -> "Declárate en bancarrota $n $vez"
-                AchMetric.days -> "Juega $n días"
-                AchMetric.golden -> "Rompe $n {huchas} dorad{as}"
-                AchMetric.kings -> "Derrota al Rey {Hucha} $n $vez"
-                AchMetric.chests -> "Abre $n sobres"
-                AchMetric.crits -> "Da $n golpes críticos"
-                AchMetric.combo -> "Haz un combo de $n"
-                AchMetric.frenzies -> "Entra $n $vez en frenesí"
-                AchMetric.level -> "Llega al nivel $n"
-                AchMetric.coins -> "Junta $n monedas del álbum"
-                AchMetric.skins -> "Ten $n animales"
-                AchMetric.hammers -> "Ten $n martillos a la vez"
-                AchMetric.quests -> "Cumple $n encargos"
-                AchMetric.bestDay -> "Gana ${Fmt.money(target)} en un día"
-                AchMetric.pigLevel -> "Sube {las} {huchas} al nivel $n"
-                AchMetric.spins -> "Tira $n veces en la tragaperras"
+                AchMetric.broken -> tf("Rompe %1 {huchas}", n)
+                AchMetric.earned -> tf("Gana %1 en total", Fmt.money(target))
+                AchMetric.bills -> tf("Paga %1 facturas", n)
+                AchMetric.bankruptcies -> tf("Declárate en bancarrota %1 %2", n, vez)
+                AchMetric.days -> tf("Juega %1 días", n)
+                AchMetric.golden -> tf("Rompe %1 {huchas} dorad{as}", n)
+                AchMetric.kings -> tf("Derrota al Rey {Hucha} %1 %2", n, vez)
+                AchMetric.chests -> tf("Abre %1 sobres", n)
+                AchMetric.crits -> tf("Da %1 golpes críticos", n)
+                AchMetric.combo -> tf("Haz un combo de %1", n)
+                AchMetric.frenzies -> tf("Entra %1 %2 en frenesí", n, vez)
+                AchMetric.level -> tf("Llega al nivel %1", n)
+                AchMetric.coins -> tf("Junta %1 monedas del álbum", n)
+                AchMetric.skins -> tf("Ten %1 animales", n)
+                AchMetric.hammers -> tf("Ten %1 martillos a la vez", n)
+                AchMetric.quests -> tf("Cumple %1 encargos", n)
+                AchMetric.bestDay -> tf("Gana %1 en un día", Fmt.money(target))
+                AchMetric.pigLevel -> tf("Sube {las} {huchas} al nivel %1", n)
+                AchMetric.spins -> tf("Tira %1 veces en la tragaperras", n)
                 AchMetric.jackpots -> "Saca tres coronas en la tragaperras"
-                AchMetric.scratches -> "Rasca $n rascas"
-                AchMetric.parts -> "Sube $n niveles las mejoras del martillo en una partida"
+                AchMetric.scratches -> tf("Rasca %1 rascas", n)
+                AchMetric.parts -> tf("Sube %1 niveles las mejoras del martillo en una partida", n)
             }
         }
 }

@@ -26,7 +26,10 @@ object Shop {
     const val STARTER = "paquete_inicio"
     val products: List<String> get() = listOf(NO_ADS, STARTER) + Content.skins.mapNotNull { it.product }.filter { it != STARTER }
     /** precios por si Google Play todavía no ha contestado */
-    fun fallbackPrice(id: String): String = when (id) { NO_ADS -> "3,99 €"; STARTER -> "1,99 €"; else -> "0,99 €" }
+    fun fallbackPrice(id: String): String {
+        val v = when (id) { NO_ADS -> "3.99"; STARTER -> "1.99"; else -> "0.99" }
+        return if (es.david.findemes.support.L10n.lang == es.david.findemes.support.Lang.en) "€$v" else v.replace(".", ",") + " €"
+    }
 
     private lateinit var prefs: android.content.SharedPreferences
     private var client: BillingClient? = null

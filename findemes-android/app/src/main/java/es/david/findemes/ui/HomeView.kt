@@ -1,5 +1,7 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.nm
+import es.david.findemes.support.tf
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -80,7 +82,7 @@ fun HomeView(startSheet: HomeSheet? = null, startTab: String? = null) {
             game.nextBill?.let { next ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
                     T("Después:", typewriter(13.0, true), color = Ink.soft)
-                    T("${next.company} · ${Fmt.money(game.billAmount(next))}", typewriter(13.0), color = Ink.soft, maxLines = 1, minScale = 0.6f)
+                    T(tf("%1 · %2", next.company, Fmt.money(game.billAmount(next))), typewriter(13.0), color = Ink.soft, maxLines = 1, minScale = 0.6f)
                 }
             }
         }
@@ -109,8 +111,8 @@ private fun TopBar(onSettings: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             T("FIN DE MES", chunky(34.0).hardShadow(3.0, 3.0), color = Ink.red)
-            T("Día ${game.s.day}" + (if (game.s.year > 0) " · año ${game.s.year + 1}" else "") +
-                (if (st.bankruptcies > 0) " · ${st.bankruptcies.toInt()} bancarrota${if (st.bankruptcies == 1.0) "" else "s"}" else ""),
+            T(tf("Día %1", game.s.day) + (if (game.s.year > 0) tf(" · año %1", game.s.year + 1) else "") +
+                (if (st.bankruptcies > 0) (if (st.bankruptcies == 1.0) tf(" · %1 bancarrota", 1) else tf(" · %1 bancarrotas", st.bankruptcies.toInt())) else ""),
                 typewriter(13.0, true), color = Ink.soft)
         }
         ChunkyButton(onSettings, color = Ink.paper, size = 16.0, radius = 12.0) { SymIcon("gearshape.fill", 22.0, Ink.ink) }
@@ -158,11 +160,11 @@ private fun BillCard() {
                         T(Fmt.money(amount), chunky(34.0), maxLines = 1, minScale = 0.5f)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        T(if (left == 0) "Vence HOY" else "Vence en $left día${if (left == 1) "" else "s"} (día ${game.s.billDue})",
+                        T(if (left == 0) "Vence HOY" else (if (left == 1) tf("Vence en %1 día (día %2)", left, game.s.billDue) else tf("Vence en %1 días (día %2)", left, game.s.billDue)),
                             typewriter(13.0, true), Modifier.weight(1f), color = if (left == 0) Ink.red else Ink.ink, maxLines = 1, minScale = 0.7f)
-                        T("Tienes ${Fmt.money(game.s.cash)}", typewriter(13.0), color = if (can) Ink.green else Ink.soft, maxLines = 1, minScale = 0.7f)
+                        T(tf("Tienes %1", Fmt.money(game.s.cash)), typewriter(13.0), color = if (can) Ink.green else Ink.soft, maxLines = 1, minScale = 0.7f)
                     }
-                    ChunkyText(if (can) "PAGAR" else "Te faltan ${Fmt.money(amount - game.s.cash)}", {
+                    ChunkyText(if (can) "PAGAR" else tf("Te faltan %1", Fmt.money(amount - game.s.cash)), {
                         game.payBill()
                         scope.launch { shake.animateTo(-8f, tween(50)); shake.animateTo(8f, tween(50)); shake.animateTo(0f, spring(dampingRatio = 0.5f)) }
                     }, Modifier.fillMaxWidth().padding(top = 4.dp), color = Ink.green, text = Ink.paper, size = 22.0, enabled = can, fill = true)
@@ -191,7 +193,7 @@ private fun PlayButton() {
             SkinIcon(Content.playing(game.s.skin).id, 52.0)
             Column {
                 T("A ROMPER {HUCHAS}", chunky(26.0), maxLines = 1, minScale = 0.6f)
-                T("con ${Content.hammers[game.s.hammer].name.lowercase()}", typewriter(13.0, true), Modifier.alpha(0.75f), maxLines = 1, minScale = 0.6f)
+                T(tf("con %1", nm(Content.hammers[game.s.hammer].name)), typewriter(13.0, true), Modifier.alpha(0.75f), maxLines = 1, minScale = 0.6f)
             }
         }
     }
@@ -213,8 +215,8 @@ private fun Doors(open: (HomeSheet) -> Unit) {
                     when (d) {
                         Door.mejoras -> DoorCard(d, "Árbol de mejoras", game.bestSkill(Content.skills) != null, m) { open(HomeSheet.tree) }
                         Door.martillo -> DoorCard(d, Content.hammers[game.s.hammer].name, game.bestHammer != null || ((game.s.stats.billsPaid >= 3 || game.s.stats.bankruptcies > 0) && game.bestPart != null), m) { open(HomeSheet.hammers) }
-                        Door.album -> DoorCard(d, "$kinds {huchas} · ${game.s.achievements.size} logros", game.achievementsReady > 0 || game.s.pendingChests.isNotEmpty(), m) { open(HomeSheet.album) }
-                        Door.herencia -> DoorCard(d, "${Fmt.num(game.s.legacy)} puntos", legacyBuy, m) { open(HomeSheet.herencia) }
+                        Door.album -> DoorCard(d, tf("%1 {huchas} · %2 logros", kinds, game.s.achievements.size), game.achievementsReady > 0 || game.s.pendingChests.isNotEmpty(), m) { open(HomeSheet.album) }
+                        Door.herencia -> DoorCard(d, tf("%1 puntos", Fmt.num(game.s.legacy)), legacyBuy, m) { open(HomeSheet.herencia) }
                         Door.bar -> {}
                     }
                 }

@@ -5,6 +5,9 @@ import es.david.findemes.model.Content
 import es.david.findemes.model.SkillDef
 import es.david.findemes.support.Fmt
 import es.david.findemes.support.Ink
+import es.david.findemes.support.L10n
+import es.david.findemes.support.Lang
+import es.david.findemes.support.tf
 import es.david.findemes.support.capitalizedFirst
 import es.david.findemes.support.rnd
 import java.util.UUID
@@ -48,17 +51,37 @@ class AwayPrize(val minutes: Double, val cash: Double, val cows: Double) { val i
 /** las hipotecas, una detrás de otra */
 object Mortgage {
     val names = listOf("La Hipoteca", "El chalet de la playa", "El yate", "El equipo de fútbol", "Comprar el banco")
-    fun name(level: Int): String = if (level < names.size) names[level] else "El banco (${level - names.size + 2})"
+    fun name(level: Int): String = if (level < names.size) names[level] else tf("El banco (%1)", level - names.size + 2)
     /** lo que cuesta: la primera, mil trillones; cada una, diez mil veces la anterior */
     fun total(level: Int): Double = 1e21 * 1e4.pow(level)
     /** la cifra en palabras: «Mil trillones €», «10 cuatrillones €» */
     fun words(v: Double): String {
-        val names = listOf("", "mil", "millones", "mil millones", "billones", "mil billones", "trillones", "mil trillones",
-            "cuatrillones", "mil cuatrillones", "quintillones", "mil quintillones", "sextillones")
-        val e3 = min(names.size - 1, floor(log10(max(1.0, v)) / 3).toInt())
-        val m = rnd(v / 1000.0.pow(e3))
-        if (m == 1.0 && names[e3].startsWith("mil")) return names[e3].capitalizedFirst + " €"
-        return Fmt.num(m) + " " + names[e3] + " €"
+        val e3 = floor(log10(max(1.0, v)) / 3).toInt()
+        when (L10n.lang) {
+            Lang.es -> {
+                val names = listOf("", "mil", "millones", "mil millones", "billones", "mil billones", "trillones", "mil trillones",
+                    "cuatrillones", "mil cuatrillones", "quintillones", "mil quintillones", "sextillones")
+                val k = min(names.size - 1, e3)
+                val m = rnd(v / 1000.0.pow(k))
+                if (m == 1.0 && names[k].startsWith("mil")) return names[k].capitalizedFirst + " €"
+                return Fmt.num(m) + " " + names[k] + " €"
+            }
+            Lang.en -> {
+                val names = listOf("", "thousand", "million", "billion", "trillion", "quadrillion", "quintillion", "sextillion",
+                    "septillion", "octillion", "nonillion", "decillion", "undecillion")
+                val k = min(names.size - 1, e3)
+                return "$" + Fmt.num(rnd(v / 1000.0.pow(k))) + " " + names[k]
+            }
+            Lang.pt -> {
+                val one = listOf("", "mil", "milhão", "bilhão", "trilhão", "quatrilhão", "quintilhão", "sextilhão",
+                    "septilhão", "octilhão", "nonilhão", "decilhão", "undecilhão")
+                val many = listOf("", "mil", "milhões", "bilhões", "trilhões", "quatrilhões", "quintilhões", "sextilhões",
+                    "septilhões", "octilhões", "nonilhões", "decilhões", "undecilhões")
+                val k = min(one.size - 1, e3)
+                val m = rnd(v / 1000.0.pow(k))
+                return "R$ " + Fmt.num(m) + " " + (if (m == 1.0) one[k] else many[k])
+            }
+        }
     }
 }
 
@@ -146,6 +169,16 @@ fun Game.collectAway(double: Boolean = false) {
 }
 
 // MARK: números grandes
+
+/** el número grande celebrado, en el idioma de ahora */
+fun milestoneName(k: Int): String {
+    val list = when (L10n.lang) {
+        Lang.es -> milestoneNames
+        Lang.en -> listOf("", "$1,000", "MILLION", "BILLION", "TRILLION", "QUADRILLION", "QUINTILLION", "SEXTILLION", "SEPTILLION", "OCTILLION", "NONILLION")
+        Lang.pt -> listOf("", "R$ 1.000", "MILHÃO", "BILHÃO", "TRILHÃO", "QUATRILHÃO", "QUINTILHÃO", "SEXTILHÃO", "SEPTILHÃO", "OCTILHÃO", "NONILHÃO")
+    }
+    return if (k < list.size) list[k] else "1e${k * 3}"
+}
 
 val milestoneNames = listOf("", "MIL €", "MILLÓN", "MIL MILLONES", "BILLÓN", "MIL BILLONES", "TRILLÓN", "MIL TRILLONES",
     "CUATRILLÓN", "MIL CUATRILLONES", "QUINTILLÓN")

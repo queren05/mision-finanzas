@@ -24,6 +24,7 @@ import es.david.findemes.money.Money
 import es.david.findemes.money.Reward
 import es.david.findemes.money.Shop
 import es.david.findemes.support.Animal
+import es.david.findemes.support.L10n
 import es.david.findemes.support.rnd
 import java.util.UUID
 import kotlin.math.floor
@@ -130,6 +131,14 @@ class Game private constructor() {
         recompute()
         wake()
         refillQuests()
+    }
+
+    /** cambia el idioma ("auto", "es", "en" o "pt") */
+    fun setLanguage(code: String) {
+        s.settings.lang = code
+        L10n.set(code)
+        Animal.use(Content.skin(s.skin))
+        save()
     }
 
     fun applySettings() {

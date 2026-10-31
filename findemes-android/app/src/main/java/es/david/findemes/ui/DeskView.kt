@@ -1,5 +1,6 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.tf
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -112,7 +113,7 @@ fun DeskView(zoo: Boolean = false, parade: Boolean = false) {
             Spacer(Modifier.weight(1f))
             BottomBar(stamina) { Sound.click(); askQuit = true }
         }
-        ActionDialog(askQuit, "¿Terminar el día ya?", "Te quedan ${stamina.toInt()} de aguante sin usar.",
+        ActionDialog(askQuit, "¿Terminar el día ya?", tf("Te quedan %1 de aguante sin usar.", stamina.toInt()),
             listOf(DialogAction("Terminar el día", destructive = true) { desk.quit() }), cancel = "Seguir rompiendo") { askQuit = false }
     }
 }
@@ -128,12 +129,12 @@ private fun Hud(cash: Double, stamina: Double) {
         }
         Spacer(Modifier.weight(1f).padding(6.dp))
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            T("DÍA ${game.s.day}", chunky(22.0).hardShadow(2.0, 2.0), color = Ink.paper)
+            T(tf("DÍA %1", game.s.day), chunky(22.0).hardShadow(2.0, 2.0), color = Ink.paper)
             val left = game.daysLeft
             Box(Modifier.outlined(0.0, if (left == 0) Ink.red.copy(alpha = 0.85f) else Ink.paper, line = 2.0, shadow = 0.0).padding(horizontal = 7.dp, vertical = 3.dp)) {
-                T("Factura: ${Fmt.money(game.billAmount)}", typewriter(13.0, true), maxLines = 1)
+                T(tf("Factura: %1", Fmt.money(game.billAmount)), typewriter(13.0, true), maxLines = 1)
             }
-            T(if (left == 0) "¡VENCE HOY!" else "vence en $left día${if (left == 1) "" else "s"}", typewriter(11.0, true).hardShadow(1.0, 1.0), color = if (left == 0) Ink.red else Ink.paper)
+            T(if (left == 0) "¡VENCE HOY!" else (if (left == 1) tf("vence en %1 día", left) else tf("vence en %1 días", left)), typewriter(11.0, true).hardShadow(1.0, 1.0), color = if (left == 0) Ink.red else Ink.paper)
         }
     }
 }

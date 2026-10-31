@@ -55,6 +55,7 @@ import es.david.findemes.ui.MilestoneView
 import es.david.findemes.ui.NewKindView
 import es.david.findemes.ui.NoticeStrip
 import es.david.findemes.money.Ads
+import es.david.findemes.support.L10n
 import es.david.findemes.money.Money
 import es.david.findemes.money.Shop
 import es.david.findemes.ui.Pt
@@ -77,7 +78,10 @@ class MainActivity : ComponentActivity() {
         // capturas automáticas: adb shell am start … --es args "-demo -tree"
         val args = (intent?.getStringExtra("args") ?: "").split(" ").filter { it.isNotBlank() }
         val game = Game.shared
+        L10n.init(this, game.s.settings.lang)
+        args.indexOf("-idioma").let { if (it >= 0 && it + 1 < args.size) L10n.set(args[it + 1]) }
         Demo.apply(game, args)
+        es.david.findemes.support.Animal.use(es.david.findemes.model.Content.skin(game.s.skin))
         Money.attach(this)
         Shop.init(this)
         // en las capturas automáticas no sale el aviso de privacidad
@@ -114,7 +118,8 @@ fun Root(args: List<String>) {
         else -> null
     }
     val tab = args.indexOf("-tab").let { if (it >= 0 && it + 1 < args.size) args[it + 1] else null }
-    Box(Modifier.fillMaxSize()) {
+    // al cambiar de idioma se vuelve a dibujar todo
+    key(L10n.lang) { Box(Modifier.fillMaxSize()) {
         AnimatedContent(game.inRun, transitionSpec = {
             if (targetState) slideInVertically(spring(dampingRatio = 0.85f, stiffness = 300f)) { it } togetherWith fadeOut()
             else fadeIn() togetherWith fadeOut()
@@ -135,7 +140,7 @@ fun Root(args: List<String>) {
             calm && game.dailyReady -> DailyView()
         }
         NoticeStrip()
-    }
+    } }
 }
 
 /** partidas de ejemplo para las capturas */

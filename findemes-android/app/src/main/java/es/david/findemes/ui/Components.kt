@@ -212,7 +212,7 @@ fun InkBar(value: Double, color: Color, height: Double = 14.0, modifier: Modifie
 fun SymIcon(name: String, size: Double, color: Color, modifier: Modifier = Modifier) {
     if (name == "eurosign.circle.fill") {
         Box(modifier.size(size.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
-            T("€", TextStyle(fontWeight = FontWeight.Black, fontSize = pts(size * 0.68)), color = if (color.luminance() < 0.3f) Ink.paper else Ink.ink, maxLines = 1)
+            T(es.david.findemes.support.Fmt.coin, TextStyle(fontWeight = FontWeight.Black, fontSize = pts(size * 0.68)), color = if (color.luminance() < 0.3f) Ink.paper else Ink.ink, maxLines = 1)
         }
     } else Icon(Sym.of(name), null, modifier.size(size.dp), tint = color)
 }

@@ -1,5 +1,7 @@
 package es.david.findemes.ui
 
+import es.david.findemes.support.nm
+import es.david.findemes.support.tf
 import es.david.findemes.money.Money
 import es.david.findemes.money.Reward
 import androidx.compose.animation.AnimatedContent
@@ -87,8 +89,8 @@ fun PartRow(def: PartDef) {
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     T(def.name, chunky(17.0)); T("$l/${def.maxLevel}", typewriter(12.0, true), Modifier.padding(bottom = 2.dp), color = Ink.soft)
                 }
-                T(def.desc.filling(Fmt.num(def.per)) + " por nivel", typewriter(12.0), color = Ink.soft)
-                if (l > 0) T("Ahora: " + def.desc.filling(Fmt.num(def.value(l))), typewriter(12.0, true), color = Ink.green)
+                T(tf("%1 por nivel", def.desc.filling(Fmt.num(def.per))), typewriter(12.0), color = Ink.soft)
+                if (l > 0) T(tf("Ahora: %1", def.desc.filling(Fmt.num(def.value(l)))), typewriter(12.0, true), color = Ink.green)
                 Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ChunkyText(if (maxed) "MÁX." else Fmt.money(cost), { game.buyPart(def) }, Modifier.weight(1f), size = 15.0, radius = 10.0, enabled = !(maxed || game.s.cash < cost), fill = true)
                     ChunkyText("Máx.", { game.buyPartMax(def) }, color = Ink.paper, size = 15.0, radius = 10.0, enabled = !(maxed || game.s.cash < cost))
@@ -109,7 +111,7 @@ fun BarView(onClose: () -> Unit, startTab: Int = 0) {
         SheetHeader("La feria", "Tiradas gratis cada día", onClose)
         CashPill(Fmt.money(game.s.cash), modifier = Modifier.padding(bottom = 10.dp))
         Row(Modifier.padding(horizontal = 18.dp).padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            for ((i, t) in listOf("Tragaperras · ${game.freeSpins}", if (game.freeScratch) "Rasca · 1" else "Rasca").withIndex()) {
+            for ((i, t) in listOf(tf("Tragaperras · %1", game.freeSpins), if (game.freeScratch) "Rasca · 1" else "Rasca").withIndex()) {
                 ChunkyText(t, { Sound.click(); tab = i }, Modifier.weight(1f), color = if (tab == i) Ink.gold else Ink.paper, size = 16.0, radius = 12.0, fill = true)
             }
         }
@@ -182,7 +184,7 @@ fun SlotMachineView() {
                 AnimatedContent(flash, transitionSpec = { (scaleIn() + fadeIn()) togetherWith fadeOut() }, label = "f") { _ ->
                     val r = result
                     if (r != null && !busy) {
-                        if (r.won > 0) T("¡+${Fmt.money(r.won)}!" + (if (r.chest != null) " y un sobre ${r.chest.title.lowercase()}" else ""), chunky(20.0), color = Ink.gold, maxLines = 1, minScale = 0.5f)
+                        if (r.won > 0) T("¡+${Fmt.money(r.won)}!" + (if (r.chest != null) tf(" y un sobre %1", nm(r.chest.title)) else ""), chunky(20.0), color = Ink.gold, maxLines = 1, minScale = 0.5f)
                         else T("Nada", chunky(20.0), color = hex("#ff9a8a"))
                     } else T(if (busy) "…" else " ", chunky(20.0), color = Ink.paper)
                 }
@@ -192,7 +194,7 @@ fun SlotMachineView() {
             for (i in 0 until dailySpins) SymIcon(if (i < game.freeSpins) "ticket.fill" else "ticket", 28.0, if (i < game.freeSpins) Ink.gold else Ink.paper.copy(alpha = 0.4f))
         }
         if (game.freeSpins > 0 || busy) ChunkyText("¡TIRAR!", { pull() }, Modifier.fillMaxWidth(), color = Ink.red, text = Ink.paper, size = 24.0, enabled = !(busy || game.freeSpins == 0 || game.inRun), fill = true)
-        else RewardButton("Tirada extra · ${Money.usesLeft(Reward.tirada)}", Reward.tirada, Modifier.fillMaxWidth(), color = Ink.gold, size = 22.0) { pull(extra = true) }
+        else RewardButton(tf("Tirada extra · %1", Money.usesLeft(Reward.tirada)), Reward.tirada, Modifier.fillMaxWidth(), color = Ink.gold, size = 22.0) { pull(extra = true) }
 
         // la tabla de premios
         Column(Modifier.fillMaxWidth().paper().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -201,7 +203,7 @@ fun SlotMachineView() {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { SlotSymbolView(s, 30.0) }
                     Spacer(Modifier.weight(1f))
-                    T(Fmt.money(unit * s.pays) + (if (s == SlotSymbol.corona) " + sobre legendario" else if (s == SlotSymbol.anillo) " + sobre épico" else ""), typewriter(13.0, true), maxLines = 1, minScale = 0.6f)
+                    T((if (s == SlotSymbol.corona) tf("%1 + sobre legendario", Fmt.money(unit * s.pays)) else if (s == SlotSymbol.anillo) tf("%1 + sobre épico", Fmt.money(unit * s.pays)) else Fmt.money(unit * s.pays)), typewriter(13.0, true), maxLines = 1, minScale = 0.6f)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {

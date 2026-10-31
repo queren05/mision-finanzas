@@ -62,13 +62,16 @@ class Settings {
     var sound by mutableStateOf(true)
     var haptics by mutableStateOf(true)
     var music by mutableStateOf(true)
+    /** "auto" (el del teléfono), "es", "en" o "pt" */
+    var lang by mutableStateOf("auto")
 
-    fun toJson() = JSONObject().apply { put("sound", sound); put("haptics", haptics); put("music", music) }
+    fun toJson() = JSONObject().apply { put("sound", sound); put("haptics", haptics); put("music", music); put("lang", lang) }
 
     companion object {
         fun from(o: JSONObject?): Settings = Settings().apply {
             if (o == null) return@apply
             sound = o.optBoolean("sound", true); haptics = o.optBoolean("haptics", true); music = o.optBoolean("music", true)
+            lang = o.optString("lang", "auto")
         }
     }
 }
