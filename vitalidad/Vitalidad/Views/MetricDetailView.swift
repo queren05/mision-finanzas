@@ -149,7 +149,16 @@ struct MetricChart: View {
         }
     }
 
+    /// Para las líneas: el eje empieza cerca del valor más bajo, no en cero.
+    private var floor: Double {
+        var vals = points.map { y($0.value) }
+        if showBand, let b = baseline { vals.append(y(max(0, b.low))) }
+        guard let lo = vals.min(), let hi = vals.max() else { return 0 }
+        return max(0, lo - max((hi - lo) * 0.25, abs(lo) * 0.03))
+    }
+
     var body: some View {
+        let floor = floor
         Chart {
             if showBand, let b = baseline, let first = points.first?.date, let last = points.last?.date {
                 RectangleMark(
@@ -188,7 +197,7 @@ struct MetricChart: View {
                         .foregroundStyle(LinearGradient(colors: [metric.color, metric.color.opacity(0.45)], startPoint: .top, endPoint: .bottom))
                         .cornerRadius(4)
                 } else {
-                    AreaMark(x: .value("Día", p.date, unit: .day), y: .value(metric.title, y(p.value)))
+                    AreaMark(x: .value("Día", p.date, unit: .day), yStart: .value("Base", floor), yEnd: .value(metric.title, y(p.value)))
                         .foregroundStyle(LinearGradient(colors: [metric.color.opacity(0.35), metric.color.opacity(0)], startPoint: .top, endPoint: .bottom))
                         .interpolationMethod(.catmullRom)
                     LineMark(x: .value("Día", p.date, unit: .day), y: .value(metric.title, y(p.value)))
