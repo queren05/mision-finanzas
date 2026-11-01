@@ -15,6 +15,8 @@ struct TodayView: View {
 
     @AppStorage("hoyDia") private var showDay = true
     @AppStorage("hoySenales") private var showSignals = true
+    @AppStorage("hoyPlan") private var showPlan = true
+    @AppStorage("hoyEnergia") private var showEnergy = true
 
     var body: some View {
         let report = ScoreEngine.report(store)
@@ -38,8 +40,16 @@ struct TodayView: View {
                         .stagger(0)
                 }
 
+                if showPlan {
+                    PlanCard().stagger(1).scrollFade()
+                }
+
+                if showEnergy {
+                    EnergyCard().stagger(1).scrollFade()
+                }
+
                 if showDay {
-                    DayTimelineCard().stagger(1).scrollFade()
+                    DayTimelineCard().stagger(2).scrollFade()
                 }
 
                 if showSignals {
@@ -130,6 +140,7 @@ struct ReadinessHero: View {
         VStack(spacing: Space.l) {
             if let main {
                 ZStack {
+                    BreathingGlow(color: main.tone).frame(width: 300, height: 300)
                     AnimatedGauge(value: Double(main.value) / 100, stops: main.scale)
                     VStack(spacing: 0) {
                         Text(main.title.uppercased())
@@ -232,6 +243,11 @@ struct DayTimelineCard: View {
                     }
                 }
                 .frame(height: 120)
+
+                let stress = EnergyEngine.stress(store)
+                if stress.contains(where: { $0.level >= 0 }) {
+                    StressStrip(hours: stress, start: start, end: end)
+                }
 
                 if totalSteps > 0 {
                     Chart(steps, id: \.date) { p in

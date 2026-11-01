@@ -13,6 +13,7 @@ struct ActivityView: View {
                 if let effort = report.effort {
                     hero(effort).stagger(0)
                 }
+                LoadCard().stagger(1).scrollFade()
                 WeeklyLoadCard().stagger(1).scrollFade()
 
                 if !recent.isEmpty {
@@ -183,4 +184,102 @@ struct WorkoutRow: View {
     NavigationStack { ActivityView() }
         .environment(HealthStore.preview())
                 .preferredColorScheme(.dark)
+}
+
+/// Carga de entreno: aguja sobre cuatro zonas (pierdes forma, óptima, alta, riesgo).
+struct LoadCard: View {
+    @Environment(HealthStore.self) private var store
+
+    var body: some View {
+        if let load = TrainingLoad.compute(store) {
+            let zone = TrainingLoad.zone(load.ratio)
+            VStack(alignment: .leading, spacing: Space.m) {
+                CardHeader("Carga de entreno", symbol: "gauge.with.needle.fill", color: TrainingLoad.color(zone))
+                ZStack(alignment: .bottom) {
+                    LoadDial(ratio: load.ratio)
+                        .frame(height: 140)
+                    VStack(spacing: 0) {
+                        Text(Fmt.number(load.ratio, decimals: 2))
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                        Text(TrainingLoad.title(zone))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(TrainingLoad.color(zone))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Últimos 7 días").font(.caption).foregroundStyle(.secondary)
+                        Text("\(Fmt.full(.activeEnergy, load.acute))/día").font(.subheadline.weight(.semibold)).monospacedDigit()
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Últimos 28 días").font(.caption).foregroundStyle(.secondary)
+                        Text("\(Fmt.full(.activeEnergy, load.chronic))/día").font(.subheadline.weight(.semibold)).monospacedDigit()
+                    }
+                }
+                Text(TrainingLoad.sentence(load))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .card(tint: TrainingLoad.color(zone))
+        }
+    }
+}
+
+/// Medio círculo con las zonas de color y una aguja que se mueve con un muelle.
+struct LoadDial: View {
+    var ratio: Double
+    @State private var shown: Double = 0.4
+
+    static let lo = 0.4, hi = 2.0
+    static let zones: [(Double, Double, Color)] = [
+        (0.4, 0.8, Palette.breath), (0.8, 1.3, Palette.recovery), (1.3, 1.5, Palette.effort), (1.5, 2.0, Palette.heart),
+    ]
+
+    var body: some View {
+        NeedleDial(value: shown)
+            .onAppear { withAnimation(.spring(response: 1.4, dampingFraction: 0.6).delay(0.2)) { shown = min(Self.hi, max(Self.lo, ratio)) } }
+            .onChange(of: ratio) { _, r in withAnimation(.smooth) { shown = min(Self.hi, max(Self.lo, r)) } }
+    }
+}
+
+struct NeedleDial: View, Animatable {
+    var value: Double
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+
+    var body: some View {
+        Canvas { ctx, size in
+            let r = min(size.width / 2, size.height) - 10
+            let c = CGPoint(x: size.width / 2, y: size.height - 4)
+            func angle(_ v: Double) -> Angle { .degrees(180 + 180 * (v - LoadDial.lo) / (LoadDial.hi - LoadDial.lo)) }
+            for z in LoadDial.zones {
+                var p = Path()
+                p.addArc(center: c, radius: r, startAngle: .degrees(angle(z.0).degrees + 1.2), endAngle: .degrees(angle(z.1).degrees - 1.2), clockwise: false)
+                ctx.stroke(p, with: .color(z.2), style: StrokeStyle(lineWidth: 12, lineCap: .round))
+            }
+            // Rayitas finas por dentro.
+            for i in 0...32 {
+                let a = angle(LoadDial.lo + (LoadDial.hi - LoadDial.lo) * Double(i) / 32).radians
+                var t = Path()
+                t.move(to: CGPoint(x: c.x + CGFloat(cos(a)) * (r - 16), y: c.y + CGFloat(sin(a)) * (r - 16)))
+                t.addLine(to: CGPoint(x: c.x + CGFloat(cos(a)) * (r - (i % 4 == 0 ? 24 : 20)), y: c.y + CGFloat(sin(a)) * (r - (i % 4 == 0 ? 24 : 20))))
+                ctx.stroke(t, with: .color(Ink.track), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            }
+            let a = angle(value).radians
+            let tip = CGPoint(x: c.x + CGFloat(cos(a)) * (r - 6), y: c.y + CGFloat(sin(a)) * (r - 6))
+            var n = Path()
+            n.move(to: CGPoint(x: c.x + CGFloat(cos(a)) * (r * 0.62), y: c.y + CGFloat(sin(a)) * (r * 0.62)))
+            n.addLine(to: tip)
+            ctx.stroke(n, with: .color(.primary), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+            ctx.fill(Path(ellipseIn: CGRect(x: tip.x - 5, y: tip.y - 5, width: 10, height: 10)), with: .color(.primary))
+        }
+        .accessibilityHidden(true)
+    }
 }
