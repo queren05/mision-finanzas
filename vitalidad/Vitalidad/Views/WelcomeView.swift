@@ -19,16 +19,22 @@ struct WelcomeView: View {
             ScrollView {
                 VStack(spacing: Space.xxl) {
                     ZStack {
-                        Ring(progress: 0.78, color: Palette.recovery, lineWidth: 14).frame(width: 128, height: 128)
-                        Ring(progress: 0.62, color: Palette.effort, lineWidth: 14).frame(width: 92, height: 92)
-                        Ring(progress: 0.86, color: Palette.sleep, lineWidth: 14).frame(width: 56, height: 56)
+                        AnimatedGauge(value: 0.82, stops: RGB.readiness)
+                        VStack(spacing: 0) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 30, weight: .semibold))
+                                .foregroundStyle(LinearGradient(colors: [Palette.heart, Palette.effort], startPoint: .top, endPoint: .bottom))
+                                .symbolEffect(.pulse, options: .repeating)
+                        }
                     }
-                    .padding(.top, 56)
+                    .frame(width: 170, height: 170)
+                    .padding(.top, 48)
                     .stagger(0)
 
                     VStack(spacing: Space.s) {
                         Text("Vitalidad")
-                            .bigFont(44)
+                            .font(.system(size: 46, weight: .bold, design: .rounded))
+                            .tracking(-1)
                         Text("Tus datos de salud, explicados y comparados contigo mismo.")
                             .font(.title3)
                             .foregroundStyle(.secondary)
@@ -106,6 +112,5 @@ struct WelcomeView: View {
 
 #Preview {
     WelcomeView {}
-        .fontDesign(.rounded)
-        .preferredColorScheme(.dark)
+                .preferredColorScheme(.dark)
 }

@@ -7,34 +7,47 @@ struct TodayView: View {
     @State private var widgets = Launch.args.contains("-widgets")
     @State private var personalize = Launch.args.contains("-personalizar")
     @Namespace private var zoom
-    @AppStorage("hoyEstilo") private var style = TodayStyle(rawValue: Launch.value("-estilo") ?? "") ?? .cards
+    @AppStorage("hoyEstilo") private var style = TodayStyle(rawValue: Launch.value("-estilo") ?? "") ?? .grid
     @AppStorage("hoyTarjetas") private var cardsRaw = TodayCards.defaultString
     @AppStorage("hoyResumen") private var showSummary = true
     @AppStorage("hoyPuntuaciones") private var showScores = true
+
+    @AppStorage("hoyDia") private var showDay = true
+    @AppStorage("hoySenales") private var showSignals = true
 
     var body: some View {
         let report = ScoreEngine.report(store)
         let insights = TodayCards.decode(cardsRaw).compactMap { Explainer.insight($0, store: store) }
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
-                Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").capitalizedFirst)
-                    .font(.subheadline.weight(.semibold))
+                Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").uppercased())
+                    .font(.caption.weight(.bold))
+                    .tracking(1.1)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, Space.xs)
+                    .padding(.top, -Space.s)
 
-                if showSummary {
+                if showScores && !report.scores.isEmpty {
+                    ReadinessHero(report: report, showSummary: showSummary).stagger(0)
+                } else if showSummary {
                     Text(report.summary)
                         .font(.title3.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, Space.xs)
-                        .padding(.bottom, Space.xs)
                         .stagger(0)
                 }
 
-                if showScores && !report.scores.isEmpty {
-                    ScoresCard(scores: report.scores).stagger(1)
+                if showDay {
+                    DayTimelineCard().stagger(1).scrollFade()
                 }
 
+                if showSignals {
+                    SignalsCard(zoom: zoom).stagger(2).scrollFade()
+                }
+
+                if !insights.isEmpty {
+                    SectionTitle(title: "Tus datos").stagger(3)
+                }
                 cards(insights)
 
                 if let updated = store.updated {
@@ -59,7 +72,7 @@ struct TodayView: View {
         .refreshable { await store.refresh(full: false) }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button { personalize = true } label: { Image(systemName: "square.grid.2x2") }
+                Button { personalize = true } label: { Image(systemName: "slider.horizontal.3") }
                     .accessibilityLabel("Personalizar Hoy")
                 Button { settings = true } label: { Image(systemName: "gearshape") }
                     .accessibilityLabel("Ajustes")
@@ -80,7 +93,7 @@ struct TodayView: View {
                     InsightCard(insight: ins).zoomSource(ins.metric, zoom)
                 }
                 .buttonStyle(.plain)
-                .stagger(i + 2)
+                .stagger(i + 4)
                 .scrollFade()
             }
         case .grid:
@@ -90,7 +103,7 @@ struct TodayView: View {
                         GridTile(insight: ins).zoomSource(ins.metric, zoom)
                     }
                     .buttonStyle(.plain)
-                    .stagger(i + 2)
+                    .stagger(i + 4)
                 }
             }
         case .grouped:
@@ -98,47 +111,228 @@ struct TodayView: View {
             let groups = insights.map(\.metric.group).reduce(into: [MetricGroup]()) { if !$0.contains($1) { $0.append($1) } }
             ForEach(Array(groups.enumerated()), id: \.element) { i, g in
                 GroupCard(group: g, insights: insights.filter { $0.metric.group == g }, zoom: zoom)
-                    .stagger(i + 2)
+                    .stagger(i + 4)
                     .scrollFade()
             }
         }
     }
 }
 
-/// Las tres puntuaciones con anillo y su frase.
-struct ScoresCard: View {
-    var scores: [Score]
+/// Lo primero que se ve: el medidor grande de la puntuación principal, el resumen y las otras dos puntuaciones.
+struct ReadinessHero: View {
+    var report: DayReport
+    var showSummary: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.l) {
-            HStack(spacing: Space.m) {
-                ForEach(scores) { s in
-                    VStack(spacing: Space.s) {
-                        ZStack {
-                            Ring(progress: Double(s.value) / 100, color: s.color, lineWidth: 10)
-                            CountingNumber(value: s.value)
-                                .bigFont(26)
-                        }
-                        .frame(width: 88, height: 88)
-                        Text(s.title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+        let main = report.recovery ?? report.sleep ?? report.effort
+        let others = report.scores.filter { $0.kind != main?.kind }
+        VStack(spacing: Space.l) {
+            if let main {
+                ZStack {
+                    AnimatedGauge(value: Double(main.value) / 100, stops: main.scale)
+                    VStack(spacing: 0) {
+                        Text(main.title.uppercased())
+                            .font(.caption2.weight(.heavy))
+                            .tracking(1.6)
+                            .foregroundStyle(.secondary)
+                        CountingNumber(value: main.value)
+                            .font(.system(size: 76, weight: .bold, design: .rounded))
+                            .tracking(-2)
+                        Text(main.verdict)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(main.tone)
                     }
-                    .frame(maxWidth: .infinity)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(s.title): \(s.value) de 100")
+                    .offset(y: 4)
                 }
+                .frame(width: 236, height: 236)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, -Space.l)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(main.title): \(main.value) de 100, \(main.verdict)")
             }
-            VStack(alignment: .leading, spacing: Space.m) {
-                ForEach(scores) { s in
-                    HStack(alignment: .firstTextBaseline, spacing: Space.s) {
-                        Circle().fill(s.color).frame(width: 8, height: 8)
-                        Text(s.sentence)
-                            .font(.subheadline)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+
+            if showSummary {
+                Text(report.summary)
+                    .font(.body.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, Space.s)
+            }
+
+            if !others.isEmpty {
+                HStack(alignment: .top, spacing: Space.xl) {
+                    ForEach(others) { ScoreBar(score: $0) }
                 }
+                .padding(.top, Space.s)
             }
         }
-        .card()
+        .card(padding: 22, radius: 30, tint: main?.tone)
+    }
+}
+
+/// El pulso hora a hora de hoy, con la noche y los entrenos marcados, y los pasos debajo.
+struct DayTimelineCard: View {
+    @Environment(HealthStore.self) private var store
+
+    var body: some View {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: .now)
+        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        let hr = store.heartToday.filter { $0.value > 0 }
+        let steps = store.stepsToday
+        let totalSteps = steps.reduce(0) { $0 + $1.value }
+        if hr.count >= 3 {
+            let lo = max(30, (hr.map(\.value).min() ?? 50) - 8)
+            let hi = (hr.map(\.value).max() ?? 120) + 8
+            let night = store.lastNight.flatMap { n -> (Date, Date)? in
+                n.end > start ? (max(n.start, start), n.end) : nil
+            }
+            let training = store.workouts.filter { $0.end > start }
+            VStack(alignment: .leading, spacing: Space.m) {
+                CardHeader("Tu día", symbol: "waveform.path.ecg", color: Palette.heart,
+                           trailing: "\(Fmt.number(hr.map(\.value).min() ?? 0))–\(Fmt.number(hr.map(\.value).max() ?? 0)) lpm")
+                Chart {
+                    if let night {
+                        RectangleMark(xStart: .value("Desde", night.0), xEnd: .value("Hasta", night.1),
+                                      yStart: .value("Bajo", lo), yEnd: .value("Alto", hi))
+                            .foregroundStyle(Palette.sleep.opacity(0.16))
+                            .cornerRadius(6)
+                    }
+                    ForEach(training) { w in
+                        RectangleMark(xStart: .value("Desde", max(w.start, start)), xEnd: .value("Hasta", w.end),
+                                      yStart: .value("Bajo", lo), yEnd: .value("Alto", hi))
+                            .foregroundStyle(Palette.effort.opacity(0.22))
+                            .cornerRadius(4)
+                    }
+                    ForEach(hr, id: \.date) { p in
+                        AreaMark(x: .value("Hora", p.date), yStart: .value("Base", lo), yEnd: .value("Pulso", p.value))
+                            .foregroundStyle(LinearGradient(colors: [Palette.heart.opacity(0.35), Palette.heart.opacity(0)], startPoint: .top, endPoint: .bottom))
+                            .interpolationMethod(.catmullRom)
+                        LineMark(x: .value("Hora", p.date), y: .value("Pulso", p.value))
+                            .foregroundStyle(Palette.heart)
+                            .lineStyle(StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+                            .interpolationMethod(.catmullRom)
+                    }
+                    if let last = hr.last {
+                        PointMark(x: .value("Hora", last.date), y: .value("Pulso", last.value))
+                            .foregroundStyle(Palette.heart)
+                            .symbolSize(50)
+                    }
+                }
+                .chartXScale(domain: start...end)
+                .chartYScale(domain: lo...hi)
+                .chartXAxis(.hidden)
+                .chartYAxis {
+                    AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { _ in
+                        AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
+                        AxisValueLabel().font(.caption2)
+                    }
+                }
+                .frame(height: 120)
+
+                if totalSteps > 0 {
+                    Chart(steps, id: \.date) { p in
+                        BarMark(x: .value("Hora", p.date, unit: .hour), y: .value("Pasos", p.value), width: .ratio(0.7))
+                            .foregroundStyle(Palette.effort.opacity(0.85))
+                            .cornerRadius(2)
+                    }
+                    .chartXScale(domain: start...end)
+                    .chartYAxis(.hidden)
+                    .chartXAxis {
+                        AxisMarks(values: (0...4).map { cal.date(byAdding: .hour, value: $0 * 6, to: start)! }) { v in
+                            AxisValueLabel {
+                                if let d = v.as(Date.self) { Text(Fmt.clock(d)).font(.caption2) }
+                            }
+                        }
+                    }
+                    .frame(height: 50)
+                }
+
+                HStack(spacing: Space.l) {
+                    legend(Palette.heart, "Pulso")
+                    if night != nil { legend(Palette.sleep, "Sueño") }
+                    if !training.isEmpty { legend(Palette.effort, "Entreno") }
+                    Spacer()
+                    if totalSteps > 0 {
+                        Text("\(Fmt.number(totalSteps)) pasos")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+            }
+            .card()
+        }
+    }
+
+    private func legend(_ c: Color, _ t: String) -> some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 2).fill(c).frame(width: 10, height: 10)
+            Text(t).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Las señales del cuerpo frente a tu rango normal: un punto en una pista por cada una.
+struct SignalsCard: View {
+    var zoom: Namespace.ID
+    @Environment(HealthStore.self) private var store
+
+    private let metrics: [Metric] = [.hrv, .restingHR, .respiratoryRate, .sleep, .walkingHR]
+
+    var body: some View {
+        let rows = metrics.compactMap { Explainer.insight($0, store: store) }.filter { $0.baseline != nil }
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: Space.l) {
+                CardHeader("Frente a tu normal", symbol: "scope", color: Palette.recovery)
+                ForEach(rows) { ins in
+                    NavigationLink(value: ins.metric) {
+                        SignalRow(insight: ins)
+                    }
+                    .buttonStyle(.plain)
+                    .zoomSource(ins.metric, zoom)
+                }
+            }
+            .card()
+        }
+    }
+}
+
+struct SignalRow: View {
+    var insight: Insight
+
+    var body: some View {
+        let m = insight.metric
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.s) {
+                Image(systemName: m.symbol)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(m.color)
+                    .frame(width: 20)
+                Text(m.title).font(.subheadline.weight(.medium))
+                Spacer(minLength: Space.s)
+                Text(insight.display)
+                    .font(.system(.headline, design: .rounded).weight(.bold))
+                    .monospacedDigit()
+                if !m.unit.isEmpty {
+                    Text(m.unit).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if let b = insight.baseline {
+                RangeBar(value: insight.value, baseline: b, color: m.color, status: insight.status)
+                HStack {
+                    Text("Normal \(Fmt.value(m, max(0, b.low)))–\(Fmt.full(m, b.high))")
+                    Spacer()
+                    DeltaChip(insight: insight)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -162,34 +356,44 @@ struct CountingNumber: View {
     }
 }
 
-/// Tarjeta de una métrica: valor, estado y su frase. Una sola idea por tarjeta.
+/// Tarjeta de una métrica: valor, diferencia con lo normal, siete días en pequeño y su frase.
 struct InsightCard: View {
     var insight: Insight
+    @Environment(HealthStore.self) private var store
 
     var body: some View {
         let m = insight.metric
         VStack(alignment: .leading, spacing: Space.m) {
-            HStack(spacing: Space.s) {
-                MetricGlyph(symbol: m.symbol, color: m.color)
-                Text(m.title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Image(systemName: m.symbol).font(.caption.weight(.bold)).foregroundStyle(m.color)
+                Text(m.title.uppercased()).font(.caption.weight(.bold)).tracking(1.1).foregroundStyle(.secondary)
                 Spacer()
                 StatusPill(status: insight.status)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(insight.display)
-                    .bigFont(40)
-                    .contentTransition(.numericText())
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-                Text(m.unit).font(.headline).foregroundStyle(.secondary)
+            HStack(alignment: .bottom, spacing: Space.m) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(insight.display)
+                            .bigFont(40)
+                            .contentTransition(.numericText())
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                        Text(m.unit).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                    DeltaChip(insight: insight)
+                }
+                .layoutPriority(1)
+                Spacer(minLength: 0)
+                Sparkline(metric: m, points: store.series(m, days: 7))
+                    .frame(width: 112, height: 50)
             }
             Text(insight.sentence)
                 .font(.subheadline)
-                .foregroundStyle(.primary.opacity(0.85))
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .card()
-        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityHint("Abre la gráfica y la explicación")
     }
@@ -198,6 +402,5 @@ struct InsightCard: View {
 #Preview {
     NavigationStack { TodayView(opened: .constant(nil)) }
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
-        .preferredColorScheme(.dark)
+                .preferredColorScheme(.dark)
 }

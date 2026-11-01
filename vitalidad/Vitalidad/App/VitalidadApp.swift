@@ -28,7 +28,6 @@ struct VitalidadApp: App {
             .onChange(of: phase) { _, p in
                 if p == .active && onboarded { Task { await store.refresh(full: false) } }
             }
-            .fontDesign(.rounded)
             .environment(\.locale, Locale(identifier: "es_ES"))
             .preferredColorScheme(theme.scheme)
         }

@@ -20,7 +20,7 @@ struct SleepView: View {
                     adviceCard(night: night).stagger(4).scrollFade()
                     NavigationLink(value: Metric.sleep) {
                         VStack(alignment: .leading, spacing: Space.m) {
-                            Label("Últimas noches", systemImage: "chart.bar.fill").font(.headline).foregroundStyle(Palette.sleep)
+                            CardHeader("Últimas noches", symbol: "chart.bar.fill", color: Palette.sleep)
                             MetricChart(metric: .sleep, points: store.series(.sleep, days: 7), baseline: store.baseline(.sleep), bars: true)
                                 .frame(height: 160)
                         }
@@ -44,31 +44,80 @@ struct SleepView: View {
     }
 
     private func hero(night: SleepNight, score: Int, insight: Insight?) -> some View {
-        VStack(alignment: .leading, spacing: Space.m) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Text("Anoche").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.sleep)
+        VStack(alignment: .leading, spacing: Space.l) {
+            HStack(alignment: .center, spacing: Space.m) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ANOCHE")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.2)
+                        .foregroundStyle(.secondary)
                     Text(Fmt.duration(night.asleep))
-                        .bigFont(52)
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .tracking(-1.5)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                         .contentTransition(.numericText())
-                    Text("\(Fmt.clock(night.start)) – \(Fmt.clock(night.end))")
-                        .font(.subheadline).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Label(Fmt.clock(night.start), systemImage: "moon.fill")
+                        Image(systemName: "arrow.right").font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
+                        Label(Fmt.clock(night.end), systemImage: "sun.max.fill")
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .labelStyle(TightLabel())
                 }
-                Spacer()
+                Spacer(minLength: 0)
                 ZStack {
-                    Ring(progress: Double(score) / 100, color: Palette.sleep, lineWidth: 10)
-                    CountingNumber(value: score).bigFont(24)
+                    AnimatedGauge(value: Double(score) / 100, stops: RGB.sleep, ticks: 40, tickLength: 10, tickWidth: 2.6)
+                    VStack(spacing: 0) {
+                        CountingNumber(value: score)
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                        Text("PUNTOS")
+                            .font(.system(size: 9, weight: .heavy))
+                            .tracking(1.2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .frame(width: 84, height: 84)
+                .frame(width: 108, height: 108)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Puntuación del sueño: \(score) de 100")
             }
+
+            HStack(spacing: 0) {
+                stat("En la cama", Fmt.duration(night.inBed))
+                Divider().frame(height: 30)
+                stat("Eficiencia", "\(Int((night.efficiency * 100).rounded())) %")
+                Divider().frame(height: 30)
+                stat("Despierto", Fmt.duration(night.awake))
+            }
+            .padding(.vertical, Space.s)
+            .background(Ink.track.opacity(0.35), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
             if let insight {
-                HStack(spacing: Space.s) {
+                HStack(spacing: Space.m) {
                     StatusPill(status: insight.status)
+                    DeltaChip(insight: insight)
                 }
-                Text(insight.sentence).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                Text(insight.sentence)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .card(tint: Palette.sleep)
+        .card(padding: 22, radius: 30, tint: Palette.sleep)
+    }
+
+    private func stat(_ title: String, _ value: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .monospacedDigit()
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private func adviceCard(night: SleepNight) -> some View {
@@ -90,16 +139,29 @@ struct StagesCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.l) {
-            Label("Fases", systemImage: "waveform.path").font(.headline).foregroundStyle(Palette.sleep)
-            Chart(night.segments, id: \.start) { s in
-                RectangleMark(
-                    xStart: .value("Inicio", s.start),
-                    xEnd: .value("Fin", s.end),
-                    yStart: .value("Fase", Double(3 - s.stage.level) - 0.38),
-                    yEnd: .value("Fase", Double(3 - s.stage.level) + 0.38)
-                )
-                .foregroundStyle(s.stage.color.gradient)
-                .cornerRadius(3)
+            CardHeader("Fases", symbol: "waveform.path", color: Palette.sleep)
+            let segs = night.segments.sorted { $0.start < $1.start }
+            Chart {
+                // Líneas finas que unen una fase con la siguiente (el hipnograma de los laboratorios del sueño).
+                ForEach(Array(segs.indices.dropLast()), id: \.self) { i in
+                    RuleMark(
+                        x: .value("Cambio", segs[i + 1].start),
+                        yStart: .value("De", Double(3 - segs[i].stage.level)),
+                        yEnd: .value("A", Double(3 - segs[i + 1].stage.level))
+                    )
+                    .foregroundStyle(.secondary.opacity(0.35))
+                    .lineStyle(StrokeStyle(lineWidth: 1))
+                }
+                ForEach(segs, id: \.start) { s in
+                    RectangleMark(
+                        xStart: .value("Inicio", s.start),
+                        xEnd: .value("Fin", s.end),
+                        yStart: .value("Fase", Double(3 - s.stage.level) - 0.32),
+                        yEnd: .value("Fase", Double(3 - s.stage.level) + 0.32)
+                    )
+                    .foregroundStyle(s.stage.color.gradient)
+                    .cornerRadius(4)
+                }
             }
             .chartYScale(domain: -0.6...3.6)
             .chartYAxis {
@@ -119,6 +181,20 @@ struct StagesCard: View {
             .frame(height: 170)
 
             let asleep = max(1, night.asleep + night.awake)
+            GeometryReader { geo in
+                HStack(spacing: 3) {
+                    ForEach(stages.reversed(), id: \.self) { st in
+                        let share = night.time(st) / asleep
+                        if share > 0 {
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(st.color)
+                                .frame(width: max(4, (geo.size.width - 9) * share))
+                        }
+                    }
+                }
+            }
+            .frame(height: 10)
+            .accessibilityHidden(true)
             VStack(spacing: Space.s) {
                 ForEach(stages.reversed(), id: \.self) { st in
                     let t = night.time(st)
@@ -146,7 +222,7 @@ struct RegularityCard: View {
         let beds = nights.map { ScoreEngine.minutesFromMidnight($0.start) }
         let wakes = nights.map { ScoreEngine.minutesFromMidnight($0.end) }
         VStack(alignment: .leading, spacing: Space.m) {
-            Label("Regularidad", systemImage: "clock.fill").font(.headline).foregroundStyle(Palette.sleep)
+            CardHeader("Regularidad", symbol: "clock.fill", color: Palette.sleep)
             if nights.count >= 3 {
                 let sd = Self.sd(beds)
                 Text(Self.sentence(sd: sd, bed: Self.median(beds), wake: Self.median(wakes)))
@@ -210,7 +286,7 @@ struct ComparisonCard: View {
     var body: some View {
         let previous = store.recentNights(31).filter { $0.day < night.day }
         VStack(alignment: .leading, spacing: Space.m) {
-            Label("Frente a tu media", systemImage: "equal.circle.fill").font(.headline).foregroundStyle(Palette.sleep)
+            CardHeader("Frente a tu media", symbol: "equal.circle.fill", color: Palette.sleep)
             if previous.count >= Baseline.minDays {
                 row("Dormido", night.asleep, previous.map(\.asleep))
                 if night.hasStages {
@@ -292,6 +368,15 @@ struct EmptyCard: View {
 #Preview {
     NavigationStack { SleepView() }
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
-        .preferredColorScheme(.dark)
+                .preferredColorScheme(.dark)
+}
+
+/// Icono y texto muy juntos.
+struct TightLabel: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) {
+            configuration.icon.font(.caption)
+            configuration.title
+        }
+    }
 }

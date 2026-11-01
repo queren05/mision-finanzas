@@ -29,7 +29,7 @@ enum TodayCards {
         .restingHR, .hrv, .respiratoryRate, .walkingHR, .vo2max,
         .sleep, .weight, .calories, .protein, .water,
     ]
-    static let defaults: [Metric] = [.steps, .activeEnergy, .exerciseMinutes, .restingHR, .hrv, .respiratoryRate, .calories]
+    static let defaults: [Metric] = [.steps, .activeEnergy, .exerciseMinutes, .standHours, .calories, .vo2max]
     static let defaultString = defaults.map(\.rawValue).joined(separator: ",")
 
     static func decode(_ s: String) -> [Metric] { s.split(separator: ",").compactMap { Metric(rawValue: String($0)) } }
@@ -85,19 +85,20 @@ extension Metric {
 
 // MARK: - Módulos compactos
 
-/// Cuadrícula: valor y estado, sin frase.
+/// Cuadrícula: valor, diferencia con lo normal y siete días en pequeño, sin frase.
 struct GridTile: View {
     var insight: Insight
+    @Environment(HealthStore.self) private var store
 
     var body: some View {
         let m = insight.metric
         VStack(alignment: .leading, spacing: Space.s) {
-            HStack {
-                MetricGlyph(symbol: m.symbol, color: m.color, size: 28)
-                Spacer()
-                Circle().fill(insight.status.color).frame(width: 10, height: 10)
+            HStack(spacing: 5) {
+                Image(systemName: m.symbol).font(.caption.weight(.bold)).foregroundStyle(m.color)
+                Text(m.title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
+                Spacer(minLength: 2)
+                Circle().fill(insight.status.color).frame(width: 7, height: 7)
             }
-            Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(insight.display)
                     .bigFont(28)
@@ -105,10 +106,15 @@ struct GridTile: View {
                     .lineLimit(1)
                 Text(m.unit).font(.caption.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
             }
-            Text(m.title).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+            .padding(.top, 2)
+            Sparkline(metric: m, points: store.series(m, days: 7))
+                .frame(height: 34)
+            DeltaChip(insight: insight)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .frame(minHeight: 112, alignment: .topLeading)
-        .card(padding: Space.l)
+        .frame(minHeight: 150, alignment: .topLeading)
+        .card(padding: Space.l, radius: 24)
         .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(m.title): \(insight.display) \(m.unit), \(insight.status.title)")
@@ -128,9 +134,7 @@ struct GroupCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            Label(group.title, systemImage: group.symbol)
-                .font(.headline)
-                .foregroundStyle(group.color)
+            CardHeader(group.title, symbol: group.symbol, color: group.color)
             VStack(spacing: 0) {
                 ForEach(insights) { ins in
                     NavigationLink(value: ins.metric) {
@@ -141,7 +145,7 @@ struct GroupCard: View {
                                 .frame(width: 24)
                             Text(ins.metric.title).font(.subheadline)
                             Spacer(minLength: Space.s)
-                            Text(ins.display).font(.headline).monospacedDigit()
+                            Text(ins.display).font(.system(.headline, design: .rounded).weight(.bold)).monospacedDigit()
                             Text(ins.metric.unit).font(.caption).foregroundStyle(.secondary)
                             Circle().fill(ins.status.color).frame(width: 8, height: 8)
                         }
@@ -167,10 +171,12 @@ struct GroupCard: View {
 // MARK: - Personalizar
 
 struct PersonalizeTodayView: View {
-    @AppStorage("hoyEstilo") private var style = TodayStyle.cards
+    @AppStorage("hoyEstilo") private var style = TodayStyle.grid
     @AppStorage("hoyTarjetas") private var cardsRaw = TodayCards.defaultString
     @AppStorage("hoyResumen") private var showSummary = true
     @AppStorage("hoyPuntuaciones") private var showScores = true
+    @AppStorage("hoyDia") private var showDay = true
+    @AppStorage("hoySenales") private var showSignals = true
     @Environment(\.dismiss) private var dismiss
 
     private var shown: [Metric] { TodayCards.decode(cardsRaw) }
@@ -209,6 +215,8 @@ struct PersonalizeTodayView: View {
                 Section("Arriba") {
                     Toggle("Resumen del día", isOn: $showSummary)
                     Toggle("Puntuaciones", isOn: $showScores)
+                    Toggle("Tu día", isOn: $showDay)
+                    Toggle("Frente a tu normal", isOn: $showSignals)
                 }
 
                 Section("En Hoy") {
@@ -254,10 +262,12 @@ struct PersonalizeTodayView: View {
                 Section {
                     Button("Volver a lo de antes") {
                         withAnimation {
-                            style = .cards
+                            style = .grid
                             cardsRaw = TodayCards.defaultString
                             showSummary = true
                             showScores = true
+                            showDay = true
+                            showSignals = true
                         }
                     }
                 }

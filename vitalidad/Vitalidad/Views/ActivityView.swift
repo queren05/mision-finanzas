@@ -17,7 +17,7 @@ struct ActivityView: View {
 
                 if !recent.isEmpty {
                     VStack(alignment: .leading, spacing: Space.m) {
-                        Label("Entrenos recientes", systemImage: "figure.run").font(.headline).foregroundStyle(Palette.effort)
+                        CardHeader("Entrenos recientes", symbol: "figure.run", color: Palette.effort)
                         ForEach(recent) { w in
                             WorkoutRow(workout: w)
                             if w.id != recent.last?.id { Divider().opacity(0.5) }
@@ -54,16 +54,30 @@ struct ActivityView: View {
     private func hero(_ s: Score) -> some View {
         HStack(spacing: Space.l) {
             ZStack {
-                Ring(progress: Double(s.value) / 100, color: s.color, lineWidth: 12)
-                CountingNumber(value: s.value).bigFont(30)
+                AnimatedGauge(value: Double(s.value) / 100, stops: s.scale, ticks: 44, tickLength: 11, tickWidth: 2.8)
+                VStack(spacing: 0) {
+                    CountingNumber(value: s.value)
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                    Text("ESFUERZO")
+                        .font(.system(size: 9, weight: .heavy))
+                        .tracking(1.2)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .frame(width: 104, height: 104)
-            VStack(alignment: .leading, spacing: Space.s) {
-                Text("Esfuerzo de hoy").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.effort)
-                Text(s.sentence).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+            .frame(width: 118, height: 118)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Esfuerzo de hoy: \(s.value) de 100")
+            VStack(alignment: .leading, spacing: 6) {
+                Text(s.verdict)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(s.tone)
+                Text(s.sentence)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .card(tint: Palette.effort)
+        .card(padding: 22, radius: 30, tint: s.tone)
     }
 }
 
@@ -95,9 +109,9 @@ struct WeeklyLoadCard: View {
         let previous = w.dropLast().suffix(4).map(\.energy).filter { $0 > 0 }
         let usual = previous.isEmpty ? 0 : previous.reduce(0, +) / Double(previous.count)
         VStack(alignment: .leading, spacing: Space.m) {
-            Label("Carga semanal", systemImage: "chart.bar.fill").font(.headline).foregroundStyle(Palette.effort)
+            CardHeader("Carga semanal", symbol: "chart.bar.fill", color: Palette.effort)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(Fmt.value(.activeEnergy, current)).bigFont(36)
+                Text(Fmt.value(.activeEnergy, current)).bigFont(36).monospacedDigit()
                 Text("\(Fmt.energyUnit) en 7 días").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
             }
             Text(Self.sentence(current: current, usual: usual, minutes: w.last?.minutes ?? 0))
@@ -168,6 +182,5 @@ struct WorkoutRow: View {
 #Preview {
     NavigationStack { ActivityView() }
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
-        .preferredColorScheme(.dark)
+                .preferredColorScheme(.dark)
 }

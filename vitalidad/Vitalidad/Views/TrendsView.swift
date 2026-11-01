@@ -53,17 +53,8 @@ struct TrendCard: View {
         let points = store.series(metric, days: days, includeToday: !metric.accumulates)
         let avg = points.isEmpty ? nil : points.map(\.value).reduce(0, +) / Double(points.count)
         VStack(alignment: .leading, spacing: Space.m) {
-            HStack(spacing: Space.s) {
-                MetricGlyph(symbol: metric.symbol, color: metric.color)
-                Text(metric.title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                Spacer()
-                if let avg {
-                    Text("media \(Fmt.full(metric, avg))")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
+            CardHeader(metric.title, symbol: metric.symbol, color: metric.color,
+                       trailing: avg.map { "media \(Fmt.full(metric, $0))" })
             Text(Trend.sentence(metric, points: points, days: days))
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
@@ -127,6 +118,5 @@ enum Trend {
 #Preview {
     NavigationStack { TrendsView() }
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
         .preferredColorScheme(.dark)
 }

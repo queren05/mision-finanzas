@@ -64,45 +64,40 @@ enum Mood: String, Equatable {
     }
 }
 
-/// Fondo vivo: una malla de color que respira despacio (iOS 18+) o un degradado en iOS 17.
+/// Fondo: casi negro (o papel muy claro) con un resplandor arriba del color del día. Sobrio, como las apps de salud serias.
 struct MoodBackground: View {
     var mood: Mood
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         let colors = mood.mesh(scheme)
-        Group {
-            if #available(iOS 18.0, *) {
-                // Quieta: una malla que se mueve obliga al cristal de todas las tarjetas a redibujarse en cada fotograma.
-                MeshGradient(width: 3, height: 3, points: Self.points(2.2), colors: colors)
-                    .drawingGroup()
-            } else {
-                ZStack {
-                    LinearGradient(colors: [colors[1], colors[4], colors[7]], startPoint: .top, endPoint: .bottom)
-                    RadialGradient(colors: [colors[0].opacity(0.8), .clear], center: .topLeading, startRadius: 0, endRadius: 420)
-                    RadialGradient(colors: [colors[2].opacity(0.7), .clear], center: .topTrailing, startRadius: 0, endRadius: 380)
-                }
-            }
+        let dark = scheme == .dark
+        ZStack {
+            Ink.canvas
+            // Dos luces suaves en la parte de arriba: el color del estado del día.
+            RadialGradient(colors: [colors[1].opacity(dark ? 0.95 : 0.9), .clear], center: UnitPoint(x: 0.2, y: -0.05), startRadius: 0, endRadius: 460)
+            RadialGradient(colors: [colors[2].opacity(dark ? 0.8 : 0.7), .clear], center: UnitPoint(x: 0.95, y: 0.02), startRadius: 0, endRadius: 380)
+            LinearGradient(colors: [.clear, Ink.canvas], startPoint: UnitPoint(x: 0.5, y: 0.18), endPoint: UnitPoint(x: 0.5, y: 0.55))
         }
         .animation(.easeInOut(duration: 1.2), value: mood)
         .ignoresSafeArea()
     }
-
-    static func points(_ t: Double) -> [SIMD2<Float>] {
-        func w(_ speed: Double, _ phase: Double, _ amp: Double) -> Float { Float(sin(t * speed + phase) * amp) }
-        return [
-            [0, 0], [0.5 + w(0.21, 0, 0.12), 0], [1, 0],
-            [0, 0.42 + w(0.17, 1, 0.08)], [0.5 + w(0.23, 2, 0.14), 0.45 + w(0.19, 3, 0.1)], [1, 0.40 + w(0.15, 4, 0.08)],
-            [0, 1], [0.5, 1], [1, 1],
-        ]
-    }
 }
 
-// MARK: - Tarjetas y botones de cristal
+/// Colores de base (fondo, superficies, líneas) que cambian con el modo claro u oscuro.
+enum Ink {
+    static let canvas = Palette.adaptive(dark: (0.035, 0.04, 0.055), light: (0.955, 0.955, 0.965))
+    static let surface = Palette.adaptive(dark: (0.085, 0.09, 0.11), light: (1, 1, 1))
+    static let surfaceHigh = Palette.adaptive(dark: (0.12, 0.125, 0.15), light: (0.985, 0.985, 0.99))
+    static let track = Palette.adaptive(dark: (0.19, 0.2, 0.23), light: (0.88, 0.885, 0.9))
+    static let hairline = Palette.adaptive(dark: (1, 1, 1), light: (0, 0, 0))
+}
+
+// MARK: - Tarjetas y botones
 
 extension View {
-    /// Tarjeta con cristal líquido (iOS 26) o material translúcido (iOS 17-18). Esquinas de 24 pt.
+    /// Tarjeta sólida con un filo de luz arriba. Esquinas de 26 pt.
     @ViewBuilder
-    func card(padding: CGFloat = 20, radius: CGFloat = 24, tint: Color? = nil) -> some View {
+    func card(padding: CGFloat = 20, radius: CGFloat = 26, tint: Color? = nil) -> some View {
         modifier(CardModifier(padding: padding, radius: radius, tint: tint))
     }
 
@@ -140,7 +135,7 @@ extension View {
         scrollTransition(.animated(.smooth)) { content, phase in
             content
                 .opacity(phase.isIdentity ? 1 : 0.4)
-                .scaleEffect(phase.isIdentity ? 1 : 0.96)
+                .scaleEffect(phase.isIdentity ? 1 : 0.97)
         }
     }
 }
@@ -149,23 +144,29 @@ struct CardModifier: ViewModifier {
     var padding: CGFloat
     var radius: CGFloat
     var tint: Color?
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        let inner = content.padding(padding).frame(maxWidth: .infinity, alignment: .leading)
-        if reduceTransparency {
-            inner.background(Color(.secondarySystemBackground), in: shape)
-        } else if #available(iOS 26.0, *) {
-            let glass: Glass = tint.map { Glass.regular.tint($0.opacity(0.18)) } ?? Glass.regular
-            inner.glassEffect(glass, in: shape)
-        } else {
-            inner
-                .background(.ultraThinMaterial, in: shape)
-                .background((tint ?? .clear).opacity(0.10), in: shape)
-                .overlay(shape.strokeBorder(.white.opacity(scheme == .dark ? 0.08 : 0.4), lineWidth: 0.5))
-        }
+        let dark = scheme == .dark
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                ZStack {
+                    shape.fill(LinearGradient(colors: [Ink.surfaceHigh, Ink.surface], startPoint: .top, endPoint: .bottom))
+                    if let tint {
+                        shape.fill(RadialGradient(colors: [tint.opacity(dark ? 0.22 : 0.12), .clear], center: .topLeading, startRadius: 0, endRadius: 320))
+                    }
+                }
+                .shadow(color: .black.opacity(dark ? 0 : 0.06), radius: 14, y: 6)
+            }
+            .overlay(
+                shape.strokeBorder(
+                    LinearGradient(colors: [Ink.hairline.opacity(dark ? 0.13 : 0.07), Ink.hairline.opacity(dark ? 0.03 : 0.04)], startPoint: .top, endPoint: .bottom),
+                    lineWidth: 1
+                )
+            )
     }
 }
 

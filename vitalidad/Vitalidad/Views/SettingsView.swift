@@ -112,6 +112,5 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
         .preferredColorScheme(.dark)
 }

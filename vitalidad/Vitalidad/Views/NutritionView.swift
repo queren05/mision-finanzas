@@ -27,7 +27,7 @@ struct NutritionView: View {
                     }
                     NavigationLink(value: Metric.calories) {
                         VStack(alignment: .leading, spacing: Space.m) {
-                            Label("Últimos 7 días", systemImage: "chart.bar.fill").font(.headline).foregroundStyle(Palette.nutrition)
+                            CardHeader("Últimos 7 días", symbol: "chart.bar.fill", color: Palette.nutrition)
                             MetricChart(metric: .calories, points: store.series(.calories, days: 7, includeToday: false), baseline: nil, bars: true)
                                 .frame(height: 150)
                         }
@@ -143,7 +143,7 @@ struct MacrosCard: View {
         let f = store.value(.fat, on: day) ?? 0
         let kcal = max(1, p * 4 + c * 4 + f * 9)
         VStack(alignment: .leading, spacing: Space.m) {
-            Label("Macros", systemImage: "chart.pie.fill").font(.headline).foregroundStyle(Palette.nutrition)
+            CardHeader("Macros", symbol: "chart.pie.fill", color: Palette.nutrition)
             GeometryReader { geo in
                 HStack(spacing: 3) {
                     Capsule().fill(Color(red: 1.0, green: 0.42, blue: 0.5)).frame(width: max(4, geo.size.width * p * 4 / kcal))
@@ -190,6 +190,5 @@ struct MacrosCard: View {
 #Preview {
     NavigationStack { NutritionView() }
         .environment(HealthStore.preview())
-        .fontDesign(.rounded)
         .preferredColorScheme(.dark)
 }

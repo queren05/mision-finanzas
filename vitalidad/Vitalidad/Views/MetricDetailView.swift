@@ -10,35 +10,68 @@ struct MetricDetailView: View {
     var body: some View {
         let insight = Explainer.insight(metric, store: store)
         let points = store.series(metric, days: range)
+        // Lo de hoy, si aún se está sumando, no cuenta para mínimo, media y máximo.
+        let closed = store.series(metric, days: range, includeToday: !metric.accumulates).map(\.value)
         let base = store.baseline(metric)
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 if let insight {
-                    VStack(alignment: .leading, spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.m) {
+                        HStack {
+                            Text(Calendar.current.isDateInToday(insight.day) ? "HOY" : Fmt.day(insight.day, style: "EEEE d").uppercased())
+                                .font(.caption.weight(.bold))
+                                .tracking(1.2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            StatusPill(status: insight.status)
+                        }
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(insight.display)
-                                .bigFont(56)
+                                .font(.system(size: 60, weight: .bold, design: .rounded))
+                                .tracking(-1.5)
+                                .minimumScaleFactor(0.6)
+                                .lineLimit(1)
                                 .contentTransition(.numericText())
                             Text(metric.unit).font(.title3.weight(.semibold)).foregroundStyle(.secondary)
                         }
-                        StatusPill(status: insight.status)
+                        if let b = insight.baseline {
+                            RangeBar(value: insight.value, baseline: b, color: metric.color, status: insight.status)
+                            HStack {
+                                Text("Tu normal: \(Fmt.value(metric, max(0, b.low)))–\(Fmt.full(metric, b.high))")
+                                Spacer()
+                                DeltaChip(insight: insight)
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
                         Text(insight.sentence)
                             .font(.body)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, Space.xs)
                     }
-                    .card(tint: metric.color)
+                    .card(padding: 22, radius: 30, tint: metric.color)
                 }
 
-                VStack(alignment: .leading, spacing: Space.m) {
+                VStack(alignment: .leading, spacing: Space.l) {
                     Picker("Periodo", selection: $range.animation(.smooth)) {
                         Text("7 días").tag(7)
                         Text("30 días").tag(30)
+                        Text("90 días").tag(90)
                     }
                     .pickerStyle(.segmented)
 
-                    MetricChart(metric: metric, points: points, baseline: base, bars: metric.accumulates || metric == .sleep)
-                        .frame(height: 220)
+                    if !closed.isEmpty {
+                        HStack(spacing: 0) {
+                            stat("Mínimo", closed.min()!)
+                            Divider().frame(height: 30)
+                            stat("Media", closed.reduce(0, +) / Double(closed.count))
+                            Divider().frame(height: 30)
+                            stat("Máximo", closed.max()!)
+                        }
+                    }
+
+                    MetricChart(metric: metric, points: points, baseline: base, bars: (metric.accumulates || metric == .sleep) && range <= 30, scrub: true)
+                        .frame(height: 230)
 
                     if let base {
                         HStack(spacing: Space.s) {
@@ -52,9 +85,9 @@ struct MetricDetailView: View {
                 .card()
 
                 VStack(alignment: .leading, spacing: Space.m) {
-                    Label("Qué es", systemImage: "info.circle.fill").font(.headline).foregroundStyle(metric.color)
+                    CardHeader("Qué es", symbol: "info.circle.fill", color: metric.color)
                     Text(Glossary.what(metric)).fixedSize(horizontal: false, vertical: true)
-                    Label("Por qué importa", systemImage: "sparkles").font(.headline).foregroundStyle(metric.color).padding(.top, Space.s)
+                    CardHeader("Por qué importa", symbol: "sparkles", color: metric.color).padding(.top, Space.s)
                     Text(Glossary.why(metric)).fixedSize(horizontal: false, vertical: true)
                 }
                 .card()
@@ -66,6 +99,19 @@ struct MetricDetailView: View {
         .navigationTitle(metric.title)
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: range)
+    }
+
+    private func stat(_ title: String, _ v: Double) -> some View {
+        VStack(spacing: 3) {
+            Text(Fmt.value(metric, v))
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(title).font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -91,6 +137,9 @@ struct MetricChart: View {
     var baseline: Baseline?
     var bars: Bool
     var showBand = true
+    /// Tocar y arrastrar para ver el valor de cada día.
+    var scrub = false
+    @State private var selected: Date?
 
     private func y(_ v: Double) -> Double {
         switch metric {
@@ -114,6 +163,25 @@ struct MetricChart: View {
                     .foregroundStyle(metric.color.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
             }
+            if scrub, let sel = selected, let p = points.first(where: { Calendar.current.isDate($0.date, inSameDayAs: sel) }) {
+                RuleMark(x: .value("Día", p.date, unit: .day))
+                    .foregroundStyle(.secondary.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1))
+                    .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
+                        VStack(spacing: 1) {
+                            Text(Fmt.full(metric, p.value))
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .monospacedDigit()
+                            Text(Fmt.day(p.date, style: "EEE d MMM"))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Ink.surfaceHigh, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(metric.color.opacity(0.5), lineWidth: 1))
+                    }
+            }
             ForEach(points, id: \.date) { p in
                 if bars {
                     BarMark(x: .value("Día", p.date, unit: .day), y: .value(metric.title, y(p.value)))
@@ -136,6 +204,8 @@ struct MetricChart: View {
             }
         }
         .chartYScale(domain: .automatic(includesZero: bars))
+        .scrubbing(scrub, $selected)
+        .sensoryFeedback(.selection, trigger: selected.map { Calendar.current.startOfDay(for: $0) })
         .chartXAxis {
             AxisMarks(values: .stride(by: .day, count: points.count > 40 ? 30 : points.count > 10 ? 7 : 1)) { _ in
                 AxisValueLabel(format: points.count > 10 ? .dateTime.day().month(.abbreviated) : .dateTime.weekday(.narrow))
@@ -146,6 +216,17 @@ struct MetricChart: View {
                 AxisGridLine().foregroundStyle(.secondary.opacity(0.2))
                 AxisValueLabel()
             }
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func scrubbing(_ on: Bool, _ selection: Binding<Date?>) -> some View {
+        if on {
+            self.chartXSelection(value: selection)
+        } else {
+            self
         }
     }
 }
