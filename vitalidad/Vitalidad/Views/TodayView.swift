@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct TodayView: View {
     @Environment(HealthStore.self) private var store
