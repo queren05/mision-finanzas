@@ -162,8 +162,9 @@ enum TrainingLoad {
         store.remember("carga") {
             let cal = Calendar.current
             let vals = store.values[.activeEnergy] ?? [:]
+            let today = store.today
             func avg(_ from: Int, _ to: Int) -> Double? {
-                let days = (from...to).compactMap { cal.date(byAdding: .day, value: -$0, to: store.today) }.compactMap { vals[$0] }.filter { $0 > 0 }
+                let days = (from...to).compactMap { cal.date(byAdding: .day, value: -$0, to: today) }.compactMap { vals[$0] }.filter { $0 > 0 }
                 return days.count >= max(3, (to - from + 1) / 2) ? days.reduce(0, +) / Double(days.count) : nil
             }
             guard let a = avg(1, 7), let c = avg(1, 28), c > 0 else { return nil }
