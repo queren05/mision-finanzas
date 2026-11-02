@@ -156,6 +156,29 @@ struct RootView: View {
                 }
                 store.s.smoke.start = nil; store.s.smoke.measuring = true; store.s.smoke.log = log
             }
+            if args.contains("-recaida") {
+                // volvió a fumar y tiene un Día D dentro de 5 días
+                let cal = Calendar.current
+                var sm = store.s.smoke
+                let now = Date()
+                sm.attempts = [SmokeAttempt(start: now.addingTimeInterval(-40 * 86400), end: now.addingTimeInterval(-37 * 86400)),
+                               SmokeAttempt(start: now.addingTimeInterval(-9 * 86400), end: now.addingTimeInterval(-4 * 86400 - 5 * 3600))]
+                sm.start = nil; sm.measuring = true
+                sm.quitDay = cal.date(byAdding: .day, value: 5, to: cal.startOfDay(for: now))
+                sm.planSet = now.addingTimeInterval(-2 * 86400); sm.planFrom = 12
+                sm.prep = ["contar", "razones"]
+                let today = cal.startOfDay(for: now)
+                var log: [Date] = []
+                for d in [-2, -1] {
+                    let day = cal.date(byAdding: .day, value: d, to: today)!
+                    for h in [8.5, 10.2, 13.9, 15.1, 17.4, 19.8, 21.3, 23.0] { log.append(day.addingTimeInterval(h * 3600)) }
+                }
+                for h in [8.4, 10.6, 14.2] where today.addingTimeInterval(h * 3600) < now { log.append(today.addingTimeInterval(h * 3600)) }
+                let kinds = ["cafe", "cafe", "comer", "estres", "cafe", "alcohol", "comer", "estres", "cafe", "aburrimiento"]
+                for (i, d) in log.enumerated() where i < kinds.count { sm.tags[Smoke.tagKey(d)] = kinds[i] }
+                sm.log = log
+                store.s.smoke = sm
+            }
             if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
                 let map = ["brain": "cerebro", "review": "revision", "library": "cine", "brand": "marca", "smoke": "humo", "wish": "deseos"]
                 if let p = map[args[i + 1]] { router.open(p) }

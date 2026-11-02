@@ -44,6 +44,30 @@ final class Store {
             saveNow()
             UserDefaults.standard.set(true, forKey: "restaurado-24oct")
         }
+        if !UserDefaults.standard.bool(forKey: "recaida-29oct") && !ProcessInfo.processInfo.arguments.contains("-demo") {
+            Store.relapse29Oct(&s)
+            saveNow()
+            UserDefaults.standard.set(true, forKey: "recaida-29oct")
+        }
+    }
+
+    /// David volvió a fumar el jueves 29-oct-2026: cierra el intento que empezó el 25-oct y pasa a apuntar lo que fuma
+    static func relapse29Oct(_ st: inout RState) {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Europe/Madrid") ?? .current
+        guard let start = st.smoke.start,
+              let from = cal.date(from: DateComponents(year: 2026, month: 10, day: 24)),
+              let thu = cal.date(from: DateComponents(year: 2026, month: 10, day: 29)),
+              let fri = cal.date(from: DateComponents(year: 2026, month: 10, day: 30)),
+              start >= from, start < thu else { return }
+        // el cigarro apuntado el jueves por la noche es cuando volvió a fumar
+        let slip = st.smoke.slips.filter { $0 >= thu && $0 < fri }.min()
+        let end = slip ?? cal.date(from: DateComponents(year: 2026, month: 10, day: 29, hour: 20)) ?? thu
+        st.smoke.attempts.append(SmokeAttempt(start: start, end: end))
+        if let slip { st.smoke.slips.removeAll { $0 == slip } }
+        st.smoke.start = nil
+        st.smoke.measuring = true
+        st.smoke.seen = []
     }
 
     /// vuelve a meter lo que había antes de que se borrara la app (24-oct-2026), sin duplicar nada

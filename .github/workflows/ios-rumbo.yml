@@ -82,6 +82,7 @@ jobs:
           shot -demo -tab smoke -celebrar; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/16-nuevo-logro.png"
           shot -demo -tab smoke -medir; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/17-apuntar.png"
           shot -demo -tab wish;    xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/18-deseos.png"
+          shot -demo -tab smoke -recaida; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/19-dia-d.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

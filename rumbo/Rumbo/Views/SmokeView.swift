@@ -34,9 +34,18 @@ struct Smoke: Codable, Hashable {
     var seen: [String] = []
     /// días en que has prometido no fumar (yyyy-MM-dd)
     var pledges: [String] = []
+    /// día elegido para dejarlo mientras aún fumas
+    var quitDay: Date? = nil
+    /// cuándo se puso el plan de ir bajando y cuántos fumabas entonces
+    var planSet: Date? = nil
+    var planFrom: Int = 0
+    /// preparativos del Día D hechos
+    var prep: [String] = []
+    /// por qué te fumaste cada cigarro apuntado (clave: segundos del cigarro)
+    var tags: [String: String] = [:]
 
     init() {}
-    enum CodingKeys: String, CodingKey { case start, perDay, perPack, packPrice, minutesEach, reasons, cravings, slips, attempts, wish, wishPrice, log, measuring, awake, seen, pledges }
+    enum CodingKeys: String, CodingKey { case start, perDay, perPack, packPrice, minutesEach, reasons, cravings, slips, attempts, wish, wishPrice, log, measuring, awake, seen, pledges, quitDay, planSet, planFrom, prep, tags }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         let x = Smoke()
@@ -47,7 +56,36 @@ struct Smoke: Codable, Hashable {
         slips = v(.slips, x.slips); attempts = v(.attempts, x.attempts); wish = v(.wish, x.wish); wishPrice = v(.wishPrice, x.wishPrice)
         log = v(.log, x.log); measuring = v(.measuring, x.measuring); awake = v(.awake, x.awake)
         seen = v(.seen, x.seen); pledges = v(.pledges, x.pledges)
+        quitDay = (try? c.decodeIfPresent(Date.self, forKey: .quitDay)) ?? nil
+        planSet = (try? c.decodeIfPresent(Date.self, forKey: .planSet)) ?? nil
+        planFrom = v(.planFrom, x.planFrom); prep = v(.prep, x.prep); tags = v(.tags, x.tags)
     }
+
+    static func tagKey(_ d: Date) -> String { String(Int(d.timeIntervalSinceReferenceDate)) }
+    func tag(_ d: Date) -> String? { tags[Smoke.tagKey(d)] }
+
+    /// el intento más reciente que acabó
+    var lastAttempt: SmokeAttempt? { attempts.max { $0.end < $1.end } }
+    func saved(_ a: SmokeAttempt) -> Double { perPack > 0 ? a.end.timeIntervalSince(a.start) / 86400 * Double(perDay) / Double(perPack) * packPrice : 0 }
+    func avoided(_ a: SmokeAttempt) -> Int { Int(a.end.timeIntervalSince(a.start) / 86400 * Double(perDay)) }
+
+    /// días que faltan para el Día D (0 = hoy, negativo = ya pasó)
+    func daysToQuit(_ now: Date) -> Int? {
+        guard let q = quitDay else { return nil }
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: now), to: cal.startOfDay(for: q)).day
+    }
+
+    /// cuántos puedes fumar ese día si vas bajando hasta el Día D
+    func limit(_ now: Date) -> Int? {
+        guard let q = quitDay, let set = planSet, planFrom > 0 else { return nil }
+        let cal = Calendar.current
+        let total = max(1, cal.dateComponents([.day], from: cal.startOfDay(for: set), to: cal.startOfDay(for: q)).day ?? 1)
+        let i = cal.dateComponents([.day], from: cal.startOfDay(for: set), to: cal.startOfDay(for: now)).day ?? 0
+        return max(0, Int((Double(planFrom) * Double(total - i) / Double(total)).rounded()))
+    }
+
+    func count(on now: Date) -> Int { let d = Day.str(now); return log.filter { Day.str($0) == d }.count }
 
     func seconds(_ now: Date) -> TimeInterval { start.map { max(0, now.timeIntervalSince($0)) } ?? 0 }
     func cigarettes(_ now: Date) -> Double { seconds(now) / 86400 * Double(perDay) }
@@ -302,6 +340,28 @@ let cravingTips = [
     "Piensa en el olor del tabaco en la ropa y en las manos.",
 ]
 
+/// momentos en los que se fuma, con un truco para cada uno
+let smokeTriggers: [(id: String, name: String, icon: String, tip: String)] = [
+    ("cafe", "Café", "cup.and.saucer.fill", "Cambia el sitio o la hora del café, o pásate un tiempo al té."),
+    ("comer", "Después de comer", "fork.knife", "Levántate de la mesa nada más acabar y lávate los dientes."),
+    ("alcohol", "Bebiendo", "wineglass.fill", "Es donde más se recae: los primeros días, menos salidas o sin tabaco a mano."),
+    ("estres", "Estrés", "bolt.fill", "Tres respiraciones largas antes de encenderlo. El estrés baja solo en unos minutos."),
+    ("aburrimiento", "Aburrimiento", "hourglass", "Ten algo para las manos y un plan corto: un paseo, una ducha, una partida."),
+    ("amigos", "Con gente", "person.2.fill", "Avisa de que lo estás dejando y no aceptes cigarros, ni «solo uno»."),
+    ("coche", "En el coche", "car.fill", "Saca el mechero y el cenicero del coche y ve con chicle."),
+    ("despertar", "Al despertar", "sunrise.fill", "Retrasa el primero un poco más cada día y desayuna antes."),
+]
+
+/// preparativos para el Día D
+let smokePrep: [(id: String, text: String, icon: String)] = [
+    ("contar", "Contárselo a alguien que te apoye", "person.wave.2.fill"),
+    ("mecheros", "Tirar mecheros, ceniceros y paquetes el día antes", "trash.fill"),
+    ("momentos", "Saber en qué momentos fumas (apúntalos aquí)", "list.bullet.clipboard.fill"),
+    ("sustituto", "Tener a mano chicle, fruta o algo para las manos", "hand.raised.fill"),
+    ("razones", "Escribir tus razones para dejarlo", "heart.circle.fill"),
+    ("plan", "Pensar qué harás en el primer café y la primera cerveza", "lightbulb.fill"),
+]
+
 private let smokeGreen = Color(hex: "#6fd49b")
 
 // MARK: - Textos
@@ -330,8 +390,21 @@ extension Store {
     /// avisa cuando llegues a cada cambio de tu cuerpo y a cada logro, y cada mañana te recuerda cuánto llevas
     func scheduleSmoke() {
         let c = UNUserNotificationCenter.current()
-        c.removePendingNotificationRequests(withIdentifiers: (0..<20).map { "smoke-\($0)" } + (0..<7).map { "smoke-m\($0)" })
-        guard s.settings.notifySmoke, let start = s.smoke.start else { return }
+        c.removePendingNotificationRequests(withIdentifiers: (0..<20).map { "smoke-\($0)" } + (0..<7).map { "smoke-m\($0)" } + ["smoke-d0", "smoke-d1"])
+        guard s.settings.notifySmoke else { return }
+        if s.smoke.start == nil, let q = s.smoke.quitDay {
+            // aviso la víspera y la mañana del Día D
+            let cal = Calendar.current
+            let day = cal.startOfDay(for: q)
+            if let eve = cal.date(byAdding: .hour, value: -3, to: day), eve > Date() {
+                smokeNoti(c, "smoke-d0", eve, "Mañana es tu Día D", "Tira mecheros y paquetes antes de acostarte. Mañana empiezas.")
+            }
+            if let morning = cal.date(bySettingHour: 9, minute: 0, second: 0, of: day), morning > Date() {
+                smokeNoti(c, "smoke-d1", morning, "Hoy es tu Día D 💪", "Abre Rumbo y pon en marcha el contador. Hoy no fumas.")
+            }
+            return
+        }
+        guard let start = s.smoke.start else { return }
         let sm = s.smoke
         var items: [(Date, String, String)] = []
         for h in healthSteps { items.append((start.addingTimeInterval(h.seconds), "\(h.when) sin fumar 💪", h.text)) }
@@ -374,6 +447,8 @@ struct SmokeView: View {
     @State private var badge: SmokeBadge? = nil
     @State private var allBadges = false
     @State private var celebrate: SmokeBadge? = nil
+    @State private var relapse = false
+    @State private var quitSheet = false
     private let tick = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -421,6 +496,7 @@ struct SmokeView: View {
                 } else if store.s.smoke.measuring {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
+                            Button { quitSheet = true } label: { Label(store.s.smoke.quitDay == nil ? "Ponerme un Día D" : "Cambiar el Día D", systemImage: "flag.fill") }
                             Button(role: .destructive) { askStopMeasure = true } label: { Label("Dejar de apuntar", systemImage: "xmark.circle") }
                         } label: { Image(systemName: "ellipsis.circle") }
                     }
@@ -432,9 +508,11 @@ struct SmokeView: View {
             .sheet(item: $badge) { b in BadgeSheet(badge: b) }
             .sheet(isPresented: $allBadges) { AllBadgesSheet() }
             .sheet(item: $celebrate) { b in CelebrationSheet(badge: b) }
-            .confirmationDialog("¿Empezar el contador de cero?", isPresented: $askRestart, titleVisibility: .visible) {
-                Button("Empezar de cero ahora", role: .destructive) { restart() }
+            .sheet(isPresented: $relapse) { RelapseSheet() }
+            .sheet(isPresented: $quitSheet) { QuitDaySheet() }
+            .confirmationDialog("¿Qué ha pasado?", isPresented: $askRestart, titleVisibility: .visible) {
                 Button("Solo ha sido uno, sigo") { store.s.smoke.slips.append(Date()); Haptic.tap() }
+                Button("He vuelto a fumar…", role: .destructive) { relapse = true }
                 Button("Cancelar", role: .cancel) {}
             } message: { Text("El intento de ahora se guarda en tu historial.") }
             .confirmationDialog("¿Borrar todo lo apuntado?", isPresented: $askStopMeasure, titleVisibility: .visible) {
@@ -463,15 +541,6 @@ struct SmokeView: View {
         if celebrate == nil && badge == nil && !allBadges && !craving && !setup {
             celebrate = new.max { ($0.kind == .time ? 1 : 0, $0.goal) < ($1.kind == .time ? 1 : 0, $1.goal) }
         }
-    }
-
-    private func restart() {
-        guard let st = store.s.smoke.start else { return }
-        store.s.smoke.attempts.append(SmokeAttempt(start: st, end: Date()))
-        store.s.smoke.start = Date()
-        store.s.smoke.seen = []
-        store.scheduleSmoke()
-        Haptic.heavy()
     }
 
     private var startCard: some View {
@@ -507,20 +576,30 @@ struct SmokeView: View {
         let today = s.log.filter { Day.str($0) == Day.str(now) }
         let m = s.measured(now)
         let each = s.perPack > 0 ? s.packPrice / Double(s.perPack) : 0
+        let limit = s.limit(now)
         VStack(spacing: 18) {
-            Button(action: logOne) {
-                VStack(spacing: 8) {
-                    Image(systemName: "plus").font(.system(size: 34, weight: .bold))
-                    Text("Me he fumado uno").font(.title3.weight(.bold))
-                    if let last = s.log.last {
-                        Text("El último, hace \(SmokeText.duration(now.timeIntervalSince(last)))").font(.caption.weight(.semibold)).opacity(0.7)
+            quitDayCard(now).appear(0)
+            VStack(spacing: 12) {
+                Button(action: logOne) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "plus").font(.system(size: 34, weight: .bold))
+                        Text("Me he fumado uno").font(.title3.weight(.bold))
+                        if let last = s.log.last {
+                            Text("El último, hace \(SmokeText.duration(now.timeIntervalSince(last)))").font(.caption.weight(.semibold)).opacity(0.7)
+                        }
                     }
+                    .foregroundStyle(.black).frame(maxWidth: .infinity).padding(.vertical, 26)
+                    .background(LinearGradient(colors: [Color(hex: "#ff9f7a"), Color(hex: "#f0c46a")], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
-                .foregroundStyle(.black).frame(maxWidth: .infinity).padding(.vertical, 26)
-                .background(LinearGradient(colors: [Color(hex: "#ff9f7a"), Color(hex: "#f0c46a")], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .buttonStyle(PressableStyle())
+                if let last = s.log.last, now.timeIntervalSince(last) < 600, s.tag(last) == nil {
+                    tagPicker(last).transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
-            .buttonStyle(PressableStyle())
-            .appear(0)
+            .appear(0.02)
+            if let limit {
+                todayLimit(today.count, limit).appear(0.03)
+            }
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                 stat("\(today.count)", "hoy", "sun.max.fill", Color(hex: "#f0c46a"))
                 stat(Money.eur(Double(today.count) * each), "gastados hoy", "eurosign.circle.fill", Color(hex: "#ff8686"))
@@ -528,14 +607,20 @@ struct SmokeView: View {
                 stat(m.map { "\($0.perDay) al día" } ?? "—", m.map { "\(Money.eur(Double($0.perDay) * each * 365)) al año" } ?? "de media", "calendar", Color(hex: "#b39cff"))
             }
             .appear(0.04)
+            triggersCard.appear(0.06)
             if !today.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     CardTitle(title: "Hoy", icon: "clock.fill", color: Color(hex: "#ff9f7a"), subtitle: today.count == 1 ? "1 cigarro" : "\(today.count) cigarros")
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                         ForEach(today, id: \.self) { d in
-                            Text(Day.time(d)).font(.caption.weight(.semibold).monospacedDigit())
-                                .frame(maxWidth: .infinity).padding(.vertical, 7)
-                                .background(Color.white.opacity(0.07), in: Capsule())
+                            HStack(spacing: 4) {
+                                if let t = s.tag(d), let tr = smokeTriggers.first(where: { $0.id == t }) {
+                                    Image(systemName: tr.icon).font(.system(size: 9, weight: .bold)).foregroundStyle(Color(hex: "#ff9f7a"))
+                                }
+                                Text(Day.time(d)).font(.caption.weight(.semibold).monospacedDigit())
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 7)
+                            .background(Color.white.opacity(0.07), in: Capsule())
                         }
                     }
                     Button { askUndo = true } label: { Label("Quitar el último", systemImage: "arrow.uturn.backward").font(.subheadline) }
@@ -544,6 +629,7 @@ struct SmokeView: View {
                 .card()
                 .appear(0.08)
             }
+            if !s.attempts.isEmpty { AttemptsCard().appear(0.1) }
             VStack(spacing: 12) {
                 Text(m == nil ? "Cuando quieras, déjalo" : "Ya sabes cuánto fumas").font(.headline)
                 Button { setup = true } label: {
@@ -554,6 +640,159 @@ struct SmokeView: View {
             }
             .card()
             .appear(0.12)
+        }
+    }
+
+    /// el Día D: cuenta atrás, plan para ir bajando y preparativos
+    @ViewBuilder private func quitDayCard(_ now: Date) -> some View {
+        let s = store.s.smoke
+        if let q = s.quitDay, let left = s.daysToQuit(now) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 14) {
+                    ZStack {
+                        Circle().fill(LinearGradient(colors: [smokeGreen, Color(hex: "#5fd3c8")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        VStack(spacing: -2) {
+                            Text(left <= 0 ? "¡Ya!" : "\(left)").font(.system(size: left <= 0 ? 22 : 30, weight: .heavy, design: .rounded))
+                            if left > 0 { Text(left == 1 ? "día" : "días").font(.caption2.weight(.bold)) }
+                        }
+                        .foregroundStyle(.black)
+                    }
+                    .frame(width: 72, height: 72)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(left <= 0 ? "Hoy es tu Día D" : left == 1 ? "Mañana lo dejas" : "Tu Día D").font(.title3.weight(.bold))
+                        Text(Day.header(Day.str(q))).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                    Button { quitSheet = true } label: { Image(systemName: "pencil").font(.subheadline.weight(.bold)).foregroundStyle(.secondary) }
+                        .buttonStyle(.borderless)
+                }
+                if left <= 0 {
+                    Button { setup = true } label: {
+                        Text("Empezar el contador").font(.headline).foregroundStyle(.black).frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .background(smokeGreen, in: Capsule())
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+                let done = smokePrep.filter { s.prep.contains($0.id) }.count
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Prepárate").font(.subheadline.weight(.bold))
+                        Spacer()
+                        Text("\(done) de \(smokePrep.count)").font(.caption.weight(.semibold)).foregroundStyle(smokeGreen)
+                    }
+                    ForEach(smokePrep, id: \.id) { p in
+                        let on = s.prep.contains(p.id)
+                        Button {
+                            Haptic.select()
+                            withAnimation(.snappy) {
+                                if on { store.s.smoke.prep.removeAll { $0 == p.id } } else { store.s.smoke.prep.append(p.id) }
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(on ? smokeGreen : .secondary)
+                                    .contentTransition(.symbolEffect(.replace))
+                                Text(p.text).font(.subheadline).foregroundStyle(on ? .secondary : .primary).strikethrough(on, color: .secondary)
+                                    .multilineTextAlignment(.leading)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .card()
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(LinearGradient(colors: [smokeGreen.opacity(0.6), .clear], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.5))
+        } else {
+            Button { Haptic.tap(); quitSheet = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "flag.fill").font(.title2)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ponte un Día D").font(.headline)
+                        Text("Elige el día y ve bajando poco a poco hasta él").font(.caption.weight(.semibold)).opacity(0.75)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.subheadline.weight(.bold))
+                }
+                .foregroundStyle(.black).padding(16)
+                .background(LinearGradient(colors: [smokeGreen, Color(hex: "#5fd3c8")], startPoint: .leading, endPoint: .trailing), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+            .buttonStyle(PressableStyle())
+        }
+    }
+
+    /// cuántos llevas hoy frente a los que te tocan según el plan
+    private func todayLimit(_ n: Int, _ limit: Int) -> some View {
+        let over = n > limit
+        let c = over ? Color(hex: "#ff8686") : n == limit ? Color(hex: "#f0c46a") : smokeGreen
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Hoy, como mucho \(limit)").font(.headline)
+                Spacer()
+                Text("\(n) de \(limit)").font(.headline.monospacedDigit()).foregroundStyle(c)
+            }
+            HStack(spacing: 4) {
+                ForEach(0..<max(limit, n, 1), id: \.self) { i in
+                    Capsule().fill(i < n ? (i >= limit ? Color(hex: "#ff8686") : c) : Color.white.opacity(0.1)).frame(height: 10)
+                }
+            }
+            .animation(.snappy, value: n)
+            Text(over ? "Te has pasado \(n - limit). Mañana toca \(max(0, limit - 1)) o menos, sin agobios." : n == limit ? "Ya has llegado: el resto del día, sin fumar." : "Te quedan \(limit - n) para hoy.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .card()
+    }
+
+    /// pregunta por qué te has fumado el último
+    private func tagPicker(_ d: Date) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("¿Por qué ese?").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(smokeTriggers, id: \.id) { t in
+                        Button {
+                            Haptic.select()
+                            withAnimation(.snappy) { store.s.smoke.tags[Smoke.tagKey(d)] = t.id }
+                        } label: {
+                            Label(t.name, systemImage: t.icon).font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                                .background(Color(hex: "#ff9f7a").opacity(0.16), in: Capsule())
+                                .foregroundStyle(Color(hex: "#ff9f7a"))
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
+                }
+            }
+        }
+    }
+
+    /// en qué momentos fumas más, con un truco para el principal
+    @ViewBuilder private var triggersCard: some View {
+        let s = store.s.smoke
+        let counts = Dictionary(grouping: s.tags.values, by: { $0 }).mapValues(\.count)
+        let ranked = smokeTriggers.compactMap { t in counts[t.id].map { (t, $0) } }.sorted { $0.1 > $1.1 }
+        if let top = ranked.first {
+            let maxN = Double(top.1)
+            VStack(alignment: .leading, spacing: 12) {
+                CardTitle(title: "Cuándo fumas", icon: "scope", color: Color(hex: "#ff9f7a"), subtitle: "\(counts.values.reduce(0, +)) apuntados con motivo")
+                ForEach(ranked.prefix(4), id: \.0.id) { t, n in
+                    HStack(spacing: 10) {
+                        Image(systemName: t.icon).foregroundStyle(Color(hex: "#ff9f7a")).frame(width: 22)
+                        Text(t.name).font(.subheadline.weight(.semibold)).frame(width: 130, alignment: .leading).lineLimit(1).minimumScaleFactor(0.8)
+                        GeometryReader { g in
+                            Capsule().fill(Color(hex: "#ff9f7a").opacity(0.75)).frame(width: max(8, g.size.width * Double(n) / maxN))
+                        }
+                        .frame(height: 8)
+                        Text("\(n)").font(.caption.weight(.bold).monospacedDigit()).foregroundStyle(.secondary).frame(width: 24, alignment: .trailing)
+                    }
+                }
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill").foregroundStyle(Color(hex: "#f0c46a"))
+                    Text(top.0.tip).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(hex: "#f0c46a").opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .card()
         }
     }
 
@@ -818,16 +1057,7 @@ struct SmokeView: View {
     }
 
     @ViewBuilder private var history: some View {
-        let s = store.s.smoke
-        if !s.attempts.isEmpty || !s.slips.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                CardTitle(title: "Tu historial", icon: "clock.arrow.circlepath", color: .secondary)
-                if s.best > 0 { LabeledContent("Tu mejor racha", value: SmokeText.duration(max(s.best, s.seconds(Date())))).font(.subheadline) }
-                LabeledContent("Intentos", value: "\(s.attempts.count + 1)").font(.subheadline)
-                if !s.slips.isEmpty { LabeledContent("Cigarros sueltos", value: "\(s.slips.count)").font(.subheadline) }
-            }
-            .card()
-        }
+        if !store.s.smoke.attempts.isEmpty || !store.s.smoke.slips.isEmpty { AttemptsCard() }
     }
 }
 
@@ -1063,6 +1293,7 @@ struct SmokeSetup: View {
                         var n = s
                         n.start = start
                         n.measuring = false
+                        n.quitDay = nil
                         n.log = store.s.smoke.log
                         n.packPrice = Money.parse(price) ?? n.packPrice
                         n.wishPrice = Money.parse(wishPrice) ?? 0
@@ -1187,8 +1418,10 @@ struct SmokeMini: View {
                 if s.start == nil && s.measuring {
                     let today = s.log.filter { Day.str($0) == Day.str(tl.date) }.count
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(today == 1 ? "Hoy, 1 cigarro" : "Hoy, \(today) cigarros").font(.headline)
-                        if let last = s.log.last {
+                        Text(s.limit(tl.date).map { "Hoy, \(today) de \($0)" } ?? (today == 1 ? "Hoy, 1 cigarro" : "Hoy, \(today) cigarros")).font(.headline)
+                        if let left = s.daysToQuit(tl.date) {
+                            Text(left <= 0 ? "Hoy es tu Día D" : left == 1 ? "Mañana es tu Día D" : "Día D en \(left) días").font(.caption).foregroundStyle(smokeGreen)
+                        } else if let last = s.log.last {
                             Text("El último, hace \(SmokeText.duration(tl.date.timeIntervalSince(last)))").font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -1218,5 +1451,201 @@ struct SmokeMini: View {
             .onTapGesture { Haptic.tap(); Router.shared.open("humo") }
         }
         .card()
+    }
+}
+
+// MARK: - Intentos
+
+/// tus intentos de dejarlo, con lo que aguantaste en cada uno
+struct AttemptsCard: View {
+    @Environment(Store.self) private var store
+    var body: some View {
+        let s = store.s.smoke
+        let now = Date()
+        let list = s.attempts.sorted { $0.end > $1.end }
+        let current = s.start.map { now.timeIntervalSince($0) }
+        let best = max(s.best, current ?? 0, 1)
+        VStack(alignment: .leading, spacing: 12) {
+            CardTitle(title: "Tus intentos", icon: "clock.arrow.circlepath", color: Color(hex: "#b39cff"),
+                      subtitle: "\(s.attempts.count + (s.start == nil ? 0 : 1)) · el mejor, \(SmokeText.duration(best))")
+            if let current {
+                row("Ahora", current, best, smokeGreen, nil)
+            }
+            ForEach(Array(list.prefix(5).enumerated()), id: \.offset) { _, a in
+                let d = a.end.timeIntervalSince(a.start)
+                row(Day.shortLabel(Day.str(a.start)), d, best, Color(hex: "#b39cff"), "\(Money.eur(s.saved(a))) · \(s.avoided(a)) cigarros")
+            }
+            if s.start == nil, let last = list.first {
+                Text(Self.cheer(last.end.timeIntervalSince(last.start))).font(.subheadline).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !s.slips.isEmpty {
+                LabeledContent("Cigarros sueltos", value: "\(s.slips.count)").font(.subheadline)
+            }
+        }
+        .card()
+    }
+
+    static func cheer(_ d: TimeInterval) -> String {
+        let t = SmokeText.duration(d)
+        return "Aguantaste \(t): eso no se borra. Casi nadie lo deja a la primera y cada intento suele durar más que el anterior. Lo que aprendiste te sirve para el siguiente."
+    }
+
+    private func row(_ label: String, _ d: TimeInterval, _ best: TimeInterval, _ c: Color, _ sub: String?) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(label).font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(SmokeText.duration(d)).font(.subheadline.weight(.bold).monospacedDigit()).foregroundStyle(c)
+            }
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.07))
+                    Capsule().fill(c).frame(width: max(8, g.size.width * min(1, d / best)))
+                }
+            }
+            .frame(height: 8)
+            if let sub { Text(sub).font(.caption).foregroundStyle(.secondary) }
+        }
+    }
+}
+
+/// he vuelto a fumar: desde cuándo y qué hacemos ahora
+struct RelapseSheet: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var when = Date()
+    @State private var again = false
+
+    var body: some View {
+        NavigationStack {
+            let s = store.s.smoke
+            let start = s.start ?? Date()
+            let a = SmokeAttempt(start: start, end: max(start, when))
+            Form {
+                Section {
+                    DatePicker("Volví a fumar el", selection: $when, in: start...Date())
+                }
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 14) {
+                            Image(systemName: "medal.fill").font(.title).foregroundStyle(Color(hex: "#f0c46a"))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Aguantaste \(SmokeText.duration(a.end.timeIntervalSince(a.start)))").font(.headline)
+                                Text("\(Money.eur(s.saved(a))) ahorrados · \(s.avoided(a)) cigarros menos").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                        }
+                        Text("Se guarda en tus intentos. Cada intento cuenta.").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                Section("¿Y ahora?") {
+                    Picker("", selection: $again) {
+                        Label("Ahora fumo: apuntar lo que fumo y elegir un Día D", systemImage: "flag.fill").tag(false)
+                        Label("Lo vuelvo a dejar ahora mismo", systemImage: "arrow.counterclockwise").tag(true)
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+            }
+            .navigationTitle("He vuelto a fumar").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Guardar") {
+                        store.s.smoke.attempts.append(a)
+                        store.s.smoke.seen = []
+                        if again {
+                            store.s.smoke.start = Date()
+                        } else {
+                            store.s.smoke.start = nil
+                            store.s.smoke.measuring = true
+                            store.s.smoke.quitDay = nil
+                        }
+                        store.scheduleSmoke()
+                        Haptic.heavy(); dismiss()
+                    }.bold()
+                }
+            }
+        }
+    }
+}
+
+/// elegir el Día D y si quieres ir bajando hasta él
+struct QuitDaySheet: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var day = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+    @State private var taper = true
+    @State private var from = 10
+    @State private var askRemove = false
+
+    var body: some View {
+        NavigationStack {
+            let cal = Calendar.current
+            let days = max(1, cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: day)).day ?? 1)
+            Form {
+                Section {
+                    DatePicker("Lo dejo el", selection: $day, in: Date()...(cal.date(byAdding: .day, value: 60, to: Date()) ?? Date()), displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .tint(smokeGreen)
+                    HStack(spacing: 8) {
+                        ForEach([(3, "3 días"), (7, "1 semana"), (14, "2 semanas")], id: \.0) { d in
+                            Button(d.1) { Haptic.select(); day = cal.date(byAdding: .day, value: d.0, to: Date()) ?? day }
+                                .buttonStyle(.bordered).tint(smokeGreen).font(.subheadline)
+                        }
+                    }
+                }
+                Section {
+                    Toggle("Ir bajando hasta ese día", isOn: $taper.animation())
+                    if taper {
+                        Stepper("Ahora fumo \(from) al día", value: $from, in: 1...80)
+                        HStack(spacing: 3) {
+                            ForEach(0...min(days, 30), id: \.self) { i in
+                                let n = Int((Double(from) * Double(days - i) / Double(days)).rounded())
+                                Capsule().fill(n == 0 ? smokeGreen : Color(hex: "#ff9f7a").opacity(0.4 + 0.6 * Double(n) / Double(max(1, from))))
+                                    .frame(height: max(4, 50 * Double(n) / Double(max(1, from))))
+                                    .frame(maxHeight: 50, alignment: .bottom)
+                            }
+                        }
+                        .frame(height: 50)
+                        Text("Mañana como mucho \(Int((Double(from) * Double(days - 1) / Double(days)).rounded())), y uno menos cada poco hasta llegar a 0.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if store.s.smoke.quitDay != nil {
+                    Section {
+                        Button("Quitar el Día D", role: .destructive) { askRemove = true }
+                    }
+                }
+            }
+            .navigationTitle("Tu Día D").navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog("¿Quitar el Día D?", isPresented: $askRemove, titleVisibility: .visible) {
+                Button("Quitar", role: .destructive) {
+                    store.s.smoke.quitDay = nil; store.s.smoke.planSet = nil
+                    store.scheduleSmoke(); dismiss()
+                }
+                Button("Cancelar", role: .cancel) {}
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Guardar") {
+                        store.s.smoke.quitDay = cal.startOfDay(for: day)
+                        store.s.smoke.planSet = taper ? Date() : nil
+                        store.s.smoke.planFrom = taper ? from : 0
+                        store.scheduleSmoke()
+                        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+                        Haptic.success(); dismiss()
+                    }.bold()
+                }
+            }
+            .onAppear {
+                let s = store.s.smoke
+                if let q = s.quitDay { day = q }
+                taper = s.quitDay == nil || s.planSet != nil
+                from = s.planFrom > 0 ? s.planFrom : (s.measured(Date())?.perDay ?? s.perDay)
+            }
+        }
     }
 }
