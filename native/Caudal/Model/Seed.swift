@@ -3,7 +3,7 @@ import Foundation
 /// Datos de partida: categorías por defecto. Los datos personales (cuentas y movimientos reales) no están en el código:
 /// se leen de `seed-personal.json`, que no se sube a git (ver .gitignore) y GitHub Actions lo pone desde un secreto.
 enum Seed {
-    static let version = 9
+    static let version = 10
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -65,10 +65,18 @@ enum Seed {
             let order = ["a_revolut": 0, "a_tr": 1, "a_conjunta": 2, "a_etf": 3]
             for i in s.accounts.indices { if let o = order[s.accounts[i].id] { s.accounts[i].order = o } else if s.accounts[i].order < 4 { s.accounts[i].order += 4 } }
         }
-        if s.seed < 9 {
-            // Nov 2026: el plan se queda en 100 € al MSCI ACWI (se deshace el reparto 50/50 con el S&P 500).
-            s.recurring.removeAll { $0.id == "r_plan_sp500" }
-            if let i = s.recurring.firstIndex(where: { $0.id == "r_plan" }), s.recurring[i].amount == 50 { s.recurring[i].amount = 100 }
+        if s.seed < 10 {
+            // Nov 2026: el plan mensual pasa de 100 € al MSCI ACWI a 50 € al MSCI ACWI y 50 € al S&P 500.
+            if let i = s.recurring.firstIndex(where: { $0.id == "r_plan" }) {
+                s.recurring[i].amount = 50
+                if s.assets.contains(where: { $0.id == "s_sp500" }) && !s.recurring.contains(where: { $0.id == "r_plan_sp500" }) {
+                    var sp = s.recurring[i]
+                    sp.id = "r_plan_sp500"
+                    sp.name = "Plan S&P 500"
+                    sp.assetId = "s_sp500"
+                    s.recurring.insert(sp, at: i + 1)
+                }
+            }
         }
         s.seed = version
     }
