@@ -98,7 +98,7 @@ struct TodayView: View {
                 if !insights.isEmpty {
                     SectionTitle(title: "Tus datos").stagger(3)
                 }
-                cards(insights)
+                InsightGrid(insights: insights, zoom: zoom)
 
                 if let updated = store.updated {
                     Text("Actualizado a las \(Fmt.clock(updated))")
@@ -145,39 +145,6 @@ struct TodayView: View {
         .sheet(isPresented: $coach) { CoachView() }
         .sheet(isPresented: $widgets) { NavigationStack { WidgetsGalleryView() } }
         .animation(.snappy, value: style)
-    }
-
-    @ViewBuilder
-    private func cards(_ insights: [Insight]) -> some View {
-        switch style {
-        case .cards:
-            ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
-                NavigationLink(value: ins.metric) {
-                    InsightCard(insight: ins).zoomSource(ins.metric, zoom)
-                }
-                .buttonStyle(.plain)
-                .stagger(i + 4)
-                .scrollFade()
-            }
-        case .grid:
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: Space.m), GridItem(.flexible(), spacing: Space.m)], spacing: Space.m) {
-                ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
-                    NavigationLink(value: ins.metric) {
-                        GridTile(insight: ins).zoomSource(ins.metric, zoom)
-                    }
-                    .buttonStyle(.plain)
-                    .stagger(i + 4)
-                }
-            }
-        case .grouped:
-            // Los módulos salen en el orden en que aparece su primera métrica.
-            let groups = insights.map(\.metric.group).reduce(into: [MetricGroup]()) { if !$0.contains($1) { $0.append($1) } }
-            ForEach(Array(groups.enumerated()), id: \.element) { i, g in
-                GroupCard(group: g, insights: insights.filter { $0.metric.group == g }, zoom: zoom)
-                    .stagger(i + 4)
-                    .scrollFade()
-            }
-        }
     }
 }
 

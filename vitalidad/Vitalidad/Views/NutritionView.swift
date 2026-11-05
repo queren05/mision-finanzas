@@ -39,6 +39,12 @@ struct NutritionView: View {
                     .buttonStyle(.plain)
                     .stagger(3)
                     .scrollFade()
+
+                    let insights = [Metric.calories, .protein, .carbs, .fat, .water].compactMap { Explainer.insight($0, store: store) }
+                    if !insights.isEmpty {
+                        SectionTitle(title: "Tus datos")
+                        InsightGrid(insights: insights, zoom: zoom, first: 4)
+                    }
                 }
             }
             .padding(.horizontal, Space.l)
@@ -46,6 +52,7 @@ struct NutritionView: View {
         }
         .background(MoodBackground(mood: .neutral))
         .navigationTitle("Nutrición")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StyleMenu() } }
         .navigationDestination(for: Metric.self) { m in MetricDetailView(metric: m).zoomDestination(m, zoom) }
         .refreshable { await store.refresh(full: false) }
         .sensoryFeedback(.selection, trigger: yesterday)

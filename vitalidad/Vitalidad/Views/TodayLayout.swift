@@ -308,3 +308,61 @@ struct PersonalizeTodayView: View {
 #Preview {
     PersonalizeTodayView().fontDesign(.rounded).preferredColorScheme(.dark)
 }
+
+/// Las tarjetas de datos en el estilo elegido (grandes, cuadrícula o agrupadas). Se usa en todas las pestañas.
+struct InsightGrid: View {
+    var insights: [Insight]
+    var zoom: Namespace.ID
+    var first = 4
+    @AppStorage("hoyEstilo") private var style = TodayStyle(rawValue: Launch.value("-estilo") ?? "") ?? .grid
+
+    var body: some View {
+        Group {
+            switch style {
+            case .cards:
+                ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
+                    NavigationLink(value: ins.metric) {
+                        InsightCard(insight: ins).zoomSource(ins.metric, zoom)
+                    }
+                    .buttonStyle(.plain)
+                    .stagger(i + first)
+                    .scrollFade()
+                }
+            case .grid:
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: Space.m), GridItem(.flexible(), spacing: Space.m)], spacing: Space.m) {
+                    ForEach(Array(insights.enumerated()), id: \.element.id) { i, ins in
+                        NavigationLink(value: ins.metric) {
+                            GridTile(insight: ins).zoomSource(ins.metric, zoom)
+                        }
+                        .buttonStyle(.plain)
+                        .stagger(i + first)
+                    }
+                }
+            case .grouped:
+                let groups = insights.map(\.metric.group).reduce(into: [MetricGroup]()) { if !$0.contains($1) { $0.append($1) } }
+                ForEach(Array(groups.enumerated()), id: \.element) { i, g in
+                    GroupCard(group: g, insights: insights.filter { $0.metric.group == g }, zoom: zoom)
+                        .stagger(i + first)
+                        .scrollFade()
+                }
+            }
+        }
+        .animation(.snappy, value: style)
+    }
+}
+
+/// Botón para cambiar el estilo de las tarjetas desde cualquier pestaña.
+struct StyleMenu: View {
+    @AppStorage("hoyEstilo") private var style = TodayStyle.grid
+    var body: some View {
+        Menu {
+            Picker("Estilo", selection: $style) {
+                ForEach(TodayStyle.allCases) { s in Label(s.title, systemImage: s.symbol).tag(s) }
+            }
+        } label: {
+            Image(systemName: style.symbol)
+        }
+        .accessibilityLabel("Estilo de las tarjetas")
+        .sensoryFeedback(.selection, trigger: style)
+    }
+}

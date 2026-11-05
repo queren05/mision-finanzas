@@ -81,6 +81,7 @@ struct MuscleMap: View {
             }
             .aspectRatio(120 / 230, contentMode: .fit)
             Text(label).font(.system(size: 10, weight: .heavy)).tracking(0.8).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.6).fixedSize()
         }
         .frame(maxWidth: .infinity)
     }

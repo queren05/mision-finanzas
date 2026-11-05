@@ -31,13 +31,10 @@ struct ActivityView: View {
                     .scrollFade()
                 }
 
-                ForEach(Array([Metric.steps, .exerciseMinutes, .standHours, .vo2max, .walkingHR].compactMap { Explainer.insight($0, store: store) }.enumerated()), id: \.element.id) { i, ins in
-                    NavigationLink(value: ins.metric) {
-                        InsightCard(insight: ins).zoomSource(ins.metric, zoom)
-                    }
-                    .buttonStyle(.plain)
-                    .stagger(i + 3)
-                    .scrollFade()
+                let insights = [Metric.steps, .activeEnergy, .exerciseMinutes, .standHours, .vo2max, .walkingHR].compactMap { Explainer.insight($0, store: store) }
+                if !insights.isEmpty {
+                    SectionTitle(title: "Tus datos")
+                    InsightGrid(insights: insights, zoom: zoom, first: 3)
                 }
 
                 if report.effort == nil && recent.isEmpty && !store.has(.steps) {
@@ -50,6 +47,7 @@ struct ActivityView: View {
         }
         .background(MoodBackground(mood: report.mood == .night ? .night : .easy))
         .navigationTitle("Actividad")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StyleMenu() } }
         .navigationDestination(isPresented: $strengthOpen) { StrengthView() }
         .navigationDestination(for: Metric.self) { m in MetricDetailView(metric: m).zoomDestination(m, zoom) }
         .refreshable { await store.refresh(full: false) }

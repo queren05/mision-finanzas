@@ -18,6 +18,11 @@ struct SleepView: View {
                     RegularityCard(nights: store.recentNights(14)).stagger(2).scrollFade()
                     ComparisonCard(night: night).stagger(3).scrollFade()
                     adviceCard(night: night).stagger(4).scrollFade()
+                    let insights = [Metric.sleep, .hrv, .restingHR, .respiratoryRate].compactMap { Explainer.insight($0, store: store) }
+                    if !insights.isEmpty {
+                        SectionTitle(title: "Tus datos")
+                        InsightGrid(insights: insights, zoom: zoom, first: 5)
+                    }
                     NavigationLink(value: Metric.sleep) {
                         VStack(alignment: .leading, spacing: Space.m) {
                             CardHeader("Últimas noches", symbol: "chart.bar.fill", color: Palette.sleep)
@@ -39,6 +44,7 @@ struct SleepView: View {
         }
         .background(MoodBackground(mood: .night))
         .navigationTitle("Sueño")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StyleMenu() } }
         .navigationDestination(for: Metric.self) { m in MetricDetailView(metric: m).zoomDestination(m, zoom) }
         .refreshable { await store.refresh(full: false) }
     }

@@ -125,14 +125,14 @@ struct AddFoodView: View {
                 if !fromPhoto.isEmpty {
                     Section("En la foto") {
                         ForEach(Array(fromPhoto.enumerated()), id: \.offset) { _, f in
-                            Button { picked = f.0 } label: { FoodRow(item: f.0, grams: f.1) }
+                            Button { picked = f.0 } label: { FoodRow(item: f.0, grams: f.1) }.buttonStyle(.plain)
                         }
                     }
                 }
                 if query.isEmpty {
                     if !log.recents.isEmpty {
                         Section("Recientes") {
-                            ForEach(log.recents) { f in Button { picked = f } label: { FoodRow(item: f) } }
+                            ForEach(log.recents) { f in Button { picked = f } label: { FoodRow(item: f) }.buttonStyle(.plain) }
                         }
                     }
                 } else {
@@ -140,7 +140,7 @@ struct AddFoodView: View {
                         if searching && results.isEmpty {
                             HStack { ProgressView(); Text("Buscando…").foregroundStyle(.secondary) }
                         }
-                        ForEach(results) { f in Button { picked = f } label: { FoodRow(item: f) } }
+                        ForEach(results) { f in Button { picked = f } label: { FoodRow(item: f) }.buttonStyle(.plain) }
                     }
                 }
             }
