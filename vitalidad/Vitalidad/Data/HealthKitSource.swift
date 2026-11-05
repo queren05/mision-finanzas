@@ -26,9 +26,46 @@ final class HealthKitSource: HealthDataSource, @unchecked Sendable {
         return s
     }
 
+    /// Lo único que escribe: las comidas y el agua que apuntas en la app.
+    static let shareIDs: [HKQuantityTypeIdentifier] = [.dietaryEnergyConsumed, .dietaryProtein, .dietaryCarbohydrates, .dietaryFatTotal, .dietaryWater]
+
     func requestAuthorization() async throws {
         guard isAvailable else { return }
-        try await store.requestAuthorization(toShare: [], read: Self.readTypes)
+        try await store.requestAuthorization(toShare: Set(Self.shareIDs.map { HKQuantityType($0) }), read: Self.readTypes)
+    }
+
+    // MARK: - Escribir comidas
+
+    func saveFood(name: String, date: Date, kcal: Double, protein: Double, carbs: Double, fat: Double) async -> [UUID] {
+        let meta: [String: Any] = [HKMetadataKeyFoodType: name]
+        var samples: [HKQuantitySample] = []
+        func add(_ id: HKQuantityTypeIdentifier, _ v: Double, _ u: HKUnit) {
+            guard v > 0 else { return }
+            samples.append(HKQuantitySample(type: HKQuantityType(id), quantity: HKQuantity(unit: u, doubleValue: v), start: date, end: date, metadata: meta))
+        }
+        add(.dietaryEnergyConsumed, kcal, .kilocalorie())
+        add(.dietaryProtein, protein, .gram())
+        add(.dietaryCarbohydrates, carbs, .gram())
+        add(.dietaryFatTotal, fat, .gram())
+        guard !samples.isEmpty else { return [] }
+        do { try await store.save(samples) } catch { return [] }
+        return samples.map(\.uuid)
+    }
+
+    func saveWater(_ liters: Double, date: Date) async -> [UUID] {
+        let s = HKQuantitySample(type: HKQuantityType(.dietaryWater), quantity: HKQuantity(unit: .liter(), doubleValue: liters), start: date, end: date)
+        do { try await store.save(s) } catch { return [] }
+        return [s.uuid]
+    }
+
+    func deleteSamples(_ ids: [UUID]) async {
+        guard !ids.isEmpty else { return }
+        let predicate = HKQuery.predicateForObjects(with: Set(ids))
+        for id in Self.shareIDs {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                store.deleteObjects(of: HKQuantityType(id), predicate: predicate) { _, _, _ in c.resume() }
+            }
+        }
     }
 
     // MARK: - Tipos y unidades

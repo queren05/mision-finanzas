@@ -21,6 +21,7 @@ struct TodayView: View {
     @AppStorage("hoyEdad") private var showAge = true
     @AppStorage("hoyJornada") private var showWork = true
     @AppStorage("hoyCrono") private var showTimeline = true
+    @State private var coach = Launch.args.contains("-entrenador")
     @State private var day: Date = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: -(Int(Launch.value("-dia") ?? "") ?? 0), to: .now)!)
 
     var body: some View {
@@ -130,9 +131,11 @@ struct TodayView: View {
         }
         .refreshable { await store.refresh(full: false) }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItemGroup(placement: .topBarLeading) {
                 NavigationLink { TrendsView() } label: { Image(systemName: "chart.xyaxis.line") }
                     .accessibilityLabel("Tendencias")
+                Button { coach = true } label: { Image(systemName: "sparkles") }
+                    .accessibilityLabel("Entrenador")
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { personalize = true } label: { Image(systemName: "slider.horizontal.3") }
@@ -143,6 +146,7 @@ struct TodayView: View {
         }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(isPresented: $personalize) { PersonalizeTodayView() }
+        .sheet(isPresented: $coach) { CoachView() }
         .sheet(isPresented: $widgets) { NavigationStack { WidgetsGalleryView() } }
         .animation(.snappy, value: style)
     }

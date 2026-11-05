@@ -139,6 +139,8 @@ jobs:
           shot -demo -dia 1 -foco crono;   snap 18-cronologia
           shot -demo -tab activity -fuerza; snap 19-fuerza
           shot -demo -tab activity -vivo;   snap 20-entreno
+          shot -demo -tab nutrition;        snap 21-comidas
+          shot -demo -tab nutrition -comer; snap 22-apuntar-comida
           xcrun simctl ui "$DEV" appearance light
           shot -demo;                   snap 9-hoy-claro
           ls -la "$GITHUB_WORKSPACE/out"

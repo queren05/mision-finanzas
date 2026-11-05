@@ -12,14 +12,16 @@ struct NutritionView: View {
         let hasAny = [Metric.calories, .protein, .carbs, .fat, .water].contains { store.has($0) }
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
-                if hasAny {
-                    Picker("Día", selection: $yesterday.animation(.smooth)) {
-                        Text("Hoy").tag(false)
-                        Text("Ayer").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, Space.xs)
+                Picker("Día", selection: $yesterday.animation(.smooth)) {
+                    Text("Hoy").tag(false)
+                    Text("Ayer").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, Space.xs)
 
+                FoodDayCard(day: day).stagger(0)
+
+                if hasAny {
                     BalanceCard(day: day, isToday: !yesterday).stagger(0)
                     MacrosCard(day: day).stagger(1).scrollFade()
                     if let water = store.value(.water, on: day) {
@@ -37,9 +39,6 @@ struct NutritionView: View {
                     .buttonStyle(.plain)
                     .stagger(3)
                     .scrollFade()
-                } else {
-                    EmptyCard(symbol: "fork.knife", color: Palette.nutrition, title: "Sin datos de nutrición",
-                              text: "Activa en los ajustes de Yazio la conexión con Apple Salud y aquí verás lo que comes.")
                 }
             }
             .padding(.horizontal, Space.l)

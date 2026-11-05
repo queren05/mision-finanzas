@@ -17,6 +17,11 @@ protocol HealthDataSource: Sendable {
     func workouts(from: Date, to: Date) async -> [Workout]
     /// Valores por horas de un día (pulso medio de cada hora, pasos de cada hora…).
     func hourly(_ metric: Metric, day: Date) async -> [TimePoint]
+    /// Guarda una comida en Salud (energía y macros). Devuelve lo guardado para poder borrarlo.
+    func saveFood(name: String, date: Date, kcal: Double, protein: Double, carbs: Double, fat: Double) async -> [UUID]
+    func saveWater(_ liters: Double, date: Date) async -> [UUID]
+    /// Borra de Salud lo que guardó la app.
+    func deleteSamples(_ ids: [UUID]) async
     /// Fecha de nacimiento y sexo, si están en la fuente.
     func profile() async -> Profile
     /// Avisa cuando cambian los datos, también con la app cerrada si la fuente lo permite.

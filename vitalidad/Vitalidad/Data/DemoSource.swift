@@ -129,6 +129,10 @@ struct DemoSource: HealthDataSource {
         return out.sorted { $0.start > $1.start }
     }
 
+    func saveFood(name: String, date: Date, kcal: Double, protein: Double, carbs: Double, fat: Double) async -> [UUID] { [] }
+    func saveWater(_ liters: Double, date: Date) async -> [UUID] { [] }
+    func deleteSamples(_ ids: [UUID]) async {}
+
     func profile() async -> Profile {
         Profile(birth: Calendar.current.date(from: DateComponents(year: 1994, month: 3, day: 12)), female: false)
     }

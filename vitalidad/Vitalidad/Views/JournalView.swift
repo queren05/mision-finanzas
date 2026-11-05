@@ -134,6 +134,7 @@ struct HabitTile: View {
                     stepButton("minus") { change(max(0, value - 1)) }.opacity(on ? 1 : 0.4).disabled(!on)
                     Spacer()
                     Text(habit.unit ?? "").font(.caption).foregroundStyle(on ? .white.opacity(0.8) : .secondary)
+                        .lineLimit(1).minimumScaleFactor(0.7).fixedSize()
                     Spacer()
                     stepButton("plus") { change(value + 1) }
                 }

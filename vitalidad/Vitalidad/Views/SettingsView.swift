@@ -79,6 +79,15 @@ struct SettingsView: View {
                         Label("Edad", systemImage: "hourglass")
                     }
                     NavigationLink {
+                        CoachKeyView(inSheet: false)
+                    } label: {
+                        LabeledContent {
+                            Text(Claude.hasKey ? "Puesta" : "Sin clave")
+                        } label: {
+                            Label("Entrenador con IA", systemImage: "sparkles")
+                        }
+                    }
+                    NavigationLink {
                         WorkSettingsView(inSheet: false)
                     } label: {
                         LabeledContent {

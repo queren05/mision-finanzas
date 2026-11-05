@@ -43,8 +43,10 @@ targets:
         DEVELOPMENT_LANGUAGE: es
         INFOPLIST_KEY_CFBundleDisplayName: Vitalidad
         INFOPLIST_KEY_CFBundleDevelopmentRegion: es
-        INFOPLIST_KEY_NSHealthShareUsageDescription: "Vitalidad lee tu sueño, tu pulso, tu actividad y lo que comes para explicarte cómo estás, comparándote siempre contigo mismo. Los datos no salen de tu iPhone."
-        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Vitalidad no escribe nada en Salud; solo lee tus datos."
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Vitalidad lee tu sueño, tu pulso, tu actividad y lo que comes para explicarte cómo estás, comparándote siempre contigo mismo. Solo salen del iPhone si le preguntas al entrenador con IA."
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Vitalidad solo guarda en Salud las comidas y el agua que apuntas en la app."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Para escanear el código de barras de los alimentos y hacer fotos a tu plato."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Para elegir una foto de tu plato."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO

@@ -60,9 +60,9 @@ final class HealthStore {
         let needFull = (lastFull.map { Date.now.timeIntervalSince($0) > 12 * 3600 } ?? true) || values.isEmpty
         Task {
             // Permiso nuevo: fecha de nacimiento y sexo (para la edad del cuerpo).
-            if !UserDefaults.standard.bool(forKey: "permisosPerfil") {
+            if !UserDefaults.standard.bool(forKey: "permisosComidas") {
                 try? await source.requestAuthorization()
-                UserDefaults.standard.set(true, forKey: "permisosPerfil")
+                UserDefaults.standard.set(true, forKey: "permisosComidas")
             }
             await refresh(full: needFull)
         }
