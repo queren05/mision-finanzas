@@ -17,18 +17,39 @@ struct TodayView: View {
     @AppStorage("hoySenales") private var showSignals = true
     @AppStorage("hoyPlan") private var showPlan = true
     @AppStorage("hoyEnergia") private var showEnergy = true
+    @AppStorage("hoyEstres") private var showStress = true
+    @AppStorage("hoyEdad") private var showAge = true
+    @AppStorage("hoyJornada") private var showWork = true
+    @State private var day: Date = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: -(Int(Launch.value("-dia") ?? "") ?? 0), to: .now)!)
 
     var body: some View {
-        let report = ScoreEngine.report(store)
-        let insights = TodayCards.decode(cardsRaw).compactMap { Explainer.insight($0, store: store) }
+        let isToday = store.isToday(day)
+        let report = ScoreEngine.report(store, day: day)
+        let insights = isToday ? TodayCards.decode(cardsRaw).compactMap { Explainer.insight($0, store: store) } : []
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
-                Text(Fmt.day(.now, style: "EEEE, d 'de' MMMM").uppercased())
-                    .font(.caption.weight(.bold))
-                    .tracking(1.1)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, Space.xs)
+                DayStrip(selected: $day)
+                    .padding(.horizontal, -Space.s)
                     .padding(.top, -Space.s)
+
+                HStack {
+                    Text(Fmt.day(day, style: "EEEE, d 'de' MMMM").uppercased())
+                        .font(.caption.weight(.bold))
+                        .tracking(1.1)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if !isToday {
+                        Button {
+                            withAnimation(.snappy) { day = store.today }
+                        } label: {
+                            Label("Hoy", systemImage: "arrow.uturn.forward")
+                                .font(.caption.weight(.bold))
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+                .padding(.horizontal, Space.xs)
 
                 if showScores && !report.scores.isEmpty {
                     ReadinessHero(report: report, showSummary: showSummary).stagger(0)
@@ -40,20 +61,36 @@ struct TodayView: View {
                         .stagger(0)
                 }
 
-                if showPlan {
+                if isToday && showPlan {
                     PlanCard().stagger(1).scrollFade()
                 }
 
+                if isToday && showWork {
+                    WorkAskCard().stagger(1)
+                }
+
                 if showEnergy {
-                    EnergyCard().stagger(1).scrollFade()
+                    EnergyCard(date: day).stagger(1).scrollFade().id("energia")
+                }
+
+                if showWork {
+                    WorkCard(day: day).stagger(2).scrollFade().id("jornada")
+                }
+
+                if showStress {
+                    StressCard(day: day).stagger(2).scrollFade().id("estres")
                 }
 
                 if showDay {
-                    DayTimelineCard().stagger(2).scrollFade()
+                    DayTimelineCard(day: day).stagger(2).scrollFade()
                 }
 
-                if showSignals {
-                    SignalsCard(zoom: zoom).stagger(2).scrollFade()
+                if isToday && showAge {
+                    BioAgeCard().stagger(3).scrollFade().id("edad")
+                }
+
+                if isToday && showSignals {
+                    SignalsCard(zoom: zoom).stagger(3).scrollFade()
                 }
 
                 if !insights.isEmpty {
@@ -71,6 +108,12 @@ struct TodayView: View {
             }
             .padding(.horizontal, Space.l)
             .padding(.bottom, Space.xxl)
+        }
+        .onAppear {
+            if let f = Launch.value("-foco") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { proxy.scrollTo(f, anchor: .top) }
+            }
+        }
         }
         .background(MoodBackground(mood: report.mood))
         .navigationTitle("Hoy")
@@ -187,21 +230,22 @@ struct ReadinessHero: View {
 /// El pulso hora a hora de hoy, con la noche y los entrenos marcados, y los pasos debajo.
 struct DayTimelineCard: View {
     @Environment(HealthStore.self) private var store
+    var day: Date = .now
 
     var body: some View {
         let cal = Calendar.current
-        let start = cal.startOfDay(for: .now)
+        let start = cal.startOfDay(for: day)
         let end = cal.date(byAdding: .day, value: 1, to: start)!
-        let hr = store.heartToday.filter { $0.value > 0 }
-        let steps = store.stepsToday
+        let hr = store.dayHours(start).hr.filter { $0.value > 0 }
+        let steps = store.dayHours(start).steps
         let totalSteps = steps.reduce(0) { $0 + $1.value }
         if hr.count >= 3 {
             let lo = max(30, (hr.map(\.value).min() ?? 50) - 8)
             let hi = (hr.map(\.value).max() ?? 120) + 8
-            let night = store.lastNight.flatMap { n -> (Date, Date)? in
+            let night = store.night(for: start).flatMap { n -> (Date, Date)? in
                 n.end > start ? (max(n.start, start), n.end) : nil
             }
-            let training = store.workouts.filter { $0.end > start }
+            let training = store.workouts.filter { $0.end > start && $0.start < end }
             VStack(alignment: .leading, spacing: Space.m) {
                 CardHeader("Tu día", symbol: "waveform.path.ecg", color: Palette.heart,
                            trailing: "\(Fmt.number(hr.map(\.value).min() ?? 0))–\(Fmt.number(hr.map(\.value).max() ?? 0)) lpm")
@@ -243,11 +287,6 @@ struct DayTimelineCard: View {
                     }
                 }
                 .frame(height: 120)
-
-                let stress = EnergyEngine.stress(store)
-                if stress.contains(where: { $0.level >= 0 }) {
-                    StressStrip(hours: stress, start: start, end: end)
-                }
 
                 if totalSteps > 0 {
                     Chart(steps, id: \.date) { p in

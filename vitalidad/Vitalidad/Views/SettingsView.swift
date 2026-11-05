@@ -72,6 +72,23 @@ struct SettingsView: View {
                     .disabled(store.loading)
                 }
 
+                Section("Tú") {
+                    NavigationLink {
+                        AgeSettingsView(inSheet: false)
+                    } label: {
+                        Label("Edad", systemImage: "hourglass")
+                    }
+                    NavigationLink {
+                        WorkSettingsView(inSheet: false)
+                    } label: {
+                        LabeledContent {
+                            Text(WorkSchedule.current.active ? WorkSchedule.current.kind.short : "No")
+                        } label: {
+                            Label("Trabajo", systemImage: "briefcase.fill")
+                        }
+                    }
+                }
+
                 Section {
                     NavigationLink {
                         WidgetsGalleryView()

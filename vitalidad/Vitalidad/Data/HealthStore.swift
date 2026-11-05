@@ -12,8 +12,12 @@ final class HealthStore {
     private(set) var values: [Metric: [Date: Double]] = [:]
     private(set) var nights: [Date: SleepNight] = [:]
     private(set) var workouts: [Workout] = []
-    private(set) var heartToday: [TimePoint] = []
-    private(set) var stepsToday: [TimePoint] = []
+    /// Pulso, pasos y energía activa hora a hora de los últimos 14 días.
+    private(set) var hours: [Date: DayHours] = [:]
+    var heartToday: [TimePoint] { hours[today]?.hr ?? [] }
+    var stepsToday: [TimePoint] { hours[today]?.steps ?? [] }
+    /// Fecha de nacimiento y sexo que hay en Salud.
+    private(set) var profile = Profile()
     private(set) var updated: Date?
     private(set) var loading = false
     /// Cambia cada vez que llegan datos nuevos (para refrescar las vistas que calculan cosas).
@@ -53,7 +57,15 @@ final class HealthStore {
                 await self?.refresh(full: false)
             }
         }
-        Task { await refresh(full: (lastFull.map { Date.now.timeIntervalSince($0) > 12 * 3600 } ?? true) || values.isEmpty) }
+        let needFull = (lastFull.map { Date.now.timeIntervalSince($0) > 12 * 3600 } ?? true) || values.isEmpty
+        Task {
+            // Permiso nuevo: fecha de nacimiento y sexo (para la edad del cuerpo).
+            if !UserDefaults.standard.bool(forKey: "permisosPerfil") {
+                try? await source.requestAuthorization()
+                UserDefaults.standard.set(true, forKey: "permisosPerfil")
+            }
+            await refresh(full: needFull)
+        }
     }
 
     /// Lectura pedida mientras otra estaba en marcha (`true` si alguna era completa).
@@ -90,9 +102,27 @@ final class HealthStore {
         }
         async let n = source.nights(from: from, to: to)
         async let w = source.workouts(from: from, to: to)
-        async let hr = source.hourly(.heartRate, day: today)
-        async let st = source.hourly(.steps, day: today)
-        let (newNights, newWorkouts, newHR, newSteps) = await (n, w, hr, st)
+        async let prof = source.profile()
+        // Por horas: dos semanas en la lectura completa, hoy y ayer en las rápidas.
+        let hourDays = (0..<(full || hours.isEmpty ? 14 : 2)).map { cal.date(byAdding: .day, value: -$0, to: today)! }
+        var newHours: [Date: DayHours] = [:]
+        await withTaskGroup(of: (Date, Int, [TimePoint]).self) { group in
+            for d in hourDays {
+                for (i, m) in [Metric.heartRate, .steps, .activeEnergy].enumerated() {
+                    group.addTask { [source] in (d, i, await source.hourly(m, day: d)) }
+                }
+            }
+            for await (d, i, pts) in group {
+                var h = newHours[d] ?? DayHours()
+                switch i {
+                case 0: h.hr = pts
+                case 1: h.steps = pts
+                default: h.energy = pts
+                }
+                newHours[d] = h
+            }
+        }
+        let (newNights, newWorkouts, newProfile) = await (n, w, prof)
 
         let old = values
         var merged = values
@@ -112,8 +142,10 @@ final class HealthStore {
         var ws = workouts.filter { $0.start < from }
         ws.append(contentsOf: newWorkouts)
         workouts = ws.sorted { $0.start > $1.start }
-        heartToday = newHR
-        stepsToday = newSteps
+        var hs = hours.filter { $0.key >= cal.date(byAdding: .day, value: -15, to: today)! }
+        for (d, h) in newHours { hs[d] = h }
+        hours = hs
+        profile = newProfile
         updated = .now
         if full { lastFull = .now }
         revision += 1
@@ -121,6 +153,9 @@ final class HealthStore {
         cache.save(values: merged, old: old, nights: newNights, workouts: newWorkouts)
         if full { cache.prune() }
     }
+
+    /// Para que se recalcule todo al cambiar algo de Ajustes (el trabajo, la edad…).
+    func invalidate() { revision += 1 }
 
     // MARK: - Memoria de cálculos
 
@@ -186,4 +221,11 @@ final class HealthStore {
         let from = Calendar.current.date(byAdding: .day, value: -(n - 1), to: today)!
         return workouts.filter { $0.start >= from }
     }
+}
+
+/// Un día por horas.
+struct DayHours: Sendable {
+    var hr: [TimePoint] = []
+    var steps: [TimePoint] = []
+    var energy: [TimePoint] = []
 }

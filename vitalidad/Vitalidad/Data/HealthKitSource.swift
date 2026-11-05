@@ -21,6 +21,8 @@ final class HealthKitSource: HealthDataSource, @unchecked Sendable {
         s.insert(HKCategoryType(.sleepAnalysis))
         s.insert(HKCategoryType(.appleStandHour))
         s.insert(HKObjectType.workoutType())
+        s.insert(HKCharacteristicType(.dateOfBirth))
+        s.insert(HKCharacteristicType(.biologicalSex))
         return s
     }
 
@@ -174,6 +176,17 @@ final class HealthKitSource: HealthDataSource, @unchecked Sendable {
                 avgHR: w.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
             )
         }
+    }
+
+    // MARK: - Perfil
+
+    func profile() async -> Profile {
+        var p = Profile()
+        if let c = try? store.dateOfBirthComponents() { p.birth = Calendar.current.date(from: c) }
+        if let s = try? store.biologicalSex().biologicalSex {
+            p.female = s == .female ? true : s == .male ? false : nil
+        }
+        return p
     }
 
     // MARK: - Cambios en segundo plano

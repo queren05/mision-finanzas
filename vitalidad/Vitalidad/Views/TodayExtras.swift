@@ -60,11 +60,13 @@ struct GoalRing: View {
 /// La batería del cuerpo: cuánta energía te queda y cómo ha ido el día.
 struct EnergyCard: View {
     @Environment(HealthStore.self) private var store
+    var date: Date = .now
 
     var body: some View {
-        if let day = EnergyEngine.today(store) {
+        if let day = EnergyEngine.day(store, date) {
             let cal = Calendar.current
-            let start = cal.startOfDay(for: .now)
+            let isToday = store.isToday(date)
+            let start = cal.startOfDay(for: date)
             let end = cal.date(byAdding: .day, value: 1, to: start)!
             let tone = RGB.mix(RGB.readiness, day.now / 100).color
             VStack(alignment: .leading, spacing: Space.l) {
@@ -81,7 +83,7 @@ struct EnergyCard: View {
                                 .contentTransition(.numericText())
                             Text("%").font(.title2.weight(.bold)).foregroundStyle(.secondary)
                         }
-                        Text(EnergyEngine.sentence(day.now))
+                        Text(isToday ? EnergyEngine.sentence(day.now) : "Cargaste hasta el \(Int(day.peak.rounded())) % y acabaste el día con el \(Int(day.now.rounded())) %.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -170,12 +172,13 @@ struct BatteryGlyph: View {
 
 /// Franja de estrés hora a hora.
 struct StressStrip: View {
-    var hours: [EnergyEngine.StressHour]
+    var hours: [StressEngine.Hour]
     var start: Date
     var end: Date
 
     static func color(_ l: Int) -> Color {
         switch l {
+        case -2: Palette.effort.opacity(0.4)
         case -1: Palette.sleep.opacity(0.45)
         case 0: Palette.breath.opacity(0.35)
         case 1: Color(red: 1, green: 0.82, blue: 0.35).opacity(0.75)
@@ -184,7 +187,7 @@ struct StressStrip: View {
         }
     }
 
-    static func summary(_ hours: [EnergyEngine.StressHour]) -> String {
+    static func summary(_ hours: [StressEngine.Hour]) -> String {
         let awake = hours.filter { $0.level >= 0 }
         guard !awake.isEmpty else { return "" }
         let high = awake.filter { $0.level >= 2 }.count
@@ -197,9 +200,14 @@ struct StressStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Text("ESTRÉS").font(.system(size: 10, weight: .heavy)).tracking(1).foregroundStyle(.secondary)
+                Text("POR HORAS").font(.system(size: 10, weight: .heavy)).tracking(1).foregroundStyle(.secondary)
                 Spacer()
-                Text(Self.summary(hours)).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                if hours.contains(where: { $0.level == -2 }) {
+                    HStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 2).fill(Self.color(-2)).frame(width: 8, height: 8)
+                        Text("Trabajo").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                }
             }
             Chart(hours) { s in
                 BarMark(x: .value("Hora", s.date, unit: .hour), yStart: .value("Bajo", 0), yEnd: .value("Alto", 1), width: .ratio(0.8))

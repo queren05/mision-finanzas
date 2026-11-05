@@ -179,6 +179,9 @@ struct PersonalizeTodayView: View {
     @AppStorage("hoySenales") private var showSignals = true
     @AppStorage("hoyPlan") private var showPlan = true
     @AppStorage("hoyEnergia") private var showEnergy = true
+    @AppStorage("hoyEstres") private var showStress = true
+    @AppStorage("hoyEdad") private var showAge = true
+    @AppStorage("hoyJornada") private var showWork = true
     @Environment(\.dismiss) private var dismiss
 
     private var shown: [Metric] { TodayCards.decode(cardsRaw) }
@@ -219,6 +222,9 @@ struct PersonalizeTodayView: View {
                     Toggle("Puntuaciones", isOn: $showScores)
                     Toggle("Plan de hoy", isOn: $showPlan)
                     Toggle("Energía del cuerpo", isOn: $showEnergy)
+                    Toggle("Tu jornada", isOn: $showWork)
+                    Toggle("Estrés", isOn: $showStress)
+                    Toggle("Edad de tu cuerpo", isOn: $showAge)
                     Toggle("Tu día", isOn: $showDay)
                     Toggle("Frente a tu normal", isOn: $showSignals)
                 }
@@ -274,6 +280,9 @@ struct PersonalizeTodayView: View {
                             showSignals = true
                             showPlan = true
                             showEnergy = true
+                            showStress = true
+                            showAge = true
+                            showWork = true
                         }
                     }
                 }

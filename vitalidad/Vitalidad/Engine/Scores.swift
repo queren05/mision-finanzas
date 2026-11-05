@@ -93,6 +93,75 @@ enum ScoreEngine {
         store.remember("report") { computeReport(store) }
     }
 
+    /// El informe de cualquier día (hoy, el de siempre).
+    static func report(_ store: HealthStore, day: Date) -> DayReport {
+        let d = store.dayStart(day)
+        if d >= store.today { return report(store) }
+        return store.remember("report|\(Int(d.timeIntervalSince1970))") { computePast(store, day: d) }
+    }
+
+    /// Esfuerzo de un día: energía activa y ejercicio frente a lo normal en ti, y el pulso de cada hora
+    /// (para que cuente también el trabajo físico, que sube el pulso sin sumar pasos).
+    static func effort(_ store: HealthStore, day: Date) -> Score? {
+        let d = store.dayStart(day)
+        guard let e = store.value(.activeEnergy, on: d) ?? (store.has(.activeEnergy) ? 0 : nil) else { return nil }
+        let eb = store.baseline(.activeEnergy, before: d)?.median ?? 450
+        let ex = store.value(.exerciseMinutes, on: d) ?? 0
+        let xb = max(10, store.baseline(.exerciseMinutes, before: d)?.median ?? 30)
+        let raw = 0.6 * e / max(eb, 50) + 0.4 * ex / xb
+        var value = Int((100 * (1 - exp(-1.1 * raw))).rounded())
+        var byHeart = false
+        if let h = HeartLoad.score(store, day: d) {
+            let mixed = Int((0.5 * Double(value) + 0.5 * Double(h)).rounded())
+            if mixed > value { value = mixed; byHeart = true }
+        }
+        var sentence = effortSentence(value, energy: e, exercise: ex, store: store)
+        if byHeart {
+            let level = value >= 75 ? "alto" : value >= 45 ? "moderado" : "bajo"
+            sentence = WorkSchedule.current.isWorkDay(d)
+                ? "Esfuerzo \(level): \(Fmt.full(.activeEnergy, e)) activas y el pulso alto de tu jornada."
+                : "Esfuerzo \(level): \(Fmt.full(.activeEnergy, e)) activas y muchas horas con el pulso alto."
+        }
+        return Score(kind: .effort, value: value, sentence: sentence)
+    }
+
+    private static func computePast(_ store: HealthStore, day: Date) -> DayReport {
+        var sleepScore: Score?
+        var sleepParts: [String: Double] = [:]
+        let night = store.nights[day]
+        if let night {
+            let (v, p) = sleep(night, store: store)
+            sleepParts = p
+            sleepScore = Score(kind: .sleep, value: v, sentence: sleepSentence(v, night: night, parts: p, store: store))
+        }
+        var weighted: [(Double, Double, String)] = []
+        if let hrv = store.value(.hrv, on: day), let b = store.baseline(.hrv, before: day) {
+            weighted.append((0.4, part(b.z(hrv)), "la variabilidad estaba baja"))
+        }
+        if let rhr = store.value(.restingHR, on: day), let b = store.baseline(.restingHR, before: day) {
+            weighted.append((0.3, part(-b.z(rhr)), "el pulso en reposo estaba alto"))
+        }
+        if let s = sleepScore { weighted.append((0.3, Double(s.value) / 100, "dormiste poco")) }
+        var recovery: Score?
+        if weighted.count >= 2 {
+            let w = weighted.reduce(0) { $0 + $1.0 }
+            let value = Int(min(100, max(0, weighted.reduce(0) { $0 + $1.0 * $1.1 } / w * 100)).rounded())
+            let worst = weighted.min { $0.1 < $1.1 }!
+            let text = value >= 67 ? "Ese día estabas recuperado." : value >= 40 ? "Recuperación a medias: \(worst.2)." : "Tu cuerpo aún se estaba recuperando: \(worst.2)."
+            recovery = Score(kind: .recovery, value: value, sentence: text)
+        }
+        let eff = effort(store, day: day)
+        var parts: [String] = []
+        if let night { parts.append("Dormiste \(Fmt.duration(night.asleep)).") }
+        if let r = recovery { parts.append(r.sentence) }
+        if let e = eff { parts.append(e.sentence) }
+        _ = sleepParts
+        let mood: Mood = recovery.map { $0.value >= 67 ? .recovered : $0.value >= 40 ? .steady : .easy } ?? .neutral
+        return DayReport(recovery: recovery, sleep: sleepScore, effort: eff,
+                         summary: parts.isEmpty ? "No hay datos de este día." : parts.prefix(3).joined(separator: " "),
+                         mood: mood, advice: nil)
+    }
+
     private static func computeReport(_ store: HealthStore) -> DayReport {
         let night = store.lastNight
         var sleepScore: Score?
@@ -122,16 +191,7 @@ enum ScoreEngine {
             recovery = Score(kind: .recovery, value: value, sentence: recoverySentence(value, reason: worst.2))
         }
 
-        // Esfuerzo: energía activa y ejercicio de hoy frente a lo normal en ti.
-        var effort: Score?
-        if let e = store.value(.activeEnergy, on: store.today) ?? (store.has(.activeEnergy) ? 0 : nil) {
-            let eb = store.baseline(.activeEnergy)?.median ?? 450
-            let ex = store.value(.exerciseMinutes, on: store.today) ?? 0
-            let xb = max(10, store.baseline(.exerciseMinutes)?.median ?? 30)
-            let raw = 0.6 * e / max(eb, 50) + 0.4 * ex / xb
-            let value = Int((100 * (1 - exp(-1.1 * raw))).rounded())
-            effort = Score(kind: .effort, value: value, sentence: effortSentence(value, energy: e, exercise: ex, store: store))
-        }
+        let effort = Self.effort(store, day: store.today)
 
         let mood: Mood = {
             let h = Calendar.current.component(.hour, from: .now)

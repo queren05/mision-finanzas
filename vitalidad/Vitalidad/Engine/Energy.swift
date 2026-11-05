@@ -13,27 +13,32 @@ enum EnergyEngine {
         var peak: Double
     }
 
-    static func today(_ store: HealthStore) -> Day? {
-        store.remember("energia") { compute(store) }
+    static func today(_ store: HealthStore) -> Day? { day(store, store.today) }
+
+    static func day(_ store: HealthStore, _ day: Date) -> Day? {
+        let d = store.dayStart(day)
+        return store.remember("energia|\(Int(d.timeIntervalSince1970))") { compute(store, d) }
     }
 
-    private static func compute(_ store: HealthStore) -> Day? {
+    private static func compute(_ store: HealthStore, _ start: Date) -> Day? {
         let cal = Calendar.current
-        let start = cal.startOfDay(for: .now)
-        let hr = Dictionary(store.heartToday.map { (cal.component(.hour, from: $0.date), $0.value) }, uniquingKeysWith: { a, _ in a })
-        let steps = Dictionary(store.stepsToday.map { (cal.component(.hour, from: $0.date), $0.value) }, uniquingKeysWith: { a, _ in a })
+        let h = store.dayHours(start)
+        let hr = Dictionary(h.hr.map { (cal.component(.hour, from: $0.date), $0.value) }, uniquingKeysWith: { a, _ in a })
+        let steps = Dictionary(h.steps.map { (cal.component(.hour, from: $0.date), $0.value) }, uniquingKeysWith: { a, _ in a })
         guard !hr.isEmpty || !steps.isEmpty else { return nil }
-        let rhr = store.baseline(.restingHR)?.median ?? store.latest(.restingHR)?.value ?? 60
-        let recovery = Double(ScoreEngine.report(store).recovery?.value ?? 60)
-        let night = store.lastNight.flatMap { $0.end > start ? $0 : nil }
+        let rhr = store.restingHR(for: start)
+        let recovery = Double(ScoreEngine.report(store, day: start).recovery?.value ?? 60)
+        let night = store.night(for: start).flatMap { $0.end > start ? $0 : nil }
         let wake = night?.end ?? cal.date(byAdding: .hour, value: 7, to: start)!
         let sleepFrom = night.map { max($0.start, start) } ?? start
         let peak = min(100, 40 + 0.6 * recovery)
+        let work = WorkSchedule.current
+        let isToday = store.isToday(start)
         var level = 22.0
         var out: [TimePoint] = []
-        let nowHour = cal.component(.hour, from: .now)
-        for h in 0...nowHour {
-            let t = cal.date(byAdding: .hour, value: h, to: start)!
+        let lastHour = isToday ? cal.component(.hour, from: .now) : 23
+        for hour in 0...lastHour {
+            let t = cal.date(byAdding: .hour, value: hour, to: start)!
             let tEnd = cal.date(byAdding: .hour, value: 1, to: t)!
             out.append(TimePoint(date: t, value: level))
             if tEnd <= sleepFrom {
@@ -44,14 +49,16 @@ enum EnergyEngine {
                 level += (peak - level) / left * 1.1
                 level = min(level, peak)
             } else {
-                let s = steps[h] ?? 0
-                let pulse = hr[h] ?? rhr + 12
-                let drain = 1.6 + s / 450 + max(0, pulse - rhr - 15) * 0.2
+                let s = steps[hour] ?? 0
+                let pulse = hr[hour] ?? rhr + 12
+                var drain = 1.6 + s / 450 + max(0, pulse - rhr - 15) * 0.2
+                // Cargar peso cansa aunque no camines.
+                if work.kind == .physical && work.isWorkHour(t) { drain += 1.2 }
                 level = max(4, level - drain)
             }
         }
-        let now = Date.now
-        out.append(TimePoint(date: now, value: level))
+        let endPoint = isToday ? Date.now : cal.date(byAdding: .day, value: 1, to: start)!.addingTimeInterval(-60)
+        out.append(TimePoint(date: endPoint, value: level))
         return Day(points: out, now: level, wake: night?.end, peak: peak)
     }
 
@@ -60,32 +67,6 @@ enum EnergyEngine {
         if v >= 45 { return "Te queda energía para un entreno moderado o una tarde activa." }
         if v >= 25 { return "Vas justo de energía: algo suave y no te acuestes tarde." }
         return "Batería baja: descansa y prioriza dormir bien esta noche."
-    }
-
-    /// Estrés de cada hora: pulso alto para lo poco que te estás moviendo (0 nada, 3 alto).
-    struct StressHour: Identifiable {
-        var date: Date
-        /// -1 durmiendo, 0 tranquilo, 1 algo, 2 medio, 3 alto
-        var level: Int
-        var id: Date { date }
-    }
-
-    static func stress(_ store: HealthStore) -> [StressHour] {
-        store.remember("estres") {
-            let cal = Calendar.current
-            let rhr = store.baseline(.restingHR)?.median ?? 60
-            let steps = Dictionary(store.stepsToday.map { (cal.component(.hour, from: $0.date), $0.value) }, uniquingKeysWith: { a, _ in a })
-            let night = store.lastNight
-            return store.heartToday.compactMap { p -> StressHour? in
-                guard p.value > 0 else { return nil }
-                if let n = night, p.date >= n.start.addingTimeInterval(-1800), p.date < n.end { return StressHour(date: p.date, level: -1) }
-                let h = cal.component(.hour, from: p.date)
-                // Si te mueves, el pulso alto es ejercicio, no estrés.
-                if (steps[h] ?? 0) > 900 { return StressHour(date: p.date, level: 0) }
-                let over = p.value - rhr
-                return StressHour(date: p.date, level: over > 30 ? 3 : over > 20 ? 2 : over > 12 ? 1 : 0)
-            }
-        }
     }
 }
 

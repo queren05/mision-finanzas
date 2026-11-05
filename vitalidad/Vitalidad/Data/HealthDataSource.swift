@@ -17,6 +17,14 @@ protocol HealthDataSource: Sendable {
     func workouts(from: Date, to: Date) async -> [Workout]
     /// Valores por horas de un día (pulso medio de cada hora, pasos de cada hora…).
     func hourly(_ metric: Metric, day: Date) async -> [TimePoint]
+    /// Fecha de nacimiento y sexo, si están en la fuente.
+    func profile() async -> Profile
     /// Avisa cuando cambian los datos, también con la app cerrada si la fuente lo permite.
     func observeChanges(_ onChange: @escaping @Sendable () async -> Void)
+}
+
+/// Lo que la fuente sabe de ti (para la edad del cuerpo y el pulso máximo).
+struct Profile: Sendable, Equatable {
+    var birth: Date?
+    var female: Bool?
 }

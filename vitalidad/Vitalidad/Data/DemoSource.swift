@@ -129,17 +129,29 @@ struct DemoSource: HealthDataSource {
         return out.sorted { $0.start > $1.start }
     }
 
+    func profile() async -> Profile {
+        Profile(birth: Calendar.current.date(from: DateComponents(year: 1994, month: 3, day: 12)), female: false)
+    }
+
     func hourly(_ metric: Metric, day: Date) async -> [TimePoint] {
         let cal = Calendar.current
         let start = cal.startOfDay(for: day)
         let nowHour = cal.isDateInToday(day) ? cal.component(.hour, from: .now) : 23
-        var r = Rand(seed: 99)
+        let dayN = Int(start.timeIntervalSince1970 / 86400)
+        var r = Rand(seed: 99 &+ UInt64(dayN % 997) &* 7 &+ UInt64(Metric.allCases.firstIndex(of: metric) ?? 0))
+        // Días de diario: mozo de almacén de 7 a 15, cargando cajas (pulso alto con pocos pasos).
+        let weekday = cal.component(.weekday, from: start)
+        let workday = weekday >= 2 && weekday <= 6
+        let gym = dayN % 3 == 0
         return (0...nowHour).map { h in
             let date = cal.date(byAdding: .hour, value: h, to: start)!
             let awake = h >= 7 && h <= 23
+            let work = workday && h >= 7 && h < 15
+            let train = gym && h == 19
             let v: Double = switch metric {
-            case .heartRate: awake ? r.normal(h == 19 ? 128 : 76, 6) : r.normal(56, 2)
-            case .steps: awake ? max(0, r.normal(h == 8 || h == 14 || h == 19 ? 1400 : 420, 220)) : 0
+            case .heartRate: train ? r.normal(132, 6) : work ? r.normal(h == 10 || h == 13 ? 112 : 101, 6) : awake ? r.normal(h == 22 ? 88 : 74, 5) : r.normal(56, 2)
+            case .steps: train ? r.normal(1500, 200) : work ? max(0, r.normal(650, 180)) : awake ? max(0, r.normal(h == 8 || h == 16 ? 1300 : 380, 200)) : 0
+            case .activeEnergy: train ? r.normal(420, 30) : work ? max(0, r.normal(68, 10)) : awake ? max(0, r.normal(22, 6)) : r.normal(2, 1)
             default: 0
             }
             return TimePoint(date: date, value: v)
