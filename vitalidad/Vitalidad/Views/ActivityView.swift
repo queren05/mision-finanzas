@@ -4,6 +4,7 @@ import Charts
 struct ActivityView: View {
     @Environment(HealthStore.self) private var store
     @Namespace private var zoom
+    @State private var strengthOpen = Launch.args.contains("-fuerza")
 
     var body: some View {
         let report = ScoreEngine.report(store)
@@ -13,6 +14,7 @@ struct ActivityView: View {
                 if let effort = report.effort {
                     hero(effort).stagger(0)
                 }
+                StrengthCard().stagger(1).scrollFade()
                 LoadCard().stagger(1).scrollFade()
                 WeeklyLoadCard().stagger(1).scrollFade()
 
@@ -48,6 +50,7 @@ struct ActivityView: View {
         }
         .background(MoodBackground(mood: report.mood == .night ? .night : .easy))
         .navigationTitle("Actividad")
+        .navigationDestination(isPresented: $strengthOpen) { StrengthView() }
         .navigationDestination(for: Metric.self) { m in MetricDetailView(metric: m).zoomDestination(m, zoom) }
         .refreshable { await store.refresh(full: false) }
     }

@@ -252,10 +252,11 @@ enum BioAge {
         let cal = Calendar.current
         let vo2From = cal.date(byAdding: .day, value: -90, to: day)!
         if let vo2 = (store.values[.vo2max] ?? [:]).filter({ $0.key >= vo2From && $0.key <= day }).max(by: { $0.key < $1.key })?.value {
-            let (a, b) = female ? (51.0, 0.32) : (65.25, 0.434)
+            // Media del Apple Watch por edad: unos 40 a los 30 años en hombres (33 en mujeres), bajando cada año.
+            let (a, b) = female ? (41.0, 0.25) : (48.5, 0.27)
             let fitAge = max(18, min(90, (a - vo2) / b))
             parts.append(Part(id: "vo2", title: "Forma física", symbol: "bolt.heart.fill", color: Palette.recovery,
-                              value: "\(Fmt.value(.vo2max, vo2)) VO₂ máx", years: clamp((fitAge - real) * 0.4, 6)))
+                              value: "\(Fmt.value(.vo2max, vo2)) VO₂ máx", years: clamp((fitAge - real) * 0.3, 5)))
         }
         if let rhr = avg(store, .restingHR, day) {
             parts.append(Part(id: "rhr", title: "Pulso en reposo", symbol: "heart.fill", color: Palette.heart,

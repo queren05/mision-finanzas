@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppTab: String, CaseIterable {
-    case today, sleep, activity, nutrition, trends
+    case today, activity, sleep, nutrition, journal
 
     var title: String {
         switch self {
@@ -9,7 +9,7 @@ enum AppTab: String, CaseIterable {
         case .sleep: "Sueño"
         case .activity: "Actividad"
         case .nutrition: "Nutrición"
-        case .trends: "Tendencias"
+        case .journal: "Diario"
         }
     }
 
@@ -19,7 +19,7 @@ enum AppTab: String, CaseIterable {
         case .sleep: "moon.zzz.fill"
         case .activity: "flame.fill"
         case .nutrition: "fork.knife"
-        case .trends: "chart.xyaxis.line"
+        case .journal: "book.closed.fill"
         }
     }
 }
@@ -65,7 +65,7 @@ struct RootView: View {
         case .sleep: SleepView()
         case .activity: ActivityView()
         case .nutrition: NutritionView()
-        case .trends: TrendsView()
+        case .journal: JournalView()
         }
     }
 }

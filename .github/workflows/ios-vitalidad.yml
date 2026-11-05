@@ -125,7 +125,7 @@ jobs:
           shot -demo -tab sleep;        snap 3-sueno
           shot -demo -tab activity;     snap 4-actividad
           shot -demo -tab nutrition;    snap 5-nutricion
-          shot -demo -tab trends;       snap 6-tendencias
+          shot -demo -tab journal;      snap 6-diario
           shot -demo -detail hrv;       snap 7-detalle
           shot -demo -settings;         snap 8-ajustes
           shot -demo -estilo grid;      snap 10-hoy-cuadricula
@@ -133,9 +133,12 @@ jobs:
           shot -demo -personalizar;     snap 12-personalizar
           shot -demo -widgets;          snap 13-widgets
           shot -demo -dia 2;            snap 14-dia-anterior
-          shot -demo -foco jornada;     snap 15-jornada
-          shot -demo -foco estres;      snap 16-estres
+          shot -demo -dia 1 -foco jornada; snap 15-jornada
+          shot -demo -dia 1 -foco estres;  snap 16-estres
           shot -demo -foco edad;        snap 17-edad
+          shot -demo -dia 1 -foco crono;   snap 18-cronologia
+          shot -demo -tab activity -fuerza; snap 19-fuerza
+          shot -demo -tab activity -vivo;   snap 20-entreno
           xcrun simctl ui "$DEV" appearance light
           shot -demo;                   snap 9-hoy-claro
           ls -la "$GITHUB_WORKSPACE/out"

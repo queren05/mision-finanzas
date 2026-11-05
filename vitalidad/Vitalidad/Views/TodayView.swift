@@ -20,6 +20,7 @@ struct TodayView: View {
     @AppStorage("hoyEstres") private var showStress = true
     @AppStorage("hoyEdad") private var showAge = true
     @AppStorage("hoyJornada") private var showWork = true
+    @AppStorage("hoyCrono") private var showTimeline = true
     @State private var day: Date = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: -(Int(Launch.value("-dia") ?? "") ?? 0), to: .now)!)
 
     var body: some View {
@@ -81,6 +82,10 @@ struct TodayView: View {
                     StressCard(day: day).stagger(2).scrollFade().id("estres")
                 }
 
+                if showTimeline {
+                    TimelineCard(day: day).stagger(2).scrollFade().id("crono")
+                }
+
                 if showDay {
                     DayTimelineCard(day: day).stagger(2).scrollFade()
                 }
@@ -125,6 +130,10 @@ struct TodayView: View {
         }
         .refreshable { await store.refresh(full: false) }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink { TrendsView() } label: { Image(systemName: "chart.xyaxis.line") }
+                    .accessibilityLabel("Tendencias")
+            }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { personalize = true } label: { Image(systemName: "slider.horizontal.3") }
                     .accessibilityLabel("Personalizar Hoy")
@@ -172,58 +181,118 @@ struct TodayView: View {
     }
 }
 
-/// Lo primero que se ve: el medidor grande de la puntuación principal, el resumen y las otras dos puntuaciones.
+/// Lo primero que se ve: los tres anillos (esfuerzo, recuperación y sueño) y el resumen.
 struct ReadinessHero: View {
     var report: DayReport
     var showSummary: Bool
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
+        let order: [Score.Kind] = [.effort, .recovery, .sleep]
+        let rings = order.map { k in report.scores.first { $0.kind == k } }
         let main = report.recovery ?? report.sleep ?? report.effort
-        let others = report.scores.filter { $0.kind != main?.kind }
         VStack(spacing: Space.l) {
-            if let main {
-                ZStack {
-                    BreathingGlow(color: main.tone).frame(width: 300, height: 300)
-                    AnimatedGauge(value: Double(main.value) / 100, stops: main.scale)
-                    VStack(spacing: 0) {
-                        Text(main.title.uppercased())
-                            .font(.caption2.weight(.heavy))
-                            .tracking(1.6)
-                            .foregroundStyle(.secondary)
-                        CountingNumber(value: main.value)
-                            .font(.system(size: 76, weight: .bold, design: .rounded))
-                            .tracking(-2)
-                        Text(main.verdict)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(main.tone)
+            HStack(alignment: .top, spacing: 0) {
+                ForEach(Array(order.enumerated()), id: \.offset) { i, k in
+                    Button {
+                        switch k {
+                        case .effort: openURL(URL(string: "vitalidad://tab/activity")!)
+                        case .sleep: openURL(URL(string: "vitalidad://tab/sleep")!)
+                        case .recovery: openURL(URL(string: "vitalidad://detalle/hrv")!)
+                        }
+                    } label: {
+                        ScoreRing(kind: k, score: rings[i], big: k == .recovery)
                     }
-                    .offset(y: 4)
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(width: 236, height: 236)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, -Space.l)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(main.title): \(main.value) de 100, \(main.verdict)")
             }
-
+            if let main {
+                Text(main.verdict)
+                    .font(.headline)
+                    .foregroundStyle(main.tone)
+            }
             if showSummary {
                 Text(report.summary)
-                    .font(.body.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary.opacity(0.9))
+                    .foregroundStyle(.primary.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, Space.s)
-            }
-
-            if !others.isEmpty {
-                HStack(alignment: .top, spacing: Space.xl) {
-                    ForEach(others) { ScoreBar(score: $0) }
-                }
-                .padding(.top, Space.s)
+                    .padding(.horizontal, Space.xs)
             }
         }
-        .card(padding: 22, radius: 30, tint: main?.tone)
+        .card(padding: 20, radius: 30, tint: main?.tone)
+    }
+}
+
+/// Un anillo grueso con el número dentro y el nombre debajo.
+struct ScoreRing: View {
+    var kind: Score.Kind
+    var score: Score?
+    var big = false
+    @State private var shown: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var title: String {
+        switch kind {
+        case .recovery: "Recuperación"
+        case .sleep: "Sueño"
+        case .effort: "Esfuerzo"
+        }
+    }
+
+    private var base: Color {
+        switch kind {
+        case .recovery: Palette.recovery
+        case .sleep: Palette.sleep
+        case .effort: Palette.effort
+        }
+    }
+
+    var body: some View {
+        let size: CGFloat = big ? 112 : 92
+        let line: CGFloat = big ? 12 : 10
+        let colors = score?.scale.map(\.color) ?? [base]
+        let tone = score?.tone ?? base
+        VStack(spacing: Space.s) {
+            ZStack {
+                Circle().stroke(base.opacity(0.16), lineWidth: line)
+                Circle()
+                    .trim(from: 0, to: shown)
+                    .stroke(AngularGradient(colors: colors + [colors.last!], center: .center, startAngle: .degrees(0), endAngle: .degrees(360 * max(shown, 0.01))),
+                            style: StrokeStyle(lineWidth: line, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .shadow(color: tone.opacity(0.45), radius: 6)
+                VStack(spacing: -2) {
+                    if let score {
+                        CountingNumber(value: score.value)
+                            .font(.system(size: big ? 36 : 28, weight: .bold, design: .rounded))
+                        Text("%").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    } else {
+                        Text("—").font(.title2.weight(.bold)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(width: size, height: size)
+            .padding(line / 2)
+            Text(title.uppercased())
+                .font(.system(size: 10, weight: .heavy))
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(height: 150, alignment: .bottom)
+        .onAppear { go(score.map { Double($0.value) / 100 } ?? 0, 0.15) }
+        .onChange(of: score?.value) { _, v in go(Double(v ?? 0) / 100, 0) }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(score.map { "\(title): \($0.value) de 100" } ?? "\(title): sin datos")
+    }
+
+    private func go(_ v: Double, _ delay: Double) {
+        if reduceMotion { shown = v; return }
+        withAnimation(.spring(response: 1.2, dampingFraction: 0.85).delay(delay)) { shown = v }
     }
 }
 

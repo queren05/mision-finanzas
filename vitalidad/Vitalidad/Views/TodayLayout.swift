@@ -182,6 +182,7 @@ struct PersonalizeTodayView: View {
     @AppStorage("hoyEstres") private var showStress = true
     @AppStorage("hoyEdad") private var showAge = true
     @AppStorage("hoyJornada") private var showWork = true
+    @AppStorage("hoyCrono") private var showTimeline = true
     @Environment(\.dismiss) private var dismiss
 
     private var shown: [Metric] { TodayCards.decode(cardsRaw) }
@@ -224,6 +225,7 @@ struct PersonalizeTodayView: View {
                     Toggle("Energía del cuerpo", isOn: $showEnergy)
                     Toggle("Tu jornada", isOn: $showWork)
                     Toggle("Estrés", isOn: $showStress)
+                    Toggle("Cronología", isOn: $showTimeline)
                     Toggle("Edad de tu cuerpo", isOn: $showAge)
                     Toggle("Tu día", isOn: $showDay)
                     Toggle("Frente a tu normal", isOn: $showSignals)
@@ -283,6 +285,7 @@ struct PersonalizeTodayView: View {
                             showStress = true
                             showAge = true
                             showWork = true
+                            showTimeline = true
                         }
                     }
                 }
