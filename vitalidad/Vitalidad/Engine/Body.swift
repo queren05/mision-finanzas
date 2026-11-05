@@ -183,7 +183,8 @@ enum StressEngine {
                 let moving = (steps[hour] ?? 0) > (work.kind == .standing && work.isWorkHour(p.date) ? 400 : 900)
                 if moving { return Hour(date: p.date, level: 0) }
                 let over = p.value - rhr
-                return Hour(date: p.date, level: over > 30 ? 3 : over > 20 ? 2 : over > 12 ? 1 : 0)
+                // Despierto y sentado, lo normal es ir 10-20 pulsaciones por encima del pulso en reposo.
+                return Hour(date: p.date, level: over > 40 ? 3 : over > 30 ? 2 : over > 22 ? 1 : 0)
             }
         }
     }
@@ -193,7 +194,7 @@ enum StressEngine {
         let hs = hours(store, day: day).filter { $0.level >= 0 }
         guard hs.count >= 3 else { return nil }
         let avg = Double(hs.reduce(0) { $0 + $1.level }) / Double(hs.count) / 3
-        var v = avg * 150 + 8
+        var v = avg * 130 + 6
         // La variabilidad baja también es estrés del cuerpo.
         if let hrv = store.value(.hrv, on: day), let b = store.baseline(.hrv, before: store.dayStart(day)) {
             v += max(-8, min(14, -b.z(hrv) * 6))

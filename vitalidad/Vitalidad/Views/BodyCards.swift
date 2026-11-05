@@ -294,7 +294,7 @@ struct WorkCard: View {
                             .interpolationMethod(.catmullRom)
                     }
                 }
-                .chartXScale(domain: start...end)
+                .chartXScale(domain: (Calendar.current.dateInterval(of: .hour, for: start)?.start ?? start)...(Calendar.current.dateInterval(of: .hour, for: end.addingTimeInterval(-1))?.end ?? end))
                 .chartYAxis(.hidden)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: .hour, count: max(1, Int(end.timeIntervalSince(start) / 3600) / 4))) { v in
