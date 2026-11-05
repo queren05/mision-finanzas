@@ -30,37 +30,71 @@ enum JobKind: String, CaseIterable, Identifiable {
     }
 }
 
-/// Tu jornada: tipo de trabajo, días y horas.
+/// Tu jornada: tipo de trabajo y el horario de cada día (en minutos desde las 0:00).
 struct WorkSchedule {
-    var kind: JobKind
-    /// Días de la semana (1 domingo … 7 sábado).
-    var days: Set<Int>
-    var from: Int
-    var to: Int
+    struct Shift: Equatable {
+        var from: Int
+        var to: Int
+    }
 
-    static let kindKey = "trabajoTipo", daysKey = "trabajoDias", fromKey = "trabajoDesde", toKey = "trabajoHasta", askedKey = "trabajoPreguntado"
+    var kind: JobKind
+    /// Día de la semana (1 domingo … 7 sábado) → horario.
+    var shifts: [Int: Shift]
+
+    static let kindKey = "trabajoTipo", scheduleKey = "trabajoHorario", askedKey = "trabajoPreguntado"
+    /// Lunes de 16:30 a 22:30 y de martes a viernes de 17:30 a 22:30.
+    static let defaultSchedule = "2:990-1350,3:1050-1350,4:1050-1350,5:1050-1350,6:1050-1350"
+
+    static func decode(_ s: String) -> [Int: Shift] {
+        var out: [Int: Shift] = [:]
+        for part in s.split(separator: ",") {
+            let kv = part.split(separator: ":"), r = kv.last?.split(separator: "-") ?? []
+            guard kv.count == 2, r.count == 2, let d = Int(kv[0]), let a = Int(r[0]), let b = Int(r[1]), b > a else { continue }
+            out[d] = Shift(from: a, to: b)
+        }
+        return out
+    }
+
+    static func encode(_ m: [Int: Shift]) -> String {
+        m.keys.sorted().compactMap { d in m[d].map { "\(d):\($0.from)-\($0.to)" } }.joined(separator: ",")
+    }
 
     static var current: WorkSchedule {
         let d = UserDefaults.standard
-        if Launch.demo { return WorkSchedule(kind: .physical, days: [2, 3, 4, 5, 6], from: 7, to: 15) }
-        let kind = JobKind(rawValue: d.string(forKey: kindKey) ?? "") ?? .none
-        let days = Set((d.string(forKey: daysKey) ?? "23456").compactMap { Int(String($0)) })
-        let from = d.object(forKey: fromKey) as? Int ?? 7
-        let to = d.object(forKey: toKey) as? Int ?? 15
-        return WorkSchedule(kind: kind, days: days, from: from, to: max(from + 1, to))
+        let kind = JobKind(rawValue: d.string(forKey: kindKey) ?? "") ?? .physical
+        return WorkSchedule(kind: kind, shifts: decode(d.string(forKey: scheduleKey) ?? defaultSchedule))
     }
 
     var active: Bool { kind != .none }
 
-    func isWorkDay(_ d: Date) -> Bool { active && days.contains(Calendar.current.component(.weekday, from: d)) }
+    func shift(on d: Date) -> Shift? { active ? shifts[Calendar.current.component(.weekday, from: d)] : nil }
 
+    func isWorkDay(_ d: Date) -> Bool { shift(on: d) != nil }
+
+    /// Una hora cuenta como trabajo si su mitad cae dentro del horario.
     func isWorkHour(_ d: Date) -> Bool {
-        guard isWorkDay(d) else { return false }
-        let h = Calendar.current.component(.hour, from: d)
-        return h >= from && h < to
+        guard let s = shift(on: d) else { return false }
+        let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+        let mid = (c.hour ?? 0) * 60 + (c.minute ?? 0) + 30
+        return mid >= s.from && mid < s.to
     }
 
-    var hoursText: String { "\(from):00–\(to):00" }
+    /// Cuándo empieza y acaba la jornada de ese día.
+    func bounds(on day: Date) -> (Date, Date)? {
+        guard let s = shift(on: day) else { return nil }
+        let start = Calendar.current.startOfDay(for: day)
+        return (start.addingTimeInterval(Double(s.from) * 60), start.addingTimeInterval(Double(s.to) * 60))
+    }
+
+    static func clock(_ m: Int) -> String { "\(m / 60):\(String(format: "%02d", m % 60))" }
+
+    func hoursText(on day: Date) -> String { shift(on: day).map { "\(Self.clock($0.from))–\(Self.clock($0.to))" } ?? "" }
+
+    /// Resumen para el entrenador: «lunes 16:30–22:30, martes 17:30–22:30…».
+    var summary: String {
+        let names = [2: "lunes", 3: "martes", 4: "miércoles", 5: "jueves", 6: "viernes", 7: "sábado", 1: "domingo"]
+        return [2, 3, 4, 5, 6, 7, 1].compactMap { d in shifts[d].map { "\(names[d]!) \(Self.clock($0.from))–\(Self.clock($0.to))" } }.joined(separator: ", ")
+    }
 }
 
 // MARK: - Días
@@ -200,6 +234,24 @@ enum BioAge {
         var diff: Double { age - real }
     }
 
+    /// Lo que más años te quitaría, de más a menos.
+    static func tips(_ r: Result) -> [(Part, String)] {
+        r.parts.filter { $0.years > 0.2 }.sorted { $0.years > $1.years }.prefix(3).map { p in
+            let text: String = switch p.id {
+            case "tabaco": "Dejar de fumar"
+            case "alcohol": "Bajar a menos de 7 bebidas a la semana"
+            case "porro": "Dejar los porros"
+            case "vo2": "Mejorar el fondo: 3 días de cardio a la semana"
+            case "rhr": "Bajar el pulso en reposo con cardio suave y dormir bien"
+            case "hrv": "Subir la variabilidad: dormir, menos alcohol y menos estrés"
+            case "sueno": "Dormir entre 7 y 9 horas"
+            case "pasos": "Llegar a 8.000 pasos al día"
+            default: p.title
+            }
+            return (p, text)
+        }
+    }
+
     static let ageKey = "edadManual", sexKey = "sexoManual"
 
     static func realAge(_ store: HealthStore, at day: Date = .now) -> Double? {
@@ -219,7 +271,7 @@ enum BioAge {
 
     /// Cómo ha ido cambiando: una cada 15 días durante los últimos 3 meses.
     static func history(_ store: HealthStore) -> [TimePoint] {
-        store.remember("edad-historia") {
+        store.remember("edad-historia|\(Journal.shared.version)") {
             let cal = Calendar.current
             return stride(from: 90, through: 0, by: -15).compactMap { n -> TimePoint? in
                 guard let d = cal.date(byAdding: .day, value: -n, to: store.today), let r = compute(store, at: d) else { return nil }
@@ -229,7 +281,7 @@ enum BioAge {
     }
 
     static func compute(_ store: HealthStore, at day: Date) -> Result? {
-        store.remember("edad|\(Int(day.timeIntervalSince1970))") { make(store, at: day) }
+        store.remember("edad|\(Int(day.timeIntervalSince1970))|\(Journal.shared.version)") { make(store, at: day) }
     }
 
     private static func avg(_ store: HealthStore, _ m: Metric, _ day: Date, days: Int = 30) -> Double? {
@@ -276,6 +328,29 @@ enum BioAge {
         if let steps = avg(store, .steps, day) {
             parts.append(Part(id: "pasos", title: "Pasos al día", symbol: "figure.walk", color: Palette.effort,
                               value: Fmt.number(steps), years: clamp((7500 - steps) / 2500, 2.5)))
+        }
+        // Hábitos del Diario de los últimos 30 días (si los apuntas).
+        let journal = Journal.shared
+        let answered = (0..<30).compactMap { cal.date(byAdding: .day, value: -$0, to: day) }.filter { journal.answered($0) }
+        if answered.count >= 5 {
+            func perDay(_ h: String) -> Double { Double(answered.reduce(0) { $0 + journal.value(h, on: $1) }) / Double(answered.count) }
+            if journal.tracked.contains("tabaco") {
+                let c = perDay("tabaco")
+                parts.append(Part(id: "tabaco", title: "Tabaco", symbol: "smoke.fill", color: Color(red: 0.62, green: 0.6, blue: 0.58),
+                                  value: c > 0 ? "\(Fmt.number(c, decimals: c < 10 ? 1 : 0)) al día" : "nada", years: c > 0 ? min(7, 1 + c * 0.3) : -0.3))
+            }
+            if journal.tracked.contains("alcohol") {
+                let week = perDay("alcohol") * 7
+                parts.append(Part(id: "alcohol", title: "Alcohol", symbol: "wineglass.fill", color: Palette.nutrition,
+                                  value: "\(Fmt.number(week, decimals: week < 10 ? 1 : 0)) a la semana", years: week > 7 ? min(3, (week - 7) * 0.15) : week < 1 ? -0.2 : 0))
+            }
+            if journal.tracked.contains("porro") {
+                let p = perDay("porro")
+                if p > 0 {
+                    parts.append(Part(id: "porro", title: "Porros", symbol: "leaf.fill", color: Color(red: 0.45, green: 0.75, blue: 0.35),
+                                      value: "\(Fmt.number(p * 7, decimals: 1)) a la semana", years: min(2.5, 0.3 + p * 1.2)))
+                }
+            }
         }
         guard parts.count >= 2 else { return nil }
         let total = max(-15, min(15, parts.reduce(0) { $0 + $1.years }))

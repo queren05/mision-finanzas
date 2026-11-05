@@ -132,7 +132,7 @@ struct StressCard: View {
 struct WorkAskCard: View {
     @Environment(HealthStore.self) private var store
     @AppStorage(WorkSchedule.askedKey) private var asked = false
-    @AppStorage(WorkSchedule.kindKey) private var kind = JobKind.none.rawValue
+    @AppStorage(WorkSchedule.kindKey) private var kind = JobKind.physical.rawValue
     @State private var edit = false
 
     var body: some View {
@@ -167,20 +167,19 @@ struct WorkAskCard: View {
     }
 }
 
-/// Tipo de trabajo, días y horas.
+/// Tipo de trabajo y el horario de cada día.
 struct WorkSettingsView: View {
     @Environment(HealthStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(WorkSchedule.kindKey) private var kind = JobKind.none.rawValue
-    @AppStorage(WorkSchedule.daysKey) private var days = "23456"
-    @AppStorage(WorkSchedule.fromKey) private var from = 7
-    @AppStorage(WorkSchedule.toKey) private var to = 15
+    @AppStorage(WorkSchedule.kindKey) private var kind = JobKind.physical.rawValue
+    @AppStorage(WorkSchedule.scheduleKey) private var raw = WorkSchedule.defaultSchedule
     @AppStorage(WorkSchedule.askedKey) private var asked = false
     var inSheet = true
 
-    private let weekdays: [(Int, String)] = [(2, "L"), (3, "M"), (4, "X"), (5, "J"), (6, "V"), (7, "S"), (1, "D")]
+    private let weekdays: [(Int, String)] = [(2, "Lunes"), (3, "Martes"), (4, "Miércoles"), (5, "Jueves"), (6, "Viernes"), (7, "Sábado"), (1, "Domingo")]
 
     var body: some View {
+        let shifts = WorkSchedule.decode(raw)
         Form {
             Section("Tipo de trabajo") {
                 Picker("Tipo", selection: $kind) {
@@ -192,25 +191,28 @@ struct WorkSettingsView: View {
                 .labelsHidden()
             }
             if kind != JobKind.none.rawValue {
-                Section("Días") {
-                    HStack(spacing: 6) {
-                        ForEach(weekdays, id: \.0) { d in
-                            let on = days.contains(String(d.0))
-                            Button {
-                                days = on ? days.replacingOccurrences(of: String(d.0), with: "") : days + String(d.0)
-                            } label: {
-                                Text(d.1).font(.subheadline.weight(.bold))
-                                    .frame(maxWidth: .infinity, minHeight: 38)
-                                    .background(Circle().fill(on ? Palette.effort : Color.secondary.opacity(0.12)))
-                                    .foregroundStyle(on ? .black : .secondary)
+                Section("Horario") {
+                    ForEach(weekdays, id: \.0) { d in
+                        let s = shifts[d.0]
+                        Toggle(d.1, isOn: Binding(
+                            get: { s != nil },
+                            set: { on in
+                                var m = shifts
+                                m[d.0] = on ? (m[d.0] ?? shifts.values.first ?? WorkSchedule.Shift(from: 1050, to: 1350)) : nil
+                                raw = WorkSchedule.encode(m)
+                            }))
+                        if let s {
+                            HStack {
+                                DatePicker("Entro", selection: time(d.0, s, start: true), displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                Image(systemName: "arrow.right").font(.caption).foregroundStyle(.secondary)
+                                DatePicker("Salgo", selection: time(d.0, s, start: false), displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                Spacer()
+                                Text(Fmt.duration(Double(s.to - s.from) * 60)).font(.caption).foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
-                }
-                Section("Horario") {
-                    Stepper("Entro a las \(from):00", value: $from, in: 0...22)
-                    Stepper("Salgo a las \(to):00", value: $to, in: (from + 1)...24)
                 }
             }
         }
@@ -224,9 +226,20 @@ struct WorkSettingsView: View {
             }
         }
         .onChange(of: kind) { _, _ in asked = true; store.invalidate() }
-        .onChange(of: days) { _, _ in store.invalidate() }
-        .onChange(of: from) { _, v in if to <= v { to = v + 1 }; store.invalidate() }
-        .onChange(of: to) { _, _ in store.invalidate() }
+        .onChange(of: raw) { _, _ in store.invalidate() }
+    }
+
+    private func time(_ day: Int, _ s: WorkSchedule.Shift, start: Bool) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.startOfDay(for: .now).addingTimeInterval(Double(start ? s.from : s.to) * 60) },
+            set: { d in
+                let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+                let m = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+                var all = WorkSchedule.decode(raw)
+                var n = s
+                if start { n.from = m } else { n.to = m == 0 ? 1440 : m }
+                if n.to > n.from { all[day] = n; raw = WorkSchedule.encode(all) }
+            })
     }
 }
 
@@ -248,12 +261,10 @@ struct WorkCard: View {
             let avgHR = hr.reduce(0) { $0 + $1.value } / Double(hr.count)
             let load = HeartLoad.points(store, day: day, onlyWork: true) ?? 0
             let (label, color) = HeartLoad.level(load)
-            let cal = Calendar.current
-            let start = cal.date(byAdding: .hour, value: work.from, to: store.dayStart(day))!
-            let end = cal.date(byAdding: .hour, value: work.to, to: store.dayStart(day))!
+            let (start, end) = work.bounds(on: day) ?? (store.dayStart(day), store.dayStart(day).addingTimeInterval(3600))
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack {
-                    CardHeader("Tu jornada", symbol: work.kind.symbol, color: Palette.effort, trailing: work.hoursText)
+                    CardHeader("Tu jornada", symbol: work.kind.symbol, color: Palette.effort, trailing: work.hoursText(on: day))
                     Button { edit = true } label: { Image(systemName: "pencil").font(.caption.weight(.bold)).foregroundStyle(.secondary) }
                         .buttonStyle(.borderless)
                         .accessibilityLabel("Cambiar tu trabajo")
@@ -286,7 +297,7 @@ struct WorkCard: View {
                 .chartXScale(domain: start...end)
                 .chartYAxis(.hidden)
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .hour, count: max(1, (work.to - work.from) / 4))) { v in
+                    AxisMarks(values: .stride(by: .hour, count: max(1, Int(end.timeIntervalSince(start) / 3600) / 4))) { v in
                         AxisValueLabel { if let d = v.as(Date.self) { Text(Fmt.clock(d)).font(.caption2) } }
                     }
                 }
@@ -426,5 +437,209 @@ struct AgeSettingsView: View {
         .onAppear { if age == 0 && store.profile.birth == nil { age = 30 } }
         .onChange(of: age) { _, _ in store.invalidate() }
         .onChange(of: sex) { _, _ in store.invalidate() }
+    }
+}
+
+// MARK: - Edad biológica: acceso rápido y pantalla
+
+/// Debajo de los anillos: tu edad biológica frente a la real.
+struct BioAgeTile: View {
+    @Environment(HealthStore.self) private var store
+    @State private var open = Launch.args.contains("-edad")
+    @State private var ask = false
+
+    var body: some View {
+        if let r = BioAge.today(store) {
+            let younger = r.diff < 0
+            let tone = younger ? Palette.good : r.diff < 2 ? Palette.effort : Palette.heart
+            Button { open = true } label: {
+                HStack(spacing: Space.l) {
+                    ZStack {
+                        Circle().fill(tone.opacity(0.16))
+                        Image(systemName: "hourglass").font(.title3.weight(.bold)).foregroundStyle(tone)
+                    }
+                    .frame(width: 46, height: 46)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("EDAD BIOLÓGICA").font(.caption2.weight(.heavy)).tracking(1).foregroundStyle(.secondary)
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(BioAge.ageText(r.age)).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
+                            Text("años").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(younger ? "−" : "+")\(BioAge.ageText(abs(r.diff)))")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(tone)
+                        Text("real \(Int(r.real))").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+            .card(padding: 16, tint: tone)
+            .navigationDestination(isPresented: $open) { BioAgeView() }
+        } else {
+            Button { ask = true } label: {
+                HStack(spacing: Space.m) {
+                    MetricGlyph(symbol: "hourglass", color: Palette.recovery, size: 40)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("EDAD BIOLÓGICA").font(.caption2.weight(.heavy)).tracking(1).foregroundStyle(.secondary)
+                        Text(BioAge.realAge(store) == nil ? "Pon tu edad para calcularla" : "Faltan datos de unos días").font(.headline)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(BioAge.realAge(store) != nil)
+            .card(padding: 16)
+            .sheet(isPresented: $ask) { NavigationStack { AgeSettingsView() } }
+        }
+    }
+}
+
+/// La pantalla de la edad biológica: el número, cómo ha ido, qué la sube y qué la baja.
+struct BioAgeView: View {
+    @Environment(HealthStore.self) private var store
+    @State private var shown: Double = 0
+
+    var body: some View {
+        ScrollView {
+            if let r = BioAge.today(store) {
+                let younger = r.diff < 0
+                let tone = younger ? Palette.good : r.diff < 2 ? Palette.effort : Palette.heart
+                VStack(alignment: .leading, spacing: Space.l) {
+                    VStack(spacing: Space.m) {
+                        Text("Tu cuerpo tiene").font(.headline).foregroundStyle(.secondary)
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(BioAge.ageText(r.real + (r.age - r.real) * shown))
+                                .font(.system(size: 84, weight: .bold, design: .rounded))
+                                .tracking(-2)
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
+                            Text("años").font(.title2.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                        Text(abs(r.diff) < 0.3 ? "Lo mismo que tu edad real" : "\(BioAge.ageText(abs(r.diff))) años \(younger ? "menos" : "más") que tu edad real (\(Int(r.real)))")
+                            .font(.headline)
+                            .foregroundStyle(tone)
+                        AgeScale(real: r.real, bio: r.age, tone: tone).frame(height: 56).padding(.top, Space.s)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .card(padding: 22, radius: 30, tint: tone)
+
+                    let hist = BioAge.history(store)
+                    if hist.count >= 3 {
+                        VStack(alignment: .leading, spacing: Space.m) {
+                            CardHeader("Últimos 3 meses", symbol: "chart.line.downtrend.xyaxis", color: tone,
+                                       trailing: hist.first.map { p in
+                                           let d = r.age - p.value
+                                           return "\(d <= 0 ? "−" : "+")\(BioAge.ageText(abs(d))) años"
+                                       })
+                            Chart(hist, id: \.date) { p in
+                                AreaMark(x: .value("Fecha", p.date), yStart: .value("Base", (hist.map(\.value).min() ?? 0) - 1), yEnd: .value("Edad", p.value))
+                                    .foregroundStyle(LinearGradient(colors: [tone.opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
+                                    .interpolationMethod(.catmullRom)
+                                LineMark(x: .value("Fecha", p.date), y: .value("Edad", p.value))
+                                    .foregroundStyle(tone)
+                                    .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
+                                    .interpolationMethod(.catmullRom)
+                                RuleMark(y: .value("Real", r.real))
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            }
+                            .chartYScale(domain: (min(hist.map(\.value).min() ?? 0, r.real) - 1)...(max(hist.map(\.value).max() ?? 0, r.real) + 1))
+                            .chartYAxis {
+                                AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
+                                    AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
+                                    AxisValueLabel().font(.caption2)
+                                }
+                            }
+                            .frame(height: 160)
+                        }
+                        .card()
+                    }
+
+                    let worse = r.parts.filter { $0.years > 0.05 }.sorted { $0.years > $1.years }
+                    let better = r.parts.filter { $0.years < -0.05 }.sorted { $0.years < $1.years }
+                    if !better.isEmpty { partsCard("Lo que te quita años", better, Palette.good) }
+                    if !worse.isEmpty { partsCard("Lo que te suma años", worse, Palette.heart) }
+
+                    let tips = BioAge.tips(r)
+                    if !tips.isEmpty {
+                        VStack(alignment: .leading, spacing: Space.m) {
+                            CardHeader("Cómo bajarla", symbol: "arrow.down.heart.fill", color: Palette.recovery)
+                            ForEach(tips, id: \.0.id) { tip in
+                                let p = tip.0
+                                HStack(spacing: Space.m) {
+                                    MetricGlyph(symbol: p.symbol, color: p.color, size: 32)
+                                    Text(tip.1).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                                    Spacer()
+                                    Text("−\(BioAge.ageText(p.years))").font(.headline.weight(.bold).monospacedDigit()).foregroundStyle(Palette.good)
+                                }
+                            }
+                        }
+                        .card()
+                    }
+                }
+                .padding(.horizontal, Space.l)
+                .padding(.bottom, Space.xxl)
+            }
+        }
+        .background(MoodBackground(mood: .neutral))
+        .navigationTitle("Edad biológica")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { withAnimation(.spring(response: 1.4, dampingFraction: 0.9).delay(0.2)) { shown = 1 } }
+    }
+
+    private func partsCard(_ title: String, _ parts: [BioAge.Part], _ c: Color) -> some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            CardHeader(title, color: c)
+            ForEach(parts) { p in
+                HStack(spacing: Space.m) {
+                    MetricGlyph(symbol: p.symbol, color: p.color, size: 32)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(p.title).font(.subheadline.weight(.semibold))
+                        Text(p.value).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text("\(p.years <= 0 ? "−" : "+")\(BioAge.ageText(abs(p.years)))")
+                        .font(.headline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(c)
+                }
+            }
+        }
+        .card()
+    }
+}
+
+/// Una regla de edades con tu edad real y la biológica marcadas.
+struct AgeScale: View {
+    var real: Double
+    var bio: Double
+    var tone: Color
+
+    var body: some View {
+        GeometryReader { g in
+            let lo = floor(min(real, bio) - 5), hi = ceil(max(real, bio) + 5)
+            let x = { (v: Double) in g.size.width * (v - lo) / (hi - lo) }
+            ZStack(alignment: .topLeading) {
+                Capsule().fill(LinearGradient(colors: [Palette.good, Palette.effort, Palette.heart], startPoint: .leading, endPoint: .trailing).opacity(0.35))
+                    .frame(height: 8).offset(y: 20)
+                Capsule().fill(tone).frame(width: abs(x(bio) - x(real)), height: 8).offset(x: min(x(bio), x(real)), y: 20)
+                marker(x(real), "Real", .secondary).offset(y: 0)
+                marker(x(bio), "Tú", tone)
+            }
+        }
+    }
+
+    private func marker(_ px: CGFloat, _ label: String, _ c: Color) -> some View {
+        VStack(spacing: 2) {
+            Circle().fill(c).frame(width: 14, height: 14).overlay(Circle().strokeBorder(Ink.canvas, lineWidth: 2))
+                .offset(y: 17)
+            Text(label).font(.caption2.weight(.bold)).foregroundStyle(c).offset(y: 20)
+        }
+        .frame(width: 40)
+        .offset(x: px - 20)
     }
 }

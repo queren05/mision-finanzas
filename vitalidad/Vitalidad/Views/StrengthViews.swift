@@ -95,7 +95,7 @@ extension HealthStore {
         return (0..<days).compactMap { n -> (Date, Double)? in
             let d = cal.date(byAdding: .day, value: -n, to: today)!
             guard work.isWorkDay(d), let p = HeartLoad.points(self, day: d, onlyWork: true) else { return nil }
-            let end = min(Date.now, cal.date(byAdding: .hour, value: work.to, to: d)!)
+            let end = min(Date.now, work.bounds(on: d)?.1 ?? d)
             return (end, p)
         }
     }

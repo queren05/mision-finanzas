@@ -216,7 +216,7 @@ enum CoachContext {
         if let age = BioAge.realAge(store) { out.append("Edad: \(Int(age)) años, \(BioAge.female(store) ? "mujer" : "hombre").") }
         let work = WorkSchedule.current
         if work.active {
-            out.append("Trabajo: \(work.kind.title.lowercased()), \(work.hoursText).")
+            out.append("Trabajo: \(work.kind.title.lowercased()) (mozo de almacén), \(work.summary).")
         }
         if let b = BioAge.today(store) { out.append("Edad del cuerpo estimada: \(BioAge.ageText(b.age)) años.") }
         out.append("\nÚltimos 14 días (día: recuperación / sueño / esfuerzo / estrés / horas dormidas / pasos):")

@@ -143,17 +143,17 @@ struct DemoSource: HealthDataSource {
         let nowHour = cal.isDateInToday(day) ? cal.component(.hour, from: .now) : 23
         let dayN = Int(start.timeIntervalSince1970 / 86400)
         var r = Rand(seed: 99 &+ UInt64(dayN % 997) &* 7 &+ UInt64(Metric.allCases.firstIndex(of: metric) ?? 0))
-        // Días de diario: mozo de almacén de 7 a 15, cargando cajas (pulso alto con pocos pasos).
+        // Días de diario: mozo de almacén por la tarde (lunes desde las 16:30, el resto desde las 17:30, hasta las 22:30).
         let weekday = cal.component(.weekday, from: start)
         let workday = weekday >= 2 && weekday <= 6
         let gym = dayN % 3 == 0
         return (0...nowHour).map { h in
             let date = cal.date(byAdding: .hour, value: h, to: start)!
             let awake = h >= 7 && h <= 23
-            let work = workday && h >= 7 && h < 15
-            let train = gym && h == 19
+            let work = workday && h >= (weekday == 2 ? 16 : 17) && h < 22
+            let train = gym && h == 10
             let v: Double = switch metric {
-            case .heartRate: train ? r.normal(132, 6) : work ? r.normal(h == 10 || h == 13 ? 112 : 101, 6) : awake ? r.normal(h == 22 ? 88 : 74, 5) : r.normal(56, 2)
+            case .heartRate: train ? r.normal(132, 6) : work ? r.normal(h == 19 || h == 21 ? 112 : 101, 6) : awake ? r.normal(h == 14 ? 86 : 74, 5) : r.normal(56, 2)
             case .steps: train ? r.normal(1500, 200) : work ? max(0, r.normal(650, 180)) : awake ? max(0, r.normal(h == 8 || h == 16 ? 1300 : 380, 200)) : 0
             case .activeEnergy: train ? r.normal(420, 30) : work ? max(0, r.normal(68, 10)) : awake ? max(0, r.normal(22, 6)) : r.normal(2, 1)
             default: 0

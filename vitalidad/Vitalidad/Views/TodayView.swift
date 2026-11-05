@@ -63,12 +63,12 @@ struct TodayView: View {
                         .stagger(0)
                 }
 
-                if isToday && showPlan {
-                    PlanCard().stagger(1).scrollFade()
+                if isToday && showAge {
+                    BioAgeTile().stagger(1)
                 }
 
-                if isToday && showWork {
-                    WorkAskCard().stagger(1)
+                if isToday && showPlan {
+                    PlanCard().stagger(1).scrollFade()
                 }
 
                 if showEnergy {
@@ -89,10 +89,6 @@ struct TodayView: View {
 
                 if showDay {
                     DayTimelineCard(day: day).stagger(2).scrollFade()
-                }
-
-                if isToday && showAge {
-                    BioAgeCard().stagger(3).scrollFade().id("edad")
                 }
 
                 if isToday && showSignals {

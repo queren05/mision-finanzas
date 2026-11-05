@@ -79,9 +79,7 @@ struct TimelineCard: View {
                              detail: ScoreEngine.report(store, day: start).recovery.map { "Recuperación \($0.value) %" }))
         }
         let work = WorkSchedule.current
-        if work.isWorkDay(start) {
-            let a = cal.date(byAdding: .hour, value: work.from, to: start)!
-            let b = cal.date(byAdding: .hour, value: work.to, to: start)!
+        if let (a, b) = work.bounds(on: start) {
             if a <= .now {
                 let load = HeartLoad.points(store, day: start, onlyWork: true)
                 out.append(Event(time: a, end: b, symbol: work.kind.symbol, color: Palette.effort, title: "Jornada",
