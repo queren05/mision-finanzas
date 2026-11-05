@@ -91,7 +91,15 @@ jobs:
           shot -portfolio -widgets; sleep 3; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/24-widgets.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
+      - name: Guardar el .ipa y las capturas
+        uses: actions/upload-artifact@v4
+        with:
+          name: caudal
+          path: out/
+          retention-days: 3
+
       - name: Publicar el .ipa como descarga directa
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
