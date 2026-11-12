@@ -7,6 +7,8 @@ struct StatsView: View {
     @State private var showIncome = false
     @State private var selectedCat: String? = nil
     @State private var angle: Double? = nil
+    @State private var editing: Tx? = nil
+    @State private var showAll = false
     /// dentro de otra navegación (desde Inicio o Más) no lleva su propia barra
     var embedded = false
 
@@ -29,6 +31,7 @@ struct StatsView: View {
             }
             .appBackground()
             .navigationTitle("Análisis")
+            .sheet(item: $editing) { TxEditor(original: $0) }
             .onAppear { if start.isEmpty { start = store.periodStart(for: Day.today) } }
     }
 
@@ -113,7 +116,7 @@ struct StatsView: View {
                 ForEach(cats) { c in
                     Button {
                         Haptic.select()
-                        withAnimation(.spring) { selectedCat = selectedCat == c.cat.id ? nil : c.cat.id }
+                        withAnimation(.spring) { selectedCat = selectedCat == c.cat.id ? nil : c.cat.id; showAll = false }
                     } label: {
                         VStack(spacing: 6) {
                             HStack {
@@ -127,10 +130,60 @@ struct StatsView: View {
                         .opacity(selectedCat == nil || selectedCat == c.cat.id ? 1 : 0.45)
                     }
                     .buttonStyle(.plain)
+                    if selectedCat == c.cat.id {
+                        breakdown(c.cat.id, kind: showIncome ? .income : .expense, total: c.total, color: Color(hex: c.cat.color))
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
             }
         }
         .card()
+    }
+
+    /// Desglose de una categoría: por concepto y cada movimiento.
+    private func breakdown(_ catId: String, kind: TxType, total: Double, color: Color) -> some View {
+        let list = store.txs(in: range).filter { $0.type == kind && !$0.excluded && ($0.categoryId ?? "") == catId }
+            .sorted { ($0.date, $0.time) > ($1.date, $1.time) }
+        var groups: [String: (Double, Int)] = [:]
+        for t in list {
+            let k = t.title.isEmpty ? "Sin concepto" : t.title
+            let g = groups[k] ?? (0, 0)
+            groups[k] = (g.0 + t.amount, g.1 + 1)
+        }
+        let concepts = groups.sorted { $0.value.0 > $1.value.0 }
+        let shown = showAll ? list : Array(list.prefix(8))
+        return VStack(alignment: .leading, spacing: 12) {
+            if concepts.count > 1 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("POR CONCEPTO").font(.caption2.weight(.heavy)).foregroundStyle(.secondary)
+                    ForEach(concepts, id: \.key) { item in
+                        let k = item.key, v = item.value
+                        HStack(spacing: 8) {
+                            Text(k).font(.subheadline).lineLimit(1)
+                            if v.1 > 1 { Text("×\(v.1)").font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
+                            Spacer()
+                            Text("\(Money.num(v.0 / max(total, 0.01) * 100)) %").font(.caption).foregroundStyle(.secondary)
+                            AmountText(value: v.0, font: .subheadline.weight(.semibold))
+                        }
+                        ProgressBar(value: v.0 / max(concepts.first?.value.0 ?? 1, 0.01), color: color.opacity(0.7), height: 4)
+                    }
+                }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("MOVIMIENTOS · \(list.count)").font(.caption2.weight(.heavy)).foregroundStyle(.secondary)
+                ForEach(shown) { t in
+                    Button { editing = t } label: { TxRow(tx: t, showDate: true) }
+                        .buttonStyle(.plain)
+                }
+                if list.count > 8 {
+                    Button(showAll ? "Ver menos" : "Ver los \(list.count)") { withAnimation(.spring) { showAll.toggle() } }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.top, 4)
+                }
+            }
+        }
+        .padding(12)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private struct MonthBar: Identifiable { var id: String { month + kind }; var month: String; var kind: String; var value: Double }
