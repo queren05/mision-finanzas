@@ -194,7 +194,7 @@ final class Store {
         return m.compactMap { (k, v) in
             let c = category(k) ?? Category(id: "none", kind: kind == .income ? .income : .expense, name: "Sin categoría", icon: "❔")
             return CatTotal(cat: c, total: v)
-        }.sorted { $0.total > $1.total }
+        }.sorted { $0.total != $1.total ? $0.total > $1.total : $0.cat.id < $1.cat.id }
     }
 
     // MARK: cambios

@@ -143,6 +143,15 @@ extension Color {
 
 let palette = ["#e4b3cb", "#8fb4ff", "#6fd49b", "#f0c46a", "#ff9f7a", "#b39cff", "#62cfd0", "#ff8686", "#c3d36a", "#d9a0f5", "#7ac8ff", "#f59fc4", "#a9b3c2"]
 
+// MARK: - Ritmo de las animaciones
+
+enum Motion {
+    /// cosas que cambian de tamaño o de sitio (desplegar, cambiar de mes): sin rebote, para que no tiemble
+    static var layout: Animation { Look.shared.motion ? .smooth(duration: 0.36) : .easeOut(duration: 0.15) }
+    /// resaltar o atenuar algo que no se mueve
+    static var quick: Animation { .easeOut(duration: 0.18) }
+}
+
 // MARK: - Vibraciones
 
 enum Haptic {
