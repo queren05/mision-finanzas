@@ -74,7 +74,7 @@ struct HomeView: View {
         switch id {
         case "patrimonio": hero
         case "cuentas": accountsStrip
-        case "horas": if !store.state.companies.isEmpty { WorkCard { showWork = true } }
+        case "horas": if !store.state.companies.isEmpty || store.state.job != nil { WorkCard { showWork = true } }
         case "mes": monthCard
         case "categorias": categoriesCard
         case "proximos": upcomingCard

@@ -3,7 +3,7 @@ import Foundation
 /// Datos de partida: categorías por defecto. Los datos personales (cuentas y movimientos reales) no están en el código:
 /// se leen de `seed-personal.json`, que no se sube a git (ver .gitignore) y GitHub Actions lo pone desde un secreto.
 enum Seed {
-    static let version = 10
+    static let version = 11
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -77,6 +77,10 @@ enum Seed {
                     s.recurring.insert(sp, at: i + 1)
                 }
             }
+        }
+        if s.seed < 11 {
+            // Nov 2026: se retiran las empresas de trabajo por horas (su historial de turnos se conserva)
+            for i in s.companies.indices { s.companies[i].archived = true }
         }
         s.seed = version
     }

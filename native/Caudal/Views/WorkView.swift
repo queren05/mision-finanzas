@@ -12,6 +12,7 @@ struct WorkView: View {
     @State private var paying: Company? = nil
     @State private var editingCompany: Company? = nil
     @State private var newCompany = false
+    @State private var editingJob = false
 
     var body: some View {
         let list = store.shifts(month: month, company: company)
@@ -19,17 +20,25 @@ struct WorkView: View {
         List {
             Section {
                 monthBar.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
-                if store.state.companies.count > 1 { companyChips.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden) }
+                if store.activeCompanies.count > 1 { companyChips.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden) }
                 hero(sum).listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             Section {
-                ForEach(store.state.companies.filter { company == nil || $0.id == company }) { c in
-                    companyRow(c)
-                        .contentShape(Rectangle())
-                        .onTapGesture { Haptic.tap(); editingCompany = c }
+                if let j = store.state.job {
+                    jobRow(j).contentShape(Rectangle()).onTapGesture { Haptic.tap(); editingJob = true }
+                } else {
+                    Button { Haptic.tap(); editingJob = true } label: { Label("Tengo contrato indefinido", systemImage: "briefcase.fill") }
                 }
-                Button { Haptic.tap(); newCompany = true } label: { Label("Añadir empresa", systemImage: "plus.circle.fill") }
-            } header: { Text("Empresas") }
+            } header: { Text("Contrato") }
+            if !store.activeCompanies.isEmpty {
+                Section {
+                    ForEach(store.activeCompanies.filter { company == nil || $0.id == company }) { c in
+                        companyRow(c)
+                            .contentShape(Rectangle())
+                            .onTapGesture { Haptic.tap(); editingCompany = c }
+                    }
+                } header: { Text("Por horas") }
+            }
             Section {
                 ForEach(list) { s in
                     shiftRow(s)
@@ -65,11 +74,12 @@ struct WorkView: View {
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: month)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: company)
-        .sheet(isPresented: $adding) { ShiftEditor(original: nil, companyId: company ?? store.state.companies.first?.id ?? "") }
+        .sheet(isPresented: $adding) { ShiftEditor(original: nil, companyId: company ?? store.activeCompanies.first?.id ?? "") }
         .sheet(item: $editing) { ShiftEditor(original: $0, companyId: $0.companyId) }
         .sheet(item: $paying) { c in PayMonthSheet(company: c, month: month) }
         .sheet(item: $editingCompany) { CompanyEditor(original: $0) }
         .sheet(isPresented: $newCompany) { CompanyEditor(original: nil) }
+        .sheet(isPresented: $editingJob) { JobEditor() }
         .confirmationDialog("¿Seguro que quieres borrar este turno?", isPresented: $askDelete, titleVisibility: .visible, presenting: pendingDelete) { s in
             Button("Borrar", role: .destructive) { Haptic.heavy(); store.deleteShift(s) }
             Button("Cancelar", role: .cancel) {}
@@ -102,7 +112,7 @@ struct WorkView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 chip(nil, "Todas", "#ffffff")
-                ForEach(store.state.companies) { c in chip(c.id, c.name, c.color) }
+                ForEach(store.activeCompanies) { c in chip(c.id, c.name, c.color) }
             }
         }
     }
@@ -166,6 +176,23 @@ struct WorkView: View {
     }
 
     // MARK: filas
+
+    private func jobRow(_ j: Job) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "briefcase.fill").font(.system(size: 17, weight: .bold))
+                .frame(width: 44, height: 44).background(Color.income.opacity(0.22), in: Circle()).foregroundStyle(Color.income)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(j.company).font(.body.weight(.semibold)).lineLimit(1)
+                Text("Indefinido · \(j.seniority)").font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 3) {
+                AmountText(value: j.net, font: .body.weight(.semibold), color: .income)
+                Text("día \(j.payDay)").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
 
     private func companyRow(_ c: Company) -> some View {
         let w = store.summary(store.shifts(month: month, company: c.id))
@@ -242,10 +269,18 @@ struct WorkCard: View {
                     Spacer()
                     Image(systemName: "chevron.right").foregroundStyle(.secondary)
                 }
-                HStack(spacing: 12) {
-                    item(Hours.dec(w.totalMin) + " h", "trabajadas", nil)
-                    item(nil, "neto estimado", w.net)
-                    item(nil, "pendiente", w.pendingNet)
+                if let j = store.state.job, w.totalMin == 0 {
+                    HStack(spacing: 12) {
+                        item(j.company, "indefinido", nil)
+                        item(nil, "neto al mes", j.net)
+                        item("día \(j.payDay)", "cobro", nil)
+                    }
+                } else {
+                    HStack(spacing: 12) {
+                        item(Hours.dec(w.totalMin) + " h", "trabajadas", nil)
+                        item(nil, "neto estimado", w.net)
+                        item(nil, "pendiente", w.pendingNet)
+                    }
                 }
             }
             .card()
@@ -254,7 +289,7 @@ struct WorkCard: View {
     }
     private func item(_ text: String?, _ label: String, _ v: Double?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            if let text { Text(text).font(.title3.weight(.bold)).foregroundStyle(.primary) }
+            if let text { Text(text).font(.title3.weight(.bold)).foregroundStyle(.primary).lineLimit(1).minimumScaleFactor(0.6) }
             if let v { AmountText(value: v, font: .title3.weight(.bold), color: label == "pendiente" && v > 0 ? .orange : nil) }
             Text(label).font(.caption).foregroundStyle(.secondary)
         }
@@ -301,13 +336,13 @@ struct ShiftEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                if store.state.companies.isEmpty {
+                if store.activeCompanies.isEmpty && store.company(companyId) == nil {
                     Section {
                                                 Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
                     }
                 } else {
                     Section("Empresa") {
-                        Picker("¿Para qué empresa?", selection: $companyId) { ForEach(store.state.companies) { Text($0.name).tag($0.id) } }
+                        Picker("¿Para qué empresa?", selection: $companyId) { ForEach(store.state.companies.filter { $0.archived != true || $0.id == companyId }) { Text($0.name).tag($0.id) } }
                         Button { newCompany = true } label: { Label("Nueva empresa", systemImage: "building.2.fill") }
                     }
                     Section {
@@ -373,7 +408,7 @@ struct ShiftEditor: View {
                 }
             }
             .onAppear {
-                if companyId.isEmpty { companyId = store.state.companies.first?.id ?? "" }
+                if companyId.isEmpty { companyId = store.activeCompanies.first?.id ?? "" }
                 if let o = original {
                     date = Day.date(o.date)
                     start = Calendar.current.date(bySettingHour: o.start / 60, minute: o.start % 60, second: 0, of: Date()) ?? Date()
@@ -510,6 +545,55 @@ struct CompanyEditor: View {
                 normal = Money.num(c.normalRate); night = Money.num(c.nightRate)
                 nStart = Calendar.current.date(bySettingHour: c.nightStart / 60, minute: c.nightStart % 60, second: 0, of: Date()) ?? Date()
                 nEnd = Calendar.current.date(bySettingHour: c.nightEnd / 60, minute: c.nightEnd % 60, second: 0, of: Date()) ?? Date()
+            }
+        }
+    }
+}
+
+/// Contrato indefinido: empresa, desde cuándo, sueldo neto y día de cobro
+struct JobEditor: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var start = Date()
+    @State private var net = ""
+    @State private var payDay = 28
+    @State private var accountId = ""
+    @State private var askRemove = false
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("¿Dónde trabajas?") { TextField("Nombre de la empresa", text: $name) }
+                Section("Contrato indefinido") {
+                    DatePicker("Desde", selection: $start, displayedComponents: .date)
+                    LabeledContent("Sueldo neto al mes (€)") { TextField("1.400,00", text: $net).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+                    Stepper("Día de cobro: \(payDay)", value: $payDay, in: 1...31)
+                    Picker("Cuenta donde cobras", selection: $accountId) {
+                        ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) }
+                    }
+                }
+                if store.state.job != nil { Section { Button("Quitar contrato", role: .destructive) { askRemove = true } } }
+            }
+            .navigationTitle("Contrato").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Guardar") {
+                        var j = store.state.job ?? Job(company: "", start: Day.today, net: 0, accountId: accountId)
+                        j.company = name.trimmingCharacters(in: .whitespaces); j.start = Day.str(start)
+                        j.net = Money.parse(net) ?? 0; j.payDay = payDay; j.accountId = accountId
+                        store.saveJob(j); Haptic.success(); dismiss()
+                    }
+                    .bold().disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || (Money.parse(net) ?? 0) <= 0 || accountId.isEmpty)
+                }
+            }
+            .confirmationDialog("¿Seguro que quieres quitar el contrato?", isPresented: $askRemove, titleVisibility: .visible) {
+                Button("Quitar contrato", role: .destructive) { store.removeJob(); Haptic.heavy(); dismiss() }
+            } message: { Text("Se quitará también el cobro mensual. Las nóminas ya apuntadas se quedan.") }
+            .onAppear {
+                if let j = store.state.job {
+                    name = j.company; start = Day.date(j.start); net = Money.num(j.net).replacingOccurrences(of: ".", with: ""); payDay = j.payDay; accountId = j.accountId
+                } else { accountId = store.accounts.first?.id ?? "" }
             }
         }
     }

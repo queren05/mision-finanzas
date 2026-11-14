@@ -15,6 +15,41 @@ struct Company: Codable, Identifiable, Hashable {
     var ssPct: Double = 6.5
     var irpfPct: Double = 2
     var accountId: String? = nil
+    /// retirada: ya no sale para apuntar turnos nuevos, pero su historial se conserva
+    var archived: Bool? = nil
+}
+
+/// Contrato indefinido: sueldo fijo al mes. El cobro va como ingreso periódico, así sale solo cada mes y cuenta en las previsiones.
+struct Job: Codable, Hashable {
+    var company: String
+    /// yyyy-MM-dd
+    var start: String
+    var net: Double
+    var payDay: Int = 28
+    var accountId: String
+    var recurringId: String = "r_nomina"
+
+    /// primer día de cobro que no sea anterior a la fecha dada
+    static func firstPay(from: String, day: Int) -> String {
+        var m = Day.monthStart(from)
+        for _ in 0..<3 {
+            let days = Day.cal.range(of: .day, in: .month, for: Day.date(m))?.count ?? 28
+            let d = String(m.prefix(8)) + String(format: "%02d", min(max(1, day), days))
+            if d >= from { return d }
+            m = Day.add(m, months: 1)
+        }
+        return from
+    }
+    /// «3 meses», «1 año y 2 meses»
+    var seniority: String {
+        let c = Day.cal.dateComponents([.year, .month], from: Day.date(start), to: Date())
+        let y = max(0, c.year ?? 0), mo = max(0, c.month ?? 0)
+        if start > Day.today { return "Empiezas el \(Day.header(start))" }
+        if y == 0 && mo == 0 { return "Desde el \(Day.header(start))" }
+        let ys = y == 0 ? "" : (y == 1 ? "1 año" : "\(y) años")
+        let ms = mo == 0 ? "" : (mo == 1 ? "1 mes" : "\(mo) meses")
+        return [ys, ms].filter { !$0.isEmpty }.joined(separator: " y ")
+    }
 }
 
 enum PayStatus: String, Codable, CaseIterable, Identifiable {
@@ -120,6 +155,34 @@ extension Store {
             if s.status == .pagado { w.paidNet += n } else { w.pendingNet += n }
         }
         return w
+    }
+
+    /// empresas en las que se pueden apuntar turnos (las retiradas solo guardan su historial)
+    var activeCompanies: [Company] { state.companies.filter { $0.archived != true } }
+
+    func saveJob(_ j: Job) {
+        let old = state.recurring.first { $0.id == j.recurringId }
+        var r = old ?? Recurring(id: j.recurringId, name: "", type: "income", amount: j.net, accountId: j.accountId, next: Day.today)
+        r.name = "Nómina · \(j.company)"; r.type = "income"; r.amount = j.net; r.accountId = j.accountId
+        r.freq = .monthly; r.day = j.payDay; r.active = true
+        if r.categoryId == nil {
+            r.categoryId = state.categories.first { c in
+                let n = c.name.lowercased()
+                return c.kind == .income && (n.contains("nómina") || n.contains("nomina") || n.contains("sueldo") || n.contains("salario"))
+            }?.id
+        }
+        // si ya estaba programado y no cambia el día, se respeta el próximo cobro (para no cobrar dos veces el mismo mes)
+        if old == nil { r.next = Job.firstPay(from: max(j.start, Day.today), day: j.payDay) }
+        else if old?.day != j.payDay || (state.job?.start ?? "") != j.start { r.next = Job.firstPay(from: max(j.start, Day.add(Day.today, days: 1)), day: j.payDay) }
+        withAnimation(Motion.layout) {
+            if let i = state.recurring.firstIndex(where: { $0.id == r.id }) { state.recurring[i] = r } else { state.recurring.append(r) }
+            state.job = j
+        }
+    }
+    /// quita el contrato y su cobro mensual (los ingresos ya apuntados se quedan)
+    func removeJob() {
+        guard let j = state.job else { return }
+        withAnimation(Motion.layout) { state.recurring.removeAll { $0.id == j.recurringId }; state.job = nil }
     }
 
     func save(_ c: Company) {
