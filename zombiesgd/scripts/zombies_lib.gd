@@ -11,9 +11,12 @@ const TYPES := {
 	"bloat": { "height": 1.95, "tint": Color(0.6, 0.85, 0.35), "fat": 1.35 },
 }
 var scenes = {}
+var zlod = 1.0   # <1: los zombis pasan antes a su malla simplificada
 
 func _ready() -> void:
 	for k in KINDS: scenes[k] = load(KINDS[k])
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("zlod="): zlod = float(a.split("=")[1])
 	# las animaciones de andar, correr y estar quieto se repiten
 	for k in scenes:
 		var n: Node = scenes[k].instantiate()
@@ -35,6 +38,7 @@ func make(kind: String, type := "normal") -> Node3D:
 		var mi: MeshInstance3D = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if GS.settings.get("quality", "alta") == "alta" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visibility_range_end = 70.0; mi.visibility_range_end_margin = 5.0
+		mi.lod_bias = zlod
 		for si in mi.mesh.get_surface_count():
 			var src = mi.get_active_material(si)
 			if src is StandardMaterial3D:

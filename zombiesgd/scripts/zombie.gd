@@ -61,6 +61,11 @@ var lod = 0                  # 0 cerca, 1 media distancia, 2 lejos o fuera de pa
 var target: Node3D = null
 var target_t = 0.0
 var enraged = false
+var shadow_meshes: Array = []
+var shadow_on = true
+var shadow_ok = true
+var flash_mats: Array = []   # materiales propios de este zombi: destello al recibir un disparo
+var flash = 0.0
 var bubbled = 0.0            # atrapado en una burbuja (arma maravilla)
 # marioneta (cooperativo, en los clientes)
 var puppet = false
@@ -81,6 +86,12 @@ func setup(g: Node, kind_: String, pos: Vector3, health: float, speed: float, ty
 	if anim: anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	anim_frame = randi() % 4
 	skel = _find_skel(model)
+	shadow_ok = GS.settings.get("quality", "alta") == "alta"
+	for m in model.find_children("*", "MeshInstance3D", true, false):
+		shadow_meshes.append(m)
+		for si in m.mesh.get_surface_count():
+			var mt = m.get_surface_override_material(si)
+			if mt is StandardMaterial3D: mt.emission_enabled = true; mt.emission = Color(1.0, 0.25, 0.18); mt.emission_energy_multiplier = 0.0; flash_mats.append(mt)
 	if skel:
 		for i in skel.get_bone_count():
 			var n = skel.get_bone_name(i)
@@ -136,6 +147,7 @@ func head_pos() -> Vector3:
 func take_hit(dmg: float, at: Vector3, head: bool, by, kind_ := "bullet", wid := "") -> bool:
 	if dead: return false
 	game.blood(at, head)
+	flash = 1.0
 	if puppet: return false
 	hp -= dmg
 	hit_flinch = 0.25 if type != "brute" else 0.05
@@ -162,6 +174,9 @@ func die_visual(head: bool) -> void:
 	if type == "bloat": game.gas_burst(global_position + Vector3(0, 1.0, 0), not puppet)
 
 func _process(delta: float) -> void:
+	if flash > 0.0:
+		flash = max(0.0, flash - delta * 9.0)
+		for mt in flash_mats: mt.emission_energy_multiplier = flash * flash * 1.6
 	if anim == null: return
 	anim_acc += delta; anim_frame += 1
 	var every = [1, 2, 4][lod] * (2 if game.low_quality and lod > 0 else 1)
@@ -173,6 +188,11 @@ func _update_lod() -> void:
 	var d = to.length()
 	var on_screen = d < 3.0 or to.normalized().dot(-cam.global_transform.basis.z) > 0.35
 	lod = 0 if (d < 14.0 and on_screen) else (1 if (d < 30.0 and on_screen) else 2)
+	# la sombra de un zombi cuesta dibujarlo otra vez por cada cascada: solo los cercanos la hacen
+	var sh = d < 20.0 and shadow_ok
+	if sh != shadow_on:
+		shadow_on = sh
+		for m in shadow_meshes: m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if sh else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 var skip_acc = 0.0
 func _physics_process(delta: float) -> void:

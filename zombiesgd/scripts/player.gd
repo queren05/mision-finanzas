@@ -15,6 +15,10 @@ var cur_pos = Vector3.ZERO
 var eye_h = 1.62
 var look_frame = Vector2.ZERO
 var shake = 0.0                     # temblor de cámara (disparos, explosiones, golpes)
+var shake_t = 0.0
+var _shake_noise := FastNoiseLite.new()
+var fov_punch = 0.0                 # golpe de campo de visión (disparo: se abre un instante; correr: se abre poco a poco)
+var fov_run = 0.0
 var muzzle_light: OmniLight3D
 var flash: Sprite3D
 
@@ -136,9 +140,12 @@ func _process(delta: float) -> void:
 	else: Controls.take_look()
 	var frac = Engine.get_physics_interpolation_fraction()
 	var pos = prev_pos.lerp(cur_pos, frac) if prev_pos.distance_to(cur_pos) < 1.0 else global_position
-	shake = move_toward(shake, 0.0, delta * 3.0)
-	var sh = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake * shake * 0.012 * float(GS.settings.get("shake", 1.0))
-	head.global_transform = Transform3D(Basis(Vector3.UP, yaw + sh.x) * Basis(Vector3.RIGHT, pitch + sh.y), pos + Vector3(0, eye_h, 0))
+	# temblor por «trauma»: ruido suave (ondula, no vibra) en giro, cabeceo y balanceo; se apaga solo
+	shake = move_toward(shake, 0.0, delta * 2.4)
+	shake_t += delta * 34.0
+	var sk = shake * shake * float(GS.settings.get("shake", 1.0))
+	var sh = Vector3(_shake_noise.get_noise_2d(shake_t, 0.0), _shake_noise.get_noise_2d(0.0, shake_t), _shake_noise.get_noise_2d(shake_t, shake_t + 50.0)) * sk
+	head.global_transform = Transform3D(Basis(Vector3.UP, yaw + sh.x * 0.022) * Basis(Vector3.RIGHT, pitch + sh.y * 0.022) * Basis(Vector3.BACK, sh.z * 0.03), pos + Vector3(0, eye_h, 0))
 	_view(delta)
 
 ## coloca la cabeza ya (para cuando algo cambia la mirada por código, como las pruebas)
@@ -346,6 +353,7 @@ func _shoot() -> void:
 	var w = cur_w()
 	if not gums.has("eterno"): w.mag -= 1
 	body.fired(); vm.fire(); shake = min(1.0, shake + 0.12 + float(stat("recoil")) * 0.04)
+	fov_punch = min(2.5, fov_punch + 0.5 + float(stat("recoil")) * 0.25)
 	var rpm = float(stat("rpm")) * (1.33 if "dtap" in perks else 1.0)
 	fire_cd = 60.0 / rpm
 	Sfx.play(str(stat("sound")), 0.9, 1.0 if not w.pap else 0.85)
@@ -466,18 +474,25 @@ func _view(delta: float) -> void:
 		var dest = want if hit.is_empty() else hit.position + (pivot - want).normalized() * 0.25
 		cam.global_position = cam.global_position.lerp(dest, min(1.0, delta * 18.0)) if cam.position.length() > 0.3 else dest
 		vm.visible = false; flash.visible = false
-		cam.fov = lerp(float(GS.settings.fov), float(GS.settings.fov) * 0.7, ads)
+		cam.fov = lerp(float(GS.settings.fov), float(GS.settings.fov) * 0.7, ads) + _fov_extra(delta)
 		game.hud.set_scope(false)
 		return
 	cam.position = Vector3.ZERO; vm.visible = true
 	var w = cur_w() if weapons.size() > 0 else null
 	var scope: bool = w != null and stat("scope") == true and ads > 0.9
-	cam.fov = lerp(float(GS.settings.fov), 22.0 if scope else float(GS.settings.fov) * 0.8, ads)
+	cam.fov = lerp(float(GS.settings.fov), 22.0 if scope else float(GS.settings.fov) * 0.8, ads) + _fov_extra(delta)
 	game.hud.set_scope(scope)
 	vm.visible = not scope and not downed
 	var spd = Vector2(velocity.x, velocity.z).length()
 	vm.update(delta, spd, spd > 5.0 and is_on_floor(), ads, reload_t > 0.0, look_frame)
 	flash.global_position = vm.muzzle_global()
+
+## campo de visión extra: se abre al esprintar (sensación de velocidad) y da un golpecito con cada disparo
+func _fov_extra(delta: float) -> float:
+	var sprinting = Vector2(velocity.x, velocity.z).length() > 5.0 and is_on_floor() and ads < 0.3
+	fov_run = lerp(fov_run, 5.0 if sprinting else 0.0, min(1.0, delta * 6.0))
+	fov_punch = lerp(fov_punch, 0.0, min(1.0, delta * 16.0))
+	return (fov_run + fov_punch) * (1.0 - ads * 0.7) * float(GS.settings.get("shake", 1.0))
 
 func _body_anim(delta: float) -> void:
 	if body == null: return

@@ -146,6 +146,16 @@ func _build_environment() -> void:
 	env.fog_enabled = true; env.fog_light_color = _col(e.get("fog", [0.4, 0.42, 0.45])); env.fog_density = float(e.get("fog_density", 0.012)); env.fog_aerial_perspective = 0.4; env.fog_sky_affect = 0.6
 	env.glow_enabled = true; env.glow_intensity = 0.35; env.glow_strength = 0.8; env.glow_bloom = 0.0; env.glow_hdr_threshold = 1.6
 	env.adjustment_enabled = true; env.adjustment_contrast = 1.06; env.adjustment_saturation = float(e.get("saturation", 0.85))
+	if not OS.get_cmdline_user_args().has("oldtone"):
+		# tono AgX: aguanta mejor las luces fuertes (fuego, focos) sin quemarlas y da negros más profundos que Filmic,
+		# que dejaba la imagen gris. Encima, un degradado de color: sombras frías y luces cálidas (como en el cine)
+		env.tonemap_mode = Environment.TONE_MAPPER_AGX; env.tonemap_agx_contrast = float(e.get("agx_contrast", 1.4)); env.tonemap_agx_white = 8.0
+		env.tonemap_exposure = float(e.get("exposure", 1.0)) * 1.3
+		env.adjustment_contrast = 1.0; env.adjustment_saturation = float(e.get("saturation", 0.85)) + 0.12
+		var g = Gradient.new()
+		g.set_color(0, _col(e.get("grade_dark", [0.0, 0.012, 0.03]))); g.set_color(1, _col(e.get("grade_light", [1.0, 0.975, 0.93])))
+		var gt = GradientTexture1D.new(); gt.gradient = g; gt.width = 64
+		env.adjustment_color_correction = gt
 	var we = WorldEnvironment.new(); we.environment = env; add_child(we)
 	apply_quality(env)
 	var sun = DirectionalLight3D.new(); sun.light_color = _col(e.get("sun_color", [1.0, 0.92, 0.8])); sun.light_energy = float(e.get("sun", 1.1))
@@ -160,6 +170,7 @@ func _build_environment() -> void:
 	if q == "media": sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 40.0; sun.directional_shadow_split_1 = 0.2
 	self.sun = sun
 	add_child(sun)
+	apply_quality(env)   # (otra vez, ya con el sol: los ajustes de sombras lo necesitan)
 	var lp = "res://assets/maps/%s/nav/lights.json" % map_id
 	if FileAccess.file_exists(lp):
 		for c in JSON.parse_string(FileAccess.open(lp, FileAccess.READ).get_as_text()):
@@ -182,20 +193,20 @@ func _dynamic_resolution(delta: float) -> void:
 	else: return
 	var vp = get_viewport()
 	vp.scaling_3d_scale = base_scale * dyn_scale
-	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if vp.scaling_3d_scale < 0.99 else Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR   # (FSR solo existe en el renderizador Forward+; en Mobile daba un aviso y no hacía nada)
 
 ## calidad gráfica: escala de render, suavizado, sombras y resplandor (alta / media / baja)
 func apply_quality(e: Environment) -> void:
 	var q = GS.settings.get("quality", "alta")
 	low_quality = q == "baja"
 	var vp = get_viewport()
-	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q != "alta" else Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 	base_scale = { "alta": 1.0, "media": 0.8, "baja": 0.62 }[q]
 	dyn_scale = 1.0
 	vp.scaling_3d_scale = base_scale
-	vp.mesh_lod_threshold = { "alta": 1.0, "media": 2.5, "baja": 5.0 }[q]   # modelos simplificados antes cuanto más baja la calidad
-	var pc = not OS.has_feature("mobile")
-	vp.msaa_3d = (Viewport.MSAA_2X if pc else Viewport.MSAA_4X) if q == "alta" else (Viewport.MSAA_2X if q == "media" and not pc else Viewport.MSAA_DISABLED)   # en GPUs de móvil el MSAA sale barato; en PC con resoluciones altas, no
+	var pc = not OS.has_feature("mobile") and not OS.get_cmdline_user_args().has("asmobile")
+	vp.mesh_lod_threshold = { "alta": 1.0 if pc else 1.5, "media": 2.5, "baja": 5.0 }[q]   # modelos simplificados antes cuanto más baja la calidad
+	vp.msaa_3d = Viewport.MSAA_2X if q == "alta" else (Viewport.MSAA_2X if q == "media" and not pc else Viewport.MSAA_DISABLED)   # 4x en móvil calentaba el chip en partidas largas; quien lo quiera lo tiene en ajustes avanzados
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if q == "media" else Viewport.SCREEN_SPACE_AA_DISABLED
 	if OS.get_cmdline_user_args().has("maxq"):
 		vp.msaa_3d = Viewport.MSAA_8X; vp.scaling_3d_scale = 1.0; base_scale = 1.0
@@ -205,13 +216,17 @@ func apply_quality(e: Environment) -> void:
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM if q == "alta" else RenderingServer.SHADOW_QUALITY_SOFT_LOW)
 	if sun:
 		sun.shadow_enabled = q != "baja"
-		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if q == "alta" else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		# medido: 4 cascadas a 60 m dibujan el mapa casi dos veces más (en la Penitenciaría, +775 000 triángulos por fotograma).
+		# En móvil, 2 cascadas a 45 m: la mitad de ese coste y a la vista casi igual (la niebla tapa las sombras lejanas)
+		var four = q == "alta" and pc
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if four else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		sun.directional_shadow_max_distance = 60.0 if four else (45.0 if q == "alta" else 40.0)
+		sun.directional_shadow_split_1 = 0.08 if four else 0.22
 	e.glow_enabled = q != "baja"
 	Engine.max_fps = 60 if OS.has_feature("mobile") else 0   # en PC manda la sincronización vertical
 	# ajustes avanzados (si no están en «auto», mandan sobre la calidad)
 	var S: Dictionary = GS.settings
 	base_scale *= float(S.get("res_scale", 1.0)); vp.scaling_3d_scale = base_scale
-	if base_scale < 0.99: vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR
 	match String(S.get("fps_limit", "auto")):
 		"30": Engine.max_fps = 30
 		"60": Engine.max_fps = 60
@@ -826,6 +841,7 @@ func on_award(pts: int, kill: bool, head: bool, kind_type: String, wid: String) 
 	var parts = kind_type.split(":"); var kind = parts[0]; var ztype = parts[1] if parts.size() > 1 else "normal"
 	player.add_points(pts)
 	if not kill: return
+	if head or kind == "knife" or ztype == "brute": Fx.hitstop(70 if ztype == "brute" else 40)
 	player.kills += 1
 	if head: player.headshots += 1
 	if (kind == "bullet" or kind == "proj" or kind == "bubble") and Data.WEAPONS.has(wid): _challenges(GS.add_kill(wid))

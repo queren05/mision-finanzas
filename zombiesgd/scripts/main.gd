@@ -16,6 +16,8 @@ func _ready() -> void:
 		var kv = a.split("=", true, 1); args[kv[0]] = kv[1] if kv.size() > 1 else "1"
 	if args.has("menushot"): _menu_shots(); return
 	if args.has("nethost") or args.has("netjoin"): _net_test(); return
+	for sk in ["quality", "shadows", "aa"]:   # pruebas: quality=alta|media|baja shadows=no|bajas|altas
+		if args.has(sk): GS.settings[sk] = String(args[sk])
 	if args.has("test"):
 		GS.sel_map = args.test; GS.start_round = int(args.get("round", "1")); GS.settings.third = args.has("tp"); Controls.device = args.get("dev", Controls.device); GS.character = args.get("char", GS.character)
 		GS.mode = "oleadas"

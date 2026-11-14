@@ -40,6 +40,7 @@ func setup(id: String) -> void:
 		for i in skel.get_bone_count():
 			if skel.get_bone_name(i).begins_with("mixamorig_RightHand_"): hand_bone = i
 		play("idle")
+		if not OS.get_cmdline_user_args().has("notree"): _build_tree()
 	else:
 		var m: Node3D = load("res://assets/models/chars/%s.glb" % c.file).instantiate(); piv.add_child(m)
 		piv.rotation_degrees.y = 180.0 if float(c.head) > 0 else 0.0   # que la cabeza mire hacia delante (-Z)
@@ -82,14 +83,92 @@ func set_weapon(wid: String) -> void:
 	if not human: gun.scale = Vector3.ONE * 1.8   # en manos de la gamba se ve mejor un poco más grande
 	if shadow_only: set_shadow_only(true)
 
-func fired() -> void: shoot_t = 0.25
+func fired() -> void:
+	shoot_t = 0.25
+	if tree: tree.set("parameters/shoot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+
+# ------------------------------------------------------------------ árbol de animación (soldados)
+var tree: AnimationTree
+var k_crouch = 0.0
+var k_reload = 0.0
+var k_down = 0.0
+var k_speed = 0.0
+
+## Árbol de mezcla: las piernas mezclan quieto / andar / correr según la velocidad (sin saltos entre animaciones),
+## agachado se mezcla aparte, y el torso dispara o recarga por encima mientras las piernas siguen andando.
+func _build_tree() -> void:
+	for a in ["reload idle", "pron idle", "crouch idle", "walk crouch", "simple walk", "run"]:
+		if not anim.has_animation(a): return
+		anim.get_animation(a).loop_mode = Animation.LOOP_LINEAR
+	# postura de apuntar (un fotograma de «simple shoot») para cuando está quieto
+	var src: Animation = anim.get_animation("simple shoot")
+	var pose = Animation.new(); pose.length = 0.2; pose.loop_mode = Animation.LOOP_LINEAR
+	for i in src.get_track_count():
+		var ty = src.track_get_type(i)
+		if ty != Animation.TYPE_POSITION_3D and ty != Animation.TYPE_ROTATION_3D and ty != Animation.TYPE_SCALE_3D: continue
+		var ti = pose.add_track(ty); pose.track_set_path(ti, src.track_get_path(i))
+		match ty:
+			Animation.TYPE_POSITION_3D: pose.position_track_insert_key(ti, 0.0, src.position_track_interpolate(i, 0.12))
+			Animation.TYPE_ROTATION_3D: pose.rotation_track_insert_key(ti, 0.0, src.rotation_track_interpolate(i, 0.12))
+			Animation.TYPE_SCALE_3D: pose.scale_track_insert_key(ti, 0.0, src.scale_track_interpolate(i, 0.12))
+	var lib: AnimationLibrary = anim.get_animation_library(anim.get_animation_library_list()[0])
+	var prefix = String(anim.get_animation_library_list()[0]); prefix = prefix + "/" if prefix != "" else ""
+	if not lib.has_animation("aim pose"): lib.add_animation("aim pose", pose)
+	var A = func(n: String) -> AnimationNodeAnimation:
+		var an = AnimationNodeAnimation.new(); an.animation = prefix + n; return an
+	var bt = AnimationNodeBlendTree.new()
+	var stand = AnimationNodeBlendSpace1D.new(); stand.min_space = 0.0; stand.max_space = 6.5; stand.sync = true
+	stand.add_blend_point(A.call("aim pose"), 0.0, -1, "quieto"); stand.add_blend_point(A.call("simple walk"), 1.8, -1, "andar"); stand.add_blend_point(A.call("run"), 6.0, -1, "correr")
+	var cr = AnimationNodeBlendSpace1D.new(); cr.min_space = 0.0; cr.max_space = 3.0; cr.sync = true
+	cr.add_blend_point(A.call("crouch idle"), 0.0, -1, "quieto"); cr.add_blend_point(A.call("walk crouch"), 1.6, -1, "andar")
+	# huesos del torso para arriba (columna, cabeza, brazos y manos)
+	var sp = String(anim.get_node(anim.root_node).get_path_to(skel))
+	var upper = []
+	var spine = -1
+	for i in skel.get_bone_count():
+		if skel.get_bone_name(i).begins_with("mixamorig_Spine_"): spine = i
+	for i in skel.get_bone_count():
+		var b = i
+		while b >= 0 and b != spine: b = skel.get_bone_parent(b)
+		if b == spine and spine >= 0: upper.append(NodePath("%s:%s" % [sp, skel.get_bone_name(i)]))
+	var crouch_mix = AnimationNodeBlend2.new()
+	var reload_mix = AnimationNodeBlend2.new(); reload_mix.filter_enabled = true
+	var shoot = AnimationNodeOneShot.new(); shoot.filter_enabled = true; shoot.fadein_time = 0.04; shoot.fadeout_time = 0.14
+	for u in upper: reload_mix.set_filter_path(u, true); shoot.set_filter_path(u, true)
+	var down_mix = AnimationNodeBlend2.new()
+	bt.add_node("stand", stand); bt.add_node("crouch", cr); bt.add_node("crouch_mix", crouch_mix)
+	bt.add_node("reload_anim", A.call("reload idle")); bt.add_node("reload_mix", reload_mix)
+	bt.add_node("shoot_anim", A.call("simple shoot")); bt.add_node("shoot", shoot)
+	bt.add_node("down_anim", A.call("pron idle")); bt.add_node("down_mix", down_mix)
+	bt.connect_node("crouch_mix", 0, "stand"); bt.connect_node("crouch_mix", 1, "crouch")
+	bt.connect_node("reload_mix", 0, "crouch_mix"); bt.connect_node("reload_mix", 1, "reload_anim")
+	bt.connect_node("shoot", 0, "reload_mix"); bt.connect_node("shoot", 1, "shoot_anim")
+	bt.connect_node("down_mix", 0, "shoot"); bt.connect_node("down_mix", 1, "down_anim")
+	bt.connect_node("output", 0, "down_mix")
+	anim.stop()
+	tree = AnimationTree.new(); tree.tree_root = bt
+	anim.get_parent().add_child(tree)
+	tree.anim_player = tree.get_path_to(anim); tree.active = true
+
+func _tree_update(delta: float, speed: float, crouch: bool, downed: bool, reloading: bool) -> void:
+	var k = min(1.0, delta * 9.0)
+	k_speed = lerp(k_speed, speed, min(1.0, delta * 10.0))
+	k_crouch = lerp(k_crouch, 1.0 if crouch else 0.0, k)
+	k_reload = lerp(k_reload, 1.0 if reloading and not downed else 0.0, k)
+	k_down = lerp(k_down, 1.0 if downed else 0.0, min(1.0, delta * 5.0))
+	tree.set("parameters/stand/blend_position", k_speed)
+	tree.set("parameters/crouch/blend_position", k_speed)
+	tree.set("parameters/crouch_mix/blend_amount", k_crouch)
+	tree.set("parameters/reload_mix/blend_amount", k_reload)
+	tree.set("parameters/down_mix/blend_amount", k_down)
 
 ## cada fotograma: animación según lo que hace, y el arma en la mano apuntando adonde mira
 func update(delta: float, speed: float, crouch: bool, downed: bool, reloading: bool, pitch: float) -> void:
 	shoot_t -= delta
 	if human:
 		var moving = speed > 0.4
-		if downed: play("down", 0.3)
+		if tree: _tree_update(delta, speed, crouch, downed, reloading)
+		elif downed: play("down", 0.3)
 		elif reloading: play("reload_crouch" if crouch else ("reload_walk" if moving else "reload"), 0.2)
 		elif shoot_t > 0.0 and not moving: play("crouch_shoot" if crouch else "shoot", 0.08)
 		elif crouch: play("crouch_walk" if moving else "crouch_idle", 0.2, clamp(speed / 1.6, 0.6, 1.5) if moving else 1.0)

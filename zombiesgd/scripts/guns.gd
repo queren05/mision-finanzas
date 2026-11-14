@@ -142,7 +142,12 @@ func make_view(id: String, pap: bool) -> Node3D:
 
 ## copia para el mundo (paredes, caja): sin trucos de primera persona
 func make_world(id: String) -> Node3D:
-	return _template(id).duplicate()
+	var n: Node3D = _template(id).duplicate()
+	# rendimiento: de lejos no se dibujan y no hacen sombra (son hasta 14 000 triángulos cada una)
+	for m in n.find_children("*", "MeshInstance3D", true, false):
+		m.visibility_range_end = 32.0; m.visibility_range_end_margin = 3.0; m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if n is MeshInstance3D: n.visibility_range_end = 32.0
+	return n
 
 ## armas maravilla hechas a mano con piezas sencillas (el cañón apunta a -Z)
 func _proc(kind: String, L: float) -> Node3D:

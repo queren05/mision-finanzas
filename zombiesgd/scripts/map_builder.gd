@@ -374,6 +374,12 @@ static func build_extra(list: Array, tex_dir := "") -> Node3D:
 		var node = Node3D.new(); node.position = v3(e.p) + Vector3(0, h / 2, 0); node.rotation_degrees.y = float(e.get("r", 0)); root.add_child(node)
 		node.add_child(mi)
 		if max(float(s[0]), h) < 0.9: mi.visibility_range_end = 50.0
+		# oclusión: los tabiques y bloques grandes y opacos tapan lo que hay detrás (no se dibuja)
+		if e.t == "box" and not (String(e.get("m", "")) in ["glass", "liquid", "grate", "water", "ice"]) and not OS.get_cmdline_user_args().has("noocc"):
+			var dims = [float(s[0]), h, float(s[2])]; dims.sort()
+			if dims[1] >= 2.2 and dims[2] >= 3.0:
+				var oc = OccluderInstance3D.new(); var bo = BoxOccluder3D.new()
+				bo.size = Vector3(max(0.02, float(s[0]) - 0.06), max(0.02, h - 0.06), max(0.02, float(s[2]) - 0.06)); oc.occluder = bo; node.add_child(oc)
 		if e.get("c", true):
 			var body = StaticBody3D.new(); body.collision_layer = LAYER_WORLD; body.collision_mask = 0
 			var col = CollisionShape3D.new(); col.shape = shape; body.add_child(col); node.add_child(body)

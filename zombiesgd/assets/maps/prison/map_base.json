@@ -1,6 +1,7 @@
 {
  "name": "Penitenciaría",
- "scene": "res://assets/maps/prison/scene.gltf",
+ "scene": "res://assets/maps/prison/scene_chunks.scn",
+ "scene_src": "res://assets/maps/prison/scene.gltf",
  "ambient": "amb1",
  "env": {
   "sky_top": [

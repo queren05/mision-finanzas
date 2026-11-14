@@ -24,22 +24,71 @@ func _quad(color: Color, size: float, unshaded: bool) -> QuadMesh:
 	q.material = mat; quads[key] = q
 	return q
 
+## rendimiento: las ráfagas se reutilizan (antes cada disparo creaba y destruía nodos de partículas, con tirones del recolector)
+var pool: Array = []          # [nodo, libre a partir de (ms)]
 func _burst(parent: Node, at: Vector3, n: int, color: Color, vel: float, size: float, life: float, grav: float, dir := Vector3.UP, spread := 60.0, unshaded := false) -> void:
-	var p = CPUParticles3D.new()
-	p.one_shot = true; p.emitting = false; p.amount = n; p.lifetime = life; p.explosiveness = 0.95
+	var now = Time.get_ticks_msec()
+	var p: CPUParticles3D = null
+	var slot = -1
+	for i in pool.size():
+		var e = pool[i]
+		if not is_instance_valid(e[0]) or e[0].get_parent() != parent: pool[i] = pool[-1]; pool.pop_back(); break   # (partida anterior)
+		if e[1] <= now and e[0].amount == n: p = e[0]; slot = i; break
+	if p == null:
+		if pool.size() >= 48:   # tope: con todo ocupado se salta el efecto en vez de crear más
+			return
+		p = CPUParticles3D.new(); p.one_shot = true; p.emitting = false; p.explosiveness = 0.95; p.amount = n
+		p.scale_amount_min = 0.6; p.scale_amount_max = 1.4
+		if fade == null: fade = Gradient.new(); fade.set_color(0, Color(1, 1, 1, 1)); fade.set_color(1, Color(1, 1, 1, 0))
+		p.color_ramp = fade
+		parent.add_child(p); pool.append([p, 0]); slot = pool.size() - 1
+	p.lifetime = life
 	p.mesh = _quad(color, size, unshaded)
 	p.direction = dir; p.spread = spread; p.initial_velocity_min = vel * 0.4; p.initial_velocity_max = vel
-	p.gravity = Vector3(0, -grav, 0); p.scale_amount_min = 0.6; p.scale_amount_max = 1.4
-	if fade == null: fade = Gradient.new(); fade.set_color(0, Color(1, 1, 1, 1)); fade.set_color(1, Color(1, 1, 1, 0))
-	p.color_ramp = fade
-	parent.add_child(p); p.global_position = at; p.emitting = true
-	get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
+	p.gravity = Vector3(0, -grav, 0)
+	p.global_position = at; p.restart(); p.emitting = true
+	pool[slot][1] = now + int((life + 0.25) * 1000.0)
+
+## parada de impacto: el tiempo se congela un instante (tiro en la cabeza que mata, explosión). Solo en solitario.
+var _stop_until = 0
+func hitstop(ms := 45, scale := 0.08) -> void:
+	if Net.active: return
+	if float(GS.settings.get("shake", 1.0)) <= 0.01: return
+	var was = _stop_until > Time.get_ticks_msec()
+	_stop_until = Time.get_ticks_msec() + ms
+	if was: return
+	Engine.time_scale = scale
+	while Time.get_ticks_msec() < _stop_until: await get_tree().process_frame
+	Engine.time_scale = 1.0
+
+## agujeros de bala: unas pocas marcas reutilizadas (la más vieja se recoloca), sin sombra y solo de cerca
+var holes: Array = []
+var hole_i = 0
+var hole_mesh: QuadMesh
+func bullet_hole(parent: Node, at: Vector3, n: Vector3) -> void:
+	if hole_mesh == null:
+		hole_mesh = QuadMesh.new(); hole_mesh.size = Vector2(0.11, 0.11)
+		var mat = StandardMaterial3D.new(); mat.albedo_texture = soft_tex; mat.albedo_color = Color(0.03, 0.03, 0.03, 0.85)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.disable_receive_shadows = true; mat.render_priority = 1
+		hole_mesh.material = mat
+	if holes.size() > 0 and (not is_instance_valid(holes[0]) or holes[0].get_parent() != parent): holes.clear(); hole_i = 0
+	var mi: MeshInstance3D
+	if holes.size() < 24:
+		mi = MeshInstance3D.new(); mi.mesh = hole_mesh; mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = 30.0; parent.add_child(mi); holes.append(mi)
+	else:
+		mi = holes[hole_i]; hole_i = (hole_i + 1) % holes.size()
+	var up = Vector3.UP if abs(n.y) < 0.95 else Vector3.RIGHT
+	mi.global_transform = Transform3D(Basis.looking_at(-n, up).rotated(n, randf() * TAU), at + n * 0.012)
+	mi.scale = Vector3.ONE * randf_range(0.8, 1.25)
 
 func blood(parent: Node, at: Vector3, head: bool) -> void:
 	if not GS.settings.get("gore", true): _burst(parent, at, 4, Color(0.25, 0.25, 0.22), 1.2, 0.1, 0.4, 6.0); return   # sin sangre: polvo
 	_burst(parent, at, 10 if head else 6, Color(0.42, 0.02, 0.02), 2.6 if head else 1.6, 0.13, 0.6, 9.0, Vector3.UP, 70.0)
 
 func impact(parent: Node, at: Vector3, n: Vector3) -> void:
+	bullet_hole(parent, at, n)
 	_burst(parent, at + n * 0.02, 5, Color(0.55, 0.52, 0.48), 1.8, 0.08, 0.45, 6.0, n, 35.0)
 	_burst(parent, at + n * 0.02, 3, Color(1.0, 0.8, 0.4), 3.0, 0.03, 0.12, 0.0, n, 30.0, true)
 

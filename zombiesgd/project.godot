@@ -31,6 +31,8 @@ anti_aliasing/quality/msaa_3d=2
 lights_and_shadows/directional_shadow/size.mobile=4096
 lights_and_shadows/positional_shadow/atlas_size.mobile=1024
 textures/default_filters/anisotropic_filtering_level=2
+occlusion_culling/use_occlusion_culling=true
+occlusion_culling/occlusion_rays_per_thread=256
 
 [autoload]
 
