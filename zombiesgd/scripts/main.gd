@@ -15,6 +15,7 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		var kv = a.split("=", true, 1); args[kv[0]] = kv[1] if kv.size() > 1 else "1"
 	if args.has("menushot"): _menu_shots(); return
+	if args.has("menunav"): _menu_nav(); return
 	if args.has("nethost") or args.has("netjoin"): _net_test(); return
 	for sk in ["quality", "shadows", "aa"]:   # pruebas: quality=alta|media|baja shadows=no|bajas|altas
 		if args.has(sk): GS.settings[sk] = String(args[sk])
@@ -40,6 +41,31 @@ func _net_test() -> void:
 	else:
 		await get_tree().create_timer(2.0).timeout
 		Net.join(args.netjoin)
+
+## prueba de mando en los menús: en cada pantalla tiene que haber algo enfocado y todos los botones deben
+## poder alcanzarse con la cruceta
+func _menu_nav() -> void:
+	to_menu()
+	for page in ["_home", "_story", "_docs", "_play", "_arsenal", "_progress", "_chars", "_options", "_armory", "_settings", "_credits"]:
+		menu.call(page)
+		for i in 6: await get_tree().process_frame
+		var all = []
+		for c in menu.page.find_children("*", "Control", true, false):
+			var b: Control = c
+			if b.focus_mode == Control.FOCUS_ALL and b.is_visible_in_tree() and not (b is BaseButton and (b as BaseButton).disabled): all.append(b)
+		var f = get_viewport().gui_get_focus_owner()
+		var seen = {}
+		var queue = [f] if f else []
+		while queue.size():
+			var c: Control = queue.pop_back()
+			if seen.has(c): continue
+			seen[c] = true
+			for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
+				var nb = c.find_valid_focus_neighbor(side)
+				if nb and not seen.has(nb): queue.append(nb)
+		var lost = all.filter(func(b): return not seen.has(b))
+		print("MENU ", page, " enfocado=", f != null, " botones=", all.size(), " alcanzables=", seen.size(), " perdidos=", lost.map(func(b): return (b.text if b is Button else b.get_class()) + str(Vector2i(b.global_position))))
+	get_tree().quit()
 
 func _menu_shots() -> void:
 	to_menu()
@@ -146,6 +172,16 @@ func _run_test() -> void:
 		for i in game.doors.size(): game.evt("door", i)
 		while game.mission.step_i < int(args.mstep): game.mission._next_step()
 		await get_tree().create_timer(2.0).timeout
+	if args.has("nadeshot"):   # la granada en la mano, congelada en el punto np=0..1 del lanzamiento
+		game.hud.visible = true
+		if args.has("gun"): p.give_weapon(String(args.gun)); p.weapons = [p.weapons[p.cur]]; p.cur = 0
+		await get_tree().create_timer(1.0).timeout
+		for np in String(args.get("nps", "0.2,0.42,0.6")).split(","):
+			Viewmodel.NP_TEST = float(np); p.vm.throw()
+			await get_tree().create_timer(0.5).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png("%s_%s.png" % [args.nadeshot, np])
+		get_tree().quit(); return
 	if args.has("gunsheet"):   # cada arma: de cadera y apuntando (para revisar cómo se ven)
 		var only = String(args.get("guns", "")).split(",", false)
 		game.hud.visible = true

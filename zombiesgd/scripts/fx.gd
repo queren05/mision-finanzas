@@ -161,3 +161,32 @@ func fire(parent: Node, at: Vector3, size := 1.0) -> Node3D:
 
 func fire_puff(parent: Node, at: Vector3) -> void:
 	_burst(parent, at, 8, Color(1.0, 0.5, 0.15), 1.6, 0.3, 0.5, -1.0, Vector3.UP, 40.0, true)
+
+
+## granada de mano (de fragmentación, verde oliva): cuerpo, cuello, espoleta y palanca. `k` = tamaño (1 = real, unos 9 cm)
+var _nade_mats: Array = []
+func grenade_model(k := 1.0, viewmodel := false) -> Node3D:
+	if _nade_mats.is_empty():
+		for c in [[Color(0.2, 0.25, 0.15), 0.25, 0.6], [Color(0.42, 0.4, 0.36), 0.85, 0.4]]:
+			var m = StandardMaterial3D.new(); m.albedo_color = c[0]; m.metallic = c[1]; m.roughness = c[2]; _nade_mats.append(m)
+	var n = Node3D.new()
+	var parts = []
+	var body = SphereMesh.new(); body.radius = 0.03; body.height = 0.075; body.radial_segments = 14; body.rings = 8
+	parts.append([body, Vector3.ZERO, Vector3.ZERO, 0])
+	var ring = CylinderMesh.new(); ring.top_radius = 0.031; ring.bottom_radius = 0.031; ring.height = 0.008; ring.radial_segments = 14
+	parts.append([ring, Vector3(0, 0.004, 0), Vector3.ZERO, 0])
+	var neck = CylinderMesh.new(); neck.top_radius = 0.011; neck.bottom_radius = 0.014; neck.height = 0.024; neck.radial_segments = 10
+	parts.append([neck, Vector3(0, 0.046, 0), Vector3.ZERO, 1])
+	var lever = BoxMesh.new(); lever.size = Vector3(0.012, 0.062, 0.004)
+	parts.append([lever, Vector3(0, 0.026, 0.027), Vector3(0.42, 0, 0), 1])
+	var top = BoxMesh.new(); top.size = Vector3(0.014, 0.004, 0.03)
+	parts.append([top, Vector3(0, 0.059, 0.012), Vector3.ZERO, 1])
+	for q in parts:
+		var mi = MeshInstance3D.new(); mi.mesh = q[0]; mi.position = q[1] * k; mi.rotation = q[2]; mi.scale = Vector3.ONE * k
+		var mat: StandardMaterial3D = _nade_mats[q[3]]
+		if viewmodel:
+			mat = mat.duplicate(); mat.use_z_clip_scale = true; mat.z_clip_scale = 0.12; mat.use_fov_override = true; mat.fov_override = Viewmodel.VM_FOV
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.material_override = mat
+		n.add_child(mi)
+	return n

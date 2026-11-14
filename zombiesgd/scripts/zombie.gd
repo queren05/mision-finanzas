@@ -7,7 +7,7 @@ extends CharacterBody3D
 
 const HEIGHT := 1.82
 # velocidad (m/s) que cubre cada animación con el zombi a su altura (medidas con el pie de apoyo)
-const GAITS := { "Walk": 0.37, "Shamble": 0.48, "Run": 2.5, "walk_7": 1.6, "run_fast": 6.0 }
+const GAITS := { "Walk": 0.27, "Shamble": 0.52, "Run": 2.55, "walk_7": 1.6, "run_fast": 6.0 }
 const ATTACKS := { "Attack": [1.0, 1.35], "Attack2": [1.5, 1.95], "Attack3": [1.0, 1.35] }   # golpe y fin (s de clip)
 const DOG_ATTACKS := { "attack01": [0.45, 0.9], "attack02": [0.6, 1.2] }
 const ATK_RATE := 1.55
@@ -197,7 +197,7 @@ func _update_lod() -> void:
 var skip_acc = 0.0
 func _physics_process(delta: float) -> void:
 	# rendimiento: los que están lejos o fuera de pantalla piensan a la mitad de ritmo
-	if lod >= 1 and not dead and state == "chase" and atk_t < 0.0:
+	if lod >= 2 and not dead and state == "chase" and atk_t < 0.0:   # (solo los que no se ven: a media distancia se notaba el paso a saltos)
 		if (Engine.get_physics_frames() + zid) % 2 == 1: skip_acc += delta; return
 		delta += skip_acc
 	skip_acc = 0.0

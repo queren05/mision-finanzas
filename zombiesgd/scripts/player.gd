@@ -352,8 +352,8 @@ func _start_reload() -> void:
 func _shoot() -> void:
 	var w = cur_w()
 	if not gums.has("eterno"): w.mag -= 1
-	body.fired(); vm.fire(); shake = min(1.0, shake + 0.12 + float(stat("recoil")) * 0.04)
-	fov_punch = min(2.5, fov_punch + 0.5 + float(stat("recoil")) * 0.25)
+	body.fired(); vm.fire(); shake = max(shake, min(0.32, shake + 0.05 + float(stat("recoil")) * 0.03))   # el disparo nunca acumula temblor fuerte: en ráfaga mareaba
+	fov_punch = 0.0
 	var rpm = float(stat("rpm")) * (1.33 if "dtap" in perks else 1.0)
 	fire_cd = 60.0 / rpm
 	Sfx.play(str(stat("sound")), 0.9, 1.0 if not w.pap else 0.85)
@@ -397,7 +397,12 @@ func _knife() -> void:
 
 func _throw_grenade() -> void:
 	grenades -= 1; nade_t = 1.0; game.hud.update_ammo()
-	game.throw_grenade(cam.global_position - cam.global_transform.basis.z * 0.5, (-cam.global_transform.basis.z + Vector3(0, 0.25, 0)).normalized() * 14.0 + velocity * 0.5, self)
+	vm.throw(); body.fired(); Sfx.play("knife", 0.5, 0.7)
+	# sale de la mano cuando el brazo va hacia delante, no al pulsar
+	get_tree().create_timer(Viewmodel.NADE_RELEASE).timeout.connect(func():
+		if not is_inside_tree(): return
+		shake = max(shake, 0.2)
+		game.throw_grenade(cam.global_position - cam.global_transform.basis.z * 0.5 + cam.global_transform.basis.x * 0.12, (-cam.global_transform.basis.z + Vector3(0, 0.25, 0)).normalized() * 14.0 + velocity * 0.5, self))
 
 func give_weapon(id: String, pap := false) -> void:
 	for i in weapons.size():

@@ -21,6 +21,14 @@ func _ready() -> void:
 	for k in scenes:
 		var n: Node = scenes[k].instantiate()
 		var ap: AnimationPlayer = n.find_child("AnimationPlayer", true, false)
+		# animaciones readaptadas a este esqueleto (tools/retarget_zombie.gd): las que traía dejaban las piernas abiertas y patinando
+		var fixed = KINDS[k].get_basename() + "_anims.res"
+		if ap and ResourceLoader.exists(fixed) and not OS.get_cmdline_user_args().has("oldanims"):
+			var src: AnimationLibrary = load(fixed)
+			var lib: AnimationLibrary = ap.get_animation_library("")
+			for a in src.get_animation_list():
+				if lib.has_animation(a): lib.remove_animation(a)
+				lib.add_animation(a, src.get_animation(a))
 		if ap:
 			for a in ap.get_animation_list():
 				if a in ["Idle", "Idle2", "Walk", "Shamble", "Run", "idle01", "walk_7", "run_fast"]: ap.get_animation(a).loop_mode = Animation.LOOP_LINEAR
@@ -30,7 +38,8 @@ func make(kind: String, type := "normal") -> Node3D:
 	var n: Node3D = scenes[kind].instantiate()
 	var t: Dictionary = TYPES.get(type, TYPES.normal)
 	var h = _height(n)
-	n.scale = Vector3.ONE * (float(t.height) / max(0.01, h))
+	# (el reposo de zr_A es agachado y con las piernas abiertas: erguido con las animaciones nuevas salía un 7 % más alto que su cuerpo de colisión)
+	n.scale = Vector3.ONE * (float(t.height) / max(0.01, h)) * (0.93 if kind == "a" and not OS.get_cmdline_user_args().has("oldanims") else 1.0)
 	if t.has("fat"): n.scale.x *= float(t.fat); n.scale.z *= float(t.fat)
 	var tint = Color.from_hsv(0.25 + randf_range(-0.04, 0.04), randf_range(0.0, 0.12), randf_range(0.8, 1.0)) if kind != "dog" else Color(1, 1, 1)
 	if t.has("tint"): tint = t.tint

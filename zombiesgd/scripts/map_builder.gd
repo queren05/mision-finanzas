@@ -375,7 +375,7 @@ static func build_extra(list: Array, tex_dir := "") -> Node3D:
 		node.add_child(mi)
 		if max(float(s[0]), h) < 0.9: mi.visibility_range_end = 50.0
 		# oclusión: los tabiques y bloques grandes y opacos tapan lo que hay detrás (no se dibuja)
-		if e.t == "box" and not (String(e.get("m", "")) in ["glass", "liquid", "grate", "water", "ice"]) and not OS.get_cmdline_user_args().has("noocc"):
+		if e.t == "box" and not (String(e.get("m", "")) in ["glass", "liquid", "grate", "water", "ice"]) and OS.get_cmdline_user_args().has("occ"):   # (oclusión apagada: en móvil costaba más de lo que ahorraba)
 			var dims = [float(s[0]), h, float(s[2])]; dims.sort()
 			if dims[1] >= 2.2 and dims[2] >= 3.0:
 				var oc = OccluderInstance3D.new(); var bo = BoxOccluder3D.new()

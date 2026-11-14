@@ -841,7 +841,6 @@ func on_award(pts: int, kill: bool, head: bool, kind_type: String, wid: String) 
 	var parts = kind_type.split(":"); var kind = parts[0]; var ztype = parts[1] if parts.size() > 1 else "normal"
 	player.add_points(pts)
 	if not kill: return
-	if head or kind == "knife" or ztype == "brute": Fx.hitstop(70 if ztype == "brute" else 40)
 	player.kills += 1
 	if head: player.headshots += 1
 	if (kind == "bullet" or kind == "proj" or kind == "bubble") and Data.WEAPONS.has(wid): _challenges(GS.add_kill(wid))
@@ -900,9 +899,10 @@ func throw_grenade(from: Vector3, vel: Vector3, by: Node) -> void:
 	g.continuous_cd = true   # no atraviesa el suelo aunque vaya rápida
 	g.linear_damp = 0.3; g.angular_damp = 2.0
 	var cs = CollisionShape3D.new(); var sp = SphereShape3D.new(); sp.radius = 0.08; cs.shape = sp; g.add_child(cs)
-	var m = MeshInstance3D.new(); var sm = SphereMesh.new(); sm.radius = 0.08; sm.height = 0.16; sm.radial_segments = 12; sm.rings = 6; m.mesh = sm
-	var mat = StandardMaterial3D.new(); mat.albedo_color = Color(0.35, 0.42, 0.28); mat.roughness = 0.5; mat.metallic = 0.3; m.material_override = mat; g.add_child(m)
-	var led = OmniLight3D.new(); led.light_color = Color(1, 0.2, 0.1); led.omni_range = 1.2; led.light_energy = 1.5; g.add_child(led)   # lucecita para verla
+	var gm = Fx.grenade_model(1.5); g.add_child(gm)   # (algo más grande que la real para que se vea volar)
+	# gira solo el modelo: si girase el cuerpo, al caer rodaba varios metros más
+	var spin = create_tween().bind_node(gm).set_loops(8); spin.tween_property(gm, "rotation", Vector3(TAU, 0.6, 0.3), 0.32).from(Vector3.ZERO)
+	var led = OmniLight3D.new(); led.light_color = Color(1, 0.2, 0.1); led.omni_range = 1.2; led.light_energy = 1.5; led.shadow_enabled = false; g.add_child(led)   # lucecita para verla
 	add_child(g); g.global_position = from; g.linear_velocity = vel
 	var last_ok = from
 	var tw = create_tween().set_loops(11); tw.tween_property(led, "light_energy", 0.2, 0.1); tw.tween_property(led, "light_energy", 1.8, 0.1)

@@ -28,7 +28,7 @@ const WEAPONS := {
 	"mp5k": { "name": "MP5K", "class": "subfusil", "model": "gun_mp5k", "arms": "pistol", "len": 0.36, "vm": { "up": -0.03 }, "dmg": 50, "head": 2.0, "rpm": 750, "mag": 30, "res": 210, "reload": 2.1,
 		"spread": 2.8, "ads_spread": 1.0, "auto": true, "pellets": 1, "cost": 1000, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 0.8, "range": 35,
 		"pap": { "name": "Colisionador", "dmg": 120, "mag": 40, "res": 320 } },
-	"ak74u": { "name": "AK-74u", "class": "subfusil", "model": "gun_ak74u", "len": 0.62, "vm": { "fwd": 0.08 }, "dmg": 55, "head": 2.0, "rpm": 700, "mag": 20, "res": 160, "reload": 2.0,
+	"ak74u": { "name": "AK-74u", "class": "subfusil", "model": "gun_ak74u", "len": 0.62, "vm": { "fwd": 0.08 }, "stock": true, "dmg": 55, "head": 2.0, "rpm": 700, "mag": 20, "res": 160, "reload": 2.0,
 		"spread": 2.5, "ads_spread": 0.8, "auto": true, "pellets": 1, "cost": 1200, "sound": "shot_smg", "reload_snd": "reload_rifle", "recoil": 1.0, "range": 40,
 		"pap": { "name": "AK Furiosa", "dmg": 130, "mag": 40, "res": 280 } },
 	"m16": { "name": "M16", "class": "fusil", "model": "gun_m16", "len": 1.0, "dmg": 70, "head": 2.2, "rpm": 650, "mag": 30, "res": 120, "reload": 2.2,
