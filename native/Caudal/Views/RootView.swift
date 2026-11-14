@@ -68,6 +68,7 @@ struct RootView: View {
             }
 
             // botón de apuntar, siempre a mano
+            ZStack(alignment: .bottomTrailing) {
             if (tab == .home || tab == .txs) && !store.hideFAB {
                 Button {
                     Haptic.heavy()
@@ -88,8 +89,13 @@ struct RootView: View {
                 .transition(.scale.combined(with: .opacity))
                 .animation(.spring(response: 0.4, dampingFraction: 0.6), value: fabSpin)
             }
+            }
+            // la animación se queda en el botón: si se pone en toda la pantalla, el contenido de la pestaña
+            // nueva también se anima al cambiar y da tirones
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: (tab == .home || tab == .txs) && !store.hideFAB)
 
             // aviso para deshacer el último borrado
+            ZStack(alignment: .bottom) {
             if let t = store.lastDeleted {
                 UndoToast(text: "«\(t.title.isEmpty ? t.type.label : t.title)» eliminado") {
                     Haptic.success(); store.undoDelete()
@@ -101,9 +107,10 @@ struct RootView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .id(t.id)
             }
+            }
+            .frame(maxWidth: .infinity)
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: store.lastDeleted)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: tab)
-        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: store.lastDeleted)
         .sheet(isPresented: $newTx) { TxEditor(original: nil) }
         // al tocar un widget: caudal://nuevo · caudal://tab/txs|invest|debts|home|more
         .onOpenURL { url in
