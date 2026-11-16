@@ -603,6 +603,7 @@ struct JobPaySheet: View {
     let month: String
     @State private var amount = ""
     @State private var accountId = ""
+    @State private var addIncome = true
     var body: some View {
         let m = store.jobMonth(month)
         NavigationStack {
@@ -613,7 +614,8 @@ struct JobPaySheet: View {
                 }
                 Section {
                     LabeledContent("Lo que te han pagado") { TextField("0,00", text: $amount).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    Picker("Cuenta", selection: $accountId) { ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) } }
+                    Toggle("Apuntarlo como ingreso", isOn: $addIncome.animation())
+                    if addIncome { Picker("Cuenta", selection: $accountId) { ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) } } }
                 }
             }
             .navigationTitle("Nómina de \(Day.month(month + "-01").lowercased())").navigationBarTitleDisplayMode(.inline)
@@ -621,9 +623,9 @@ struct JobPaySheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(m?.paid == nil ? "Marcar cobrado" : "Guardar") {
-                        store.payJob(month: month, amount: Money.parse(amount) ?? 0, accountId: accountId)
+                        store.payJob(month: month, amount: Money.parse(amount) ?? 0, accountId: accountId, addIncome: addIncome)
                         Haptic.success(); dismiss()
-                    }.bold().disabled((Money.parse(amount) ?? 0) <= 0 || accountId.isEmpty)
+                    }.bold().disabled(addIncome && ((Money.parse(amount) ?? 0) <= 0 || accountId.isEmpty))
                 }
             }
             .onAppear {

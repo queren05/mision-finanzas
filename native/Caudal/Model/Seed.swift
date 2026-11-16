@@ -3,7 +3,7 @@ import Foundation
 /// Datos de partida: categorías por defecto. Los datos personales (cuentas y movimientos reales) no están en el código:
 /// se leen de `seed-personal.json`, que no se sube a git (ver .gitignore) y GitHub Actions lo pone desde un secreto.
 enum Seed {
-    static let version = 12
+    static let version = 13
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -92,6 +92,15 @@ enum Seed {
             }
             // el contrato ya no tiene día de cobro: la nómina se apunta a mano cuando llega
             if let j = s.job { s.recurring.removeAll { $0.id == j.recurringId } }
+        }
+        if s.seed < 13 {
+            // Nov 2026: octubre de 2026 queda como cobrado sin apuntar ingreso (la nómina ya estaba metida a mano)
+            for i in s.shifts.indices where Day.monthKey(s.shifts[i].date) == "2026-10" && s.shifts[i].status == .pendiente {
+                s.shifts[i].status = .pagado; s.shifts[i].paidDate = Day.today
+            }
+            if var j = s.job, j.start <= "2026-10-31" {
+                j.paidMonths = Array(Set((j.paidMonths ?? []) + ["2026-10"])).sorted(); s.job = j
+            }
         }
         s.seed = version
     }

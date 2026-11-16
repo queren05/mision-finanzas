@@ -36,6 +36,8 @@ struct Job: Codable, Hashable {
     /// el neto se ha escrito a mano (ya no se recalcula desde el bruto)
     var netManual: Bool? = nil
     var schedules: [JobSchedule]? = nil
+    /// meses (yyyy-MM) marcados como cobrados sin apuntar ingreso
+    var paidMonths: [String]? = nil
 
     /// horario que toca un día: el más reciente de los que cubren esa fecha y ese día de la semana
     func schedule(on day: String) -> JobSchedule? {
@@ -247,7 +249,7 @@ extension Store {
         if let g = j.grossMonth {
             m.dayGross = r2(g / Double(n)); m.gross = r2(g * Double(m.days) / Double(n)); m.fullGross = r2(g * Double(due) / Double(n))
         }
-        m.paid = jobTx(month)?.amount
+        m.paid = jobTx(month)?.amount ?? ((j.paidMonths ?? []).contains(month) ? m.fullNet : nil)
         if m.days > 0, !(j.schedules ?? []).isEmpty {
             let ref = Company(name: "")
             var d = from
@@ -281,8 +283,17 @@ extension Store {
         return w
     }
     /// apunta la nómina del mes con lo cobrado de verdad (o corrige la que ya estaba apuntada)
-    func payJob(month: String, amount: Double, accountId: String) {
-        guard let j = state.job, amount > 0 else { return }
+    func payJob(month: String, amount: Double, accountId: String, addIncome: Bool = true) {
+        guard var j = state.job else { return }
+        if !addIncome {
+            if jobTx(month) == nil, !(j.paidMonths ?? []).contains(month) {
+                j.paidMonths = (j.paidMonths ?? []) + [month]
+                withAnimation(Motion.layout) { state.job = j }
+            }
+            return
+        }
+        guard amount > 0 else { return }
+        if (j.paidMonths ?? []).contains(month) { j.paidMonths?.removeAll { $0 == month }; state.job = j }
         if let t = jobTx(month), let i = state.txs.firstIndex(where: { $0.id == t.id }) {
             withAnimation(Motion.layout) { state.txs[i].amount = amount; state.txs[i].accountId = accountId }
             return
