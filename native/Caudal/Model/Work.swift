@@ -28,6 +28,36 @@ struct Job: Codable, Hashable {
     var payDay: Int = 28
     var accountId: String
     var recurringId: String = "r_nomina"
+    /// lo que dice la oferta: bruto al año. Sin él solo se conoce el neto
+    var grossYear: Double? = nil
+    var pays: Int? = nil
+    var ssPct: Double? = nil
+    var irpfPct: Double? = nil
+    /// el neto se ha escrito a mano (ya no se recalcula desde el bruto)
+    var netManual: Bool? = nil
+
+    var grossMonth: Double? { grossYear.map { (($0 / Double(pays ?? 12)) * 100).rounded() / 100 } }
+    static func netMonth(grossYear: Double, pays: Int, ss: Double, irpf: Double) -> Double {
+        ((grossYear / Double(max(1, pays)) * (1 - (ss + irpf) / 100)) * 100).rounded() / 100
+    }
+    /// retención de IRPF aproximada para un sueldo bruto anual (persona soltera sin hijos); sirve de punto de partida
+    static func irpfEstimate(_ gross: Double) -> Double {
+        guard gross > 15876 else { return 0 }
+        let rn = gross * (1 - 0.065)
+        var red = 0.0
+        if rn <= 14852 { red = 7302 }
+        else if rn <= 17673.52 { red = 7302 - 1.75 * (rn - 14852) }
+        else if rn <= 19747.5 { red = 2364.34 - 1.14 * (rn - 17673.52) }
+        let base = max(0, rn - 2000 - red)
+        func scale(_ b: Double) -> Double {
+            let steps: [(Double, Double)] = [(12450, 0.19), (20200, 0.24), (35200, 0.30), (60000, 0.37), (300000, 0.45), (.infinity, 0.47)]
+            var t = 0.0, prev = 0.0
+            for (top, pct) in steps { if b > prev { t += (min(b, top) - prev) * pct }; prev = top }
+            return t
+        }
+        let quota = min(max(0, scale(base) - scale(5550)), 0.43 * (gross - 15876))
+        return (quota / gross * 10000).rounded() / 100
+    }
 
     /// primer día de cobro que no sea anterior a la fecha dada
     static func firstPay(from: String, day: Int) -> String {
@@ -82,7 +112,22 @@ struct ShiftCalc {
     var gross: Double
 }
 
+/// lo que lleva ganado el contrato en un mes: cada día suma su parte del sueldo
+struct JobMonth {
+    var days = 0          // días ya ganados
+    var monthDays = 30
+    var net = 0.0         // neto ganado hasta hoy
+    var gross: Double? = nil
+    var dayNet = 0.0
+    var dayGross: Double? = nil
+    var fullNet = 0.0     // lo que toca cobrar por el mes entero
+    var fullGross: Double? = nil
+    var paid: Double? = nil
+}
+
 struct WorkSummary {
+    /// hay sueldo de contrato sin bruto conocido: el bruto total no se puede dar
+    var grossUnknown = false
     var normalMin = 0
     var nightMin = 0
     var gross = 0.0
@@ -157,6 +202,64 @@ extension Store {
         return w
     }
 
+    func jobMonth(_ month: String) -> JobMonth? {
+        guard let j = state.job else { return nil }
+        let first = month + "-01"
+        let n = Day.cal.range(of: .day, in: .month, for: Day.date(first))?.count ?? 30
+        let last = month + String(format: "-%02d", n)
+        guard j.start <= last else { return nil }
+        func span(_ a: String, _ b: String) -> Int { a > b ? 0 : (Day.cal.dateComponents([.day], from: Day.date(a), to: Day.date(b)).day ?? 0) + 1 }
+        func r2(_ v: Double) -> Double { (v * 100).rounded() / 100 }
+        let from = max(first, j.start)
+        var m = JobMonth()
+        m.monthDays = n
+        m.days = span(from, min(last, Day.today))
+        let due = span(from, last)
+        m.dayNet = r2(j.net / Double(n))
+        m.net = r2(j.net * Double(m.days) / Double(n))
+        m.fullNet = r2(j.net * Double(due) / Double(n))
+        if let g = j.grossMonth {
+            m.dayGross = r2(g / Double(n)); m.gross = r2(g * Double(m.days) / Double(n)); m.fullGross = r2(g * Double(due) / Double(n))
+        }
+        m.paid = jobTx(month)?.amount
+        return m
+    }
+    /// la nómina del contrato apuntada en ese mes (a mano o sola el día de cobro)
+    func jobTx(_ month: String) -> Tx? {
+        guard let j = state.job else { return nil }
+        return state.txs.first { $0.recurringId == j.recurringId && $0.type == .income && Day.monthKey($0.date) == month }
+    }
+    /// turnos del mes más lo ganado con el contrato
+    func workSummary(month: String, company: String? = nil) -> WorkSummary {
+        var w = summary(shifts(month: month, company: company))
+        guard company == nil, let m = jobMonth(month) else { return w }
+        if let p = m.paid {
+            w.net += p; w.paidNet += p
+            if let g = m.fullGross { w.gross += g } else { w.grossUnknown = true }
+        } else {
+            w.net += m.net; w.pendingNet += m.net
+            if let g = m.gross { w.gross += g } else if m.net > 0 { w.grossUnknown = true }
+        }
+        return w
+    }
+    /// apunta la nómina del mes con lo cobrado de verdad (o corrige la que ya estaba apuntada)
+    func payJob(month: String, amount: Double, accountId: String) {
+        guard let j = state.job, amount > 0 else { return }
+        if let t = jobTx(month), let i = state.txs.firstIndex(where: { $0.id == t.id }) {
+            withAnimation(Motion.layout) { state.txs[i].amount = amount; state.txs[i].accountId = accountId }
+            return
+        }
+        let first = month + "-01"
+        let n = Day.cal.range(of: .day, in: .month, for: Day.date(first))?.count ?? 30
+        let last = month + String(format: "-%02d", n)
+        let ri = state.recurring.firstIndex { $0.id == j.recurringId }
+        save(Tx(type: .income, amount: amount, accountId: accountId,
+                categoryId: ri.flatMap { state.recurring[$0].categoryId } ?? state.categories.first { $0.id == "i_nomina" }?.id,
+                date: min(Day.today, last), time: Day.time(Date()), title: "Nómina · \(j.company)", recurringId: j.recurringId))
+        // el cobro automático de ese mes ya no hace falta
+        if let ri, state.recurring[ri].next <= last { state.recurring[ri].next = Job.firstPay(from: Day.add(first, months: 1), day: j.payDay) }
+    }
+
     /// empresas en las que se pueden apuntar turnos (las retiradas solo guardan su historial)
     var activeCompanies: [Company] { state.companies.filter { $0.archived != true } }
 
@@ -174,6 +277,10 @@ extension Store {
         // si ya estaba programado y no cambia el día, se respeta el próximo cobro (para no cobrar dos veces el mismo mes)
         if old == nil { r.next = Job.firstPay(from: max(j.start, Day.today), day: j.payDay) }
         else if old?.day != j.payDay || (state.job?.start ?? "") != j.start { r.next = Job.firstPay(from: max(j.start, Day.add(Day.today, days: 1)), day: j.payDay) }
+        // si la nómina de ese mes ya está apuntada, el siguiente cobro es el del mes que viene
+        if state.txs.contains(where: { $0.recurringId == r.id && Day.monthKey($0.date) == Day.monthKey(r.next) }) {
+            r.next = Job.firstPay(from: Day.add(Day.monthStart(r.next), months: 1), day: j.payDay)
+        }
         withAnimation(Motion.layout) {
             if let i = state.recurring.firstIndex(where: { $0.id == r.id }) { state.recurring[i] = r } else { state.recurring.append(r) }
             state.job = j
