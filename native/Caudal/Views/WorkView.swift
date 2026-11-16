@@ -193,13 +193,21 @@ struct WorkView: View {
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 3) {
                     AmountText(value: j.net, font: .body.weight(.semibold), color: .income)
-                    Text("neto · día \(j.payDay)").font(.caption).foregroundStyle(.secondary)
+                    Text("neto al mes").font(.caption).foregroundStyle(.secondary)
                 }
             }
             if let m {
                 HStack(spacing: 10) {
                     jobStat("Al día", m.dayNet, m.dayGross)
                     jobStat(m.paid == nil ? "Llevas" : "Mes entero", m.paid == nil ? m.net : m.fullNet, m.paid == nil ? m.gross : m.fullGross)
+                }
+                if m.totalMin > 0 {
+                    HStack {
+                        Label("\(Hours.dec(m.totalMin)) h · \(m.workedDays) día\(m.workedDays == 1 ? "" : "s")", systemImage: "clock.fill")
+                        Spacer()
+                        if let sc = j.schedule(on: Day.today) { Text("Hoy \(Hours.hm(sc.start)) – \(Hours.hm(sc.end))") }
+                    }
+                    .font(.footnote).foregroundStyle(.secondary)
                 }
                 if let p = m.paid {
                     Button { Haptic.tap(); payingJob = true } label: {
@@ -642,7 +650,8 @@ struct JobEditor: View {
     @State private var irpfManual = false
     @State private var net = ""
     @State private var netManual = false
-    @State private var payDay = 28
+    @State private var schedules: [JobSchedule] = []
+    @State private var editingSchedule: JobSchedule? = nil
     @State private var accountId = ""
     @State private var askRemove = false
 
@@ -659,10 +668,24 @@ struct JobEditor: View {
                 Section("¿Dónde trabajas?") { TextField("Nombre de la empresa", text: $name) }
                 Section("Contrato indefinido") {
                     DatePicker("Desde", selection: $start, displayedComponents: .date)
-                    Stepper("Día de cobro: \(payDay)", value: $payDay, in: 1...31)
                     Picker("Cuenta donde cobras", selection: $accountId) {
                         ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) }
                     }
+                }
+                Section("Horario") {
+                    ForEach(schedules.sorted { $0.from > $1.from }) { sc in
+                        Button { editingSchedule = sc } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(sc.daysLabel) · \(Hours.hm(sc.start)) – \(Hours.hm(sc.end))").font(.body.weight(.semibold)).foregroundStyle(.primary)
+                                    Text("Desde el \(Day.shortLabel(sc.from))" + (sc.to.map { " hasta el \(Day.shortLabel($0))" } ?? "")).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Text(Hours.dur(sc.minutes)).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Button { editingSchedule = JobSchedule(from: schedules.isEmpty ? Day.str(start) : Day.today) } label: { Label("Añadir horario", systemImage: "clock.badge.fill") }
                 }
                 Section("Sueldo") {
                     LabeledContent("Bruto al año (€)") { TextField("22.000", text: $gross).keyboardType(.decimalPad).multilineTextAlignment(.trailing).focused($focus, equals: .gross) }
@@ -687,7 +710,7 @@ struct JobEditor: View {
                     Button("Guardar") {
                         var j = store.state.job ?? Job(company: "", start: Day.today, net: 0, accountId: accountId)
                         j.company = name.trimmingCharacters(in: .whitespaces); j.start = Day.str(start)
-                        j.net = Money.parse(net) ?? 0; j.payDay = payDay; j.accountId = accountId
+                        j.net = Money.parse(net) ?? 0; j.accountId = accountId; j.schedules = schedules
                         let g = Money.parse(gross) ?? 0
                         j.grossYear = g > 0 ? g : nil; j.pays = pays
                         j.ssPct = Money.parse(ss); j.irpfPct = Money.parse(irpf); j.netManual = netManual
@@ -698,7 +721,12 @@ struct JobEditor: View {
             }
             .confirmationDialog("¿Seguro que quieres quitar el contrato?", isPresented: $askRemove, titleVisibility: .visible) {
                 Button("Quitar contrato", role: .destructive) { store.removeJob(); Haptic.heavy(); dismiss() }
-            } message: { Text("Se quitará también el cobro mensual. Las nóminas ya apuntadas se quedan.") }
+            } message: { Text("Las nóminas ya apuntadas se quedan.") }
+            .sheet(item: $editingSchedule) { sc in
+                ScheduleEditor(original: sc, isNew: !schedules.contains { $0.id == sc.id }) { n in
+                    if let i = schedules.firstIndex(where: { $0.id == n.id }) { schedules[i] = n } else { schedules.append(n) }
+                } onDelete: { schedules.removeAll { $0.id == sc.id } }
+            }
             .onChange(of: gross) { _, _ in
                 if focus == .gross, !irpfManual, let g = Money.parse(gross), g > 0 { irpf = plain(Job.irpfEstimate(g)) }
                 recompute()
@@ -709,12 +737,85 @@ struct JobEditor: View {
             .onChange(of: net) { _, _ in if focus == .net { netManual = !net.isEmpty; if net.isEmpty { recompute() } } }
             .onAppear {
                 if let j = store.state.job {
-                    name = j.company; start = Day.date(j.start); net = plain(j.net); payDay = j.payDay; accountId = j.accountId
+                    name = j.company; start = Day.date(j.start); net = plain(j.net); accountId = j.accountId; schedules = j.schedules ?? []
                     pays = j.pays ?? 12
                     if let v = j.ssPct { ss = plain(v) }
                     if let v = j.irpfPct { irpf = plain(v); irpfManual = true }
                     if let g = j.grossYear { gross = plain(g); netManual = j.netManual ?? false } else { netManual = false }
                 } else { accountId = store.accounts.first?.id ?? "" }
+            }
+        }
+    }
+}
+
+/// un horario del contrato: días de la semana, horas y entre qué fechas vale
+struct ScheduleEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    let original: JobSchedule
+    let isNew: Bool
+    var onSave: (JobSchedule) -> Void
+    var onDelete: () -> Void
+    @State private var days: Set<Int> = []
+    @State private var start = Date()
+    @State private var end = Date()
+    @State private var breakMin = 0
+    @State private var from = Date()
+    @State private var hasEnd = false
+    @State private var to = Date()
+    @State private var askDelete = false
+
+    private func minutes(_ d: Date) -> Int { Calendar.current.component(.hour, from: d) * 60 + Calendar.current.component(.minute, from: d) }
+    private func time(_ m: Int) -> Date { Calendar.current.date(bySettingHour: (m / 60) % 24, minute: m % 60, second: 0, of: Date()) ?? Date() }
+    private var result: JobSchedule {
+        var n = original
+        n.weekdays = days.sorted(); n.start = minutes(start); n.end = minutes(end); n.breakMin = breakMin
+        n.from = Day.str(from); n.to = hasEnd ? Day.str(max(to, from)) : nil
+        return n
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Días") {
+                    HStack(spacing: 6) {
+                        ForEach(1...7, id: \.self) { d in
+                            let on = days.contains(d)
+                            Button { Haptic.select(); if on { days.remove(d) } else { days.insert(d) } } label: {
+                                Text(["L", "M", "X", "J", "V", "S", "D"][d - 1]).font(.subheadline.weight(.bold))
+                                    .frame(maxWidth: .infinity).frame(height: 38)
+                                    .foregroundStyle(on ? Color.black : Color.primary)
+                                    .background(on ? Color.income : Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .buttonStyle(PressableStyle())
+                        }
+                    }
+                }
+                Section("Horario") {
+                    DatePicker("Entrada", selection: $start, displayedComponents: .hourAndMinute)
+                    DatePicker("Salida", selection: $end, displayedComponents: .hourAndMinute)
+                    Stepper("Descanso: \(breakMin) min", value: $breakMin, in: 0...240, step: 15)
+                    LabeledContent("Al día", value: Hours.dur(result.minutes))
+                    LabeledContent("A la semana", value: Hours.dur(result.minutes * days.count))
+                }
+                Section("Fechas") {
+                    DatePicker("Desde", selection: $from, displayedComponents: .date)
+                    Toggle("Tiene fin", isOn: $hasEnd.animation())
+                    if hasEnd { DatePicker("Hasta", selection: $to, in: from..., displayedComponents: .date) }
+                }
+                if !isNew { Section { Button("Borrar horario", role: .destructive) { Haptic.warning(); askDelete = true } } }
+            }
+            .navigationTitle("Horario").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Guardar") { onSave(result); Haptic.success(); dismiss() }.bold().disabled(days.isEmpty) }
+            }
+            .confirmationDialog("¿Seguro que quieres borrar este horario?", isPresented: $askDelete, titleVisibility: .visible) {
+                Button("Borrar", role: .destructive) { onDelete(); Haptic.heavy(); dismiss() }
+                Button("Cancelar", role: .cancel) {}
+            }
+            .onAppear {
+                days = Set(original.weekdays); start = time(original.start); end = time(original.end); breakMin = original.breakMin
+                from = Day.date(original.from); hasEnd = original.to != nil; to = original.to.map { Day.date($0) } ?? Day.date(original.from)
             }
         }
     }

@@ -3,7 +3,7 @@ import Foundation
 /// Datos de partida: categorías por defecto. Los datos personales (cuentas y movimientos reales) no están en el código:
 /// se leen de `seed-personal.json`, que no se sube a git (ver .gitignore) y GitHub Actions lo pone desde un secreto.
 enum Seed {
-    static let version = 11
+    static let version = 12
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -81,6 +81,17 @@ enum Seed {
         if s.seed < 11 {
             // Nov 2026: se retiran las empresas de trabajo por horas (su historial de turnos se conserva)
             for i in s.companies.indices { s.companies[i].archived = true }
+        }
+        if s.seed < 12 {
+            // Nov 2026: la empresa «Altius» pasa a llamarse «UPS» (si ya hay una «UPS», sus turnos van a ella)
+            if let a = s.companies.firstIndex(where: { $0.name.trimmingCharacters(in: .whitespaces).lowercased() == "altius" }) {
+                if let u = s.companies.first(where: { $0.name.trimmingCharacters(in: .whitespaces).lowercased() == "ups" }) {
+                    let from = s.companies[a].id
+                    for i in s.shifts.indices where s.shifts[i].companyId == from { s.shifts[i].companyId = u.id }
+                } else { s.companies[a].name = "UPS" }
+            }
+            // el contrato ya no tiene día de cobro: la nómina se apunta a mano cuando llega
+            if let j = s.job { s.recurring.removeAll { $0.id == j.recurringId } }
         }
         s.seed = version
     }

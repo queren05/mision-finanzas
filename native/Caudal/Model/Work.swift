@@ -35,6 +35,14 @@ struct Job: Codable, Hashable {
     var irpfPct: Double? = nil
     /// el neto se ha escrito a mano (ya no se recalcula desde el bruto)
     var netManual: Bool? = nil
+    var schedules: [JobSchedule]? = nil
+
+    /// horario que toca un día: el más reciente de los que cubren esa fecha y ese día de la semana
+    func schedule(on day: String) -> JobSchedule? {
+        guard day >= start else { return nil }
+        let wd = (Day.cal.component(.weekday, from: Day.date(day)) + 5) % 7 + 1   // 1 = lunes … 7 = domingo
+        return (schedules ?? []).filter { $0.from <= day && ($0.to == nil || day <= $0.to!) && $0.weekdays.contains(wd) }.max { $0.from < $1.from }
+    }
 
     var grossMonth: Double? { grossYear.map { (($0 / Double(pays ?? 12)) * 100).rounded() / 100 } }
     static func netMonth(grossYear: Double, pays: Int, ss: Double, irpf: Double) -> Double {
@@ -59,17 +67,6 @@ struct Job: Codable, Hashable {
         return (quota / gross * 10000).rounded() / 100
     }
 
-    /// primer día de cobro que no sea anterior a la fecha dada
-    static func firstPay(from: String, day: Int) -> String {
-        var m = Day.monthStart(from)
-        for _ in 0..<3 {
-            let days = Day.cal.range(of: .day, in: .month, for: Day.date(m))?.count ?? 28
-            let d = String(m.prefix(8)) + String(format: "%02d", min(max(1, day), days))
-            if d >= from { return d }
-            m = Day.add(m, months: 1)
-        }
-        return from
-    }
     /// «3 meses», «1 año y 2 meses»
     var seniority: String {
         let c = Day.cal.dateComponents([.year, .month], from: Day.date(start), to: Date())
@@ -79,6 +76,30 @@ struct Job: Codable, Hashable {
         let ys = y == 0 ? "" : (y == 1 ? "1 año" : "\(y) años")
         let ms = mo == 0 ? "" : (mo == 1 ? "1 mes" : "\(mo) meses")
         return [ys, ms].filter { !$0.isEmpty }.joined(separator: " y ")
+    }
+}
+
+/// horario del contrato: qué días de la semana, a qué horas y entre qué fechas vale
+struct JobSchedule: Codable, Hashable, Identifiable {
+    var id: String = UUID().uuidString
+    /// yyyy-MM-dd
+    var from: String
+    var to: String? = nil
+    /// 1 = lunes … 7 = domingo
+    var weekdays: [Int] = [1, 2, 3, 4, 5]
+    /// minutos desde las 00:00
+    var start: Int = 9 * 60
+    var end: Int = 18 * 60
+    var breakMin: Int = 60
+
+    var minutes: Int { var b = end; if b <= start { b += 1440 }; return max(0, b - start - breakMin) }
+    /// «L–V», «L M X», «S D»
+    var daysLabel: String {
+        let w = weekdays.sorted()
+        let names = ["L", "M", "X", "J", "V", "S", "D"]
+        guard let a = w.first, let b = w.last else { return "" }
+        if w.count > 2 && w == Array(a...b) { return "\(names[a - 1])–\(names[b - 1])" }
+        return w.map { names[$0 - 1] }.joined(separator: " ")
     }
 }
 
@@ -123,6 +144,11 @@ struct JobMonth {
     var fullNet = 0.0     // lo que toca cobrar por el mes entero
     var fullGross: Double? = nil
     var paid: Double? = nil
+    // horas según el horario del contrato, hasta hoy
+    var normalMin = 0
+    var nightMin = 0
+    var workedDays = 0
+    var totalMin: Int { normalMin + nightMin }
 }
 
 struct WorkSummary {
@@ -222,6 +248,17 @@ extension Store {
             m.dayGross = r2(g / Double(n)); m.gross = r2(g * Double(m.days) / Double(n)); m.fullGross = r2(g * Double(due) / Double(n))
         }
         m.paid = jobTx(month)?.amount
+        if m.days > 0, !(j.schedules ?? []).isEmpty {
+            let ref = Company(name: "")
+            var d = from
+            for _ in 0..<m.days {
+                if let sc = j.schedule(on: d) {
+                    let r = Hours.calc(Shift(companyId: "", date: d, start: sc.start, end: sc.end, breakMin: sc.breakMin), ref)
+                    m.normalMin += r.normalMin; m.nightMin += r.nightMin; m.workedDays += 1
+                }
+                d = Day.add(d, days: 1)
+            }
+        }
         return m
     }
     /// la nómina del contrato apuntada en ese mes (a mano o sola el día de cobro)
@@ -233,6 +270,7 @@ extension Store {
     func workSummary(month: String, company: String? = nil) -> WorkSummary {
         var w = summary(shifts(month: month, company: company))
         guard company == nil, let m = jobMonth(month) else { return w }
+        w.normalMin += m.normalMin; w.nightMin += m.nightMin; w.days += m.workedDays
         if let p = m.paid {
             w.net += p; w.paidNet += p
             if let g = m.fullGross { w.gross += g } else { w.grossUnknown = true }
@@ -252,44 +290,25 @@ extension Store {
         let first = month + "-01"
         let n = Day.cal.range(of: .day, in: .month, for: Day.date(first))?.count ?? 30
         let last = month + String(format: "-%02d", n)
-        let ri = state.recurring.firstIndex { $0.id == j.recurringId }
-        save(Tx(type: .income, amount: amount, accountId: accountId,
-                categoryId: ri.flatMap { state.recurring[$0].categoryId } ?? state.categories.first { $0.id == "i_nomina" }?.id,
+        save(Tx(type: .income, amount: amount, accountId: accountId, categoryId: jobCategory,
                 date: min(Day.today, last), time: Day.time(Date()), title: "Nómina · \(j.company)", recurringId: j.recurringId))
-        // el cobro automático de ese mes ya no hace falta
-        if let ri, state.recurring[ri].next <= last { state.recurring[ri].next = Job.firstPay(from: Day.add(first, months: 1), day: j.payDay) }
+    }
+    private var jobCategory: String? {
+        state.categories.first { c in
+            let n = c.name.lowercased()
+            return c.kind == .income && (n.contains("nómina") || n.contains("nomina") || n.contains("sueldo") || n.contains("salario"))
+        }?.id
     }
 
     /// empresas en las que se pueden apuntar turnos (las retiradas solo guardan su historial)
     var activeCompanies: [Company] { state.companies.filter { $0.archived != true } }
 
     func saveJob(_ j: Job) {
-        let old = state.recurring.first { $0.id == j.recurringId }
-        var r = old ?? Recurring(id: j.recurringId, name: "", type: "income", amount: j.net, accountId: j.accountId, next: Day.today)
-        r.name = "Nómina · \(j.company)"; r.type = "income"; r.amount = j.net; r.accountId = j.accountId
-        r.freq = .monthly; r.day = j.payDay; r.active = true
-        if r.categoryId == nil {
-            r.categoryId = state.categories.first { c in
-                let n = c.name.lowercased()
-                return c.kind == .income && (n.contains("nómina") || n.contains("nomina") || n.contains("sueldo") || n.contains("salario"))
-            }?.id
-        }
-        // si ya estaba programado y no cambia el día, se respeta el próximo cobro (para no cobrar dos veces el mismo mes)
-        if old == nil { r.next = Job.firstPay(from: max(j.start, Day.today), day: j.payDay) }
-        else if old?.day != j.payDay || (state.job?.start ?? "") != j.start { r.next = Job.firstPay(from: max(j.start, Day.add(Day.today, days: 1)), day: j.payDay) }
-        // si la nómina de ese mes ya está apuntada, el siguiente cobro es el del mes que viene
-        if state.txs.contains(where: { $0.recurringId == r.id && Day.monthKey($0.date) == Day.monthKey(r.next) }) {
-            r.next = Job.firstPay(from: Day.add(Day.monthStart(r.next), months: 1), day: j.payDay)
-        }
-        withAnimation(Motion.layout) {
-            if let i = state.recurring.firstIndex(where: { $0.id == r.id }) { state.recurring[i] = r } else { state.recurring.append(r) }
-            state.job = j
-        }
+        withAnimation(Motion.layout) { state.recurring.removeAll { $0.id == j.recurringId }; state.job = j }
     }
-    /// quita el contrato y su cobro mensual (los ingresos ya apuntados se quedan)
+    /// quita el contrato (las nóminas ya apuntadas se quedan)
     func removeJob() {
-        guard let j = state.job else { return }
-        withAnimation(Motion.layout) { state.recurring.removeAll { $0.id == j.recurringId }; state.job = nil }
+        withAnimation(Motion.layout) { state.job = nil }
     }
 
     func save(_ c: Company) {
