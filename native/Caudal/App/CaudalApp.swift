@@ -1,11 +1,15 @@
 import SwiftUI
 import LocalAuthentication
+import UserNotifications
 
 @main
 struct CaudalApp: App {
     @State private var store = Store()
     @State private var locked = false
     @Environment(\.scenePhase) private var phase
+    @State private var c3 = C3.shared
+
+    init() { UNUserNotificationCenter.current().delegate = C3Avisos.shared }
 
     var body: some Scene {
         WindowGroup {
@@ -30,6 +34,7 @@ struct CaudalApp: App {
             } message: {
                 Text("En tu servidor hay \(store.pendingRestore?.backupSummary ?? ""). Si la recuperas, sustituye lo que hay ahora en Caudal.")
             }
+            .sheet(isPresented: $c3.abrir) { NavigationStack { Cola3DView() }.environment(store) }
             .onChange(of: phase) { _, p in
                 switch p {
                 case .background:
@@ -37,7 +42,9 @@ struct CaudalApp: App {
                     let id = UIApplication.shared.beginBackgroundTask()
                     Task { _ = await store.backup(); UIApplication.shared.endBackgroundTask(id) }
                     if store.state.settings.faceID { locked = true }
+                    if c3.avisos && c3.configurado { C3.programar() }
                 case .active:
+                    Task { await c3.comprobarNuevos() }
                     store.runRecurring()
                     store.updateWidgets()
                     Task { await store.checkBackup() }
@@ -45,6 +52,10 @@ struct CaudalApp: App {
                 default: break
                 }
             }
+        }
+        .backgroundTask(.appRefresh(C3.tarea)) {
+            await C3.shared.comprobarNuevos()
+            C3.programar()
         }
     }
 

@@ -9,6 +9,7 @@ struct MoreView: View {
     @State private var askErase = false
     @State private var personalize = false
     @State private var widgets = false
+    @State private var cola3d = false
 
     var body: some View {
         @Bindable var store = store
@@ -29,6 +30,7 @@ struct MoreView: View {
                 Section("Gestión") {
                     NavigationLink { StatsView(embedded: true) } label: { row("Análisis", "chart.pie.fill", .green, "") }
                     NavigationLink { WorkView() } label: { row("Horas trabajadas", "briefcase.fill", .teal, Hours.dec(store.summary(store.shifts(month: Day.monthKey(Day.today))).totalMin) + " h") }
+                    NavigationLink { Cola3DView() } label: { row("Impresiones 3D", "printer.fill", .orange, C3.shared.configurado ? (C3.shared.pendientes > 0 ? "\(C3.shared.pendientes) en cola" : "") : "") }
                     NavigationLink { AccountsList() } label: { row("Cuentas", "building.columns.fill", .blue, "\(store.accounts.count)") }
                     NavigationLink { CategoriesList() } label: { row("Categorías y presupuestos", "square.grid.2x2.fill", .orange, "\(store.state.categories.count)") }
                     NavigationLink { RecurringList() } label: { row("Recurrentes", "repeat.circle.fill", .purple, "\(store.state.recurring.filter(\.active).count)") }
@@ -70,9 +72,11 @@ struct MoreView: View {
             .navigationTitle("Más")
             .navigationDestination(isPresented: $personalize) { PersonalizeView() }
             .navigationDestination(isPresented: $widgets) { WidgetsGallery() }
+            .navigationDestination(isPresented: $cola3d) { Cola3DView() }
             .task {
                 if ProcessInfo.processInfo.arguments.contains("-personalize") { personalize = true }
                 if ProcessInfo.processInfo.arguments.contains("-widgets") { widgets = true }
+                if ProcessInfo.processInfo.arguments.contains("-cola3d") { cola3d = true }
             }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
                 guard case .success(let url) = result else { return }

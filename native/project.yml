@@ -27,6 +27,8 @@ targets:
           NSAllowsArbitraryLoads: true
         UILaunchScreen:
           UIColorName: LaunchBackground
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [es.david.caudal.cola3d]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.david.caudal
