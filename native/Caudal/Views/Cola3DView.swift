@@ -147,8 +147,12 @@ struct C3Foto: View {
 struct C3Chip: View {
     var estado: C3Estado
     var body: some View {
-        Label(estado.label, systemImage: estado.icon)
+        HStack(spacing: 4) {
+            Image(systemName: estado.icon).font(.caption2.weight(.bold))
+            Text(estado.label)
+        }
             .font(.caption.weight(.semibold))
+            .lineLimit(1).fixedSize()
             .foregroundStyle(estado.color)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(estado.color.opacity(0.15), in: Capsule())
