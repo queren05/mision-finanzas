@@ -52,6 +52,12 @@ struct Cola3DView: View {
                 NavigationLink { C3FilamentosView() } label: {
                     fila("Filamentos", "circle.dotted.circle.fill", .orange, c3.filamentos.filter { $0.activo && $0.stock_g < 100 }.isEmpty ? "\(c3.filamentos.filter(\.activo).count)" : "Queda poco")
                 }
+                let sinApuntar = c3.cobrosSinApuntar
+                if !sinApuntar.isEmpty {
+                    NavigationLink { C3ApuntarCobros() } label: {
+                        fila("Apuntar cobros en Caudal", "tray.and.arrow.down.fill", .mint, "\(sinApuntar.count) · \(Money.eur(sinApuntar.reduce(0) { $0 + $1.coste }))")
+                    }
+                }
                 NavigationLink { C3PreciosView() } label: { fila("Precios y Bizum", "eurosign.circle.fill", .green, Money.eur(c3.ajustes.precio_defecto) + "/kg") }
                 NavigationLink { C3ConexionForm(primeraVez: false) } label: { fila("Conexión y avisos", "bell.badge.fill", .red, c3.avisos ? "Activados" : "") }
                 if let u = URL(string: C3.web) {
@@ -373,6 +379,7 @@ struct C3CobrarSheet: View {
                     } ?? store.state.categories.first { $0.kind == .income && $0.name.lowercased().contains("otro") }
                     store.save(Tx(type: .income, amount: v, accountId: cuenta, categoryId: cat?.id, date: Day.today, time: Day.time(Date()),
                                   title: "Impresión 3D · \(p.nombre)", note: p.nombreFigura))
+                    C3.shared.marcarApuntado([p.id])
                 }
                 Haptic.success()
                 dismiss()
@@ -726,5 +733,74 @@ extension Color {
         UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
         func c(_ v: CGFloat) -> Int { Int((min(1, max(0, v)) * 255).rounded()) }
         return String(format: "#%02x%02x%02x", c(r), c(g), c(b))
+    }
+}
+
+/// los cobros hechos desde la web (o en mano) que aún no están apuntados en Caudal: se apuntan de una vez
+struct C3ApuntarCobros: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var c3 = C3.shared
+    @State private var elegidos: Set<String> = []
+    @State private var cuenta = ""
+    @State private var porPersona = false
+
+    var body: some View {
+        let lista = c3.cobrosSinApuntar
+        let total = lista.filter { elegidos.contains($0.id) }.reduce(0) { $0 + $1.coste }
+        Form {
+            Section {
+                ForEach(lista) { p in
+                    Button {
+                        if elegidos.contains(p.id) { elegidos.remove(p.id) } else { elegidos.insert(p.id) }
+                    } label: {
+                        HStack {
+                            Image(systemName: elegidos.contains(p.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(elegidos.contains(p.id) ? .green : .secondary)
+                            VStack(alignment: .leading) {
+                                Text(p.nombreFigura).lineLimit(1)
+                                Text("\(p.nombre) · \(p.fecha.formatted(.dateTime.day().month(.abbreviated)))").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(Money.eur(p.coste)).monospacedDigit()
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
+            } header: { Text("Cobrados y sin apuntar") }
+            Section {
+                Picker("Cuenta", selection: $cuenta) { ForEach(store.accounts) { Text("\($0.icon) \($0.name)").tag($0.id) } }
+                Toggle("Uno por persona (juntar sus pedidos)", isOn: $porPersona)
+            }
+            Section {
+                Button {
+                    apuntar(lista.filter { elegidos.contains($0.id) })
+                } label: { Text("Apuntar \(Money.eur(total))").bold().frame(maxWidth: .infinity) }
+                .disabled(elegidos.isEmpty || cuenta.isEmpty)
+                Button("No apuntar estos (ya los tengo)") { c3.marcarApuntado(Array(elegidos)); dismiss() }
+                    .foregroundStyle(.secondary).disabled(elegidos.isEmpty)
+            }
+        }
+        .navigationTitle("Apuntar cobros")
+        .onAppear {
+            elegidos = Set(lista.map(\.id))
+            if cuenta.isEmpty { cuenta = store.accounts.first?.id ?? "" }
+        }
+    }
+
+    private func apuntar(_ ps: [C3Pedido]) {
+        let cat = store.state.categories.first { c in
+            let n = c.name.lowercased()
+            return c.kind == .income && (n.contains("3d") || n.contains("impres"))
+        } ?? store.state.categories.first { $0.kind == .income && $0.name.lowercased().contains("otro") }
+        let grupos: [[C3Pedido]] = porPersona ? Dictionary(grouping: ps) { $0.nombre.lowercased() }.values.map { $0 } : ps.map { [$0] }
+        for g in grupos {
+            guard let p = g.first else { continue }
+            let v = g.reduce(0) { $0 + $1.coste }
+            store.save(Tx(type: .income, amount: v, accountId: cuenta, categoryId: cat?.id, date: Day.str(g.map(\.fecha).max() ?? Date()), time: Day.time(Date()),
+                          title: "Impresión 3D · \(p.nombre)", note: g.map(\.nombreFigura).joined(separator: ", ")))
+        }
+        c3.marcarApuntado(ps.map(\.id))
+        Haptic.success()
+        dismiss()
     }
 }

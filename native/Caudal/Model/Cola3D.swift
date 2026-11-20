@@ -184,6 +184,20 @@ final class C3 {
 
     var configurado: Bool { demo || (!url.isEmpty && !anon.isEmpty) }
     var pendientes: Int { pedidos.filter { $0.estado == .pendiente }.count }
+
+    /// cobros ya hechos (marcados pagados en la web o aquí) que aún no están apuntados como ingreso en Caudal
+    var cobrosSinApuntar: [C3Pedido] {
+        let ya = Set(UserDefaults.standard.stringArray(forKey: "c3.apuntados") ?? [])
+        // si alguno ya lo tenías apuntado a mano, «No apuntar estos» lo quita de la lista sin duplicarlo
+        return pedidos.filter { $0.pagado && $0.estado != .cancelado && $0.coste > 0 && !ya.contains($0.id) }
+            .sorted { $0.creado > $1.creado }
+    }
+    func marcarApuntado(_ ids: [String]) {
+        var ya = Set(UserDefaults.standard.stringArray(forKey: "c3.apuntados") ?? [])
+        ids.forEach { ya.insert($0) }
+        UserDefaults.standard.set(Array(ya), forKey: "c3.apuntados")
+        withAnimation { pedidos = pedidos }
+    }
     var porCobrar: Double { pedidos.filter { !$0.pagado && $0.estado != .cancelado }.reduce(0) { $0 + $1.coste } }
 
     private init() {
