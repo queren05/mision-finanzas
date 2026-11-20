@@ -375,6 +375,7 @@ struct TallerView: View {
     @State private var bizum = ""
     @State private var gratis = ""
     @State private var minimo = ""
+    @State private var real = ""
     @State private var ocupado = false
     @State private var cuentas: [Cuenta]? = nil
     @State private var falloCuentas: String? = nil
@@ -404,6 +405,7 @@ struct TallerView: View {
                     campo("Teléfono para Bizum", $bizum, .phonePad)
                     campo("Gramos gratis por persona", $gratis, .numberPad)
                     campo("Pago mínimo (€), por debajo se acumula", $minimo, .decimalPad)
+                    campo("Lo que te cuesta a ti el kilo (€)", $real, .decimalPad)
                 }
                 Section {
                     Button {
@@ -415,12 +417,20 @@ struct TallerView: View {
                         a.bizum = bizum.trimmingCharacters(in: .whitespaces)
                         a.gratis_g = max(0, Fmt.leer(gratis) ?? 50)
                         a.pago_minimo = max(0, Fmt.leer(minimo) ?? 0.5)
+                        a.coste_real_kg = max(0, Fmt.leer(real) ?? 12)
                         ocupado = true
                         Task { _ = await t.guardar(a); ocupado = false }
                     } label: {
                         HStack { Spacer(); if ocupado { ProgressView() } else { Text("Guardar").bold() }; Spacer() }
                     }
                     .disabled(ocupado)
+                }
+                Section("Rollos para la cola") { FaltanView() }
+                Section("Cuentas del taller") { RentabilidadView().listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)) }
+                if !t.deseos.isEmpty {
+                    Section("Ideas que te han pedido") {
+                        ForEach(t.deseos) { d in FilaIdea(d: d, taller: true).listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)) }
+                    }
                 }
                 Section("Cuentas") {
                     if let c = cuentas {
@@ -474,7 +484,7 @@ struct TallerView: View {
     private func rellenar() {
         let a = t.ajustes
         precio = Fmt.num(a.precio_defecto); peso = Fmt.num(a.peso_defecto, 0); luz = Fmt.num(a.luz_hora)
-        merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0); minimo = Fmt.num(a.pago_minimo)
+        merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0); minimo = Fmt.num(a.pago_minimo); real = Fmt.num(a.coste_real_kg)
     }
 
     private func campo(_ titulo: String, _ v: Binding<String>, _ teclado: UIKeyboardType) -> some View {

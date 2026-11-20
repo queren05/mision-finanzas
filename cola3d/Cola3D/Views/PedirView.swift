@@ -69,6 +69,7 @@ private struct FormPedido: View {
                     }
                     resumen
                 }
+                IdeasView()
             }
             .padding(16)
             .padding(.bottom, 20)

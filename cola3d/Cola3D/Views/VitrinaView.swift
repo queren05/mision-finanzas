@@ -6,6 +6,7 @@ struct VitrinaView: View {
     @Environment(Tienda.self) private var t
     @State private var abierto: Pedido? = nil
     @State private var nueva = false
+    @AppStorage("ver-vitrina") private var modo = ModoVista.grande.rawValue
     @State private var orden = Orden.recientes
     @State private var soloFotos = false
     @State private var soloGuardadas = false
@@ -66,11 +67,19 @@ struct VitrinaView: View {
                         Vacio(titulo: todas.isEmpty ? "Aún no se ha impreso nada" : soloGuardadas ? "No has guardado ninguna" : "Nada con estos filtros", icono: "square.grid.2x2")
                     } else {
                         // dos columnas que se van llenando como un mosaico
-                        HStack(alignment: .top, spacing: 10) {
-                            ForEach(0..<2, id: \.self) { col in
+                        if modo == ModoVista.lista.rawValue {
+                            LazyVStack(spacing: 10) {
+                                ForEach(lista) { p in
+                                    FilaLista(p: p).contentShape(Rectangle()).onTapGesture { abierto = p }.accessibilityAddTraits(.isButton)
+                                }
+                            }
+                        } else {
+                        let cols = modo == ModoVista.pequena.rawValue ? 3 : 2
+                        HStack(alignment: .top, spacing: cols == 3 ? 8 : 10) {
+                            ForEach(0..<cols, id: \.self) { col in
                                 LazyVStack(spacing: 10) {
-                                    ForEach(Array(lista.enumerated()).filter { $0.offset % 2 == col }, id: \.element.id) { i, p in
-                                        Pieza(p: p, alto: (i / 2 + col) % 2 == 0 ? 220 : 170, cuando: Fmt.fecha(cuando(p)) ?? p.fecha)
+                                    ForEach(Array(lista.enumerated()).filter { $0.offset % cols == col }, id: \.element.id) { i, p in
+                                        Pieza(p: p, alto: cols == 3 ? ((i / cols + col) % 2 == 0 ? 130 : 100) : ((i / 2 + col) % 2 == 0 ? 220 : 170), cuando: Fmt.fecha(cuando(p)) ?? p.fecha, compacta: cols == 3)
                                             .contentShape(RoundedRectangle(cornerRadius: 20))
                                             .onTapGesture { abierto = p }
                                             .accessibilityAddTraits(.isButton)
@@ -80,6 +89,7 @@ struct VitrinaView: View {
                             }
                         }
                         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: lista.map(\.id))
+                        }
                     }
                 }
                 .padding(16)
@@ -93,6 +103,7 @@ struct VitrinaView: View {
                         Button { nueva = true } label: { Label("Añadir pieza", systemImage: "plus.circle.fill") }
                     }
                 }
+                ToolbarItem(placement: .topBarLeading) { MenuVista(modo: $modo) }
                 ToolbarItem(placement: .topBarTrailing) { BotonCuenta() }
             }
             .sheet(item: $abierto) { p in DetallePedido(id: p.id) }
@@ -240,6 +251,7 @@ private struct Pieza: View {
     let p: Pedido
     let alto: CGFloat
     let cuando: Date
+    var compacta = false
     @State private var visto = false
 
     var body: some View {
@@ -261,15 +273,17 @@ private struct Pieza: View {
                 .saturation(p.fotos.isEmpty ? 0.85 : 1)
                 .overlay(alignment: .topTrailing) { if t.sesion != nil { BotonGuardar(p: p).padding(8) } }
             VStack(alignment: .leading, spacing: 6) {
-                Text(p.nombreFigura).font(.subheadline.weight(.bold)).foregroundStyle(.primary).lineLimit(2).multilineTextAlignment(.leading)
-                HStack(spacing: 5) {
-                    Avatar(nombre: p.nombre, size: 16, uid: p.user_id)
-                    Text("\(p.nombre) · \(Fmt.hace(cuando))").lineLimit(1)
+                Text(p.nombreFigura).font(compacta ? .caption.weight(.bold) : .subheadline.weight(.bold)).foregroundStyle(.primary).lineLimit(2).multilineTextAlignment(.leading)
+                if !compacta {
+                    HStack(spacing: 5) {
+                        Avatar(nombre: p.nombre, size: 16, uid: p.user_id)
+                        Text("\(p.nombre) · \(Fmt.hace(cuando))").lineLimit(1)
+                    }
+                    .font(.caption).foregroundStyle(.secondary)
                 }
-                .font(.caption).foregroundStyle(.secondary)
                 HStack {
-                    Text(Fmt.gramos(p.gramos)).font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
-                    Spacer()
+                    if !compacta { Text(Fmt.gramos(p.gramos)).font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary) }
+                    Spacer(minLength: 0)
                     BotonGusta(p: p)
                 }
             }

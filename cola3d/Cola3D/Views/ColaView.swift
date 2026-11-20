@@ -4,6 +4,7 @@ struct ColaView: View {
     @Environment(Tienda.self) private var t
     @State private var filtro = 0
     @State private var abierto: Pedido? = nil
+    @AppStorage("ver-cola") private var modo = ModoVista.grande.rawValue
 
     private var visibles: [Pedido] {
         switch filtro {
@@ -39,13 +40,21 @@ struct ColaView: View {
                     } else {
                         // los turnos se calculan una vez para toda la lista
                         let turnos = Dictionary(uniqueKeysWithValues: t.cola.filter { $0.estado == .pendiente && !$0.peticion }.enumerated().map { ($1.id, $0 + 1) })
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 16)], spacing: 16) {
+                        if modo == ModoVista.lista.rawValue {
+                            LazyVStack(spacing: 10) {
+                                ForEach(visibles) { p in
+                                    Button { abierto = p } label: { FilaLista(p: p, turno: turnos[p.id]) }.buttonStyle(Encoger())
+                                }
+                            }
+                        } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: modo == ModoVista.pequena.rawValue ? 150 : 300), spacing: modo == ModoVista.pequena.rawValue ? 10 : 16)], spacing: modo == ModoVista.pequena.rawValue ? 10 : 16) {
                             ForEach(Array(visibles.enumerated()), id: \.element.id) { i, p in
-                                Button { abierto = p } label: { TarjetaPedido(p: p, turno: turnos[p.id]) }
+                                Button { abierto = p } label: { TarjetaPedido(p: p, turno: turnos[p.id], compacta: modo == ModoVista.pequena.rawValue) }
                                     .buttonStyle(Encoger())
                                     .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 16)), removal: .opacity.combined(with: .scale(scale: 0.95))))
                                     .animation(.spring(response: 0.5, dampingFraction: 0.85).delay(Double(min(i, 8)) * 0.03), value: filtro)
                             }
+                        }
                         }
                     }
                 }
@@ -55,7 +64,10 @@ struct ColaView: View {
             .background(Color(.systemGroupedBackground))
             .refreshable { await t.cargar() }
             .navigationTitle("La cola")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonCuenta() } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { MenuVista(modo: $modo) }
+                ToolbarItem(placement: .topBarTrailing) { BotonCuenta() }
+            }
             .task {
                 if ProcessInfo.processInfo.arguments.contains("-detalle") { abierto = t.pedidos.first { $0.id == "d4" } }
             }
@@ -130,11 +142,12 @@ struct TarjetaPedido: View {
     @Environment(Tienda.self) private var t
     let p: Pedido
     let turno: Int?
+    var compacta = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Portada(p: p)
-                .frame(height: 190)
+                .frame(height: compacta ? 120 : 190)
                 .overlay(alignment: .topLeading) {
                     if let turno {
                         Text("#\(turno)").font(.system(.subheadline, design: .monospaced).weight(.bold)).foregroundStyle(.white)
@@ -152,7 +165,7 @@ struct TarjetaPedido: View {
                     }
                 }
             VStack(alignment: .leading, spacing: 8) {
-                Text(p.nombreFigura).font(.headline).lineLimit(2).multilineTextAlignment(.leading).foregroundStyle(.primary)
+                Text(p.nombreFigura).font(compacta ? .subheadline.weight(.bold) : .headline).lineLimit(2).multilineTextAlignment(.leading).foregroundStyle(.primary)
                 HStack(spacing: 6) {
                     Avatar(nombre: p.nombre, size: 20, uid: p.user_id)
                     Text(p.nombre).lineLimit(1)
@@ -161,9 +174,13 @@ struct TarjetaPedido: View {
                     if t.esMio(p) { Etiqueta(texto: "Tuyo", color: .hot) }
                 }
                 .font(.footnote).foregroundStyle(.secondary)
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 6) { chips; Spacer(minLength: 4); colores }
-                    VStack(alignment: .leading, spacing: 8) { HStack(spacing: 6) { chips }; colores }
+                if compacta {
+                    Chip(estado: p.estado)
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) { chips; Spacer(minLength: 4); colores }
+                        VStack(alignment: .leading, spacing: 8) { HStack(spacing: 6) { chips }; colores }
+                    }
                 }
             }
             .padding(14)

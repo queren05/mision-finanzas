@@ -116,11 +116,14 @@ struct BotonCuenta: View {
     @Environment(Tienda.self) private var t
     @State private var abierto = false
     var body: some View {
+        HStack(spacing: 14) {
+        BotonAvisos()
         Button { abierto = true } label: {
             if let s = t.sesion { Avatar(nombre: s.nombre, size: 30, uid: s.id) }
             else { Text("Entrar").font(.subheadline.weight(.bold)) }
         }
         .accessibilityLabel(t.sesion == nil ? "Entrar" : "Tu cuenta")
+        }
         .sheet(isPresented: $abierto) { CuentaView() }
         .task { if ProcessInfo.processInfo.arguments.contains("-perfil") && t.pestana == .cola { abierto = true } }
     }

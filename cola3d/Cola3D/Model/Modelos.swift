@@ -191,12 +191,13 @@ struct Ajustes: Codable, Hashable {
     var gratis_g: Double = 50
     /// por debajo no se pide pagar: se acumula (Bizum no deja menos de 0,50 €)
     var pago_minimo: Double = 0.5
+    var coste_real_kg: Double = 12
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         precio_defecto = c.num(.precio_defecto, 17.99); peso_defecto = c.num(.peso_defecto, 1000)
         luz_hora = c.num(.luz_hora, 0.1); merma_pct = c.num(.merma_pct, 10); bizum = c.v(.bizum, "")
-        gratis_g = c.num(.gratis_g, 50); pago_minimo = c.num(.pago_minimo, 0.5)
+        gratis_g = c.num(.gratis_g, 50); pago_minimo = c.num(.pago_minimo, 0.5); coste_real_kg = c.num(.coste_real_kg, 12)
     }
 }
 
@@ -321,4 +322,30 @@ struct Cuenta: Codable, Identifiable, Hashable {
         nombre = c.v(.nombre, ""); email = c.v(.email, ""); alta = c.v(.alta, ""); ultima = c.v(.ultima, nil)
         veces = c.v(.veces, 0); confirmada = c.v(.confirmada, false); pedidos = c.v(.pedidos, 0)
     }
+}
+
+struct Aviso: Codable, Identifiable, Hashable {
+    var id: String
+    var pedido_id: String?
+    var texto: String
+    var creado: String
+    var leido: Bool
+}
+struct Comentario: Codable, Identifiable, Hashable {
+    var id: String
+    var pedido_id: String
+    var user_id: String
+    var nombre: String
+    var texto: String
+    var creado: String
+}
+struct Deseo: Codable, Identifiable, Hashable {
+    var id: String
+    var user_id: String
+    var nombre: String
+    var texto: String
+    var estado: String
+    var respuesta: String
+    var enlace: String
+    var creado: String
 }

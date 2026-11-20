@@ -40,11 +40,18 @@ struct DetallePedido: View {
                             .buttonStyle(Encoger())
                         }
                         if p.hecho { vitrina(p) }
+                        if let u = URL(string: Supa.web + "#/pieza/" + p.id) {
+                            ShareLink(item: u, subject: Text(p.nombreFigura), message: Text("\(p.nombreFigura) · Cola 3D")) {
+                                Label("Compartir", systemImage: "square.and.arrow.up").font(.subheadline.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                        }
                         Camino(p: p)
                         if t.admin { taller(p) }
                         if t.admin && !p.delTaller && Perfiles.esMakerWorld(p.url) { Comprobar(p: p) }
                         if t.admin || !p.fotos.isEmpty { fotos(p) }
                         if !p.delTaller { coste(p) }
+                        if p.hecho { ComentariosView(p: p) }
                         if !p.notas.isEmpty {
                             bloque("Notas") { Text(p.notas).frame(maxWidth: .infinity, alignment: .leading).padding(14).tarjeta() }
                         }

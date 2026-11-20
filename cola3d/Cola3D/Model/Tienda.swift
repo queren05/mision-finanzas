@@ -20,6 +20,10 @@ final class Tienda {
     var listas: [(pedido: String, lista: String)] = []
     /// foto y nombre de cada cuenta
     var perfiles: [String: (nombre: String, avatar: String)] = [:]
+    var avisos: [Aviso] = []
+    var comentarios: [Comentario] = []
+    /// ideas: las tuyas (o todas, si eres el taller)
+    var deseos: [Deseo] = []
     var cargado = false
     var error: String? = nil
     var sesion: Sesion? { didSet { guardarSesion() } }
@@ -158,6 +162,16 @@ final class Tienda {
             if let tk = await token(), let gs: [Guardado] = try? await Supa.leer("guardados?select=pedido_id,lista", token: tk) {
                 ng = gs.map { ($0.pedido_id, $0.lista ?? "Guardados") }
             }
+            let nco: [Comentario] = (try? await Supa.leer("comentarios?select=*&order=creado")) ?? []
+            var nav: [Aviso] = [], nde: [Deseo] = []
+            if let tk = await token() {
+                nav = (try? await Supa.leer("avisos?select=id,pedido_id,texto,creado,leido&order=creado.desc&limit=40", token: tk)) ?? []
+                nde = (try? await Supa.leer("deseos?select=*&order=creado.desc", token: tk)) ?? []
+            }
+            if comentarios != nco { comentarios = nco }
+            if deseos != nde { deseos = nde }
+            avisarNuevos(nav)
+            if avisos != nav { withAnimation { avisos = nav } }
             avisarCambios(np)
             let na1 = na.first ?? Ajustes()
             let listasIguales = listas.count == ng.count && zip(listas, ng).allSatisfy { $0.pedido == $1.pedido && $0.lista == $1.lista }
@@ -241,7 +255,7 @@ final class Tienda {
 
     func guardar(_ a: Ajustes) async -> Bool {
         do {
-            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g, "pago_minimo": a.pago_minimo]])
+            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g, "pago_minimo": a.pago_minimo, "coste_real_kg": a.coste_real_kg]])
             if demo { ajustes = a } else { await cargar() }
             avisar("Precios guardados")
             return true
@@ -433,6 +447,49 @@ final class Tienda {
         } catch { avisar(error.localizedDescription, error: true); return false }
     }
 
+    // MARK: avisos, comentarios e ideas
+
+    /// avisos nuevos (de la base de datos): también como notificación del iPhone
+    private func avisarNuevos(_ nuevos: [Aviso]) {
+        let d = UserDefaults.standard
+        let primera = d.object(forKey: "avisos-notificados") == nil
+        var vistos = Set(d.stringArray(forKey: "avisos-notificados") ?? [])
+        for a in nuevos where !a.leido && !vistos.contains(a.id) {
+            vistos.insert(a.id)
+            guard !primera else { continue }
+            let c = UNMutableNotificationContent()
+            c.title = "Cola 3D"; c.body = a.texto; c.sound = .default
+            UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "aviso-" + a.id, content: c, trigger: nil))
+        }
+        d.set(Array(vistos.prefix(300)), forKey: "avisos-notificados")
+    }
+
+    var sinLeer: Int { avisos.filter { !$0.leido }.count }
+
+    func leerAvisos() async {
+        guard sinLeer > 0, let tk = await token() else { return }
+        withAnimation { for i in avisos.indices { avisos[i].leido = true } }
+        _ = try? await Supa.rpc("leer_avisos", [:], token: tk)
+    }
+
+    private func conCuenta(_ fn: String, _ args: [String: Any], ok: String? = nil) async -> Bool {
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            try await Supa.rpc(fn, args, token: tk)
+            await cargar()
+            if let ok { avisar(ok) }
+            return true
+        } catch { avisar(error.localizedDescription, error: true); return false }
+    }
+    func comentar(_ p: Pedido, _ texto: String) async -> Bool { await conCuenta("comentar", ["p_id": p.id, "p_texto": texto]) }
+    func borrarComentario(_ c: Comentario) async { _ = await conCuenta("borrar_comentario", ["p_id": c.id]) }
+    func crearDeseo(_ texto: String) async -> Bool { await conCuenta("crear_deseo", ["p_texto": texto], ok: "Idea enviada al taller") }
+    func borrarDeseo(_ d: Deseo) async { _ = await conCuenta("borrar_deseo", ["p_id": d.id]) }
+    func responderDeseo(_ d: Deseo, estado: String, respuesta: String, enlace: String) async -> Bool {
+        await conCuenta("admin_deseo", ["p_clave": "", "p_id": d.id, "p": ["estado": estado, "respuesta": respuesta, "enlace": enlace]],
+                        ok: estado == "encontrado" ? "Enviado: le llega un aviso" : "Respondida")
+    }
+
     // MARK: pagos pequeños
 
     /// el mismo que pidió: su cuenta o, sin cuenta, su nombre
@@ -504,15 +561,8 @@ final class Tienda {
             if admin && previo == nil && p.estado == .pendiente {
                 titulo = "Pedido nuevo de \(p.nombre)"
                 cuerpo = "\(p.nombreFigura) · \(Fmt.eur(p.coste))"
-            } else if esMio(p), let previo, previo != p.estado.rawValue {
-                switch p.estado {
-                case .imprimiendo: titulo = "Ya se está imprimiendo"
-                case .impreso: titulo = "¡Tu pieza está impresa!"
-                case .entregado: titulo = "Pedido entregado"
-                case .cancelado: titulo = "Pedido cancelado"
-                case .pendiente: titulo = nil
-                }
             }
+            // los cambios de tus pedidos llegan como «avisos» de la base de datos (sin repetirlos aquí)
             guard let titulo else { continue }
             let c = UNMutableNotificationContent()
             c.title = titulo; c.body = cuerpo; c.sound = .default
