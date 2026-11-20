@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum MainTab: String, Hashable, Identifiable {
-    case home, txs, debts, invest, stats, work, goals, more
+    case home, txs, debts, invest, stats, work, goals, print3d, more
     var id: String { rawValue }
 
     /// la pestaña de un id de Ajustes (settings.tabs)
@@ -13,6 +13,7 @@ enum MainTab: String, Hashable, Identifiable {
         case "analisis": .stats
         case "horas": .work
         case "objetivos": .goals
+        case "impresiones": .print3d
         default: nil
         }
     }
@@ -23,6 +24,7 @@ enum MainTab: String, Hashable, Identifiable {
         "analisis": ("Análisis", "chart.pie.fill"),
         "horas": ("Horas", "briefcase.fill"),
         "objetivos": ("Objetivos", "target"),
+        "impresiones": ("3D", "printer.fill"),
     ]
 }
 
@@ -37,6 +39,7 @@ struct TabScreen: View {
         case .stats: StatsView()
         case .work: NavigationStack { WorkView() }
         case .goals: NavigationStack { GoalsList() }
+        case .print3d: NavigationStack { Cola3DView() }
         default: EmptyView()
         }
     }
@@ -57,6 +60,7 @@ struct RootView: View {
                     if let t = MainTab.of(id), let info = MainTab.names[id] {
                         TabScreen(tab: t).tag(t)
                             .tabItem { Label(info.name, systemImage: info.icon) }
+                            .badge(t == .print3d ? C3.shared.pendientes : 0)
                     }
                 }
                 MoreView().tag(MainTab.more)
@@ -130,6 +134,16 @@ struct RootView: View {
             }
         }
         .task {
+            // Impresiones 3D entra en la barra de abajo una vez (luego se puede quitar en Personalizar)
+            if !UserDefaults.standard.bool(forKey: "c3.enBarra") {
+                UserDefaults.standard.set(true, forKey: "c3.enBarra")
+                var t = store.state.settings.tabs
+                if !t.contains("impresiones") {
+                    if t.count >= TabsCustomizer.limit { t.removeLast() }
+                    t.append("impresiones")
+                    store.state.settings.tabs = t
+                }
+            }
             // (capturas automáticas: -tab txs|invest|stats|more, -new abre el teclado de apuntar)
             let args = ProcessInfo.processInfo.arguments
             if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
@@ -138,6 +152,7 @@ struct RootView: View {
                 case "invest": tab = .invest
                 case "debts": tab = .debts
                 case "more": tab = .more
+                case "3d": tab = .print3d
                 default: break
                 }
             }

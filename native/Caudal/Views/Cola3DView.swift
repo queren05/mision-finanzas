@@ -43,6 +43,11 @@ struct Cola3DView: View {
             Section {
                 ForEach(visibles) { p in
                     NavigationLink { C3PedidoView(id: p.id) } label: { C3Fila(p: p) }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            if !p.pagado && p.estado != .cancelado {
+                                Button { cobrarRapido(p) } label: { Label("Cobrado", systemImage: "eurosign.circle.fill") }.tint(Color.income)
+                            }
+                        }
                 }
                 if visibles.isEmpty {
                     Text(filtro == 0 ? "Nada en cola" : "Sin pedidos").foregroundStyle(.secondary)
@@ -88,6 +93,14 @@ struct Cola3DView: View {
             }
         }
         .animation(Motion.layout, value: c3.error)
+    }
+
+    private func cobrarRapido(_ p: C3Pedido) {
+        Haptic.tap()
+        Task {
+            do { try await c3.cobrar(p, store: store); Haptic.success() }
+            catch { c3.error = error.localizedDescription; Haptic.warning() }
+        }
     }
 
     private var resumen: some View {
@@ -263,9 +276,21 @@ struct C3PedidoView: View {
                     Text(p.pagado ? "Pagado" : "Sin pagar").font(.subheadline.weight(.bold)).foregroundStyle(p.pagado ? Color.income : Color.negative)
                 }
                 if p.pagado {
-                    Button("Quitar pagado") { hacer { try await c3.cambiar(p, ["pagado": false]) } }.disabled(ocupado)
+                    Button("Quitar pagado") { hacer { try await c3.quitarCobro(p, store: store) } }.disabled(ocupado)
                 } else {
-                    Button { Haptic.tap(); cobrar = true } label: { Label("Marcar pagado", systemImage: "checkmark.circle.fill") }.disabled(ocupado)
+                    Button {
+                        Haptic.tap()
+                        hacer { try await c3.cobrar(p, store: store) }
+                    } label: {
+                        Label("Cobrado · \(Money.eur(p.coste))", systemImage: "eurosign.circle.fill")
+                            .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(Color.income.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .foregroundStyle(.black)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    .disabled(ocupado || p.coste <= 0)
+                    Button { Haptic.tap(); cobrar = true } label: { Label("Otra cantidad o cuenta", systemImage: "square.and.pencil") }.disabled(ocupado)
                 }
             }
 
@@ -361,7 +386,7 @@ struct C3CobrarSheet: View {
             }
             .onAppear {
                 importe = Money.num(p.coste).replacingOccurrences(of: ".", with: "")
-                cuenta = store.accounts.first?.id ?? ""
+                cuenta = C3.shared.cuentaCobros(store)
             }
         }
         .presentationDetents([.medium])
@@ -371,16 +396,7 @@ struct C3CobrarSheet: View {
         ocupado = true
         Task {
             do {
-                try await C3.shared.cambiar(p, ["pagado": true])
-                if apuntar, let v = Money.parse(importe), v > 0 {
-                    let cat = store.state.categories.first { c in
-                        let n = c.name.lowercased()
-                        return c.kind == .income && (n.contains("3d") || n.contains("impres"))
-                    } ?? store.state.categories.first { $0.kind == .income && $0.name.lowercased().contains("otro") }
-                    store.save(Tx(type: .income, amount: v, accountId: cuenta, categoryId: cat?.id, date: Day.today, time: Day.time(Date()),
-                                  title: "Impresión 3D · \(p.nombre)", note: p.nombreFigura))
-                    C3.shared.marcarApuntado([p.id])
-                }
+                try await C3.shared.cobrar(p, store: store, importe: Money.parse(importe), cuenta: cuenta, apuntar: apuntar)
                 Haptic.success()
                 dismiss()
             } catch {
@@ -783,7 +799,7 @@ struct C3ApuntarCobros: View {
         .navigationTitle("Apuntar cobros")
         .onAppear {
             elegidos = Set(lista.map(\.id))
-            if cuenta.isEmpty { cuenta = store.accounts.first?.id ?? "" }
+            if cuenta.isEmpty { cuenta = c3.cuentaCobros(store) }
         }
     }
 
@@ -802,5 +818,52 @@ struct C3ApuntarCobros: View {
         c3.marcarApuntado(ps.map(\.id))
         Haptic.success()
         dismiss()
+    }
+}
+
+// MARK: - Cobrar (marca pagado y apunta el ingreso en Caudal)
+
+extension C3 {
+    /// la cuenta donde se apuntan los cobros (la última que elegiste)
+    func cuentaCobros(_ store: Store) -> String {
+        let g = UserDefaults.standard.string(forKey: "c3.cuenta") ?? ""
+        return store.accounts.contains { $0.id == g } ? g : (store.accounts.first?.id ?? "")
+    }
+
+    private func categoriaCobros(_ store: Store) -> Category? {
+        store.state.categories.first { c in
+            let n = c.name.lowercased()
+            return c.kind == .income && (n.contains("3d") || n.contains("impres"))
+        } ?? store.state.categories.first { $0.kind == .income && $0.name.lowercased().contains("otro") }
+    }
+
+    /// marca pagado en la web y apunta el ingreso; con apuntar = false solo lo marca
+    func cobrar(_ p: C3Pedido, store: Store, importe: Double? = nil, cuenta: String? = nil, apuntar: Bool = true) async throws {
+        try await cambiar(p, ["pagado": true])
+        let v = importe ?? p.coste
+        let c = cuenta ?? cuentaCobros(store)
+        if apuntar, v > 0, !c.isEmpty {
+            let t = Tx(type: .income, amount: v, accountId: c, categoryId: categoriaCobros(store)?.id, date: Day.today, time: Day.time(Date()),
+                       title: "Impresión 3D · \(p.nombre)", note: p.nombreFigura)
+            store.save(t)
+            UserDefaults.standard.set(c, forKey: "c3.cuenta")
+            var m = UserDefaults.standard.dictionary(forKey: "c3.ingresos") as? [String: String] ?? [:]
+            m[p.id] = t.id
+            UserDefaults.standard.set(m, forKey: "c3.ingresos")
+        }
+        marcarApuntado([p.id])
+    }
+
+    /// quita el pagado y, si el ingreso se apuntó desde aquí, lo borra (se puede deshacer)
+    func quitarCobro(_ p: C3Pedido, store: Store) async throws {
+        try await cambiar(p, ["pagado": false])
+        var m = UserDefaults.standard.dictionary(forKey: "c3.ingresos") as? [String: String] ?? [:]
+        if let tid = m.removeValue(forKey: p.id) {
+            UserDefaults.standard.set(m, forKey: "c3.ingresos")
+            if let t = store.state.txs.first(where: { $0.id == tid }) { store.delete(t) }
+        }
+        var ya = Set(UserDefaults.standard.stringArray(forKey: "c3.apuntados") ?? [])
+        ya.remove(p.id)
+        UserDefaults.standard.set(Array(ya), forKey: "c3.apuntados")
     }
 }

@@ -216,7 +216,7 @@ struct Settings: Codable, Hashable {
     var appIcon: String = ""
 
     static let defaultTabs = ["movimientos", "cuentas", "inversiones"]
-    static let allTabs = ["movimientos", "cuentas", "inversiones", "analisis", "horas", "objetivos"]
+    static let allTabs = ["movimientos", "cuentas", "inversiones", "analisis", "horas", "objetivos", "impresiones"]
 }
 
 extension Settings {
