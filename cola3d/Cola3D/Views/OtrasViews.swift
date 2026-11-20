@@ -381,7 +381,7 @@ struct TallerView: View {
                     campo("Rollo sin precio propio (€)", $precio, .decimalPad)
                     campo("Gramos por rollo", $peso, .numberPad)
                     campo("Luz y desgaste por hora (€)", $luz, .decimalPad)
-                    campo("Purga con varios colores (%)", $merma, .decimalPad)
+                    campo("Purga por cada color de más (%)", $merma, .decimalPad)
                 }
                 Section("Cobrar") {
                     campo("Teléfono para Bizum", $bizum, .phonePad)
