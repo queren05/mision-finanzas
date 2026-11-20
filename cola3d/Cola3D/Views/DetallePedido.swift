@@ -269,6 +269,10 @@ struct DetallePedido: View {
                     }
                 }
                 if d.merma > 0 { fila("Purga de colores (\(Fmt.num(d.merma_pct)) %)", d.merma) }
+                if d.descuento > 0 {
+                    HStack { Label("Gramos de regalo · \(Fmt.gramos(d.gratis_g))", systemImage: "gift.fill"); Spacer(); Text("−" + Fmt.eur(d.descuento)).font(.system(.body, design: .monospaced)) }
+                        .foregroundStyle(.green)
+                }
                 if d.luz > 0 { fila("Luz y desgaste · \(Fmt.duracion(p.minutos))\(p.copias > 1 ? " × \(p.copias)" : "")", d.luz) }
                 Divider()
                 HStack {

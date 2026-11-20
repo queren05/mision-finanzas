@@ -23,6 +23,26 @@ func calcularCoste(_ lineas: [Linea], minutos: Int, copias: Int, filamentos: [Fi
     return Detalle(filamento: r2(fil), merma: r2(merma), merma_pct: mermaPct, luz: r2(luz), gramos: gtot, total: r2(fil + merma + luz), lineas: out)
 }
 
+/// gramos gratis que le quedan a una persona (lo mismo que _gratis_restante en la base de datos)
+func gratisRestante(_ pedidos: [Pedido], _ a: Ajustes, uid: String?, nombre: String, excluir: String? = nil) -> Double {
+    let n = nombre.trimmingCharacters(in: .whitespaces).lowercased()
+    let usados = pedidos.filter { p in
+        p.estado != .cancelado && p.id != excluir &&
+            (uid != nil ? p.user_id == uid : (p.user_id == nil && p.nombre.trimmingCharacters(in: .whitespaces).lowercased() == n))
+    }.reduce(0) { $0 + $1.coste_detalle.gratis_g }
+    return max(0, a.gratis_g - usados)
+}
+
+/// descuenta el filamento (y su purga) de los gramos gratis; la luz se cobra igual
+func aplicarGratis(_ d: Detalle, _ restante: Double) -> Detalle {
+    var x = d
+    let libre = min(d.gramos, max(0, restante))
+    x.gratis_g = (libre * 10).rounded() / 10
+    x.descuento = d.gramos > 0 && libre > 0 ? r2((d.filamento + d.merma) * libre / d.gramos) : 0
+    x.total = max(0, r2(d.total - x.descuento))
+    return x
+}
+
 enum Perfiles {
     /// tiempo aproximado en la A1 mini (acelera menos que las X1/P1/H2)
     static func minutosA1mini(_ p: Perfil) -> Int {

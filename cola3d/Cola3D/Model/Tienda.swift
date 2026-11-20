@@ -164,7 +164,7 @@ final class Tienda {
 
     func guardar(_ a: Ajustes) async -> Bool {
         do {
-            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum]])
+            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g]])
             if demo { ajustes = a } else { await cargar() }
             avisar("Precios guardados")
             return true

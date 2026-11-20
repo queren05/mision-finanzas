@@ -56,6 +56,9 @@ struct Detalle: Codable, Hashable {
     var gramos: Double = 0
     var total: Double = 0
     var lineas: [LineaCoste] = []
+    /// gramos que han salido gratis en este pedido y lo que se ha descontado
+    var gratis_g: Double = 0
+    var descuento: Double = 0
     init() {}
     init(filamento: Double, merma: Double, merma_pct: Double, luz: Double, gramos: Double, total: Double, lineas: [LineaCoste]) {
         self.filamento = filamento; self.merma = merma; self.merma_pct = merma_pct; self.luz = luz; self.gramos = gramos; self.total = total; self.lineas = lineas
@@ -65,6 +68,7 @@ struct Detalle: Codable, Hashable {
         filamento = c.num(.filamento); merma = c.num(.merma); merma_pct = c.num(.merma_pct)
         luz = c.num(.luz); gramos = c.num(.gramos); total = c.num(.total)
         lineas = c.v(.lineas, [])
+        gratis_g = c.num(.gratis_g); descuento = c.num(.descuento)
     }
 }
 
@@ -176,11 +180,13 @@ struct Ajustes: Codable, Hashable {
     var luz_hora: Double = 0.10
     var merma_pct: Double = 10
     var bizum: String = ""
+    var gratis_g: Double = 50
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         precio_defecto = c.num(.precio_defecto, 17.99); peso_defecto = c.num(.peso_defecto, 1000)
         luz_hora = c.num(.luz_hora, 0.1); merma_pct = c.num(.merma_pct, 10); bizum = c.v(.bizum, "")
+        gratis_g = c.num(.gratis_g, 50)
     }
 }
 

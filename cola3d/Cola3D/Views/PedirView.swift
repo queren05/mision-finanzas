@@ -32,12 +32,14 @@ private struct FormPedido: View {
 
     private var perfilesA1: [Perfil] { (vista?.perfiles ?? []).filter(\.a1mini) }
     private var sinResolver: Bool { lineas.contains { $0.falta != nil && $0.cambio == nil } }
-    private var detalle: Detalle { calcularCoste(lineas.map(\.linea), minutos: minutos, copias: copias, filamentos: t.filamentos, ajustes: t.ajustes) }
+    private var gratis: Double { gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
+    private var detalle: Detalle { aplicarGratis(calcularCoste(lineas.map(\.linea), minutos: minutos, copias: copias, filamentos: t.filamentos, ajustes: t.ajustes), gratis) }
     private var listo: Bool { perfil != nil && !lineas.isEmpty && !sinResolver && !enviando }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                if gratis > 0 { Regalo(quedan: gratis, total: t.ajustes.gratis_g) }
                 campoEnlace
                 if buscando { cargando }
                 if let fallo {
@@ -168,6 +170,11 @@ private struct FormPedido: View {
             VStack(spacing: 6) {
                 fila("Filamento", d.filamento)
                 if d.merma > 0 { fila("Purga de colores (\(Fmt.num(d.merma_pct)) %)", d.merma) }
+                if d.descuento > 0 {
+                    HStack { Label("\(Fmt.num(d.gratis_g, 1)) g gratis", systemImage: "gift.fill"); Spacer(); Text("−" + Fmt.eur(d.descuento)).font(.system(.subheadline, design: .monospaced)) }
+                        .foregroundStyle(.green).fontWeight(.semibold)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 fila("Luz y desgaste", d.luz)
             }
             .font(.subheadline)
@@ -378,5 +385,34 @@ private struct Hecho: View {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { capas = i }
             }
         }
+    }
+}
+
+/// aviso de los gramos de regalo
+private struct Regalo: View {
+    let quedan: Double
+    let total: Double
+    @State private var mueve = false
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "gift.fill").font(.title3).foregroundStyle(.white)
+                .frame(width: 40, height: 40).background(Color.green.gradient, in: RoundedRectangle(cornerRadius: 12))
+                .rotationEffect(.degrees(mueve ? 8 : -8))
+                .animation(.easeInOut(duration: 0.18).repeatCount(5, autoreverses: true).delay(0.6), value: mueve)
+            Group {
+                if quedan >= total {
+                    Text("**Tu primera impresión: los primeros \(Fmt.num(total, 0)) g son gratis.** Si gastas menos, lo que sobre se guarda para la siguiente.")
+                } else {
+                    Text("**Te quedan \(Fmt.num(quedan, 1)) g gratis** de tus \(Fmt.num(total, 0)) g de regalo.")
+                }
+            }
+            .font(.subheadline).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.green.opacity(0.35)))
+        .onAppear { mueve = true }
+        .transition(.scale(scale: 0.96).combined(with: .opacity))
     }
 }

@@ -328,6 +328,7 @@ struct TallerView: View {
     @State private var luz = ""
     @State private var merma = ""
     @State private var bizum = ""
+    @State private var gratis = ""
     @State private var ocupado = false
 
     var body: some View {
@@ -350,6 +351,7 @@ struct TallerView: View {
                 }
                 Section("Cobrar") {
                     campo("Teléfono para Bizum", $bizum, .phonePad)
+                    campo("Gramos gratis por persona", $gratis, .numberPad)
                 }
                 Section {
                     Button {
@@ -359,6 +361,7 @@ struct TallerView: View {
                         a.luz_hora = Fmt.leer(luz) ?? 0
                         a.merma_pct = Fmt.leer(merma) ?? 0
                         a.bizum = bizum.trimmingCharacters(in: .whitespaces)
+                        a.gratis_g = max(0, Fmt.leer(gratis) ?? 50)
                         ocupado = true
                         Task { _ = await t.guardar(a); ocupado = false }
                     } label: {
@@ -380,7 +383,7 @@ struct TallerView: View {
     private func rellenar() {
         let a = t.ajustes
         precio = Fmt.num(a.precio_defecto); peso = Fmt.num(a.peso_defecto, 0); luz = Fmt.num(a.luz_hora)
-        merma = Fmt.num(a.merma_pct); bizum = a.bizum
+        merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0)
     }
 
     private func campo(_ titulo: String, _ v: Binding<String>, _ teclado: UIKeyboardType) -> some View {
