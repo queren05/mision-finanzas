@@ -88,10 +88,16 @@ struct DetallePedido: View {
 
     private func peticion(_ p: Pedido) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Petición: \(p.colores) colores", systemImage: "paintpalette.fill").font(.headline).foregroundStyle(.blue)
-            Text(t.admin ? "La impresora lleva 4 colores a la vez. Si te animas a cambiar carretes, acéptala y entra en la cola."
-                         : "La impresora lleva 4 colores a la vez. El taller te dirá si se puede; hasta entonces no hace falta pagar.")
-                .font(.subheadline).foregroundStyle(.secondary)
+            if p.coste_detalle.motivo == "limite" {
+                Label("Petición: se pasa de los gramos del mes", systemImage: "scalemass.fill").font(.headline).foregroundStyle(.blue)
+                Text(t.admin ? "Si te parece bien, acéptala y entra en la cola." : "El taller te dirá si se puede; hasta entonces no hace falta pagar.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                Label("Petición: \(p.colores) colores", systemImage: "paintpalette.fill").font(.headline).foregroundStyle(.blue)
+                Text(t.admin ? "La impresora lleva 4 colores a la vez. Si te animas a cambiar carretes, acéptala y entra en la cola."
+                             : "La impresora lleva 4 colores a la vez. El taller te dirá si se puede; hasta entonces no hace falta pagar.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
             if t.admin {
                 Button { Task { await hacer { await t.cambiar(p, ["peticion": false], ok: "Petición aceptada: ya está en la cola") } } } label: {
                     Text("Aceptar petición").font(.subheadline.weight(.bold)).foregroundStyle(.white)

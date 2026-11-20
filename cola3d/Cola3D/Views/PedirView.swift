@@ -9,6 +9,8 @@ struct PedirView: View {
                 if t.sesion == nil {
                     // con scroll: si no, el teclado tapa la contraseña y el botón en móviles pequeños
                     ScrollView { FormCuenta(entrarPrimero: true).padding(16) }.scrollDismissesKeyboard(.interactively)
+                } else if t.sinAcceso {
+                    ScrollView { SinAccesoView().padding(16) }.scrollDismissesKeyboard(.interactively)
                 } else { FormPedido() }
             }
             .background(Color(.systemGroupedBackground))
@@ -39,6 +41,10 @@ private struct FormPedido: View {
     private var gratis: Double { t.admin ? 0 : gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
     private var detalle: Detalle { aplicarGratis(calcularCoste(lineas.map(\.linea), minutos: minutos, copias: copias, filamentos: t.filamentos, ajustes: t.ajustes), gratis) }
     private var nColores: Int { juntarLineas(lineas.map(\.linea)).filter { $0.gramos > 0 }.count }
+    /// gramos del mes: si con este pedido se pasa, llega como petición
+    private var limiteMes: Double { t.admin ? 0 : (t.acceso?.limite_mes_g ?? 0) }
+    private var pasaLimite: Bool { limiteMes > 0 && (t.acceso?.usado_mes_g ?? 0) + detalle.gramos > limiteMes }
+    private var esPeticion: Bool { nColores > 4 || pasaLimite }
     private var listo: Bool { perfil != nil && !lineas.isEmpty && !sinResolver && !enviando }
 
     var body: some View {
@@ -159,11 +165,17 @@ private struct FormPedido: View {
     private var colores: some View {
         VStack(alignment: .leading, spacing: 8) {
             titulo("Colores")
-            if nColores > 4 {
+            if esPeticion {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Este modelo lleva \(nColores) colores", systemImage: "paintpalette.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
-                    Text("La impresora pone 4 colores a la vez. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    if nColores > 4 {
+                        Label("Este modelo lleva \(nColores) colores", systemImage: "paintpalette.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
+                        Text("La impresora pone 4 colores a la vez. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        Label("Este mes llevas \(Fmt.gramos(t.acceso?.usado_mes_g ?? 0)) de \(Fmt.gramos(limiteMes))", systemImage: "scalemass.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
+                        Text("Con este pedido te pasas. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
@@ -200,7 +212,7 @@ private struct FormPedido: View {
             Button { Task { await enviar() } } label: {
                 Group {
                     if enviando { ProgressView().tint(.white) }
-                    else { Text(sinResolver ? "Elige otro color" : nColores > 4 ? "Enviar como petición" : "Pedir por \(Fmt.eur(d.total))") }
+                    else { Text(sinResolver ? "Elige otro color" : esPeticion ? "Enviar como petición" : "Pedir por \(Fmt.eur(d.total))") }
                 }
                 .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 15)
                 .background(listo ? AnyShapeStyle(Color.hot.gradient) : AnyShapeStyle(Color.gray.opacity(0.35)), in: Capsule())

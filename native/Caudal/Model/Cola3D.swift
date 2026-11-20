@@ -247,10 +247,11 @@ final class C3 {
         cargando = true
         defer { cargando = false }
         do {
-            let rp = try peticion("pedidos?select=*&order=creado.desc")
+            // con los grupos (familia / amigos) la tabla solo enseña lo de cada uno: el taller lo lee todo con su clave
+            let rp = try peticion("rpc/admin_pedidos", metodo: "POST", cuerpo: ["p_clave": clave])
             let rf = try peticion("filamentos?select=*&order=orden,creado")
             let ra = try peticion("ajustes?select=*&id=eq.1")
-            async let p = enviar(rp)
+            async let p = leerPedidos(rp)
             async let f = enviar(rf)
             async let a = enviar(ra)
             let dec = JSONDecoder()
@@ -266,6 +267,15 @@ final class C3 {
             error = nil
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// si aún no está el SQL de los grupos (no existe admin_pedidos), se lee la tabla como antes
+    private func leerPedidos(_ r: URLRequest) async throws -> Data {
+        do { return try await enviar(r) } catch {
+            let viejo = try peticion("pedidos?select=*&order=creado.desc")
+            guard let d = try? await enviar(viejo), (try? JSONSerialization.jsonObject(with: d) as? [Any])?.isEmpty == false else { throw error }
+            return d
         }
     }
 
@@ -334,8 +344,8 @@ final class C3 {
         guard avisos, configurado, !demo else { return }
         let antes = Set(UserDefaults.standard.stringArray(forKey: "c3.vistos") ?? [])
         let primeraVez = UserDefaults.standard.object(forKey: "c3.vistos") == nil
-        guard let r = try? peticion("pedidos?select=*&order=creado.desc&limit=30"),
-              let d = try? await enviar(r),
+        guard let r = try? peticion("rpc/admin_pedidos?limit=30", metodo: "POST", cuerpo: ["p_clave": clave]),
+              let d = try? await leerPedidos(r),
               let lista = try? JSONDecoder().decode([C3Pedido].self, from: d) else { return }
         let nuevos = lista.filter { !antes.contains($0.id) && $0.estado == .pendiente }
         var todos = antes

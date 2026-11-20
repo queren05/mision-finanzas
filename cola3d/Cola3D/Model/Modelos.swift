@@ -61,6 +61,8 @@ struct Detalle: Codable, Hashable {
     var descuento: Double = 0
     /// pieza que el taller ha subido a la vitrina por su cuenta (no se cobra)
     var taller = false
+    /// por qué llegó como petición: «colores» o «limite» (gramos del mes)
+    var motivo: String = ""
     init() {}
     init(filamento: Double, merma: Double, merma_pct: Double, luz: Double, gramos: Double, total: Double, lineas: [LineaCoste]) {
         self.filamento = filamento; self.merma = merma; self.merma_pct = merma_pct; self.luz = luz; self.gramos = gramos; self.total = total; self.lineas = lineas
@@ -70,7 +72,7 @@ struct Detalle: Codable, Hashable {
         filamento = c.num(.filamento); merma = c.num(.merma); merma_pct = c.num(.merma_pct)
         luz = c.num(.luz); gramos = c.num(.gramos); total = c.num(.total)
         lineas = c.v(.lineas, [])
-        gratis_g = c.num(.gratis_g); descuento = c.num(.descuento); taller = c.v(.taller, false)
+        gratis_g = c.num(.gratis_g); descuento = c.num(.descuento); taller = c.v(.taller, false); motivo = c.v(.motivo, "")
     }
 }
 
@@ -192,12 +194,17 @@ struct Ajustes: Codable, Hashable {
     /// por debajo no se pide pagar: se acumula (Bizum no deja menos de 0,50 €)
     var pago_minimo: Double = 0.5
     var coste_real_kg: Double = 12
+    /// gramos por persona y mes (0 = sin límite); si se pasa, llega como petición
+    var limite_mes_g: Double = 0
+    /// pedidos esperando a la vez por persona
+    var max_pendientes: Double = 0
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         precio_defecto = c.num(.precio_defecto, 17.99); peso_defecto = c.num(.peso_defecto, 1000)
         luz_hora = c.num(.luz_hora, 0.1); merma_pct = c.num(.merma_pct, 10); bizum = c.v(.bizum, "")
         gratis_g = c.num(.gratis_g, 50); pago_minimo = c.num(.pago_minimo, 0.5); coste_real_kg = c.num(.coste_real_kg, 12)
+        limite_mes_g = c.num(.limite_mes_g, 0); max_pendientes = c.num(.max_pendientes, 0)
     }
 }
 
@@ -316,9 +323,13 @@ struct Cuenta: Codable, Identifiable, Hashable {
     var veces: Int = 0
     var confirmada: Bool = false
     var pedidos: Int = 0
+    /// familia, amigos o nil (sin acceso)
+    var grupo: String? = nil
+    var taller: Bool = false
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
+        grupo = c.v(.grupo, nil); taller = c.v(.taller, false)
         nombre = c.v(.nombre, ""); email = c.v(.email, ""); alta = c.v(.alta, ""); ultima = c.v(.ultima, nil)
         veces = c.v(.veces, 0); confirmada = c.v(.confirmada, false); pedidos = c.v(.pedidos, 0)
     }
@@ -349,3 +360,20 @@ struct Deseo: Codable, Identifiable, Hashable {
     var enlace: String
     var creado: String
 }
+
+/// tu grupo (familia / amigos) y lo que llevas pedido este mes
+struct Acceso: Codable, Hashable {
+    var taller: Bool = false
+    var grupo: String? = nil
+    var limite_mes_g: Double = 0
+    var max_pendientes: Double = 0
+    var usado_mes_g: Double = 0
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        taller = c.v(.taller, false); grupo = c.v(.grupo, nil)
+        limite_mes_g = c.num(.limite_mes_g); max_pendientes = c.num(.max_pendientes); usado_mes_g = c.num(.usado_mes_g)
+    }
+}
+
+func nombreGrupo(_ g: String?) -> String { g == "familia" ? "Familia" : g == "amigos" ? "Amigos" : "Sin acceso" }
+func colorGrupo(_ g: String?) -> Color { g == "familia" ? Color(hex: "#e0679a") : g == "amigos" ? Color(hex: "#4f9be8") : .orange }

@@ -300,3 +300,39 @@ struct FilaLista: View {
         .tarjeta()
     }
 }
+
+/// con cuenta pero sin grupo: para pedir hace falta el enlace de invitación
+struct SinAccesoView: View {
+    @Environment(Tienda.self) private var t
+    @State private var codigo = ""
+    @State private var ocupado = false
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.fill").font(.title2).foregroundStyle(Color.hot)
+                .frame(width: 56, height: 56).background(Color.hot.opacity(0.14), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            Text("Hola\(t.sesion.map { ", " + $0.nombre } ?? "")").font(.title3.weight(.bold))
+            Text("Para pedir necesitas el enlace de invitación del taller. Pega aquí el enlace.")
+                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                TextField("Enlace o código", text: $codigo)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .background(Color(.secondarySystemBackground), in: Capsule())
+                Button {
+                    ocupado = true
+                    Task { if await t.unirme(codigo) { codigo = "" }; ocupado = false }
+                } label: {
+                    Group { if ocupado { ProgressView().tint(.white) } else { Text("Entrar").bold() } }
+                        .padding(.horizontal, 18).padding(.vertical, 12)
+                        .background(codigo.count < 4 ? AnyShapeStyle(Color.gray.opacity(0.35)) : AnyShapeStyle(Color.hot.gradient), in: Capsule())
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(Encoger())
+                .disabled(ocupado || codigo.trimmingCharacters(in: .whitespaces).count < 4)
+            }
+            .padding(.top, 4)
+        }
+        .padding(22).frame(maxWidth: .infinity)
+        .tarjeta()
+    }
+}

@@ -28,6 +28,10 @@ final class Tienda {
     var error: String? = nil
     var sesion: Sesion? { didSet { guardarSesion() } }
     var admin = false
+    /// tu grupo y lo que llevas este mes (nil = sin cuenta o sin el SQL de los grupos)
+    var acceso: Acceso? = nil
+    /// con cuenta pero aún sin grupo: no puede pedir
+    var sinAcceso: Bool { sesion != nil && !admin && acceso != nil && acceso?.taller == false && acceso?.grupo == nil }
     /// códigos para cancelar los pedidos hechos desde este iPhone
     var tokens: [String: String] { didSet { UserDefaults.standard.set(tokens, forKey: "tokens") } }
     var aviso: (texto: String, error: Bool)? = nil
@@ -107,6 +111,48 @@ final class Tienda {
         } catch { avisar(error.localizedDescription, error: true); return false }
     }
 
+    // MARK: grupos
+
+    /// entrar en un grupo con el enlace de invitación (o solo su código)
+    func unirme(_ texto: String) async -> Bool {
+        let t0 = texto.trimmingCharacters(in: .whitespacesAndNewlines)
+        let codigo = (t0.range(of: #"invita=([A-Za-z0-9]+)"#, options: .regularExpression).map { String(t0[$0].dropFirst(7)) } ?? t0).lowercased()
+        guard !codigo.isEmpty else { return false }
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            let d = try await Supa.rpc("unirme", ["p_codigo": codigo], token: tk)
+            let g = (try? JSONDecoder().decode(String.self, from: d)) ?? ""
+            await cargar()
+            avisar("Ya estás en \(nombreGrupo(g))")
+            return true
+        } catch { avisar(error.localizedDescription, error: true); return false }
+    }
+
+    func cambiarGrupo(_ uid: String, a grupo: String?) async -> Bool {
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            try await Supa.rpc("admin_grupo", ["p_clave": "", "p_user": uid, "p_grupo": grupo ?? ""], token: tk)
+            await cargar()
+            return true
+        } catch { avisar(error.localizedDescription, error: true); return false }
+    }
+
+    struct Invitacion: Decodable, Hashable { let grupo: String; let codigo: String }
+    func invitaciones() async throws -> [Invitacion] {
+        if demo { return [Invitacion(grupo: "familia", codigo: "3fa9c01b22de"), Invitacion(grupo: "amigos", codigo: "a51d1d3443e6")] }
+        guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+        return try JSONDecoder().decode([Invitacion].self, from: try await Supa.rpc("admin_invitaciones", ["p_clave": ""], token: tk))
+    }
+    func nuevaInvitacion(_ grupo: String) async -> String? {
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            let d = try await Supa.rpc("admin_nueva_invitacion", ["p_clave": "", "p_grupo": grupo], token: tk)
+            avisar("Enlace nuevo listo")
+            return try JSONDecoder().decode(String.self, from: d)
+        } catch { avisar(error.localizedDescription, error: true); return nil }
+    }
+    static func enlace(_ codigo: String) -> URL { URL(string: Supa.web + "?invita=" + codigo)! }
+
     func comprobarAdmin() async {
         guard !demo else { return }
         guard let t = await token() else { admin = false; return }
@@ -120,19 +166,21 @@ final class Tienda {
     func entrar(email: String, clave: String) async throws {
         sesion = try await Supa.entrar(email: email.trimmingCharacters(in: .whitespaces).lowercased(), clave: clave)
         await comprobarAdmin()
+        await cargar()
         avisar("Hola, \(sesion?.nombre ?? "")")
     }
 
     /// devuelve true si ya ha entrado (si no, hay que confirmar el correo)
     func registrar(nombre: String, email: String, clave: String) async throws -> Bool {
         let s = try await Supa.registrar(nombre: nombre.trimmingCharacters(in: .whitespaces), email: email.trimmingCharacters(in: .whitespaces).lowercased(), clave: clave)
-        if let s { sesion = s; await comprobarAdmin(); return true }
+        if let s { sesion = s; await comprobarAdmin(); await cargar(); return true }
         return false
     }
 
     func salir() async {
         if let t = sesion?.access { await Supa.salir(token: t) }
-        withAnimation { sesion = nil; admin = false; if pestana == .taller { pestana = .cola } }
+        withAnimation { sesion = nil; admin = false; acceso = nil; if pestana == .taller { pestana = .cola } }
+        await cargar()
     }
 
     // MARK: datos
@@ -143,8 +191,10 @@ final class Tienda {
         guard !demo, !cargando else { return }
         cargando = true
         defer { cargando = false }
+        // con tu cuenta: cada grupo (familia / amigos) solo ve lo suyo
+        let tk0 = await token()
         do {
-            async let p: [Pedido] = Supa.leer("pedidos?select=*&order=creado")
+            async let p: [Pedido] = Supa.leer("pedidos?select=*&order=creado", token: tk0)
             async let f: [Filamento] = Supa.leer("filamentos?select=*&order=orden,creado")
             async let a: [Ajustes] = Supa.leer("ajustes?select=*&id=eq.1")
             let (np, nf, na) = try await (p, f, a)
@@ -152,22 +202,25 @@ final class Tienda {
             struct Voto: Decodable { let pedido_id: String; let user_id: String }
             struct Guardado: Decodable { let pedido_id: String; let lista: String? }
             struct PerfilJ: Decodable { let user_id: String; let nombre: String?; let avatar: String? }
-            let pfs: [PerfilJ] = (try? await Supa.leer("perfiles?select=user_id,nombre,avatar")) ?? []
+            let pfs: [PerfilJ] = (try? await Supa.leer("perfiles?select=user_id,nombre,avatar", token: tk0)) ?? []
             var npf: [String: (nombre: String, avatar: String)] = [:]
             for x in pfs { npf[x.user_id] = (x.nombre ?? "", x.avatar ?? "") }
-            let vs: [Voto] = (try? await Supa.leer("votos?select=pedido_id,user_id")) ?? []
+            let vs: [Voto] = (try? await Supa.leer("votos?select=pedido_id,user_id", token: tk0)) ?? []
             var nv: [String: Set<String>] = [:]
             for v in vs { nv[v.pedido_id, default: []].insert(v.user_id) }
             var ng: [(pedido: String, lista: String)] = []
             if let tk = await token(), let gs: [Guardado] = try? await Supa.leer("guardados?select=pedido_id,lista", token: tk) {
                 ng = gs.map { ($0.pedido_id, $0.lista ?? "Guardados") }
             }
-            let nco: [Comentario] = (try? await Supa.leer("comentarios?select=*&order=creado")) ?? []
+            let nco: [Comentario] = (try? await Supa.leer("comentarios?select=*&order=creado", token: tk0)) ?? []
             var nav: [Aviso] = [], nde: [Deseo] = []
             if let tk = await token() {
                 nav = (try? await Supa.leer("avisos?select=id,pedido_id,texto,creado,leido&order=creado.desc&limit=40", token: tk)) ?? []
                 nde = (try? await Supa.leer("deseos?select=*&order=creado.desc", token: tk)) ?? []
             }
+            var nac: Acceso? = nil
+            if let tk0, let d = try? await Supa.rpc("mi_acceso", [:], token: tk0) { nac = try? JSONDecoder().decode(Acceso.self, from: d) }
+            if acceso != nac { withAnimation { acceso = nac } }
             if comentarios != nco { comentarios = nco }
             if deseos != nde { deseos = nde }
             avisarNuevos(nav)
@@ -255,7 +308,7 @@ final class Tienda {
 
     func guardar(_ a: Ajustes) async -> Bool {
         do {
-            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g, "pago_minimo": a.pago_minimo, "coste_real_kg": a.coste_real_kg]])
+            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g, "pago_minimo": a.pago_minimo, "coste_real_kg": a.coste_real_kg, "limite_mes_g": a.limite_mes_g, "max_pendientes": Int(a.max_pendientes)]])
             if demo { ajustes = a } else { await cargar() }
             avisar("Precios guardados")
             return true

@@ -376,6 +376,9 @@ struct TallerView: View {
     @State private var gratis = ""
     @State private var minimo = ""
     @State private var real = ""
+    @State private var limite = ""
+    @State private var maxPend = ""
+    @State private var invitaciones: [Tienda.Invitacion] = []
     @State private var ocupado = false
     @State private var cuentas: [Cuenta]? = nil
     @State private var falloCuentas: String? = nil
@@ -407,6 +410,10 @@ struct TallerView: View {
                     campo("Pago mínimo (€), por debajo se acumula", $minimo, .decimalPad)
                     campo("Lo que te cuesta a ti el kilo (€)", $real, .decimalPad)
                 }
+                Section("Límites por persona") {
+                    campo("Gramos al mes (0 = sin límite)", $limite, .numberPad)
+                    campo("Pedidos esperando a la vez", $maxPend, .numberPad)
+                }
                 Section {
                     Button {
                         var a = t.ajustes
@@ -418,6 +425,8 @@ struct TallerView: View {
                         a.gratis_g = max(0, Fmt.leer(gratis) ?? 50)
                         a.pago_minimo = max(0, Fmt.leer(minimo) ?? 0.5)
                         a.coste_real_kg = max(0, Fmt.leer(real) ?? 12)
+                        a.limite_mes_g = max(0, (Fmt.leer(limite) ?? 0).rounded())
+                        a.max_pendientes = max(0, (Fmt.leer(maxPend) ?? 0).rounded())
                         ocupado = true
                         Task { _ = await t.guardar(a); ocupado = false }
                     } label: {
@@ -432,12 +441,41 @@ struct TallerView: View {
                         ForEach(t.deseos) { d in FilaIdea(d: d, taller: true).listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)) }
                     }
                 }
+                if !invitaciones.isEmpty {
+                    Section("Invitaciones") {
+                        ForEach(invitaciones, id: \.grupo) { inv in
+                            HStack(spacing: 12) {
+                                RoundedRectangle(cornerRadius: 2).fill(colorGrupo(inv.grupo)).frame(width: 4, height: 34)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(nombreGrupo(inv.grupo)).font(.subheadline.weight(.semibold))
+                                    Text(Tienda.enlace(inv.codigo).absoluteString.replacingOccurrences(of: "https://", with: ""))
+                                        .font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                                }
+                                Spacer(minLength: 6)
+                                ShareLink(item: Tienda.enlace(inv.codigo), message: Text("Pide tus impresiones 3D aquí (grupo \(nombreGrupo(inv.grupo))):")) {
+                                    Image(systemName: "square.and.arrow.up").font(.body.weight(.semibold))
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                            .swipeActions {
+                                Button("Cambiar enlace") {
+                                    Task {
+                                        if let c = await t.nuevaInvitacion(inv.grupo), let i = invitaciones.firstIndex(of: inv) {
+                                            withAnimation { invitaciones[i] = Tienda.Invitacion(grupo: inv.grupo, codigo: c) }
+                                        }
+                                    }
+                                }.tint(.orange)
+                            }
+                        }
+                    }
+                }
                 Section("Cuentas") {
                     if let c = cuentas {
                         let hoy = c.filter { ($0.ultima.flatMap(Fmt.fecha) ?? .distantPast) > Date().addingTimeInterval(-86400) }.count
-                        LabeledContent("Personas", value: "\(c.count) · \(hoy) hoy")
+                        let sin = c.filter { !$0.taller && $0.grupo == nil }.count
+                        LabeledContent("Personas", value: "\(c.count) · \(hoy) hoy" + (sin > 0 ? " · \(sin) sin acceso" : ""))
                         ForEach(verTodas ? c : Array(c.prefix(8))) { x in
-                            FilaCuenta(c: x)
+                            FilaCuenta(c: x) { g in Task { if await t.cambiarGrupo(x.id, a: g) { await leerCuentas() } } }
                                 .contentShape(Rectangle())
                                 .onTapGesture { renombrando = x; nuevoNombre = x.nombre }
                                 .swipeActions { Button("Cambiar nombre") { renombrando = x; nuevoNombre = x.nombre }.tint(.hot) }
@@ -462,7 +500,7 @@ struct TallerView: View {
             .navigationTitle("Taller")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonCuenta() } }
             .onAppear(perform: rellenar)
-            .task { await leerCuentas() }
+            .task { await leerCuentas(); invitaciones = (try? await t.invitaciones()) ?? [] }
             .alert("Cambiar nombre", isPresented: Binding(get: { renombrando != nil }, set: { if !$0 { renombrando = nil } })) {
                 TextField("Nombre", text: $nuevoNombre)
                 Button("Cancelar", role: .cancel) { renombrando = nil }
@@ -485,6 +523,7 @@ struct TallerView: View {
         let a = t.ajustes
         precio = Fmt.num(a.precio_defecto); peso = Fmt.num(a.peso_defecto, 0); luz = Fmt.num(a.luz_hora)
         merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0); minimo = Fmt.num(a.pago_minimo); real = Fmt.num(a.coste_real_kg)
+        limite = Fmt.num(a.limite_mes_g, 0); maxPend = Fmt.num(a.max_pendientes, 0)
     }
 
     private func campo(_ titulo: String, _ v: Binding<String>, _ teclado: UIKeyboardType) -> some View {
@@ -494,6 +533,7 @@ struct TallerView: View {
 
 private struct FilaCuenta: View {
     let c: Cuenta
+    var cambiar: (String?) -> Void = { _ in }
     var body: some View {
         let u = c.ultima.flatMap(Fmt.fecha)
         let reciente = (u ?? .distantPast) > Date().addingTimeInterval(-86400)
@@ -502,6 +542,27 @@ private struct FilaCuenta: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(c.nombre).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Text(c.email).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                if c.taller {
+                    Text("Taller").font(.caption2.weight(.bold)).foregroundStyle(Color.hot)
+                        .padding(.horizontal, 8).padding(.vertical, 2).background(Color.hot.opacity(0.14), in: Capsule()).padding(.top, 3)
+                } else {
+                    Menu {
+                        Button { cambiar("familia") } label: { Label("Familia", systemImage: c.grupo == "familia" ? "checkmark" : "house") }
+                        Button { cambiar("amigos") } label: { Label("Amigos", systemImage: c.grupo == "amigos" ? "checkmark" : "person.2") }
+                        Button(role: .destructive) { cambiar(nil) } label: { Label("Sin acceso", systemImage: "lock") }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text(nombreGrupo(c.grupo))
+                            Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
+                        }
+                        .font(.caption2.weight(.bold)).foregroundStyle(colorGrupo(c.grupo))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(colorGrupo(c.grupo).opacity(0.14), in: Capsule())
+                        .overlay(Capsule().strokeBorder(colorGrupo(c.grupo).opacity(0.5)))
+                    }
+                    .buttonStyle(.borderless)
+                    .padding(.top, 3)
+                }
             }
             Spacer(minLength: 6)
             VStack(alignment: .trailing, spacing: 1) {

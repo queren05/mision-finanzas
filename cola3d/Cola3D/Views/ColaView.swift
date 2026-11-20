@@ -198,7 +198,7 @@ struct TarjetaPedido: View {
         Chip(estado: p.estado)
         if p.prioridad > 0 && p.estado == .pendiente { Etiqueta(texto: "Prioridad", color: .hot, icono: "arrow.up") }
         if p.peticion && p.estado == .pendiente {
-            Etiqueta(texto: "Petición · \(p.colores) colores", color: .blue, icono: "paintpalette.fill")
+            Etiqueta(texto: p.coste_detalle.motivo == "limite" ? "Petición · límite del mes" : "Petición · \(p.colores) colores", color: .blue, icono: p.coste_detalle.motivo == "limite" ? "scalemass.fill" : "paintpalette.fill")
         } else if p.estado != .cancelado && !p.delTaller {
             if p.pagado { Etiqueta(texto: "Pagado", color: .green, icono: "checkmark") }
             else if t.acumula(p) { Etiqueta(texto: "Se acumula", color: .secondary) }
