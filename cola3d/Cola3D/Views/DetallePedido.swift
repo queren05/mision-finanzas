@@ -42,6 +42,7 @@ struct DetallePedido: View {
                         if p.hecho { vitrina(p) }
                         Camino(p: p)
                         if t.admin { taller(p) }
+                        if t.admin && !p.delTaller && Perfiles.esMakerWorld(p.url) { Comprobar(p: p) }
                         if t.admin || !p.fotos.isEmpty { fotos(p) }
                         if !p.delTaller { coste(p) }
                         if !p.notas.isEmpty {
@@ -500,4 +501,68 @@ struct AjustarGramos: View {
 
 extension Array {
     subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
+}
+
+/// el taller comprueba que lo pedido coincide con el perfil de MakerWorld (gramos, tiempo y precio)
+private struct Comprobar: View {
+    @Environment(Tienda.self) private var t
+    let p: Pedido
+    @State private var perfil: Perfil? = nil
+    @State private var leyendo = true
+    @State private var ocupado = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("COMPROBAR CON MAKERWORLD").font(.caption.weight(.bold)).foregroundStyle(.secondary).tracking(0.6)
+            if leyendo {
+                HStack { ProgressView(); Text("Leyendo el perfil…").foregroundStyle(.secondary) }.font(.subheadline)
+            } else if let pf = perfil {
+                let pedidoG = (p.lineas.reduce(0) { $0 + $1.gramos } * 10).rounded() / 10
+                let perfilG = (pf.gramos * 10).rounded() / 10
+                let perfilMin = Perfiles.minutosA1mini(pf)
+                let bien = abs(pedidoG - perfilG) <= 1 && abs(p.minutos - perfilMin) <= 2
+                let k = pedidoG > 0 ? perfilG / pedidoG : 1
+                let lineasPerfil = p.lineas.map { Linea(filamento_id: $0.filamento_id, nombre: $0.nombre, color: $0.color, gramos: ($0.gramos * k * 10).rounded() / 10) }
+                let deberia = aplicarGratis(calcularCoste(lineasPerfil, minutos: perfilMin, copias: p.copias, filamentos: t.filamentos, ajustes: t.ajustes),
+                                            gratisRestante(t.pedidos.filter { $0.id != p.id }, t.ajustes, uid: p.user_id, nombre: p.nombre)).total
+                Label(bien ? "Coincide con el perfil" : "No coincide con el perfil", systemImage: bien ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    .font(.headline).foregroundStyle(bien ? .green : .red)
+                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
+                    GridRow { Text(""); Text("PEDIDO").font(.caption2.weight(.bold)).foregroundStyle(.secondary); Text("PERFIL").font(.caption2.weight(.bold)).foregroundStyle(.secondary) }
+                    GridRow {
+                        Text("Gramos por copia")
+                        Text(Fmt.gramos(pedidoG)).foregroundStyle(abs(pedidoG - perfilG) > 1 ? .red : .primary)
+                        Text(Fmt.gramos(perfilG))
+                    }
+                    GridRow {
+                        Text("Tiempo por copia")
+                        Text(Fmt.duracion(p.minutos)).foregroundStyle(abs(p.minutos - perfilMin) > 2 ? .red : .primary)
+                        Text(Fmt.duracion(perfilMin))
+                    }
+                    GridRow { Text("Colores"); Text("\(p.colores)"); Text("\(pf.colores.count)") }
+                }
+                .font(.system(.subheadline, design: .monospaced))
+                Text("Perfil «\(pf.titulo.isEmpty ? "sin nombre" : pf.titulo)»\(pf.impresora.isEmpty ? "" : " · \(pf.impresora)")\(bien ? "" : " · Con lo del perfil costaría \(Fmt.eur(deberia)) (ahora \(Fmt.eur(p.coste))).")")
+                    .font(.footnote).foregroundStyle(.secondary)
+                if !bien {
+                    Button {
+                        ocupado = true
+                        let ls = lineasPerfil.map { l -> [String: Any] in ["filamento_id": l.filamento_id.map { $0 as Any } ?? NSNull(), "nombre": l.nombre, "color": l.color, "gramos": l.gramos] }
+                        Task { await t.cambiar(p, ["lineas": ls, "minutos": perfilMin], ok: "Corregido: ahora cuesta \(Fmt.eur(deberia))"); ocupado = false }
+                    } label: { Text(ocupado ? "Corrigiendo…" : "Corregir a lo del perfil").bold() }
+                    .buttonStyle(.borderedProminent).tint(Color.hot).disabled(ocupado)
+                }
+            } else {
+                Text("No se ha podido leer el perfil de este modelo.").font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .tarjeta()
+        .task(id: p.url) {
+            leyendo = true
+            if let v = try? await Supa.vistaPrevia(p.url), let ps = v.perfiles, !ps.isEmpty { perfil = Perfiles.inicial(ps, url: p.url) }
+            leyendo = false
+        }
+    }
 }
