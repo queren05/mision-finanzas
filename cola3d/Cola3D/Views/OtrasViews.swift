@@ -276,7 +276,7 @@ private struct FilaPersona: View {
     @State private var lleno = false
     var body: some View {
         HStack(spacing: 14) {
-            Avatar(nombre: x.nombre, size: 46)
+            Avatar(nombre: x.nombre, size: 46, uid: x.pedidos.first { $0.user_id != nil }?.user_id)
             VStack(alignment: .leading, spacing: 5) {
                 Text(x.nombre).font(.headline).foregroundStyle(.primary).lineLimit(1)
                 Text("\(x.pedidos.count) pedido\(x.pedidos.count == 1 ? "" : "s") · \(Fmt.hace(x.ultimo))").font(.caption).foregroundStyle(.secondary)
@@ -307,7 +307,7 @@ private struct PersonaView: View {
         ScrollView {
             VStack(spacing: 16) {
                 HStack(spacing: 16) {
-                    Avatar(nombre: x.nombre, size: 64)
+                    Avatar(nombre: x.nombre, size: 64, uid: x.pedidos.first { $0.user_id != nil }?.user_id)
                     VStack(alignment: .leading) {
                         Text(x.nombre).font(.title.weight(.heavy)).lineLimit(1).minimumScaleFactor(0.6)
                         Text("\(x.pedidos.count) pedido\(x.pedidos.count == 1 ? "" : "s") · \(Fmt.gramos(x.gramos)) impresos").font(.subheadline).foregroundStyle(.secondary)
@@ -456,7 +456,7 @@ private struct FilaCuenta: View {
         let u = c.ultima.flatMap(Fmt.fecha)
         let reciente = (u ?? .distantPast) > Date().addingTimeInterval(-86400)
         HStack(spacing: 12) {
-            Avatar(nombre: c.nombre, size: 36)
+            Avatar(nombre: c.nombre, size: 36, uid: c.id)
             VStack(alignment: .leading, spacing: 1) {
                 Text(c.nombre).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Text(c.email).font(.caption).foregroundStyle(.secondary).lineLimit(1)

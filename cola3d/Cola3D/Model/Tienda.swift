@@ -14,8 +14,12 @@ final class Tienda {
     var ajustes = Ajustes()
     /// me gusta de la vitrina (pieza → cuentas que la han votado)
     var votos: [String: Set<String>] = [:]
-    /// piezas que has guardado
-    var guardados: Set<String> = []
+    /// piezas que has guardado (en cualquier lista)
+    var guardados: Set<String> { Set(listas.map { $0.pedido }) }
+    /// tus listas de guardados: qué pieza en qué lista
+    var listas: [(pedido: String, lista: String)] = []
+    /// foto y nombre de cada cuenta
+    var perfiles: [String: (nombre: String, avatar: String)] = [:]
     var cargado = false
     var error: String? = nil
     var sesion: Sesion? { didSet { guardarSesion() } }
@@ -106,19 +110,26 @@ final class Tienda {
             let (np, nf, na) = try await (p, f, a)
             // me gusta y guardados: si fallan, lo demás sigue
             struct Voto: Decodable { let pedido_id: String; let user_id: String }
-            struct Guardado: Decodable { let pedido_id: String }
+            struct Guardado: Decodable { let pedido_id: String; let lista: String? }
+            struct PerfilJ: Decodable { let user_id: String; let nombre: String?; let avatar: String? }
+            let pfs: [PerfilJ] = (try? await Supa.leer("perfiles?select=user_id,nombre,avatar")) ?? []
+            var np: [String: (nombre: String, avatar: String)] = [:]
+            for x in pfs { np[x.user_id] = (x.nombre ?? "", x.avatar ?? "") }
             let vs: [Voto] = (try? await Supa.leer("votos?select=pedido_id,user_id")) ?? []
             var nv: [String: Set<String>] = [:]
             for v in vs { nv[v.pedido_id, default: []].insert(v.user_id) }
-            var ng: Set<String> = []
-            if let tk = await token(), let gs: [Guardado] = try? await Supa.leer("guardados?select=pedido_id", token: tk) { ng = Set(gs.map(\.pedido_id)) }
+            var ng: [(pedido: String, lista: String)] = []
+            if let tk = await token(), let gs: [Guardado] = try? await Supa.leer("guardados?select=pedido_id,lista", token: tk) {
+                ng = gs.map { ($0.pedido_id, $0.lista ?? "Guardados") }
+            }
             avisarCambios(np)
             withAnimation(.snappy) {
                 pedidos = np
                 filamentos = nf
                 ajustes = na.first ?? Ajustes()
                 votos = nv
-                guardados = ng
+                listas = ng
+                perfiles = np
             }
             error = nil
         } catch {
@@ -248,18 +259,85 @@ final class Tienda {
         }
     }
 
-    func guardar(_ p: Pedido) async {
+    func listasDe(_ p: Pedido) -> [String] { listas.filter { $0.pedido == p.id }.map { $0.lista } }
+    var nombresListas: [String] {
+        var out = ["Guardados"]
+        for l in listas.map { $0.lista } where !out.contains(l) { out.append(l) }
+        return out
+    }
+
+    /// mete o saca una pieza de una lista
+    func guardar(_ p: Pedido, en lista: String = "Guardados") async {
         guard sesion != nil else { avisar("Entra con tu cuenta para guardar", error: true); return }
-        let estaba = guardados.contains(p.id)
-        withAnimation(.snappy) { if estaba { guardados.remove(p.id) } else { guardados.insert(p.id) } }
-        avisar(estaba ? "Quitada de guardadas" : "Guardada")
+        let l = String(lista.trimmingCharacters(in: .whitespaces).prefix(40))
+        guard !l.isEmpty else { return }
+        let antes = listas
+        let estaba = listas.contains { $0.pedido == p.id && $0.lista == l }
+        withAnimation(.snappy) {
+            if estaba { listas.removeAll { $0.pedido == p.id && $0.lista == l } } else { listas.append((p.id, l)) }
+        }
+        avisar(estaba ? "Quitada de «\(l)»" : "Guardada en «\(l)»")
         if demo { return }
         do {
             guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
-            try await Supa.rpc("guardar", ["p_id": p.id], token: tk)
+            try await Supa.rpc("guardar_en", ["p_id": p.id, "p_lista": l], token: tk)
         } catch {
-            withAnimation { if estaba { guardados.insert(p.id) } else { guardados.remove(p.id) } }
+            withAnimation { listas = antes }
             avisar(error.localizedDescription, error: true)
+        }
+    }
+
+    func renombrarLista(_ l: String, a nueva: String) async {
+        let n = nueva.trimmingCharacters(in: .whitespaces)
+        guard !n.isEmpty, n != l else { return }
+        do {
+            if !demo {
+                guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+                try await Supa.rpc("renombrar_lista", ["p_lista": l, "p_nueva": n], token: tk)
+                await cargar()
+            } else { listas = listas.map { ($0.pedido, $0.lista == l ? n : $0.lista) } }
+            avisar("Lista renombrada")
+        } catch { avisar(error.localizedDescription, error: true) }
+    }
+
+    func borrarLista(_ l: String) async {
+        do {
+            if !demo {
+                guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+                try await Supa.rpc("borrar_lista", ["p_lista": l], token: tk)
+                await cargar()
+            } else { listas.removeAll { $0.lista == l } }
+            avisar("Lista borrada")
+        } catch { avisar(error.localizedDescription, error: true) }
+    }
+
+    // MARK: tu perfil
+
+    func avatar(_ uid: String?) -> URL? {
+        guard let uid, let a = perfiles[uid]?.avatar, !a.isEmpty else { return nil }
+        return URL(string: a)
+    }
+
+    func guardarPerfil(nombre: String, foto: Data? = nil) async -> Bool {
+        guard var s = sesion else { return false }
+        let n = String(nombre.trimmingCharacters(in: .whitespaces).prefix(40))
+        guard !n.isEmpty else { avisar("Pon un nombre", error: true); return false }
+        do {
+            var avatar = perfiles[s.id]?.avatar ?? ""
+            if demo {
+                s.nombre = n; sesion = s; perfiles[s.id] = (n, avatar); avisar("Perfil guardado"); return true
+            }
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            if let foto { avatar = try await Supa.subirAvatar(foto, uid: s.id, token: tk) }
+            try await Supa.rpc("guardar_perfil", ["p_nombre": n, "p_avatar": avatar], token: tk)
+            s.nombre = n
+            sesion = s
+            await cargar()
+            avisar(foto != nil ? "Foto cambiada" : "Perfil guardado")
+            return true
+        } catch {
+            avisar(error.localizedDescription, error: true)
+            return false
         }
     }
 
@@ -413,8 +491,8 @@ final class Tienda {
             ped("d5", 120, "David", "Organizador de cables", .entregado, true, [az], 140),
         ]
         pedidos[3].fotos = ["https://picsum.photos/seed/c3a/900", "https://picsum.photos/seed/c3b/900"]
-        votos = ["d4": ["u1", "u2", "u3"], "d5": ["u2"]]
-        guardados = ["d5"]
+        votos = ["d4": ["u1", "u2", "u3"], "d5": ["u2", "u1"]]
+        listas = [("d5", "Guardados"), ("d4", "Regalos")]
         tokens["d2"] = "x"
         sesion = Sesion(access: "", refresh: "", caduca: .distantFuture, id: "u1", email: "jorge@ejemplo.es", nombre: "Jorge")
         admin = ProcessInfo.processInfo.arguments.contains("-taller")

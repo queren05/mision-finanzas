@@ -3,9 +3,19 @@ import SwiftUI
 // Piezas pequeñas que se repiten en varias pantallas.
 
 struct Avatar: View {
+    @Environment(Tienda.self) private var t
     let nombre: String
     var size: CGFloat = 28
+    /// cuenta de la persona: si tiene foto de perfil, sale la foto
+    var uid: String? = nil
     var body: some View {
+        if let u = t.avatar(uid) {
+            AsyncImage(url: u) { i in i.resizable().scaledToFill() } placeholder: { inicial }
+                .frame(width: size, height: size).clipShape(Circle())
+                .overlay(Circle().strokeBorder(.primary.opacity(0.1)))
+        } else { inicial }
+    }
+    private var inicial: some View {
         Text(String(nombre.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased())
             .font(.system(size: size * 0.45, weight: .heavy, design: .rounded))
             .foregroundStyle(.white)
@@ -111,11 +121,12 @@ struct BotonCuenta: View {
     @State private var abierto = false
     var body: some View {
         Button { abierto = true } label: {
-            if let s = t.sesion { Avatar(nombre: s.nombre, size: 30) }
+            if let s = t.sesion { Avatar(nombre: s.nombre, size: 30, uid: s.id) }
             else { Text("Entrar").font(.subheadline.weight(.bold)) }
         }
         .accessibilityLabel(t.sesion == nil ? "Entrar" : "Tu cuenta")
         .sheet(isPresented: $abierto) { CuentaView() }
+        .task { if ProcessInfo.processInfo.arguments.contains("-perfil") && t.pestana == .cola { abierto = true } }
     }
 }
 

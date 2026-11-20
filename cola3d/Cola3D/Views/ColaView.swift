@@ -152,7 +152,7 @@ struct TarjetaPedido: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(p.nombreFigura).font(.headline).lineLimit(2).multilineTextAlignment(.leading).foregroundStyle(.primary)
                 HStack(spacing: 6) {
-                    Avatar(nombre: p.nombre, size: 20)
+                    Avatar(nombre: p.nombre, size: 20, uid: p.user_id)
                     Text(p.nombre).lineLimit(1)
                     Text("·").foregroundStyle(.tertiary)
                     Text(Fmt.hace(p.fecha)).lineLimit(1)

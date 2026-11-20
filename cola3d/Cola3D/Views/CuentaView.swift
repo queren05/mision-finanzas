@@ -22,40 +22,8 @@ struct CuentaView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let s = t.sesion {
-                    Form {
-                        Section {
-                            HStack(spacing: 14) {
-                                Avatar(nombre: s.nombre, size: 54)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(s.nombre).font(.title3.weight(.bold))
-                                    Text(s.email).font(.subheadline).foregroundStyle(.secondary)
-                                    if t.admin { Etiqueta(texto: "Taller", color: .hot, icono: "wrench.and.screwdriver.fill").padding(.top, 4) }
-                                }
-                            }
-                            .padding(.vertical, 6)
-                        }
-                        Section("Cambiar contraseña") {
-                            CampoClave(titulo: "Contraseña nueva", texto: $nueva, nueva: true)
-                            Button {
-                                Task {
-                                    cambiando = true
-                                    defer { cambiando = false }
-                                    guard let tk = await t.token() else { return }
-                                    do { try await Supa.cambiarClave(nueva, token: tk); nueva = ""; t.avisar("Contraseña cambiada") }
-                                    catch { t.avisar(error.localizedDescription, error: true) }
-                                }
-                            } label: { if cambiando { ProgressView() } else { Text("Guardar contraseña") } }
-                            .disabled(nueva.count < 6 || cambiando)
-                        }
-                        Section("Aspecto") { aspecto }
-                        Section {
-                            Button("Salir de la cuenta", role: .destructive) { salir = true }
-                                .confirmationDialog("¿Salir de la cuenta?", isPresented: $salir, titleVisibility: .visible) {
-                                    Button("Salir", role: .destructive) { Task { await t.salir(); cerrar() } }
-                                }
-                        }
-                    }
+                if t.sesion != nil {
+                    PerfilView(cerrar: { cerrar() })
                 } else {
                     ScrollView {
                         VStack(spacing: 24) {
@@ -70,7 +38,7 @@ struct CuentaView: View {
                         .background(Color(.systemGroupedBackground))
                 }
             }
-            .navigationTitle(t.sesion == nil ? "Entrar" : "Tu cuenta")
+            .navigationTitle(t.sesion == nil ? "Entrar" : "Mi perfil")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Cerrar") { cerrar() } } }
         }

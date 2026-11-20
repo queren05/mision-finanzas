@@ -197,25 +197,41 @@ struct BotonGusta: View {
     }
 }
 
-/// marcador para guardar la pieza
+/// marcador para guardar la pieza: menú con tus listas (o una nueva)
 struct BotonGuardar: View {
     @Environment(Tienda.self) private var t
     let p: Pedido
     var grande = false
+    @State private var nueva = false
+    @State private var nombre = ""
     var body: some View {
-        let si = t.guardados.contains(p.id)
-        Button { Task { await t.guardar(p) } } label: {
+        let mias = t.listasDe(p)
+        let si = !mias.isEmpty
+        Menu {
+            Section("Guardar en") {
+                ForEach(t.nombresListas, id: \.self) { l in
+                    Button { Task { await t.guardar(p, en: l) } } label: {
+                        if mias.contains(l) { Label(l, systemImage: "checkmark") } else { Text(l) }
+                    }
+                }
+            }
+            Button { nombre = ""; nueva = true } label: { Label("Nueva lista…", systemImage: "plus") }
+        } label: {
             HStack(spacing: 6) {
                 Image(systemName: si ? "bookmark.fill" : "bookmark").symbolEffect(.bounce, value: si)
-                if grande { Text(si ? "Guardada" : "Guardar") }
+                if grande { Text(si ? (mias.count == 1 ? mias[0] : "En \(mias.count) listas") : "Guardar").lineLimit(1) }
             }
             .font((grande ? Font.body : .footnote).weight(.bold))
             .foregroundStyle(si ? Color.hot : (grande ? .secondary : .primary))
             .padding(.horizontal, grande ? 16 : 9).padding(.vertical, grande ? 11 : 8)
             .background(grande ? AnyShapeStyle(Color(.tertiarySystemFill)) : AnyShapeStyle(.regularMaterial), in: Capsule())
         }
-        .buttonStyle(Encoger())
-        .accessibilityLabel(si ? "Quitar de guardadas" : "Guardar")
+        .accessibilityLabel("Guardar en una lista")
+        .alert("Lista nueva", isPresented: $nueva) {
+            TextField("Nombre (Regalos, Para casa…)", text: $nombre)
+            Button("Cancelar", role: .cancel) {}
+            Button("Crear y guardar") { Task { await t.guardar(p, en: nombre) } }
+        }
     }
 }
 
@@ -247,7 +263,7 @@ private struct Pieza: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(p.nombreFigura).font(.subheadline.weight(.bold)).foregroundStyle(.primary).lineLimit(2).multilineTextAlignment(.leading)
                 HStack(spacing: 5) {
-                    Avatar(nombre: p.nombre, size: 16)
+                    Avatar(nombre: p.nombre, size: 16, uid: p.user_id)
                     Text("\(p.nombre) · \(Fmt.hace(cuando))").lineLimit(1)
                 }
                 .font(.caption).foregroundStyle(.secondary)

@@ -134,7 +134,7 @@ struct DetallePedido: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(p.nombreFigura).font(.title2.weight(.bold)).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
-                Avatar(nombre: p.nombre, size: 22)
+                Avatar(nombre: p.nombre, size: 22, uid: p.user_id)
                 Text(p.nombre)
                 Text("·").foregroundStyle(.tertiary)
                 Text(Fmt.fechaLarga(p.fecha))

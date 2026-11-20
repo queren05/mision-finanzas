@@ -67,6 +67,8 @@ jobs:
           shot -demo -tab gente -taller; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/4-gente.png"
           shot -demo -tab taller -taller; xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/5-taller.png"
           shot -demo -detalle -taller;  xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/6-detalle.png"
+          shot -demo -tab vitrina;      xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/7-vitrina.png"
+          shot -demo -perfil;           xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/out/8-perfil.png"
           ls -la "$GITHUB_WORKSPACE/out"
 
       - name: Publicar el .ipa como descarga directa

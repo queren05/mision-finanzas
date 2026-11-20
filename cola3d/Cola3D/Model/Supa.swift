@@ -117,6 +117,16 @@ enum Supa {
         return url + "/storage/v1/object/public/fotos/" + ruta
     }
 
+    static func subirAvatar(_ jpeg: Data, uid: String, token: String) async throws -> String {
+        let ruta = "\(uid)/\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
+        var r = peticion("/storage/v1/object/avatares/" + ruta, metodo: "POST", token: token)
+        r.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        r.httpBody = jpeg
+        r.timeoutInterval = 60
+        _ = try await enviar(r)
+        return url + "/storage/v1/object/public/avatares/" + ruta
+    }
+
     static func borrarFoto(_ u: String, token: String) async {
         guard let ruta = u.components(separatedBy: "/object/public/fotos/").last, ruta != u else { return }
         _ = try? await enviar(peticion("/storage/v1/object/fotos", metodo: "DELETE", json: ["prefixes": [ruta.removingPercentEncoding ?? ruta]], token: token))
