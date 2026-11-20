@@ -4,22 +4,54 @@ import PhotosUI
 /// todo lo que ha salido de la impresora, con las fotos de cómo ha quedado
 struct VitrinaView: View {
     @Environment(Tienda.self) private var t
-    @State private var soloFotos = false
     @State private var abierto: Pedido? = nil
     @State private var nueva = false
+    @State private var orden = Orden.recientes
+    @State private var soloFotos = false
+    @State private var soloGuardadas = false
+    @State private var persona = ""
+    @State private var tamano = Tamano.todos
+    @State private var precio = Precio.todos
+
+    enum Orden: String, CaseIterable { case recientes = "Recientes", gustan = "Más gustan", grandes = "Más grandes", caras = "Más caras" }
+    enum Tamano: String, CaseIterable {
+        case todos = "Cualquier tamaño", p = "Pequeñas (< 50 g)", m = "Medianas (50–200 g)", g = "Grandes (> 200 g)"
+        func vale(_ g: Double) -> Bool { switch self { case .todos: true; case .p: g < 50; case .m: g >= 50 && g <= 200; case .g: g > 200 } }
+    }
+    enum Precio: String, CaseIterable {
+        case todos = "Cualquier precio", uno = "Hasta 1 €", cinco = "De 1 a 5 €", mas = "Más de 5 €"
+        func vale(_ c: Double) -> Bool { switch self { case .todos: true; case .uno: c <= 1; case .cinco: c > 1 && c <= 5; case .mas: c > 5 } }
+    }
 
     /// cuándo se terminó de imprimir
     private func cuando(_ p: Pedido) -> String {
         p.historial.last { $0.estado == .impreso }?.fecha ?? (p.actualizado.isEmpty ? p.creado : p.actualizado)
     }
 
-    private var hechas: [Pedido] { t.pedidos.filter(\.hecho).sorted { cuando($0) > cuando($1) } }
+    private var hechas: [Pedido] { t.pedidos.filter(\.hecho) }
+    private var filtrando: Bool { soloFotos || soloGuardadas || !persona.isEmpty || tamano != .todos || precio != .todos }
+
+    private func filtrar(_ todas: [Pedido]) -> [Pedido] {
+        let l = todas.filter {
+            (!soloFotos || !$0.fotos.isEmpty) && (!soloGuardadas || t.guardados.contains($0.id)) &&
+                (persona.isEmpty || $0.nombre.lowercased() == persona) && tamano.vale($0.gramos) && precio.vale($0.coste)
+        }
+        let gusta = { (p: Pedido) in t.votos[p.id]?.count ?? 0 }
+        return l.sorted { a, b in
+            switch orden {
+            case .gustan where gusta(a) != gusta(b): return gusta(a) > gusta(b)
+            case .grandes where a.gramos != b.gramos: return a.gramos > b.gramos
+            case .caras where a.coste != b.coste: return a.coste > b.coste
+            default: return cuando(a) > cuando(b)
+            }
+        }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 let todas = hechas
-                let lista = soloFotos ? todas.filter { !$0.fotos.isEmpty } : todas
+                let lista = filtrar(todas)
                 VStack(spacing: 16) {
                     if !todas.isEmpty {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
@@ -28,22 +60,20 @@ struct VitrinaView: View {
                             Cifra(etiqueta: "Imprimiendo", valor: Fmt.num(Double(todas.reduce(0) { $0 + $1.minutos * max(1, $1.copias) }) / 60, 1) + " h")
                             Cifra(etiqueta: "Fotos", valor: "\(todas.reduce(0) { $0 + $1.fotos.count })")
                         }
-                        Picker("Filtro", selection: $soloFotos.animation(.snappy)) {
-                            Text("Todas").tag(false)
-                            Text("Con foto").tag(true)
-                        }
-                        .pickerStyle(.segmented)
+                        filtros(todas)
                     }
                     if t.cargado && lista.isEmpty {
-                        Vacio(titulo: todas.isEmpty ? "Aún no se ha impreso nada" : "Todavía no hay fotos", icono: "square.grid.2x2")
+                        Vacio(titulo: todas.isEmpty ? "Aún no se ha impreso nada" : soloGuardadas ? "No has guardado ninguna" : "Nada con estos filtros", icono: "square.grid.2x2")
                     } else {
                         // dos columnas que se van llenando como un mosaico
                         HStack(alignment: .top, spacing: 10) {
                             ForEach(0..<2, id: \.self) { col in
                                 LazyVStack(spacing: 10) {
                                     ForEach(Array(lista.enumerated()).filter { $0.offset % 2 == col }, id: \.element.id) { i, p in
-                                        Button { abierto = p } label: { Pieza(p: p, alto: (i / 2 + col) % 2 == 0 ? 220 : 170, cuando: Fmt.fecha(cuando(p)) ?? p.fecha) }
-                                            .buttonStyle(Encoger())
+                                        Pieza(p: p, alto: (i / 2 + col) % 2 == 0 ? 220 : 170, cuando: Fmt.fecha(cuando(p)) ?? p.fecha)
+                                            .contentShape(RoundedRectangle(cornerRadius: 20))
+                                            .onTapGesture { abierto = p }
+                                            .accessibilityAddTraits(.isButton)
                                             .transition(.scale(scale: 0.92).combined(with: .opacity))
                                     }
                                 }
@@ -69,9 +99,128 @@ struct VitrinaView: View {
             .sheet(isPresented: $nueva) { NuevaPieza { id in abierto = t.pedidos.first { $0.id == id } } }
         }
     }
+
+    private func filtros(_ todas: [Pedido]) -> some View {
+        let personas = Dictionary(todas.map { ($0.nombre.lowercased(), $0.nombre) }, uniquingKeysWith: { a, _ in a }).sorted { $0.value < $1.value }
+        return VStack(alignment: .leading, spacing: 10) {
+            Picker("Orden", selection: $orden.animation(.snappy)) {
+                ForEach(Orden.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ChipFiltro(texto: "Con foto", icono: "camera.fill", activo: soloFotos) { withAnimation(.snappy) { soloFotos.toggle() } }
+                    if t.sesion != nil {
+                        ChipFiltro(texto: t.guardados.isEmpty ? "Guardadas" : "Guardadas · \(t.guardados.count)", icono: soloGuardadas ? "bookmark.fill" : "bookmark", activo: soloGuardadas) {
+                            withAnimation(.snappy) { soloGuardadas.toggle() }
+                        }
+                    }
+                    Menu {
+                        Button("De todos") { withAnimation { persona = "" } }
+                        ForEach(personas, id: \.key) { k, n in Button(n) { withAnimation { persona = k } } }
+                    } label: { EtiquetaChip(texto: personas.first { $0.key == persona }?.value ?? "De todos", activo: !persona.isEmpty) }
+                    Menu {
+                        ForEach(Tamano.allCases, id: \.self) { x in Button(x.rawValue) { withAnimation { tamano = x } } }
+                    } label: { EtiquetaChip(texto: tamano.rawValue, activo: tamano != .todos) }
+                    Menu {
+                        ForEach(Precio.allCases, id: \.self) { x in Button(x.rawValue) { withAnimation { precio = x } } }
+                    } label: { EtiquetaChip(texto: precio.rawValue, activo: precio != .todos) }
+                    if filtrando {
+                        Button("Quitar filtros") { withAnimation { soloFotos = false; soloGuardadas = false; persona = ""; tamano = .todos; precio = .todos } }
+                            .font(.subheadline.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 8)
+                            .overlay(Capsule().strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3])).foregroundStyle(.secondary))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+}
+
+/// botón de filtro que se enciende
+struct ChipFiltro: View {
+    let texto: String
+    var icono: String? = nil
+    let activo: Bool
+    let accion: () -> Void
+    var body: some View {
+        Button(action: accion) { EtiquetaChip(texto: texto, icono: icono, activo: activo, flecha: false) }
+            .buttonStyle(Encoger())
+            .sensoryFeedback(.selection, trigger: activo)
+    }
+}
+
+struct EtiquetaChip: View {
+    let texto: String
+    var icono: String? = nil
+    let activo: Bool
+    var flecha = true
+    var body: some View {
+        HStack(spacing: 5) {
+            if let icono { Image(systemName: icono) }
+            Text(texto).lineLimit(1)
+            if flecha { Image(systemName: "chevron.down").font(.caption2.weight(.bold)) }
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(activo ? Color.hot : .primary)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(activo ? Color.hot.opacity(0.14) : Color(.secondarySystemGroupedBackground), in: Capsule())
+        .overlay(Capsule().strokeBorder(activo ? Color.hot.opacity(0.5) : Color.primary.opacity(0.1)))
+        .fixedSize()
+    }
+}
+
+/// corazón con contador
+struct BotonGusta: View {
+    @Environment(Tienda.self) private var t
+    let p: Pedido
+    var grande = false
+    var body: some View {
+        let mio = t.meGusta(p)
+        let n = t.votos[p.id]?.count ?? 0
+        Button { Task { await t.votar(p) } } label: {
+            HStack(spacing: 5) {
+                Image(systemName: mio ? "heart.fill" : "heart")
+                    .symbolEffect(.bounce, value: mio)
+                if n > 0 { Text("\(n)").contentTransition(.numericText()) }
+                if grande { Text(mio ? "Te gusta" : "Me gusta") }
+            }
+            .font((grande ? Font.body : .footnote).weight(.bold))
+            .foregroundStyle(mio ? Color.pink : .secondary)
+            .padding(.horizontal, grande ? 16 : 10).padding(.vertical, grande ? 11 : 6)
+            .background(mio ? Color.pink.opacity(0.13) : Color(.tertiarySystemFill), in: Capsule())
+        }
+        .buttonStyle(Encoger())
+        .sensoryFeedback(.impact(weight: .light), trigger: mio)
+        .accessibilityLabel(mio ? "Quitar me gusta" : "Me gusta")
+    }
+}
+
+/// marcador para guardar la pieza
+struct BotonGuardar: View {
+    @Environment(Tienda.self) private var t
+    let p: Pedido
+    var grande = false
+    var body: some View {
+        let si = t.guardados.contains(p.id)
+        Button { Task { await t.guardar(p) } } label: {
+            HStack(spacing: 6) {
+                Image(systemName: si ? "bookmark.fill" : "bookmark").symbolEffect(.bounce, value: si)
+                if grande { Text(si ? "Guardada" : "Guardar") }
+            }
+            .font((grande ? Font.body : .footnote).weight(.bold))
+            .foregroundStyle(si ? Color.hot : (grande ? .secondary : .primary))
+            .padding(.horizontal, grande ? 16 : 9).padding(.vertical, grande ? 11 : 8)
+            .background(grande ? AnyShapeStyle(Color(.tertiarySystemFill)) : AnyShapeStyle(.regularMaterial), in: Capsule())
+        }
+        .buttonStyle(Encoger())
+        .accessibilityLabel(si ? "Quitar de guardadas" : "Guardar")
+    }
 }
 
 private struct Pieza: View {
+    @Environment(Tienda.self) private var t
     let p: Pedido
     let alto: CGFloat
     let cuando: Date
@@ -94,13 +243,19 @@ private struct Pieza: View {
                     .padding(8)
                 }
                 .saturation(p.fotos.isEmpty ? 0.85 : 1)
-            VStack(alignment: .leading, spacing: 4) {
+                .overlay(alignment: .topTrailing) { if t.sesion != nil { BotonGuardar(p: p).padding(8) } }
+            VStack(alignment: .leading, spacing: 6) {
                 Text(p.nombreFigura).font(.subheadline.weight(.bold)).foregroundStyle(.primary).lineLimit(2).multilineTextAlignment(.leading)
                 HStack(spacing: 5) {
                     Avatar(nombre: p.nombre, size: 16)
                     Text("\(p.nombre) · \(Fmt.hace(cuando))").lineLimit(1)
                 }
                 .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Text(Fmt.gramos(p.gramos)).font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                    Spacer()
+                    BotonGusta(p: p)
+                }
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)

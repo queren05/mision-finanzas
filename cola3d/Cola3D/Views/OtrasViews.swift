@@ -5,9 +5,38 @@ import SwiftUI
 struct FilamentosView: View {
     @Environment(Tienda.self) private var t
     @State private var editando: Filamento? = nil
+    @State private var buscar = ""
+    @State private var material = ""
+    @State private var familia = ""
+    @State private var conStock = false
 
+    private var todos: [Filamento] { t.filamentos.filter { t.admin || $0.activo } }
     private var rollos: [Filamento] {
-        t.filamentos.filter { t.admin || $0.activo }.sorted { ($0.activo ? 0 : 1, $0.orden) < ($1.activo ? 0 : 1, $1.orden) }
+        todos.filter {
+            (buscar.isEmpty || "\($0.nombre) \($0.material)".localizedCaseInsensitiveContains(buscar)) &&
+                (material.isEmpty || $0.material.uppercased() == material) &&
+                (familia.isEmpty || Familia.de($0.color) == familia) && (!conStock || $0.disponible)
+        }
+        .sorted { ($0.activo ? 0 : 1, $0.orden) < ($1.activo ? 0 : 1, $1.orden) }
+    }
+    private var filtros: some View {
+        let mats = Array(Set(todos.map { $0.material.uppercased() })).sorted()
+        let fams = Array(Set(todos.map { Familia.de($0.color) })).sorted()
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if mats.count > 1 {
+                    ForEach(mats, id: \.self) { m in ChipFiltro(texto: m, activo: material == m) { withAnimation(.snappy) { material = material == m ? "" : m } } }
+                }
+                if fams.count > 1 {
+                    Menu {
+                        Button("Todos los colores") { withAnimation { familia = "" } }
+                        ForEach(fams, id: \.self) { f in Button(f) { withAnimation { familia = f } } }
+                    } label: { EtiquetaChip(texto: familia.isEmpty ? "Todos los colores" : familia, activo: !familia.isEmpty) }
+                }
+                ChipFiltro(texto: "Solo con stock", activo: conStock) { withAnimation(.snappy) { conStock.toggle() } }
+            }
+            .padding(.vertical, 2)
+        }
     }
 
     /// dentro del Taller ya hay navegación
@@ -25,8 +54,9 @@ struct FilamentosView: View {
                         Cifra(etiqueta: "Colores", valor: "\(t.filamentos.filter(\.activo).count)")
                         Cifra(etiqueta: "En stock", valor: Fmt.gramos(t.filamentos.filter(\.activo).reduce(0) { $0 + $1.stock_g }))
                     }
+                    if todos.count > 1 { filtros }
                     if rollos.isEmpty {
-                        Vacio(titulo: "Todavía no hay rollos", icono: "circle.circle")
+                        Vacio(titulo: todos.isEmpty ? "Todavía no hay rollos" : "Ningún rollo con estos filtros", icono: "circle.circle")
                     }
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 12)], spacing: 12) {
                         ForEach(Array(rollos.enumerated()), id: \.element.id) { i, f in
@@ -43,6 +73,7 @@ struct FilamentosView: View {
             .background(Color(.systemGroupedBackground))
             .refreshable { await t.cargar() }
             .navigationTitle("Filamentos")
+            .searchable(text: $buscar, prompt: "Buscar color o material")
             .toolbar {
                 if t.admin {
                     ToolbarItem(placement: .topBarLeading) {
@@ -439,5 +470,24 @@ private struct FilaCuenta: View {
             }
             .fixedSize()
         }
+    }
+}
+
+/// familia de color, para filtrar
+enum Familia {
+    static func de(_ hex: String) -> String {
+        let u = UIColor(Color(hex: hex))
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        u.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        let g = h * 360
+        if b < 0.2 { return "Negros" }
+        if s < 0.15 { return b > 0.85 ? "Blancos" : "Grises" }
+        if g < 15 || g >= 340 { return "Rojos" }
+        if g < 40 { return b < 0.5 ? "Marrones" : "Naranjas" }
+        if g < 70 { return "Amarillos" }
+        if g < 170 { return "Verdes" }
+        if g < 255 { return "Azules" }
+        if g < 300 { return "Morados" }
+        return "Rosas"
     }
 }

@@ -12,6 +12,10 @@ final class Tienda {
     var pedidos: [Pedido] = []
     var filamentos: [Filamento] = []
     var ajustes = Ajustes()
+    /// me gusta de la vitrina (pieza → cuentas que la han votado)
+    var votos: [String: Set<String>] = [:]
+    /// piezas que has guardado
+    var guardados: Set<String> = []
     var cargado = false
     var error: String? = nil
     var sesion: Sesion? { didSet { guardarSesion() } }
@@ -100,11 +104,21 @@ final class Tienda {
             async let f: [Filamento] = Supa.leer("filamentos?select=*&order=orden,creado")
             async let a: [Ajustes] = Supa.leer("ajustes?select=*&id=eq.1")
             let (np, nf, na) = try await (p, f, a)
+            // me gusta y guardados: si fallan, lo demás sigue
+            struct Voto: Decodable { let pedido_id: String; let user_id: String }
+            struct Guardado: Decodable { let pedido_id: String }
+            let vs: [Voto] = (try? await Supa.leer("votos?select=pedido_id,user_id")) ?? []
+            var nv: [String: Set<String>] = [:]
+            for v in vs { nv[v.pedido_id, default: []].insert(v.user_id) }
+            var ng: Set<String> = []
+            if let tk = await token(), let gs: [Guardado] = try? await Supa.leer("guardados?select=pedido_id", token: tk) { ng = Set(gs.map(\.pedido_id)) }
             avisarCambios(np)
             withAnimation(.snappy) {
                 pedidos = np
                 filamentos = nf
                 ajustes = na.first ?? Ajustes()
+                votos = nv
+                guardados = ng
             }
             error = nil
         } catch {
@@ -211,6 +225,63 @@ final class Tienda {
     func quitarFoto(_ u: String, de p: Pedido) async {
         await cambiar(p, ["fotos": p.fotos.filter { $0 != u }], ok: "Foto quitada")
         if let t = await token() { await Supa.borrarFoto(u, token: t) }
+    }
+
+    // MARK: me gusta, guardar y pedir igual
+
+    func meGusta(_ p: Pedido) -> Bool { sesion.map { votos[p.id]?.contains($0.id) ?? false } ?? false }
+
+    func votar(_ p: Pedido) async {
+        guard let s = sesion else { avisar("Entra con tu cuenta para votar", error: true); return }
+        let antes = votos[p.id] ?? []
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+            if antes.contains(s.id) { votos[p.id]?.remove(s.id) } else { votos[p.id, default: []].insert(s.id) }
+        }
+        if demo { return }
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            try await Supa.rpc("votar", ["p_id": p.id], token: tk)
+        } catch {
+            withAnimation { votos[p.id] = antes }
+            avisar(error.localizedDescription, error: true)
+        }
+    }
+
+    func guardar(_ p: Pedido) async {
+        guard sesion != nil else { avisar("Entra con tu cuenta para guardar", error: true); return }
+        let estaba = guardados.contains(p.id)
+        withAnimation(.snappy) { if estaba { guardados.remove(p.id) } else { guardados.insert(p.id) } }
+        avisar(estaba ? "Quitada de guardadas" : "Guardada")
+        if demo { return }
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            try await Supa.rpc("guardar", ["p_id": p.id], token: tk)
+        } catch {
+            withAnimation { if estaba { guardados.insert(p.id) } else { guardados.remove(p.id) } }
+            avisar(error.localizedDescription, error: true)
+        }
+    }
+
+    /// pide una pieza de la vitrina tal cual (la base de datos copia modelo, colores y tiempo)
+    func pedirIgual(_ p: Pedido, copias: Int) async -> Bool {
+        guard let s = sesion else { avisar("Entra con tu cuenta para pedirla", error: true); return false }
+        if demo { avisar("¡En la cola!"); return true }
+        do {
+            let cuerpo: [String: Any] = ["copia_de": p.id, "nombre": s.nombre, "copias": copias, "notas": "Igual que «\(p.nombreFigura)» de \(p.nombre)"]
+            let d = try await Supa.rpc("crear_pedido", ["p": cuerpo], token: await token())
+            let j = try JSONSerialization.jsonObject(with: d) as? [String: Any]
+            if let id = j?["id"] as? String {
+                if let tk = j?["token"] as? String { tokens[id] = tk }
+                await cargar()
+                resaltado = id
+                pestana = .cola
+            }
+            avisar("¡En la cola!")
+            return true
+        } catch {
+            avisar(error.localizedDescription, error: true)
+            return false
+        }
     }
 
     // MARK: pedir y cancelar
@@ -339,6 +410,8 @@ final class Tienda {
             ped("d5", 120, "David", "Organizador de cables", .entregado, true, [az], 140),
         ]
         pedidos[3].fotos = ["https://picsum.photos/seed/c3a/900", "https://picsum.photos/seed/c3b/900"]
+        votos = ["d4": ["u1", "u2", "u3"], "d5": ["u2"]]
+        guardados = ["d5"]
         tokens["d2"] = "x"
         sesion = Sesion(access: "", refresh: "", caduca: .distantFuture, id: "u1", email: "jorge@ejemplo.es", nombre: "Jorge")
         admin = ProcessInfo.processInfo.arguments.contains("-taller")

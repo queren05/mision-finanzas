@@ -13,6 +13,8 @@ struct DetallePedido: View {
     @State private var fotosElegidas: [PhotosPickerItem] = []
     @State private var subiendo = 0
     @State private var grande: String? = nil
+    @State private var copiasIgual = 1
+    @State private var pidiendo = false
 
     var body: some View {
         if let p = t.pedidos.first(where: { $0.id == id }) {
@@ -36,6 +38,7 @@ struct DetallePedido: View {
                             }
                             .buttonStyle(Encoger())
                         }
+                        if p.hecho { vitrina(p) }
                         Camino(p: p)
                         if t.admin { taller(p) }
                         if t.admin || !p.fotos.isEmpty { fotos(p) }
@@ -71,6 +74,39 @@ struct DetallePedido: View {
             .presentationDragIndicator(.visible)
         } else {
             ContentUnavailableView("Ese pedido ya no existe", systemImage: "questionmark.folder")
+        }
+    }
+
+    /// me gusta, guardar y pedir una igual
+    private func vitrina(_ p: Pedido) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                BotonGusta(p: p, grande: true)
+                if t.sesion != nil { BotonGuardar(p: p, grande: true) }
+            }
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("¿Te gusta? Pide una igual").font(.subheadline.weight(.semibold))
+                    Stepper("\(copiasIgual) \(copiasIgual == 1 ? "copia" : "copias")", value: $copiasIgual, in: 1...20)
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                Button {
+                    pidiendo = true
+                    Task {
+                        if await t.pedirIgual(p, copias: copiasIgual) { cerrar() }
+                        pidiendo = false
+                    }
+                } label: {
+                    Group { if pidiendo { ProgressView().tint(.white) } else { Text("Pedir igual") } }
+                        .font(.subheadline.weight(.bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .background(Color.hot.gradient, in: Capsule())
+                }
+                .buttonStyle(Encoger())
+                .disabled(pidiendo)
+            }
+            .padding(14)
+            .background(Color.hot.opacity(0.1), in: RoundedRectangle(cornerRadius: 18))
         }
     }
 

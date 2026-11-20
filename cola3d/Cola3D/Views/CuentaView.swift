@@ -7,6 +7,17 @@ struct CuentaView: View {
     @State private var nueva = ""
     @State private var cambiando = false
     @State private var salir = false
+    @AppStorage("tema") private var tema = "auto"
+
+    private var aspecto: some View {
+        Picker("Aspecto", selection: $tema) {
+            Label("Como el móvil", systemImage: "circle.lefthalf.filled").tag("auto")
+            Label("Claro", systemImage: "sun.max").tag("claro")
+            Label("Oscuro", systemImage: "moon").tag("oscuro")
+        }
+        .pickerStyle(.segmented)
+        .labelStyle(.titleOnly)
+    }
 
     var body: some View {
         NavigationStack {
@@ -37,6 +48,7 @@ struct CuentaView: View {
                             } label: { if cambiando { ProgressView() } else { Text("Guardar contraseña") } }
                             .disabled(nueva.count < 6 || cambiando)
                         }
+                        Section("Aspecto") { aspecto }
                         Section {
                             Button("Salir de la cuenta", role: .destructive) { salir = true }
                                 .confirmationDialog("¿Salir de la cuenta?", isPresented: $salir, titleVisibility: .visible) {
@@ -45,7 +57,16 @@ struct CuentaView: View {
                         }
                     }
                 } else {
-                    ScrollView { FormCuenta(entrarPrimero: true, alEntrar: { cerrar() }).padding(16) }
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            FormCuenta(entrarPrimero: true, alEntrar: { cerrar() })
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("ASPECTO").font(.caption.weight(.bold)).foregroundStyle(.secondary).tracking(0.6)
+                                aspecto
+                            }
+                        }
+                        .padding(16)
+                    }
                         .background(Color(.systemGroupedBackground))
                 }
             }

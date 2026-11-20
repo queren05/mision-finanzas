@@ -5,6 +5,7 @@ import UserNotifications
 struct Cola3DApp: App {
     @State private var t = Tienda.shared
     @Environment(\.scenePhase) private var fase
+    @AppStorage("tema") private var tema = "auto"
 
     init() {
         UNUserNotificationCenter.current().delegate = AvisosDelegado.shared
@@ -15,6 +16,7 @@ struct Cola3DApp: App {
             Raiz()
                 .environment(t)
                 .tint(.hot)
+                .preferredColorScheme(tema == "claro" ? .light : tema == "oscuro" ? .dark : nil)
                 .task {
                     let args = ProcessInfo.processInfo.arguments
                     if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
