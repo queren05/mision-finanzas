@@ -9,6 +9,8 @@ enum Supa {
 
     struct Fallo: LocalizedError {
         var mensaje: String
+        /// código HTTP (0 = sin conexión)
+        var codigo: Int = 0
         var errorDescription: String? { mensaje }
     }
 
@@ -33,7 +35,7 @@ enum Supa {
         guard (200..<300).contains(code) else {
             let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             let m = (j?["message"] as? String) ?? (j?["msg"] as? String) ?? (j?["error_description"] as? String) ?? (j?["error"] as? String) ?? "Error \(code)"
-            throw Fallo(mensaje: traducir(m))
+            throw Fallo(mensaje: traducir(m), codigo: code)
         }
         return data
     }

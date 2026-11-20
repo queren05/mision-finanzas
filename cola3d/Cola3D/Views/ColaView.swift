@@ -37,9 +37,11 @@ struct ColaView: View {
                     } else if visibles.isEmpty {
                         Vacio(titulo: filtro == 0 ? "No hay nada en cola" : filtro == 2 ? "Todavía no has pedido nada" : "Aquí no hay nada todavía", icono: "printer")
                     } else {
+                        // los turnos se calculan una vez para toda la lista
+                        let turnos = Dictionary(uniqueKeysWithValues: t.cola.filter { $0.estado == .pendiente && !$0.peticion }.enumerated().map { ($1.id, $0 + 1) })
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 16)], spacing: 16) {
                             ForEach(Array(visibles.enumerated()), id: \.element.id) { i, p in
-                                Button { abierto = p } label: { TarjetaPedido(p: p, turno: t.turno(p)) }
+                                Button { abierto = p } label: { TarjetaPedido(p: p, turno: turnos[p.id]) }
                                     .buttonStyle(Encoger())
                                     .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 16)), removal: .opacity.combined(with: .scale(scale: 0.95))))
                                     .animation(.spring(response: 0.5, dampingFraction: 0.85).delay(Double(min(i, 8)) * 0.03), value: filtro)

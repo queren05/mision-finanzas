@@ -54,14 +54,33 @@ final class Tienda {
 
     // MARK: sesión
 
-    /// el token de tu cuenta, renovado si ha caducado
+    private var renovando: Task<Sesion?, Never>? = nil
+
+    /// el token de tu cuenta, renovado si ha caducado.
+    /// Una sola renovación a la vez (el código de renovar solo vale una vez: si se usa dos veces, Supabase cierra la sesión)
+    /// y sin conexión no se cierra la sesión: solo si Supabase dice que ya no vale.
     func token() async -> String? {
-        guard var s = sesion else { return nil }
-        if s.caduca < Date() {
-            do { s = try await Supa.renovar(s); sesion = s }
-            catch { sesion = nil; admin = false; return nil }
+        guard let s = sesion else { return nil }
+        if s.caduca > Date() { return s.access }
+        if let r = renovando { return await r.value?.access }
+        let r = Task<Sesion?, Never> { @MainActor in
+            do {
+                let n = try await Supa.renovar(s)
+                self.sesion = n
+                return n
+            } catch let f as Supa.Fallo where (400..<500).contains(f.codigo) {
+                self.sesion = nil
+                self.admin = false
+                self.avisar("La sesión ha caducado, vuelve a entrar", error: true)
+                return nil
+            } catch {
+                return nil
+            }
         }
-        return s.access
+        renovando = r
+        let n = await r.value
+        renovando = nil
+        return n?.access
     }
 
     /// cuentas creadas y cuándo han entrado (solo el taller)
@@ -101,8 +120,12 @@ final class Tienda {
 
     // MARK: datos
 
+    private var cargando = false
+
     func cargar() async {
-        guard !demo else { return }
+        guard !demo, !cargando else { return }
+        cargando = true
+        defer { cargando = false }
         do {
             async let p: [Pedido] = Supa.leer("pedidos?select=*&order=creado")
             async let f: [Filamento] = Supa.leer("filamentos?select=*&order=orden,creado")
@@ -123,19 +146,25 @@ final class Tienda {
                 ng = gs.map { ($0.pedido_id, $0.lista ?? "Guardados") }
             }
             avisarCambios(np)
-            withAnimation(.snappy) {
-                pedidos = np
-                filamentos = nf
-                ajustes = na.first ?? Ajustes()
-                votos = nv
-                listas = ng
-                perfiles = npf
+            let na1 = na.first ?? Ajustes()
+            let listasIguales = listas.count == ng.count && zip(listas, ng).allSatisfy { $0.pedido == $1.pedido && $0.lista == $1.lista }
+            let perfilesIguales = perfiles.count == npf.count && npf.allSatisfy { k, v in perfiles[k].map { $0.nombre == v.nombre && $0.avatar == v.avatar } ?? false }
+            if pedidos != np || filamentos != nf || ajustes != na1 || votos != nv || !listasIguales || !perfilesIguales {
+                withAnimation(.snappy) {
+                    if pedidos != np { pedidos = np }
+                    if filamentos != nf { filamentos = nf }
+                    if ajustes != na1 { ajustes = na1 }
+                    if votos != nv { votos = nv }
+                    if !listasIguales { listas = ng }
+                    if !perfilesIguales { perfiles = npf }
+                }
             }
-            error = nil
+            if error != nil { error = nil }
         } catch {
+            // sin conexión: se queda lo que había y se avisa solo si no hay nada que enseñar
             self.error = error.localizedDescription
         }
-        cargado = true
+        if !cargado { cargado = true }
     }
 
     /// llamadas del taller: van con tu cuenta (la base de datos comprueba que eres el dueño)
@@ -380,10 +409,10 @@ final class Tienda {
         return id
     }
 
+    /// con el código de este iPhone o, si se pidió desde otro sitio, con tu cuenta
     func cancelar(_ p: Pedido) async -> Bool {
-        guard let tk = tokens[p.id] else { return false }
         do {
-            try await Supa.rpc("cancelar_pedido", ["p_id": p.id, "p_token": tk], token: await token())
+            try await Supa.rpc("cancelar_pedido", ["p_id": p.id, "p_token": tokens[p.id] ?? ""], token: await token())
             await cargar()
             avisar("Pedido cancelado")
             return true
@@ -421,10 +450,14 @@ final class Tienda {
     /// lo que se imprime, luego los pendientes (prioridad, pagados primero, por llegada)
     var cola: [Pedido] {
         let imp = pedidos.filter { $0.estado == .imprimiendo }.sorted { $0.creado < $1.creado }
-        let pen = pedidos.filter { $0.estado == .pendiente }.sorted {
+        let pendientes = pedidos.filter { $0.estado == .pendiente }
+        // listo para imprimir: pagado o con deuda tan pequeña que se acumula (se calcula una vez por pedido)
+        var listo: [String: Bool] = [:]
+        for p in pendientes { listo[p.id] = p.pagado || acumula(p) }
+        let pen = pendientes.sorted {
             if $0.peticion != $1.peticion { return !$0.peticion }
             if $0.prioridad != $1.prioridad { return $0.prioridad > $1.prioridad }
-            let l0 = $0.pagado || acumula($0), l1 = $1.pagado || acumula($1)
+            let l0 = listo[$0.id] ?? false, l1 = listo[$1.id] ?? false
             if l0 != l1 { return l0 }
             return $0.creado < $1.creado
         }

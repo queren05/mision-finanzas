@@ -30,7 +30,7 @@ struct DetallePedido: View {
                             }
                         cabecera(p)
                         if p.peticion && p.estado == .pendiente { peticion(p) }
-                        if !t.admin && !p.pagado && p.estado != .cancelado && !p.delTaller && !p.peticion { pago(p) }
+                        if !t.admin && t.esMio(p) && !p.pagado && p.estado != .cancelado && !p.delTaller && !p.peticion { pago(p) }
                         if !p.url.isEmpty, let u = URL(string: p.url) {
                             Link(destination: u) {
                                 Label("Abrir en \(u.host?.replacingOccurrences(of: "www.", with: "") ?? "la web")", systemImage: "arrow.up.right.square")
@@ -47,7 +47,7 @@ struct DetallePedido: View {
                         if !p.notas.isEmpty {
                             bloque("Notas") { Text(p.notas).frame(maxWidth: .infinity, alignment: .leading).padding(14).tarjeta() }
                         }
-                        if !t.admin && t.tokens[p.id] != nil && p.estado == .pendiente {
+                        if t.esMio(p) && p.estado == .pendiente {
                             Button(role: .destructive) { cancelar = true } label: {
                                 Text("Cancelar mi pedido").frame(maxWidth: .infinity).padding(.vertical, 12)
                             }
@@ -266,7 +266,7 @@ struct DetallePedido: View {
                 ForEach(p.fotos, id: \.self) { u in
                     Button { grande = u } label: {
                         Color.clear.aspectRatio(1, contentMode: .fit)
-                            .overlay { AsyncImage(url: URL(string: u)) { i in i.resizable().scaledToFill() } placeholder: { Color(.tertiarySystemFill) } }
+                            .overlay { ImagenRemota(url: URL(string: u)) { Color(.tertiarySystemFill) } }
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(Encoger())
@@ -377,7 +377,7 @@ private struct FotoGrande: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            AsyncImage(url: URL(string: url)) { i in i.resizable().scaledToFit() } placeholder: { ProgressView().tint(.white) }
+            ImagenRemota(url: URL(string: url), ajuste: .fit) { ProgressView().tint(.white) }
                 .scaleEffect(zoom)
                 .gesture(MagnifyGesture().onChanged { zoom = max(1, $0.magnification) }.onEnded { _ in withAnimation(.spring) { zoom = 1 } })
         }

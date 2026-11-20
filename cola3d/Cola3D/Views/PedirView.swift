@@ -6,7 +6,10 @@ struct PedirView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if t.sesion == nil { FormCuenta(entrarPrimero: true).padding(16) } else { FormPedido() }
+                if t.sesion == nil {
+                    // con scroll: si no, el teclado tapa la contraseña y el botón en móviles pequeños
+                    ScrollView { FormCuenta(entrarPrimero: true).padding(16) }.scrollDismissesKeyboard(.interactively)
+                } else { FormPedido() }
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Pedir una figura")
@@ -90,10 +93,13 @@ private struct FormPedido: View {
                 TextField("https://makerworld.com/es/models/…", text: $enlace)
                     .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().focused($foco)
                 if enlace.isEmpty {
-                    Button { if let s = UIPasteboard.general.string { enlace = s.trimmingCharacters(in: .whitespacesAndNewlines) } } label: {
-                        Label("Pegar", systemImage: "doc.on.clipboard").font(.subheadline.weight(.semibold))
+                    // botón de pegar del sistema: no pregunta «¿Permitir pegar?» cada vez
+                    PasteButton(payloadType: String.self) { textos in
+                        Task { @MainActor in enlace = Perfiles.limpiar(textos.first ?? "") }
                     }
-                    .buttonStyle(.bordered).tint(Color.hot)
+                    .labelStyle(.iconOnly)
+                    .buttonBorderShape(.capsule)
+                    .tint(Color.hot)
                 } else {
                     Button { withAnimation { enlace = ""; vista = nil; perfil = nil; lineas = []; fallo = nil } } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
@@ -117,7 +123,7 @@ private struct FormPedido: View {
 
     private func figura(_ v: Vista) -> some View {
         HStack(spacing: 12) {
-            AsyncImage(url: URL(string: v.imagen ?? "")) { i in i.resizable().scaledToFill() } placeholder: { Color(.tertiarySystemFill) }
+            ImagenRemota(url: URL(string: v.imagen ?? "")) { Color(.tertiarySystemFill) }
                 .frame(width: 76, height: 76).clipShape(RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 4) {
                 Text(v.titulo ?? "Modelo").font(.headline).lineLimit(2)
@@ -218,7 +224,8 @@ private struct FormPedido: View {
     // MARK: acciones
 
     private func buscar() async {
-        let u = enlace.trimmingCharacters(in: .whitespacesAndNewlines)
+        // al compartir desde Bambu Handy o MakerWorld se copia texto + enlace: se queda solo el enlace
+        let u = Perfiles.limpiar(enlace)
         guard !u.isEmpty else { return }
         guard Perfiles.esMakerWorld(u) else {
             withAnimation { fallo = "Solo modelos de MakerWorld con perfil de impresión"; vista = nil; perfil = nil; lineas = [] }
@@ -258,7 +265,7 @@ private struct FormPedido: View {
         let cambios = lineas.compactMap(\.cambio)
         let n = ([notas.trimmingCharacters(in: .whitespacesAndNewlines)] + cambios).filter { !$0.isEmpty }.joined(separator: "\n")
         do {
-            let id = try await t.pedir(nombre: t.sesion?.nombre ?? "", url: Perfiles.urlConPerfil(enlace.trimmingCharacters(in: .whitespacesAndNewlines), p),
+            let id = try await t.pedir(nombre: t.sesion?.nombre ?? "", url: Perfiles.urlConPerfil(Perfiles.limpiar(enlace), p),
                                        titulo: v.titulo ?? "", imagen: v.imagen ?? "", lineas: juntarLineas(lineas.map(\.linea)), minutos: minutos, copias: copias, notas: n)
             withAnimation(.spring) { hecho = true }
             try? await Task.sleep(for: .seconds(1.6))

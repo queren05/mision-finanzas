@@ -9,6 +9,8 @@ struct Cola3DApp: App {
 
     init() {
         UNUserNotificationCenter.current().delegate = AvisosDelegado.shared
+        // las fotos se guardan en el móvil y no se vuelven a descargar
+        URLCache.shared = URLCache(memoryCapacity: 40 * 1024 * 1024, diskCapacity: 400 * 1024 * 1024)
     }
 
     var body: some Scene {
@@ -33,13 +35,7 @@ struct Cola3DApp: App {
                     await t.comprobarAdmin()
                     if !t.demo { t.pedirPermiso() }
                 }
-                .task {
-                    // la cola se refresca sola mientras la app está abierta
-                    while !Task.isCancelled {
-                        try? await Task.sleep(for: .seconds(20))
-                        if fase == .active { await t.cargar() }
-                    }
-                }
+
         }
         .onChange(of: fase) { _, f in
             if f == .active { Task { await t.cargar(); await t.comprobarAdmin() } }
@@ -61,6 +57,7 @@ final class AvisosDelegado: NSObject, UNUserNotificationCenterDelegate {
 
 struct Raiz: View {
     @Environment(Tienda.self) private var t
+    @Environment(\.scenePhase) private var fase
 
     var body: some View {
         @Bindable var t = t
@@ -103,5 +100,14 @@ struct Raiz: View {
             }
         }
         .sensoryFeedback(.success, trigger: t.aviso?.texto) { _, n in n != nil && t.aviso?.error == false }
+        // la cola se refresca sola cada 20 s, solo con la app delante
+        .task(id: fase) {
+            guard fase == .active else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(20))
+                if Task.isCancelled { break }
+                await t.cargar()
+            }
+        }
     }
 }

@@ -69,6 +69,14 @@ enum Perfiles {
         return Int((Double(p.minutos) * f).rounded())
     }
 
+    /// el primer enlace del texto pegado (o el texto, si ya es un enlace)
+    static func limpiar(_ texto: String) -> String {
+        let t = texto.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let r = t.range(of: #"https?://[^\s]+"#, options: [.regularExpression, .caseInsensitive]) { return String(t[r]) }
+        if !t.isEmpty && !t.contains(" ") && t.contains(".") { return "https://" + t }
+        return t
+    }
+
     static func esMakerWorld(_ url: String) -> Bool {
         url.range(of: #"^https?://([a-z0-9-]+\.)*makerworld\.com(\.cn)?/"#, options: [.regularExpression, .caseInsensitive]) != nil
     }

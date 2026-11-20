@@ -10,7 +10,7 @@ struct Avatar: View {
     var uid: String? = nil
     var body: some View {
         if let u = t.avatar(uid) {
-            AsyncImage(url: u) { i in i.resizable().scaledToFill() } placeholder: { inicial }
+            ImagenRemota(url: u) { inicial }
                 .frame(width: size, height: size).clipShape(Circle())
                 .overlay(Circle().strokeBorder(.primary.opacity(0.1)))
         } else { inicial }
@@ -85,13 +85,7 @@ struct Portada: View {
             .fill(Color(.secondarySystemBackground))
             .overlay {
                 if let u = p.portada {
-                    AsyncImage(url: u, transaction: Transaction(animation: .easeOut(duration: 0.35))) { fase in
-                        switch fase {
-                        case .success(let img): img.resizable().scaledToFill().transition(.opacity)
-                        case .failure: Capas(colores: p.lineas.map(\.color))
-                        default: Capas(colores: p.lineas.map(\.color)).opacity(0.5)
-                        }
-                    }
+                    ImagenRemota(url: u) { Capas(colores: p.lineas.map(\.color)) }
                 } else {
                     Capas(colores: p.lineas.map(\.color))
                 }
