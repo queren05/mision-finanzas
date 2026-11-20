@@ -35,7 +35,8 @@ private struct FormPedido: View {
 
     private var perfilesA1: [Perfil] { (vista?.perfiles ?? []).filter(\.a1mini) }
     private var sinResolver: Bool { lineas.contains { $0.falta != nil && $0.cambio == nil } }
-    private var gratis: Double { gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
+    // la cuenta del taller no tiene regalo: así ve los precios reales
+    private var gratis: Double { t.admin ? 0 : gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
     private var detalle: Detalle { aplicarGratis(calcularCoste(lineas.map(\.linea), minutos: minutos, copias: copias, filamentos: t.filamentos, ajustes: t.ajustes), gratis) }
     private var nColores: Int { juntarLineas(lineas.map(\.linea)).filter { $0.gramos > 0 }.count }
     private var listo: Bool { perfil != nil && !lineas.isEmpty && !sinResolver && !enviando }

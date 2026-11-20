@@ -41,7 +41,7 @@ struct PerfilView: View {
                         Cifra(etiqueta: "Debes", valor: Fmt.eur(debe), color: debe > 0 ? .red : .primary)
                         Cifra(etiqueta: "Impreso", valor: Fmt.gramos(vivos.filter(\.hecho).reduce(0) { $0 + $1.gramos }))
                         Cifra(etiqueta: "Me gusta recibidos", valor: "\(recibidos)", color: .pink)
-                        Cifra(etiqueta: "Gramos de regalo", valor: Fmt.gramos(gratisRestante(t.pedidos, t.ajustes, uid: s.id, nombre: s.nombre)))
+                        Cifra(etiqueta: "Gramos de regalo", valor: Fmt.gramos(t.admin ? 0 : gratisRestante(t.pedidos, t.ajustes, uid: s.id, nombre: s.nombre)))
                     }
                     Picker("Pestaña", selection: $pestana.animation(.snappy)) {
                         ForEach(Pestana.allCases, id: \.self) { Text($0.rawValue).tag($0) }
