@@ -29,7 +29,8 @@ struct DetallePedido: View {
                                 }
                             }
                         cabecera(p)
-                        if !t.admin && !p.pagado && p.estado != .cancelado && !p.delTaller { pago(p) }
+                        if p.peticion && p.estado == .pendiente { peticion(p) }
+                        if !t.admin && !p.pagado && p.estado != .cancelado && !p.delTaller && !p.peticion { pago(p) }
                         if !p.url.isEmpty, let u = URL(string: p.url) {
                             Link(destination: u) {
                                 Label("Abrir en \(u.host?.replacingOccurrences(of: "www.", with: "") ?? "la web")", systemImage: "arrow.up.right.square")
@@ -75,6 +76,25 @@ struct DetallePedido: View {
         } else {
             ContentUnavailableView("Ese pedido ya no existe", systemImage: "questionmark.folder")
         }
+    }
+
+    private func peticion(_ p: Pedido) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Petición: \(p.colores) colores", systemImage: "paintpalette.fill").font(.headline).foregroundStyle(.blue)
+            Text(t.admin ? "La impresora lleva 4 colores a la vez. Si te animas a cambiar carretes, acéptala y entra en la cola."
+                         : "La impresora lleva 4 colores a la vez. El taller te dirá si se puede; hasta entonces no hace falta pagar.")
+                .font(.subheadline).foregroundStyle(.secondary)
+            if t.admin {
+                Button { Task { await hacer { await t.cambiar(p, ["peticion": false], ok: "Petición aceptada: ya está en la cola") } } } label: {
+                    Text("Aceptar petición").font(.subheadline.weight(.bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 10).background(Color.blue.gradient, in: Capsule())
+                }
+                .buttonStyle(Encoger()).disabled(ocupado)
+            }
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.blue.opacity(0.3)))
     }
 
     /// me gusta, guardar y pedir una igual

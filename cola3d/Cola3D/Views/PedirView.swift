@@ -34,6 +34,7 @@ private struct FormPedido: View {
     private var sinResolver: Bool { lineas.contains { $0.falta != nil && $0.cambio == nil } }
     private var gratis: Double { gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
     private var detalle: Detalle { aplicarGratis(calcularCoste(lineas.map(\.linea), minutos: minutos, copias: copias, filamentos: t.filamentos, ajustes: t.ajustes), gratis) }
+    private var nColores: Int { juntarLineas(lineas.map(\.linea)).filter { $0.gramos > 0 }.count }
     private var listo: Bool { perfil != nil && !lineas.isEmpty && !sinResolver && !enviando }
 
     var body: some View {
@@ -150,6 +151,16 @@ private struct FormPedido: View {
     private var colores: some View {
         VStack(alignment: .leading, spacing: 8) {
             titulo("Colores")
+            if nColores > 4 {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Este modelo lleva \(nColores) colores", systemImage: "paintpalette.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
+                    Text("La impresora pone 4 colores a la vez. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             VStack(spacing: 10) {
                 ForEach($lineas) { $l in FilaLinea(l: $l) }
             }
@@ -181,7 +192,7 @@ private struct FormPedido: View {
             Button { Task { await enviar() } } label: {
                 Group {
                     if enviando { ProgressView().tint(.white) }
-                    else { Text(sinResolver ? "Elige otro color" : "Pedir por \(Fmt.eur(d.total))") }
+                    else { Text(sinResolver ? "Elige otro color" : nColores > 4 ? "Enviar como petición" : "Pedir por \(Fmt.eur(d.total))") }
                 }
                 .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 15)
                 .background(listo ? AnyShapeStyle(Color.hot.gradient) : AnyShapeStyle(Color.gray.opacity(0.35)), in: Capsule())
@@ -248,7 +259,7 @@ private struct FormPedido: View {
         let n = ([notas.trimmingCharacters(in: .whitespacesAndNewlines)] + cambios).filter { !$0.isEmpty }.joined(separator: "\n")
         do {
             let id = try await t.pedir(nombre: t.sesion?.nombre ?? "", url: Perfiles.urlConPerfil(enlace.trimmingCharacters(in: .whitespacesAndNewlines), p),
-                                       titulo: v.titulo ?? "", imagen: v.imagen ?? "", lineas: lineas.map(\.linea), minutos: minutos, copias: copias, notas: n)
+                                       titulo: v.titulo ?? "", imagen: v.imagen ?? "", lineas: juntarLineas(lineas.map(\.linea)), minutos: minutos, copias: copias, notas: n)
             withAnimation(.spring) { hecho = true }
             try? await Task.sleep(for: .seconds(1.6))
             withAnimation { hecho = false; enlace = ""; vista = nil; perfil = nil; lineas = []; notas = ""; copias = 1 }

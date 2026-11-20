@@ -178,7 +178,9 @@ struct TarjetaPedido: View {
     @ViewBuilder private var chips: some View {
         Chip(estado: p.estado)
         if p.prioridad > 0 && p.estado == .pendiente { Etiqueta(texto: "Prioridad", color: .hot, icono: "arrow.up") }
-        if p.estado != .cancelado && !p.delTaller {
+        if p.peticion && p.estado == .pendiente {
+            Etiqueta(texto: "Petición · \(p.colores) colores", color: .blue, icono: "paintpalette.fill")
+        } else if p.estado != .cancelado && !p.delTaller {
             if p.pagado { Etiqueta(texto: "Pagado", color: .green, icono: "checkmark") }
             else { Etiqueta(texto: "Sin pagar", color: .red) }
         }

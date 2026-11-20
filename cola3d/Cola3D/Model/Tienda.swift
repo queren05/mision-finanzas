@@ -145,6 +145,7 @@ final class Tienda {
                     if let pg = cambios["pagado"] as? Bool { pedidos[i].pagado = pg }
                     if let pr = cambios["prioridad"] as? Int { pedidos[i].prioridad = pr }
                     if let fs = cambios["fotos"] as? [String] { pedidos[i].fotos = fs }
+                    if let pe = cambios["peticion"] as? Bool { pedidos[i].peticion = pe }
                 }
             } else { await cargar() }
             if let ok { avisar(ok) }
@@ -323,6 +324,7 @@ final class Tienda {
     var cola: [Pedido] {
         let imp = pedidos.filter { $0.estado == .imprimiendo }.sorted { $0.creado < $1.creado }
         let pen = pedidos.filter { $0.estado == .pendiente }.sorted {
+            if $0.peticion != $1.peticion { return !$0.peticion }
             if $0.prioridad != $1.prioridad { return $0.prioridad > $1.prioridad }
             if $0.pagado != $1.pagado { return $0.pagado }
             return $0.creado < $1.creado
@@ -332,7 +334,8 @@ final class Tienda {
 
     func turno(_ p: Pedido) -> Int? {
         guard p.estado == .pendiente else { return nil }
-        return cola.filter { $0.estado == .pendiente }.firstIndex { $0.id == p.id }.map { $0 + 1 }
+        guard !p.peticion else { return nil }
+        return cola.filter { $0.estado == .pendiente && !$0.peticion }.firstIndex { $0.id == p.id }.map { $0 + 1 }
     }
 
     // MARK: avisos

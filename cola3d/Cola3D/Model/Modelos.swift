@@ -131,6 +131,8 @@ struct Pedido: Codable, Identifiable, Hashable {
     var historial: [Cambio] = []
     var prioridad: Int = 0
     var fotos: [String] = []
+    /// más de 4 colores: llega como petición y el taller decide
+    var peticion = false
 
     init(id: String) { self.id = id }
     init(from d: Decoder) throws {
@@ -142,7 +144,7 @@ struct Pedido: Codable, Identifiable, Hashable {
         lineas = c.v(.lineas, []); minutos = c.v(.minutos, 0); copias = c.v(.copias, 1)
         notas = c.v(.notas, ""); estado = c.v(.estado, .pendiente); pagado = c.v(.pagado, false)
         coste = c.num(.coste); coste_detalle = c.v(.coste_detalle, Detalle())
-        historial = c.v(.historial, []); prioridad = c.v(.prioridad, 0); fotos = c.v(.fotos, [])
+        historial = c.v(.historial, []); prioridad = c.v(.prioridad, 0); fotos = c.v(.fotos, []); peticion = c.v(.peticion, false)
     }
 
     var nombreFigura: String { titulo.isEmpty ? (URL(string: url)?.host ?? "Pedido") : titulo }
@@ -151,6 +153,7 @@ struct Pedido: Codable, Identifiable, Hashable {
     var portada: URL? { URL(string: fotos.first ?? imagen) }
     var hecho: Bool { estado == .impreso || estado == .entregado }
     var delTaller: Bool { coste_detalle.taller }
+    var colores: Int { lineas.filter { $0.gramos > 0 }.count }
 }
 
 struct Filamento: Codable, Identifiable, Hashable {

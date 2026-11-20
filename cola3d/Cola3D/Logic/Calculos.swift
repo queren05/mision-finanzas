@@ -4,7 +4,20 @@ import Foundation
 
 private func r2(_ v: Double) -> Double { (v * 100).rounded() / 100 }
 
-func calcularCoste(_ lineas: [Linea], minutos: Int, copias: Int, filamentos: [Filamento], ajustes a: Ajustes) -> Detalle {
+/// junta las líneas que van al mismo rollo (o, sin rollo, al mismo color): cuentan como un solo color
+func juntarLineas(_ ls: [Linea]) -> [Linea] {
+    var out: [Linea] = []
+    var idx: [String: Int] = [:]
+    for l in ls {
+        let k = l.filamento_id.map { "f:" + $0 } ?? "c:" + l.color.lowercased()
+        if let i = idx[k] { out[i].gramos = ((out[i].gramos + l.gramos) * 10).rounded() / 10 }
+        else { idx[k] = out.count; out.append(l) }
+    }
+    return out
+}
+
+func calcularCoste(_ lineasSueltas: [Linea], minutos: Int, copias: Int, filamentos: [Filamento], ajustes a: Ajustes) -> Detalle {
+    let lineas = juntarLineas(lineasSueltas)
     let cop = Double(max(1, copias))
     var fil = 0.0, gtot = 0.0, colores = 0
     let out: [LineaCoste] = lineas.map { l in
