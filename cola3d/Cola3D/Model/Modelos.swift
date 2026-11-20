@@ -133,6 +133,8 @@ struct Pedido: Codable, Identifiable, Hashable {
     var fotos: [String] = []
     /// más de 4 colores: llega como petición y el taller decide
     var peticion = false
+    /// el taller deja imprimirlo sin pagar todavía (se suma a lo que debe)
+    var acumulado = false
 
     init(id: String) { self.id = id }
     init(from d: Decoder) throws {
@@ -144,7 +146,7 @@ struct Pedido: Codable, Identifiable, Hashable {
         lineas = c.v(.lineas, []); minutos = c.v(.minutos, 0); copias = c.v(.copias, 1)
         notas = c.v(.notas, ""); estado = c.v(.estado, .pendiente); pagado = c.v(.pagado, false)
         coste = c.num(.coste); coste_detalle = c.v(.coste_detalle, Detalle())
-        historial = c.v(.historial, []); prioridad = c.v(.prioridad, 0); fotos = c.v(.fotos, []); peticion = c.v(.peticion, false)
+        historial = c.v(.historial, []); prioridad = c.v(.prioridad, 0); fotos = c.v(.fotos, []); peticion = c.v(.peticion, false); acumulado = c.v(.acumulado, false)
     }
 
     var nombreFigura: String { titulo.isEmpty ? (URL(string: url)?.host ?? "Pedido") : titulo }

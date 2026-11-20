@@ -199,6 +199,7 @@ final class Tienda {
                     if let pr = cambios["prioridad"] as? Int { pedidos[i].prioridad = pr }
                     if let fs = cambios["fotos"] as? [String] { pedidos[i].fotos = fs }
                     if let pe = cambios["peticion"] as? Bool { pedidos[i].peticion = pe }
+                    if let ac = cambios["acumulado"] as? Bool { pedidos[i].acumulado = ac }
                 }
             } else { await cargar() }
             if let ok { avisar(ok) }
@@ -445,7 +446,7 @@ final class Tienda {
         return ((ps.reduce(0) { $0 + $1.coste } * 100).rounded() / 100, ps)
     }
     /// aún no llega al mínimo: no se pide pagar, se acumula y se imprime igual
-    func acumula(_ p: Pedido) -> Bool { !p.pagado && deuda(p).total < ajustes.pago_minimo }
+    func acumula(_ p: Pedido) -> Bool { !p.pagado && (p.acumulado || deuda(p).total < ajustes.pago_minimo) }
 
     func cobrarTodo(_ ps: [Pedido]) async {
         for p in ps { await cambiar(p, ["pagado": true]) }

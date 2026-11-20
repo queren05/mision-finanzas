@@ -156,9 +156,14 @@ struct DetallePedido: View {
 
     private func pago(_ p: Pedido) -> some View {
         let d = t.deuda(p)
-        let acumula = d.total < t.ajustes.pago_minimo
+        let apuntado = p.acumulado && d.total >= t.ajustes.pago_minimo
+        let acumula = d.total < t.ajustes.pago_minimo || apuntado
         return VStack(alignment: .leading, spacing: 10) {
-            if acumula {
+            if apuntado {
+                Label("Apuntado a tu cuenta", systemImage: "tray.full.fill").font(.headline).foregroundStyle(.secondary)
+                Text("Debes \(Fmt.eur(d.total)). El taller lo imprime sin esperar al pago; págalo cuando puedas\(t.ajustes.bizum.isEmpty ? "" : " por Bizum al \(t.ajustes.bizum)") o en mano.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            } else if acumula {
                 Label("Se acumula", systemImage: "tray.full.fill").font(.headline).foregroundStyle(.secondary)
                 Text("Llevas \(Fmt.eur(d.total)). Aún no hace falta pagar: se paga todo junto cuando llegues a \(Fmt.eur(t.ajustes.pago_minimo)) (Bizum no deja enviar menos). Se imprime igual.")
                     .font(.subheadline).foregroundStyle(.secondary)
@@ -219,6 +224,11 @@ struct DetallePedido: View {
                     .padding(14).tarjeta()
                 }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    if !p.delTaller && !p.pagado && p.estado != .cancelado {
+                        accion(p.acumulado ? "Quitar acumulado" : "Acumular", p.acumulado ? "tray.and.arrow.up" : "tray.and.arrow.down.fill", .gray) {
+                            await t.cambiar(p, ["acumulado": !p.acumulado], ok: p.acumulado ? "Vuelve a pedir el pago" : "Acumulado: se imprime sin esperar al pago")
+                        }
+                    }
                     if !p.delTaller {
                         accion(p.pagado ? "Quitar pagado" : "Marcar pagado", p.pagado ? "xmark.circle" : "checkmark.circle.fill", .green) {
                             await t.cambiar(p, ["pagado": !p.pagado], ok: p.pagado ? "Quitado el pagado" : "Marcado como pagado")
