@@ -24,7 +24,7 @@ final class Tienda {
     var pestana: Pestana = .cola
     let demo: Bool
 
-    enum Pestana: Hashable { case cola, pedir, filamentos, gente, taller }
+    enum Pestana: Hashable { case cola, pedir, vitrina, filamentos, gente, taller }
 
     private init() {
         tokens = UserDefaults.standard.dictionary(forKey: "tokens") as? [String: String] ?? [:]
@@ -171,10 +171,33 @@ final class Tienda {
         } catch { avisar(error.localizedDescription, error: true); return false }
     }
 
-    func subirFoto(_ jpeg: Data, a p: Pedido) async throws -> String {
+    func subirFoto(_ jpeg: Data, a p: Pedido) async throws -> String { try await subirFoto(jpeg, carpeta: p.id) }
+
+    func subirFoto(_ jpeg: Data, carpeta: String) async throws -> String {
         if demo { return "https://picsum.photos/seed/\(UUID().uuidString.prefix(6))/800" }
         guard let t = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
-        return try await Supa.subirFoto(jpeg, pedido: p.id, token: t)
+        return try await Supa.subirFoto(jpeg, pedido: carpeta, token: t)
+    }
+
+    /// el taller sube a la vitrina algo impreso por su cuenta (sin enlace ni cobro)
+    func crearPieza(titulo: String, para: String, url: String, filamento: Filamento?, gramos: Double, entregado: Bool, notas: String, fotos: [String]) async throws -> String {
+        var lineas: [[String: Any]] = []
+        if let f = filamento, gramos > 0 { lineas = [["filamento_id": f.id, "nombre": f.nombre, "color": f.color, "gramos": gramos]] }
+        let p: [String: Any] = ["titulo": titulo, "nombre": para, "url": url, "lineas": lineas, "copias": 1, "minutos": 0,
+                                "estado": entregado ? "entregado" : "impreso", "notas": notas, "fotos": fotos]
+        if demo {
+            var n = Pedido(id: UUID().uuidString)
+            n.creado = ISO8601DateFormatter().string(from: Date()); n.nombre = para.isEmpty ? "Taller" : para; n.titulo = titulo
+            n.estado = entregado ? .entregado : .impreso; n.pagado = true; n.fotos = fotos; n.coste_detalle.taller = true
+            pedidos.append(n)
+            return n.id
+        }
+        guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+        let d = try await Supa.rpc("admin_crear_pieza", ["p_clave": "", "p": p], token: tk)
+        let id = String(data: d, encoding: .utf8)?.trimmingCharacters(in: CharacterSet(charactersIn: "\" \n")) ?? ""
+        await cargar()
+        avisar("Pieza añadida a la vitrina")
+        return id
     }
 
     func quitarFoto(_ u: String, de p: Pedido) async {

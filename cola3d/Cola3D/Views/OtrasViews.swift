@@ -10,8 +10,15 @@ struct FilamentosView: View {
         t.filamentos.filter { t.admin || $0.activo }.sorted { ($0.activo ? 0 : 1, $0.orden) < ($1.activo ? 0 : 1, $1.orden) }
     }
 
+    /// dentro del Taller ya hay navegación
+    var enStack = true
+
     var body: some View {
-        NavigationStack {
+        if enStack { NavigationStack { contenido } } else { contenido }
+    }
+
+    private var contenido: some View {
+        Group {
             ScrollView {
                 VStack(spacing: 16) {
                     HStack(spacing: 10) {
@@ -370,6 +377,10 @@ struct TallerView: View {
                     .disabled(ocupado)
                 }
                 Section {
+                    NavigationLink { FilamentosView(enStack: false) } label: {
+                        Label("Filamentos", systemImage: "circle.circle")
+                            .badge(t.filamentos.filter { $0.activo && $0.stock_g < 100 }.isEmpty ? Text("\(t.filamentos.filter(\.activo).count)") : Text("Queda poco"))
+                    }
                     Link(destination: URL(string: Supa.web)!) { Label("Abrir la web", systemImage: "safari") }
                 }
             }

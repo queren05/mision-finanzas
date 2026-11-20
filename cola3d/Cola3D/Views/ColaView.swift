@@ -140,8 +140,8 @@ struct TarjetaPedido: View {
                     }
                 }
                 .overlay(alignment: .topTrailing) {
-                    Text(Fmt.eur(p.coste)).font(.system(.subheadline, design: .monospaced).weight(.bold))
-                        .padding(.horizontal, 9).padding(.vertical, 4).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9)).padding(10)
+                    if !p.delTaller { Text(Fmt.eur(p.coste)).font(.system(.subheadline, design: .monospaced).weight(.bold))
+                        .padding(.horizontal, 9).padding(.vertical, 4).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9)).padding(10) }
                 }
                 .overlay(alignment: .bottomLeading) {
                     if !p.fotos.isEmpty {
@@ -178,7 +178,7 @@ struct TarjetaPedido: View {
     @ViewBuilder private var chips: some View {
         Chip(estado: p.estado)
         if p.prioridad > 0 && p.estado == .pendiente { Etiqueta(texto: "Prioridad", color: .hot, icono: "arrow.up") }
-        if p.estado != .cancelado {
+        if p.estado != .cancelado && !p.delTaller {
             if p.pagado { Etiqueta(texto: "Pagado", color: .green, icono: "checkmark") }
             else { Etiqueta(texto: "Sin pagar", color: .red) }
         }

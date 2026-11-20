@@ -22,6 +22,7 @@ struct Cola3DApp: App {
                         case "pedir": t.pestana = .pedir
                         case "filamentos": t.pestana = .filamentos
                         case "gente": t.pestana = .gente
+                        case "vitrina": t.pestana = .vitrina
                         case "taller": t.pestana = .taller
                         default: break
                         }
@@ -69,16 +70,21 @@ struct Raiz: View {
             PedirView()
                 .tabItem { Label("Pedir", systemImage: "plus.circle.fill") }
                 .tag(Tienda.Pestana.pedir)
-            FilamentosView()
-                .tabItem { Label("Filamentos", systemImage: "circle.circle") }
-                .tag(Tienda.Pestana.filamentos)
+            VitrinaView()
+                .tabItem { Label("Vitrina", systemImage: "square.grid.2x2.fill") }
+                .tag(Tienda.Pestana.vitrina)
             GenteView()
                 .tabItem { Label("Gente", systemImage: "person.2.fill") }
                 .tag(Tienda.Pestana.gente)
+            // como mucho 5 pestañas: el taller lleva dentro los filamentos
             if t.admin {
                 TallerView()
                     .tabItem { Label("Taller", systemImage: "wrench.and.screwdriver.fill") }
                     .tag(Tienda.Pestana.taller)
+            } else {
+                FilamentosView()
+                    .tabItem { Label("Filamentos", systemImage: "circle.circle") }
+                    .tag(Tienda.Pestana.filamentos)
             }
         }
         .overlay(alignment: .top) {

@@ -59,6 +59,8 @@ struct Detalle: Codable, Hashable {
     /// gramos que han salido gratis en este pedido y lo que se ha descontado
     var gratis_g: Double = 0
     var descuento: Double = 0
+    /// pieza que el taller ha subido a la vitrina por su cuenta (no se cobra)
+    var taller = false
     init() {}
     init(filamento: Double, merma: Double, merma_pct: Double, luz: Double, gramos: Double, total: Double, lineas: [LineaCoste]) {
         self.filamento = filamento; self.merma = merma; self.merma_pct = merma_pct; self.luz = luz; self.gramos = gramos; self.total = total; self.lineas = lineas
@@ -68,7 +70,7 @@ struct Detalle: Codable, Hashable {
         filamento = c.num(.filamento); merma = c.num(.merma); merma_pct = c.num(.merma_pct)
         luz = c.num(.luz); gramos = c.num(.gramos); total = c.num(.total)
         lineas = c.v(.lineas, [])
-        gratis_g = c.num(.gratis_g); descuento = c.num(.descuento)
+        gratis_g = c.num(.gratis_g); descuento = c.num(.descuento); taller = c.v(.taller, false)
     }
 }
 
@@ -148,6 +150,7 @@ struct Pedido: Codable, Identifiable, Hashable {
     var fecha: Date { Fmt.fecha(creado) ?? Date() }
     var portada: URL? { URL(string: fotos.first ?? imagen) }
     var hecho: Bool { estado == .impreso || estado == .entregado }
+    var delTaller: Bool { coste_detalle.taller }
 }
 
 struct Filamento: Codable, Identifiable, Hashable {

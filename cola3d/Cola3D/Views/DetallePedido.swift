@@ -27,8 +27,8 @@ struct DetallePedido: View {
                                 }
                             }
                         cabecera(p)
-                        if !t.admin && !p.pagado && p.estado != .cancelado { pago(p) }
-                        if let u = URL(string: p.url) {
+                        if !t.admin && !p.pagado && p.estado != .cancelado && !p.delTaller { pago(p) }
+                        if !p.url.isEmpty, let u = URL(string: p.url) {
                             Link(destination: u) {
                                 Label("Abrir en \(u.host?.replacingOccurrences(of: "www.", with: "") ?? "la web")", systemImage: "arrow.up.right.square")
                                     .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -39,7 +39,7 @@ struct DetallePedido: View {
                         Camino(p: p)
                         if t.admin { taller(p) }
                         if t.admin || !p.fotos.isEmpty { fotos(p) }
-                        coste(p)
+                        if !p.delTaller { coste(p) }
                         if !p.notas.isEmpty {
                             bloque("Notas") { Text(p.notas).frame(maxWidth: .infinity, alignment: .leading).padding(14).tarjeta() }
                         }
@@ -85,8 +85,12 @@ struct DetallePedido: View {
             }
             .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(Fmt.eur(p.coste)).font(.system(.largeTitle, design: .monospaced).weight(.bold)).contentTransition(.numericText())
-                if p.estado != .cancelado {
+                if p.delTaller {
+                    Etiqueta(texto: "Del taller", color: .hot, icono: "wrench.and.screwdriver.fill")
+                } else {
+                    Text(Fmt.eur(p.coste)).font(.system(.largeTitle, design: .monospaced).weight(.bold)).contentTransition(.numericText())
+                }
+                if p.estado != .cancelado && !p.delTaller {
                     if p.pagado { Etiqueta(texto: "Pagado", color: .green, icono: "checkmark") } else { Etiqueta(texto: "Sin pagar", color: .red) }
                 }
                 if p.prioridad > 0 && p.estado == .pendiente { Etiqueta(texto: "Prioridad", color: .hot, icono: "arrow.up") }
@@ -150,8 +154,10 @@ struct DetallePedido: View {
                     .padding(14).tarjeta()
                 }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    accion(p.pagado ? "Quitar pagado" : "Marcar pagado", p.pagado ? "xmark.circle" : "checkmark.circle.fill", .green) {
-                        await t.cambiar(p, ["pagado": !p.pagado], ok: p.pagado ? "Quitado el pagado" : "Marcado como pagado")
+                    if !p.delTaller {
+                        accion(p.pagado ? "Quitar pagado" : "Marcar pagado", p.pagado ? "xmark.circle" : "checkmark.circle.fill", .green) {
+                            await t.cambiar(p, ["pagado": !p.pagado], ok: p.pagado ? "Quitado el pagado" : "Marcado como pagado")
+                        }
                     }
                     if p.estado == .pendiente {
                         if p.prioridad > 0 {
