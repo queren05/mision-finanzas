@@ -126,7 +126,7 @@ enum Perfiles {
                 out.append(LineaForm(linea: Linea(filamento_id: nil, nombre: c.material, color: c.color, gramos: c.gramos), falta: .init(color: c.color, material: c.material)))
             }
         }
-        for i in out.indices { out[i].linea.gramos = (out[i].linea.gramos * 10).rounded() / 10 }
+        for i in out.indices { out[i].linea.gramos = (out[i].linea.gramos * 10).rounded() / 10; out[i].orig = out[i].linea }
         return out
     }
 
@@ -159,4 +159,6 @@ struct LineaForm: Identifiable, Hashable {
     var falta: Falta? = nil
     /// texto del cambio hecho (va a las notas del pedido)
     var cambio: String? = nil
+    /// cómo venía en el perfil (para volver atrás)
+    var orig: Linea? = nil
 }

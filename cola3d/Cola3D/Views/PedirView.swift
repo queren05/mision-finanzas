@@ -317,10 +317,29 @@ private struct FilaLinea: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Muestra(hex: l.linea.color, size: 26)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(l.linea.filamento_id == nil ? (l.cambio != nil ? "Lo elige el taller" : "No hay este color") : l.linea.nombre)
-                        .font(.subheadline.weight(.semibold)).lineLimit(1)
-                    if let f = l.falta, l.cambio == nil { Text("\(f.material) \(Perfiles.nombreColor(f.color))").font(.caption).foregroundStyle(.secondary) }
+                // desplegable: cambiar este color por otro rollo (los gramos los marca el perfil)
+                Menu {
+                    let mats = Array(Set(t.filamentos.filter(\.disponible).map { $0.material.uppercased() })).sorted()
+                    ForEach(mats, id: \.self) { m in
+                        Section(m) {
+                            ForEach(t.filamentos.filter { $0.disponible && $0.material.uppercased() == m }) { f in
+                                Button { elegir(f) } label: {
+                                    if l.linea.filamento_id == f.id { Label(f.nombre, systemImage: "checkmark") } else { Text(f.nombre) }
+                                }
+                            }
+                        }
+                    }
+                    Button { queElija() } label: { Label("Que lo elija el taller", systemImage: "hand.raised") }
+                    if l.cambio != nil { Button { deshacer() } label: { Label("Como venía", systemImage: "arrow.uturn.backward") } }
+                } label: {
+                    HStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(l.linea.filamento_id == nil ? (l.cambio != nil ? "Lo elige el taller" : "No hay este color") : l.linea.nombre)
+                                .font(.subheadline.weight(.semibold)).lineLimit(1).foregroundStyle(.primary)
+                            if let f = l.falta, l.cambio == nil { Text("\(f.material) \(Perfiles.nombreColor(f.color))").font(.caption).foregroundStyle(.secondary) }
+                        }
+                        Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
                 Text(Fmt.gramos(l.linea.gramos)).font(.system(.subheadline, design: .monospaced)).foregroundStyle(.secondary)
@@ -365,16 +384,27 @@ private struct FilaLinea: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: l)
     }
 
+    private var pide: String {
+        if let f = l.orig.flatMap({ _ in l.falta }) { return "\(f.material) \(Perfiles.nombreColor(f.color))" }
+        return l.orig?.nombre ?? l.linea.nombre
+    }
+    private func elegir(_ a: Filamento) {
+        if l.orig?.filamento_id == a.id { deshacer(); return }
+        l.linea = Linea(filamento_id: a.id, nombre: a.nombre, color: a.color, gramos: l.linea.gramos)
+        l.cambio = "En vez de \(pide): \(a.nombre)"
+    }
     private func cambiar(_ a: Filamento, _ f: LineaForm.Falta) {
         l.linea = Linea(filamento_id: a.id, nombre: a.nombre, color: a.color, gramos: l.linea.gramos)
         l.cambio = "En vez de \(f.material) \(Perfiles.nombreColor(f.color)): \(a.nombre)"
     }
-    private func queElija(_ f: LineaForm.Falta) {
-        l.cambio = "No había \(f.material) \(Perfiles.nombreColor(f.color)): que lo elija el taller"
+    private func queElija(_ f: LineaForm.Falta? = nil) {
+        let o = l.orig ?? l.linea
+        l.linea = Linea(filamento_id: nil, nombre: l.falta?.material ?? o.nombre, color: l.falta?.color ?? o.color, gramos: l.linea.gramos)
+        l.cambio = "\(pide): que lo elija el taller"
     }
     private func deshacer() {
-        guard let f = l.falta else { return }
-        l.linea = Linea(filamento_id: nil, nombre: f.material, color: f.color, gramos: l.linea.gramos)
+        if let o = l.orig { l.linea = Linea(filamento_id: o.filamento_id, nombre: o.nombre, color: o.color, gramos: l.linea.gramos) }
+        else if let f = l.falta { l.linea = Linea(filamento_id: nil, nombre: f.material, color: f.color, gramos: l.linea.gramos) }
         l.cambio = nil
     }
 }
