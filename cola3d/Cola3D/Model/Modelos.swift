@@ -375,5 +375,17 @@ struct Acceso: Codable, Hashable {
     }
 }
 
-func nombreGrupo(_ g: String?) -> String { g == "familia" ? "Familia" : g == "amigos" ? "Amigos" : "Sin acceso" }
-func colorGrupo(_ g: String?) -> Color { g == "familia" ? Color(hex: "#e0679a") : g == "amigos" ? Color(hex: "#4f9be8") : .orange }
+let todosGrupos = ["familia", "amigos", "otros"]
+/// «familia,amigos» → «Familia y Amigos»
+func nombreGrupo(_ g: String?) -> String {
+    guard let g, !g.isEmpty else { return "Sin acceso" }
+    return g.split(separator: ",").map { $0 == "familia" ? "Familia" : $0 == "amigos" ? "Amigos" : $0 == "otros" ? "Otros" : String($0) }.joined(separator: " y ")
+}
+func colorGrupo(_ g: String?) -> Color {
+    switch g?.split(separator: ",").first {
+    case "familia": Color(hex: "#e0679a")
+    case "amigos": Color(hex: "#4f9be8")
+    case "otros": Color(hex: "#8a63d2")
+    default: .orange
+    }
+}

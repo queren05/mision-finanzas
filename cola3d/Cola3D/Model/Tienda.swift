@@ -128,10 +128,11 @@ final class Tienda {
         } catch { avisar(error.localizedDescription, error: true); return false }
     }
 
-    func cambiarGrupo(_ uid: String, a grupo: String?) async -> Bool {
+    /// los grupos de una cuenta (puede estar en varios; ninguno = sin acceso)
+    func cambiarGrupos(_ uid: String, a grupos: [String]) async -> Bool {
         do {
             guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
-            try await Supa.rpc("admin_grupo", ["p_clave": "", "p_user": uid, "p_grupo": grupo ?? ""], token: tk)
+            try await Supa.rpc("admin_grupos", ["p_clave": "", "p_user": uid, "p_grupos": grupos], token: tk)
             await cargar()
             return true
         } catch { avisar(error.localizedDescription, error: true); return false }

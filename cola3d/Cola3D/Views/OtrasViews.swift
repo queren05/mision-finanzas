@@ -475,7 +475,7 @@ struct TallerView: View {
                         let sin = c.filter { !$0.taller && $0.grupo == nil }.count
                         LabeledContent("Personas", value: "\(c.count) · \(hoy) hoy" + (sin > 0 ? " · \(sin) sin acceso" : ""))
                         ForEach(verTodas ? c : Array(c.prefix(8))) { x in
-                            FilaCuenta(c: x) { g in Task { if await t.cambiarGrupo(x.id, a: g) { await leerCuentas() } } }
+                            FilaCuenta(c: x) { gs in Task { if await t.cambiarGrupos(x.id, a: gs) { await leerCuentas() } } }
                                 .contentShape(Rectangle())
                                 .onTapGesture { renombrando = x; nuevoNombre = x.nombre }
                                 .swipeActions { Button("Cambiar nombre") { renombrando = x; nuevoNombre = x.nombre }.tint(.hot) }
@@ -533,7 +533,7 @@ struct TallerView: View {
 
 private struct FilaCuenta: View {
     let c: Cuenta
-    var cambiar: (String?) -> Void = { _ in }
+    var cambiar: ([String]) -> Void = { _ in }
     var body: some View {
         let u = c.ultima.flatMap(Fmt.fecha)
         let reciente = (u ?? .distantPast) > Date().addingTimeInterval(-86400)
@@ -546,10 +546,14 @@ private struct FilaCuenta: View {
                     Text("Taller").font(.caption2.weight(.bold)).foregroundStyle(Color.hot)
                         .padding(.horizontal, 8).padding(.vertical, 2).background(Color.hot.opacity(0.14), in: Capsule()).padding(.top, 3)
                 } else {
+                    let tiene = (c.grupo ?? "").split(separator: ",").map(String.init)
                     Menu {
-                        Button { cambiar("familia") } label: { Label("Familia", systemImage: c.grupo == "familia" ? "checkmark" : "house") }
-                        Button { cambiar("amigos") } label: { Label("Amigos", systemImage: c.grupo == "amigos" ? "checkmark" : "person.2") }
-                        Button(role: .destructive) { cambiar(nil) } label: { Label("Sin acceso", systemImage: "lock") }
+                        ForEach(todosGrupos, id: \.self) { g in
+                            Button {
+                                cambiar(tiene.contains(g) ? tiene.filter { $0 != g } : todosGrupos.filter { $0 == g || tiene.contains($0) })
+                            } label: { Label(nombreGrupo(g), systemImage: tiene.contains(g) ? "checkmark.circle.fill" : "circle") }
+                        }
+                        if !tiene.isEmpty { Button(role: .destructive) { cambiar([]) } label: { Label("Quitar acceso", systemImage: "lock") } }
                     } label: {
                         HStack(spacing: 3) {
                             Text(nombreGrupo(c.grupo))

@@ -342,6 +342,7 @@ final class C3 {
     /// se llama en segundo plano (y al abrir Caudal): mira si hay pedidos nuevos y avisa
     func comprobarNuevos() async {
         guard avisos, configurado, !demo else { return }
+        await comprobarAltas()
         let antes = Set(UserDefaults.standard.stringArray(forKey: "c3.vistos") ?? [])
         let primeraVez = UserDefaults.standard.object(forKey: "c3.vistos") == nil
         guard let r = try? peticion("rpc/admin_pedidos?limit=30", metodo: "POST", cuerpo: ["p_clave": clave]),
@@ -359,6 +360,26 @@ final class C3 {
             c.sound = .default
             c.userInfo = ["cola3d": p.id]
             try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "c3-" + p.id, content: c, trigger: nil))
+        }
+    }
+
+    /// cuentas nuevas en la web: aviso para darles acceso (familia, amigos u otros)
+    private func comprobarAltas() async {
+        struct Alta: Decodable { let id: String; let nombre: String?; let email: String?; let grupo: String?; let taller: Bool? }
+        let d = UserDefaults.standard
+        let primeraVez = d.object(forKey: "c3.cuentas") == nil
+        let antes = Set(d.stringArray(forKey: "c3.cuentas") ?? [])
+        guard let r = try? peticion("rpc/admin_cuentas", metodo: "POST", cuerpo: ["p_clave": clave]),
+              let datos = try? await enviar(r),
+              let lista = try? JSONDecoder().decode([Alta].self, from: datos) else { return }
+        d.set(lista.map(\.id), forKey: "c3.cuentas")
+        guard !primeraVez else { return }
+        for a in lista where !antes.contains(a.id) && a.grupo == nil && a.taller != true {
+            let c = UNMutableNotificationContent()
+            c.title = "Nueva cuenta en Cola 3D"
+            c.body = "\(a.nombre ?? "Alguien")\(a.email.map { " (\($0))" } ?? ""). Dale acceso desde la web: Taller → Cuentas"
+            c.sound = .default
+            try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "c3-alta-" + a.id, content: c, trigger: nil))
         }
     }
 
