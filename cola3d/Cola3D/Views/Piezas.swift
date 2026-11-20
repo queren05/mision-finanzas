@@ -80,21 +80,23 @@ struct Muestra: View {
 struct Portada: View {
     let p: Pedido
     var body: some View {
-        ZStack {
-            Color(.secondarySystemBackground)
-            if let u = p.portada {
-                AsyncImage(url: u, transaction: Transaction(animation: .easeOut(duration: 0.35))) { fase in
-                    switch fase {
-                    case .success(let img): img.resizable().scaledToFill().transition(.opacity)
-                    case .failure: Capas(colores: p.lineas.map(\.color))
-                    default: Capas(colores: p.lineas.map(\.color)).opacity(0.5)
+        // la foto se ajusta al hueco que le den (nunca lo ensancha)
+        Rectangle()
+            .fill(Color(.secondarySystemBackground))
+            .overlay {
+                if let u = p.portada {
+                    AsyncImage(url: u, transaction: Transaction(animation: .easeOut(duration: 0.35))) { fase in
+                        switch fase {
+                        case .success(let img): img.resizable().scaledToFill().transition(.opacity)
+                        case .failure: Capas(colores: p.lineas.map(\.color))
+                        default: Capas(colores: p.lineas.map(\.color)).opacity(0.5)
+                        }
                     }
+                } else {
+                    Capas(colores: p.lineas.map(\.color))
                 }
-            } else {
-                Capas(colores: p.lineas.map(\.color))
             }
-        }
-        .clipped()
+            .clipped()
     }
 }
 
