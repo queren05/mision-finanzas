@@ -333,6 +333,7 @@ private struct Camino: View {
                             if i < actual { Image(systemName: "checkmark").font(.caption2.weight(.heavy)).foregroundStyle(.white) }
                             if i == actual { Image(systemName: e.icono).font(.caption.weight(.bold)).foregroundStyle(.white) }
                         }
+                        .frame(width: 30, height: 30)
                         Rectangle().fill(i == pasos.count - 1 ? .clear : (i < actual ? pasos[actual].color : Color(.systemFill))).frame(height: 3)
                     }
                     Text(e.label).font(.caption2.weight(i == actual ? .bold : .regular)).foregroundStyle(i <= actual ? .primary : .secondary).lineLimit(1).minimumScaleFactor(0.7)

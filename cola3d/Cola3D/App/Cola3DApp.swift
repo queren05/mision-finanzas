@@ -28,7 +28,7 @@ struct Cola3DApp: App {
                     }
                     await t.cargar()
                     await t.comprobarAdmin()
-                    t.pedirPermiso()
+                    if !t.demo { t.pedirPermiso() }
                 }
                 .task {
                     // la cola se refresca sola mientras la app está abierta
