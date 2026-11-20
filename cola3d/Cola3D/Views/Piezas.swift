@@ -192,3 +192,44 @@ struct Vacio: View {
         .background(RoundedRectangle(cornerRadius: 22).strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [7, 6])).foregroundStyle(.quaternary))
     }
 }
+
+/// carrete de filamento: aro de plástico, el hilo enrollado (con líneas que se ven en negro y en blanco),
+/// el centro con su agujero y, por fuera, cuánto queda
+struct Carrete: View {
+    let hex: String
+    var fraccion: Double = 1
+    var size: CGFloat = 60
+    var body: some View {
+        let c = Color(hex: hex)
+        let claro = luminancia(hex) > 0.55
+        let linea = claro ? Color.black.opacity(0.12) : Color.white.opacity(0.16)
+        ZStack {
+            // aro del carrete (plástico gris, se ve en los dos modos)
+            Circle().fill(Color(.systemGray3)).frame(width: size * 0.86, height: size * 0.86)
+            Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1).frame(width: size * 0.86, height: size * 0.86)
+            // el filamento enrollado
+            Circle().fill(c).frame(width: size * 0.74, height: size * 0.74)
+            ForEach(1..<5, id: \.self) { i in
+                Circle().stroke(linea, lineWidth: 0.8).frame(width: size * (0.74 - Double(i) * 0.075), height: size * (0.74 - Double(i) * 0.075))
+            }
+            Circle().strokeBorder(linea.opacity(1.6), lineWidth: 1).frame(width: size * 0.74, height: size * 0.74)
+            // centro del carrete
+            Circle().fill(Color(.systemGray2)).frame(width: size * 0.3, height: size * 0.3)
+            Circle().fill(Color(.secondarySystemGroupedBackground)).frame(width: size * 0.14, height: size * 0.14)
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1))
+            // lo que queda
+            Circle().stroke(Color.primary.opacity(0.08), lineWidth: 3).frame(width: size, height: size)
+            Circle().trim(from: 0, to: max(0, min(1, fraccion))).stroke(Color.hot, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .frame(width: size, height: size).rotationEffect(.degrees(-90))
+        }
+        .frame(width: size + 3, height: size + 3)
+        .accessibilityHidden(true)
+    }
+
+    private func luminancia(_ h: String) -> Double {
+        var x = h.replacingOccurrences(of: "#", with: "")
+        if x.count == 3 { x = x.map { "\($0)\($0)" }.joined() }
+        let v = UInt64(x.prefix(6), radix: 16) ?? 0x999999
+        return (0.299 * Double((v >> 16) & 0xff) + 0.587 * Double((v >> 8) & 0xff) + 0.114 * Double(v & 0xff)) / 255
+    }
+}

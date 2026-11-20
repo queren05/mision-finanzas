@@ -297,3 +297,21 @@ func colorPersona(_ nombre: String) -> Color {
     let h = nombre.lowercased().unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0x7fffffff }
     return Color(hex: paleta[h % paleta.count])
 }
+
+/// una cuenta creada (solo la ve el taller)
+struct Cuenta: Codable, Identifiable, Hashable {
+    var id: String
+    var nombre: String = ""
+    var email: String = ""
+    var alta: String = ""
+    var ultima: String? = nil
+    var veces: Int = 0
+    var confirmada: Bool = false
+    var pedidos: Int = 0
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        nombre = c.v(.nombre, ""); email = c.v(.email, ""); alta = c.v(.alta, ""); ultima = c.v(.ultima, nil)
+        veces = c.v(.veces, 0); confirmada = c.v(.confirmada, false); pedidos = c.v(.pedidos, 0)
+    }
+}

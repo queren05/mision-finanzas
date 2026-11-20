@@ -64,13 +64,7 @@ private struct FilaRollo: View {
     var body: some View {
         let frac = min(1, max(0, f.stock_g / max(1, f.peso)))
         HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(Color(hex: f.color)).frame(width: 52, height: 52)
-                    .overlay(Circle().strokeBorder(.primary.opacity(0.15)))
-                Circle().fill(Color(.secondarySystemGroupedBackground)).frame(width: 18, height: 18)
-                Circle().trim(from: 0, to: frac).stroke(Color.hot, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 60, height: 60).rotationEffect(.degrees(-90))
-            }
+            Carrete(hex: f.color, fraccion: frac, size: 60)
             .rotationEffect(.degrees(giro ? 360 : 0))
             .onAppear { withAnimation(.easeOut(duration: 1.1)) { giro = true } }
             VStack(alignment: .leading, spacing: 4) {
@@ -110,9 +104,8 @@ private struct EditorRollo: View {
                 Section {
                     HStack {
                         Spacer()
-                        Circle().fill(color).frame(width: 90, height: 90).overlay(Circle().strokeBorder(.primary.opacity(0.15)))
-                            .overlay(Circle().fill(Color(.systemBackground)).frame(width: 26, height: 26))
-                            .shadow(color: color.opacity(0.5), radius: 16, y: 6)
+                        Carrete(hex: color.hex, fraccion: min(1, (Fmt.leer(stock) ?? 0) / max(1, Fmt.leer(peso) ?? 1000)), size: 100)
+                            .shadow(color: .black.opacity(0.15), radius: 14, y: 6)
                             .animation(.spring, value: color)
                         Spacer()
                     }
@@ -337,6 +330,9 @@ struct TallerView: View {
     @State private var bizum = ""
     @State private var gratis = ""
     @State private var ocupado = false
+    @State private var cuentas: [Cuenta]? = nil
+    @State private var falloCuentas: String? = nil
+    @State private var verTodas = false
 
     var body: some View {
         NavigationStack {
@@ -376,6 +372,20 @@ struct TallerView: View {
                     }
                     .disabled(ocupado)
                 }
+                Section("Cuentas") {
+                    if let c = cuentas {
+                        let hoy = c.filter { ($0.ultima.flatMap(Fmt.fecha) ?? .distantPast) > Date().addingTimeInterval(-86400) }.count
+                        LabeledContent("Personas", value: "\(c.count) · \(hoy) hoy")
+                        ForEach(verTodas ? c : Array(c.prefix(8))) { x in FilaCuenta(c: x) }
+                        if c.count > 8 {
+                            Button(verTodas ? "Ver menos" : "Ver las \(c.count)") { withAnimation { verTodas.toggle() } }
+                        }
+                    } else if let falloCuentas {
+                        Text(falloCuentas).foregroundStyle(.red)
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity)
+                    }
+                }
                 Section {
                     NavigationLink { FilamentosView(enStack: false) } label: {
                         Label("Filamentos", systemImage: "circle.circle")
@@ -387,8 +397,15 @@ struct TallerView: View {
             .navigationTitle("Taller")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonCuenta() } }
             .onAppear(perform: rellenar)
+            .task { await leerCuentas() }
+            .refreshable { await t.cargar(); await leerCuentas() }
             .onChange(of: t.ajustes) { _, _ in rellenar() }
         }
+    }
+
+    private func leerCuentas() async {
+        do { let c = try await t.cuentas(); withAnimation { cuentas = c; falloCuentas = nil } }
+        catch { falloCuentas = error.localizedDescription }
     }
 
     private func rellenar() {
@@ -399,5 +416,28 @@ struct TallerView: View {
 
     private func campo(_ titulo: String, _ v: Binding<String>, _ teclado: UIKeyboardType) -> some View {
         LabeledContent(titulo) { TextField("", text: v).keyboardType(teclado).multilineTextAlignment(.trailing) }
+    }
+}
+
+private struct FilaCuenta: View {
+    let c: Cuenta
+    var body: some View {
+        let u = c.ultima.flatMap(Fmt.fecha)
+        let reciente = (u ?? .distantPast) > Date().addingTimeInterval(-86400)
+        HStack(spacing: 12) {
+            Avatar(nombre: c.nombre, size: 36)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(c.nombre).font(.subheadline.weight(.semibold)).lineLimit(1)
+                Text(c.email).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 6)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(u.map { Fmt.hace($0) } ?? (c.confirmada ? "Sin entrar" : "Sin confirmar"))
+                    .font(.caption.weight(.semibold)).foregroundStyle(reciente ? .green : .primary)
+                Text("\(c.veces) \(c.veces == 1 ? "visita" : "visitas") · \(c.pedidos) \(c.pedidos == 1 ? "pedido" : "pedidos")")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            .fixedSize()
+        }
     }
 }

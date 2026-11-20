@@ -56,9 +56,17 @@ final class Tienda {
         return s.access
     }
 
+    /// cuentas creadas y cuándo han entrado (solo el taller)
+    func cuentas() async throws -> [Cuenta] {
+        if demo { return [] }
+        guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+        return try JSONDecoder().decode([Cuenta].self, from: try await Supa.rpc("admin_cuentas", ["p_clave": ""], token: tk))
+    }
+
     func comprobarAdmin() async {
         guard !demo else { return }
         guard let t = await token() else { admin = false; return }
+        _ = try? await Supa.rpc("marcar_visita", [:], token: t)
         let d = try? await Supa.rpc("soy_admin", [:], token: t)
         let si = d.flatMap { String(data: $0, encoding: .utf8) }?.contains("true") == true
         withAnimation { admin = si }
