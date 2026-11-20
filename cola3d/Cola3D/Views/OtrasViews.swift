@@ -379,6 +379,8 @@ struct TallerView: View {
     @State private var cuentas: [Cuenta]? = nil
     @State private var falloCuentas: String? = nil
     @State private var verTodas = false
+    @State private var renombrando: Cuenta? = nil
+    @State private var nuevoNombre = ""
 
     var body: some View {
         NavigationStack {
@@ -424,7 +426,12 @@ struct TallerView: View {
                     if let c = cuentas {
                         let hoy = c.filter { ($0.ultima.flatMap(Fmt.fecha) ?? .distantPast) > Date().addingTimeInterval(-86400) }.count
                         LabeledContent("Personas", value: "\(c.count) · \(hoy) hoy")
-                        ForEach(verTodas ? c : Array(c.prefix(8))) { x in FilaCuenta(c: x) }
+                        ForEach(verTodas ? c : Array(c.prefix(8))) { x in
+                            FilaCuenta(c: x)
+                                .contentShape(Rectangle())
+                                .onTapGesture { renombrando = x; nuevoNombre = x.nombre }
+                                .swipeActions { Button("Cambiar nombre") { renombrando = x; nuevoNombre = x.nombre }.tint(.hot) }
+                        }
                         if c.count > 8 {
                             Button(verTodas ? "Ver menos" : "Ver las \(c.count)") { withAnimation { verTodas.toggle() } }
                         }
@@ -446,6 +453,14 @@ struct TallerView: View {
             .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonCuenta() } }
             .onAppear(perform: rellenar)
             .task { await leerCuentas() }
+            .alert("Cambiar nombre", isPresented: Binding(get: { renombrando != nil }, set: { if !$0 { renombrando = nil } })) {
+                TextField("Nombre", text: $nuevoNombre)
+                Button("Cancelar", role: .cancel) { renombrando = nil }
+                Button("Guardar") {
+                    if let c = renombrando { Task { if await t.renombrar(c.id, a: nuevoNombre) { await leerCuentas() } } }
+                    renombrando = nil
+                }
+            } message: { Text(renombrando.map { "Cuenta de \($0.email)" } ?? "") }
             .refreshable { await t.cargar(); await leerCuentas() }
             .onChange(of: t.ajustes) { _, _ in rellenar() }
         }

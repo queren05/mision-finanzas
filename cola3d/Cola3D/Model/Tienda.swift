@@ -90,6 +90,19 @@ final class Tienda {
         return try JSONDecoder().decode([Cuenta].self, from: try await Supa.rpc("admin_cuentas", ["p_clave": ""], token: tk))
     }
 
+    /// el taller cambia el nombre de una cuenta (en la cuenta, su perfil y sus pedidos)
+    func renombrar(_ uid: String, a nombre: String) async -> Bool {
+        let n = nombre.trimmingCharacters(in: .whitespaces)
+        guard !n.isEmpty else { return false }
+        do {
+            guard let tk = await token() else { throw Supa.Fallo(mensaje: "Entra con tu cuenta") }
+            try await Supa.rpc("admin_renombrar", ["p_clave": "", "p_user": uid, "p_nombre": n], token: tk)
+            await cargar()
+            avisar("Ahora se llama \(n)")
+            return true
+        } catch { avisar(error.localizedDescription, error: true); return false }
+    }
+
     func comprobarAdmin() async {
         guard !demo else { return }
         guard let t = await token() else { admin = false; return }
