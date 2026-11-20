@@ -113,8 +113,8 @@ final class Tienda {
             struct Guardado: Decodable { let pedido_id: String; let lista: String? }
             struct PerfilJ: Decodable { let user_id: String; let nombre: String?; let avatar: String? }
             let pfs: [PerfilJ] = (try? await Supa.leer("perfiles?select=user_id,nombre,avatar")) ?? []
-            var np: [String: (nombre: String, avatar: String)] = [:]
-            for x in pfs { np[x.user_id] = (x.nombre ?? "", x.avatar ?? "") }
+            var npf: [String: (nombre: String, avatar: String)] = [:]
+            for x in pfs { npf[x.user_id] = (x.nombre ?? "", x.avatar ?? "") }
             let vs: [Voto] = (try? await Supa.leer("votos?select=pedido_id,user_id")) ?? []
             var nv: [String: Set<String>] = [:]
             for v in vs { nv[v.pedido_id, default: []].insert(v.user_id) }
@@ -129,7 +129,7 @@ final class Tienda {
                 ajustes = na.first ?? Ajustes()
                 votos = nv
                 listas = ng
-                perfiles = np
+                perfiles = npf
             }
             error = nil
         } catch {
