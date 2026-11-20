@@ -176,7 +176,8 @@ struct GenteView: View {
         var id: String
         var nombre: String
         var pedidos: [Pedido] = []
-        var gastado = 0.0, enCola = 0.0, debe = 0.0, gramos = 0.0
+        var gastado = 0.0, enCola = 0.0, debe = 0.0, pagado = 0.0, gramos = 0.0
+        var mio = false
         var ultimo = Date.distantPast
     }
 
@@ -186,7 +187,9 @@ struct GenteView: View {
             let k = p.nombre.trimmingCharacters(in: .whitespaces).lowercased()
             var x = m[k] ?? Persona(id: k, nombre: p.nombre)
             x.pedidos.append(p)
-            if p.hecho { x.gastado += p.coste; x.gramos += p.gramos; if !p.pagado { x.debe += p.coste } }
+            if p.hecho { x.gastado += p.coste; x.gramos += p.gramos }
+            if p.estado != .cancelado { if p.pagado { x.pagado += p.coste } else { x.debe += p.coste } }
+            if t.esMio(p) { x.mio = true }
             if p.estado == .pendiente || p.estado == .imprimiendo { x.enCola += p.coste }
             x.ultimo = max(x.ultimo, p.fecha)
             m[k] = x
@@ -202,14 +205,24 @@ struct GenteView: View {
                 VStack(spacing: 16) {
                     if t.admin {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
-                            Cifra(etiqueta: "Impreso en total", valor: Fmt.eur(g.reduce(0) { $0 + $1.gastado }))
+                            Cifra(etiqueta: "Cobrado", valor: Fmt.eur(g.reduce(0) { $0 + $1.pagado }), color: .green)
                             Cifra(etiqueta: "Te deben", valor: Fmt.eur(g.reduce(0) { $0 + $1.debe }), color: .red)
+                        }
+                    } else {
+                        let mios = t.pedidos.filter { t.esMio($0) && $0.estado != .cancelado }
+                        if !mios.isEmpty {
+                            let debo = mios.filter { !$0.pagado }.reduce(0) { $0 + $1.coste }
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
+                                Cifra(etiqueta: "Has pagado", valor: Fmt.eur(mios.filter(\.pagado).reduce(0) { $0 + $1.coste }), color: .green)
+                                Cifra(etiqueta: "Debes", valor: Fmt.eur(debo), color: debo > 0 ? .red : .primary)
+                                Cifra(etiqueta: "En cola", valor: Fmt.eur(mios.filter { $0.estado == .pendiente || $0.estado == .imprimiendo }.reduce(0) { $0 + $1.coste }))
+                            }
                         }
                     }
                     if g.isEmpty { Vacio(titulo: "Aún no ha pedido nadie", icono: "person.2") }
                     LazyVStack(spacing: 10) {
                         ForEach(g) { x in
-                            NavigationLink(value: x) { FilaPersona(x: x, fraccion: (x.gastado + x.enCola) / maximo) }
+                            NavigationLink(value: x) { FilaPersona(x: x, fraccion: (x.gastado + x.enCola) / maximo, verDeuda: t.admin || x.mio) }
                                 .buttonStyle(Encoger())
                         }
                     }
@@ -228,6 +241,7 @@ struct GenteView: View {
 private struct FilaPersona: View {
     let x: GenteView.Persona
     let fraccion: Double
+    let verDeuda: Bool
     @State private var lleno = false
     var body: some View {
         HStack(spacing: 14) {
@@ -243,7 +257,7 @@ private struct FilaPersona: View {
             }
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Fmt.eur(x.gastado)).font(.system(.subheadline, design: .monospaced).weight(.bold)).foregroundStyle(.primary)
-                if x.debe > 0 { Text("debe \(Fmt.eur(x.debe))").font(.caption2.weight(.bold)).foregroundStyle(.red) }
+                if x.debe > 0 && verDeuda { Text("\(x.mio ? "debes" : "debe") \(Fmt.eur(x.debe))").font(.caption2.weight(.bold)).foregroundStyle(.red) }
                 else if x.enCola > 0 { Text("\(Fmt.eur(x.enCola)) en cola").font(.caption2).foregroundStyle(.secondary) }
             }
             .fixedSize()
@@ -270,9 +284,9 @@ private struct PersonaView: View {
                     Spacer()
                 }
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
-                    Cifra(etiqueta: "Gastado", valor: Fmt.eur(x.gastado))
+                    Cifra(etiqueta: "Ha pagado", valor: Fmt.eur(x.pagado))
                     Cifra(etiqueta: "En cola", valor: Fmt.eur(x.enCola))
-                    Cifra(etiqueta: "Debe", valor: Fmt.eur(x.debe), color: x.debe > 0 ? .red : .primary)
+                    if t.admin || x.mio { Cifra(etiqueta: "Debe", valor: Fmt.eur(x.debe), color: x.debe > 0 ? .red : .primary) }
                 }
                 VStack(spacing: 8) {
                     ForEach(x.pedidos.sorted { $0.creado > $1.creado }) { p in
