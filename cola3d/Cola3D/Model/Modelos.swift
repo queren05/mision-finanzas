@@ -187,12 +187,14 @@ struct Ajustes: Codable, Hashable {
     var merma_pct: Double = 10
     var bizum: String = ""
     var gratis_g: Double = 50
+    /// por debajo no se pide pagar: se acumula (Bizum no deja menos de 0,50 €)
+    var pago_minimo: Double = 0.5
     init() {}
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         precio_defecto = c.num(.precio_defecto, 17.99); peso_defecto = c.num(.peso_defecto, 1000)
         luz_hora = c.num(.luz_hora, 0.1); merma_pct = c.num(.merma_pct, 10); bizum = c.v(.bizum, "")
-        gratis_g = c.num(.gratis_g, 50)
+        gratis_g = c.num(.gratis_g, 50); pago_minimo = c.num(.pago_minimo, 0.5)
     }
 }
 

@@ -155,38 +155,47 @@ struct DetallePedido: View {
     }
 
     private func pago(_ p: Pedido) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Págalo para que se imprima", systemImage: "eurosign.circle.fill").font(.headline).foregroundStyle(Color.hot)
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Importe").font(.caption).foregroundStyle(.secondary)
-                    Text(Fmt.eur(p.coste)).font(.system(.title3, design: .monospaced).weight(.bold))
-                }
-                Spacer()
-                if !t.ajustes.bizum.isEmpty {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Bizum").font(.caption).foregroundStyle(.secondary)
-                        Text(t.ajustes.bizum).font(.system(.body, design: .monospaced).weight(.semibold))
+        let d = t.deuda(p)
+        let acumula = d.total < t.ajustes.pago_minimo
+        return VStack(alignment: .leading, spacing: 10) {
+            if acumula {
+                Label("Se acumula", systemImage: "tray.full.fill").font(.headline).foregroundStyle(.secondary)
+                Text("Llevas \(Fmt.eur(d.total)). Aún no hace falta pagar: se paga todo junto cuando llegues a \(Fmt.eur(t.ajustes.pago_minimo)) (Bizum no deja enviar menos). Se imprime igual.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                Label(d.pedidos.count > 1 ? "Paga todo junto" : "Págalo para que se imprima", systemImage: "eurosign.circle.fill").font(.headline).foregroundStyle(Color.hot)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(d.pedidos.count > 1 ? "\(d.pedidos.count) pedidos" : "Importe").font(.caption).foregroundStyle(.secondary)
+                        Text(Fmt.eur(d.total)).font(.system(.title3, design: .monospaced).weight(.bold))
+                    }
+                    Spacer()
+                    if !t.ajustes.bizum.isEmpty {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Bizum").font(.caption).foregroundStyle(.secondary)
+                            Text(t.ajustes.bizum).font(.system(.body, design: .monospaced).weight(.semibold))
+                        }
                     }
                 }
-            }
-            if !t.ajustes.bizum.isEmpty {
-                Button {
-                    UIPasteboard.general.string = t.ajustes.bizum.replacingOccurrences(of: " ", with: "")
-                    withAnimation(.snappy) { copiado = true }
-                    Task { try? await Task.sleep(for: .seconds(2)); withAnimation { copiado = false } }
-                } label: {
-                    Label(copiado ? "Copiado" : "Copiar número", systemImage: copiado ? "checkmark" : "doc.on.doc")
-                        .contentTransition(.symbolEffect(.replace)).frame(maxWidth: .infinity)
+                if !t.ajustes.bizum.isEmpty {
+                    Button {
+                        UIPasteboard.general.string = t.ajustes.bizum.replacingOccurrences(of: " ", with: "")
+                        withAnimation(.snappy) { copiado = true }
+                        Task { try? await Task.sleep(for: .seconds(2)); withAnimation { copiado = false } }
+                    } label: {
+                        Label(copiado ? "Copiado" : "Copiar número", systemImage: copiado ? "checkmark" : "doc.on.doc")
+                            .contentTransition(.symbolEffect(.replace)).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).tint(Color.hot)
+                    .sensoryFeedback(.success, trigger: copiado)
                 }
-                .buttonStyle(.bordered).tint(Color.hot)
-                .sensoryFeedback(.success, trigger: copiado)
+                Text("También en mano.").font(.footnote).foregroundStyle(.secondary)
             }
-            Text("También en mano.").font(.footnote).foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color.hot.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.hot.opacity(0.3)))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background((acumula ? Color.secondary : Color.hot).opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder((acumula ? Color.secondary : Color.hot).opacity(0.3)))
     }
 
     private func taller(_ p: Pedido) -> some View {

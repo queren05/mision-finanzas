@@ -198,7 +198,7 @@ final class Tienda {
 
     func guardar(_ a: Ajustes) async -> Bool {
         do {
-            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g]])
+            try await taller("admin_ajustes", ["a": ["precio_defecto": a.precio_defecto, "peso_defecto": Int(a.peso_defecto), "luz_hora": a.luz_hora, "merma_pct": a.merma_pct, "bizum": a.bizum, "gratis_g": a.gratis_g, "pago_minimo": a.pago_minimo]])
             if demo { ajustes = a } else { await cargar() }
             avisar("Precios guardados")
             return true
@@ -390,6 +390,26 @@ final class Tienda {
         } catch { avisar(error.localizedDescription, error: true); return false }
     }
 
+    // MARK: pagos pequeños
+
+    /// el mismo que pidió: su cuenta o, sin cuenta, su nombre
+    func mismaPersona(_ a: Pedido, _ b: Pedido) -> Bool {
+        if let u = a.user_id { return b.user_id == u }
+        return b.user_id == nil && a.nombre.trimmingCharacters(in: .whitespaces).lowercased() == b.nombre.trimmingCharacters(in: .whitespaces).lowercased()
+    }
+    /// lo que debe esa persona entre todos sus pedidos sin pagar
+    func deuda(_ p: Pedido) -> (total: Double, pedidos: [Pedido]) {
+        let ps = pedidos.filter { mismaPersona(p, $0) && !$0.pagado && $0.estado != .cancelado && !$0.peticion && !$0.delTaller && $0.coste > 0 }
+        return ((ps.reduce(0) { $0 + $1.coste } * 100).rounded() / 100, ps)
+    }
+    /// aún no llega al mínimo: no se pide pagar, se acumula y se imprime igual
+    func acumula(_ p: Pedido) -> Bool { !p.pagado && deuda(p).total < ajustes.pago_minimo }
+
+    func cobrarTodo(_ ps: [Pedido]) async {
+        for p in ps { await cambiar(p, ["pagado": true]) }
+        avisar("Cobrado: \(Fmt.eur(ps.reduce(0) { $0 + $1.coste }))")
+    }
+
     // MARK: cálculos de la cola
 
     func esMio(_ p: Pedido) -> Bool {
@@ -404,7 +424,8 @@ final class Tienda {
         let pen = pedidos.filter { $0.estado == .pendiente }.sorted {
             if $0.peticion != $1.peticion { return !$0.peticion }
             if $0.prioridad != $1.prioridad { return $0.prioridad > $1.prioridad }
-            if $0.pagado != $1.pagado { return $0.pagado }
+            let l0 = $0.pagado || acumula($0), l1 = $1.pagado || acumula($1)
+            if l0 != l1 { return l0 }
             return $0.creado < $1.creado
         }
         return imp + pen

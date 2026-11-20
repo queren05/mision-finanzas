@@ -182,6 +182,7 @@ struct TarjetaPedido: View {
             Etiqueta(texto: "Petición · \(p.colores) colores", color: .blue, icono: "paintpalette.fill")
         } else if p.estado != .cancelado && !p.delTaller {
             if p.pagado { Etiqueta(texto: "Pagado", color: .green, icono: "checkmark") }
+            else if t.acumula(p) { Etiqueta(texto: "Se acumula", color: .secondary) }
             else { Etiqueta(texto: "Sin pagar", color: .red) }
         }
     }

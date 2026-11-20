@@ -303,6 +303,7 @@ private struct PersonaView: View {
     @Environment(Tienda.self) private var t
     let x: GenteView.Persona
     @State private var abierto: Pedido? = nil
+    @State private var cobrar = false
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -313,6 +314,19 @@ private struct PersonaView: View {
                         Text("\(x.pedidos.count) pedido\(x.pedidos.count == 1 ? "" : "s") · \(Fmt.gramos(x.gramos)) impresos").font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
+                }
+                let debe = t.pedidos.filter { $0.nombre.trimmingCharacters(in: .whitespaces).lowercased() == x.id && !$0.pagado && $0.estado != .cancelado && !$0.peticion && !$0.delTaller && $0.coste > 0 }
+                if t.admin && !debe.isEmpty {
+                    HStack {
+                        Text("Debe **\(Fmt.eur(debe.reduce(0) { $0 + $1.coste }))** de \(debe.count) \(debe.count == 1 ? "pedido" : "pedidos")").font(.subheadline)
+                        Spacer()
+                        Button("Cobrar todo") { cobrar = true }.buttonStyle(.borderedProminent).font(.subheadline.weight(.bold))
+                    }
+                    .padding(14)
+                    .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
+                    .confirmationDialog("¿Marcar como pagados \(debe.count) pedidos?", isPresented: $cobrar, titleVisibility: .visible) {
+                        Button("Cobrar \(Fmt.eur(debe.reduce(0) { $0 + $1.coste }))") { Task { await t.cobrarTodo(debe) } }
+                    }
                 }
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
                     Cifra(etiqueta: "Ha pagado", valor: Fmt.eur(x.pagado))
@@ -360,6 +374,7 @@ struct TallerView: View {
     @State private var merma = ""
     @State private var bizum = ""
     @State private var gratis = ""
+    @State private var minimo = ""
     @State private var ocupado = false
     @State private var cuentas: [Cuenta]? = nil
     @State private var falloCuentas: String? = nil
@@ -386,6 +401,7 @@ struct TallerView: View {
                 Section("Cobrar") {
                     campo("Teléfono para Bizum", $bizum, .phonePad)
                     campo("Gramos gratis por persona", $gratis, .numberPad)
+                    campo("Pago mínimo (€), por debajo se acumula", $minimo, .decimalPad)
                 }
                 Section {
                     Button {
@@ -396,6 +412,7 @@ struct TallerView: View {
                         a.merma_pct = Fmt.leer(merma) ?? 0
                         a.bizum = bizum.trimmingCharacters(in: .whitespaces)
                         a.gratis_g = max(0, Fmt.leer(gratis) ?? 50)
+                        a.pago_minimo = max(0, Fmt.leer(minimo) ?? 0.5)
                         ocupado = true
                         Task { _ = await t.guardar(a); ocupado = false }
                     } label: {
@@ -442,7 +459,7 @@ struct TallerView: View {
     private func rellenar() {
         let a = t.ajustes
         precio = Fmt.num(a.precio_defecto); peso = Fmt.num(a.peso_defecto, 0); luz = Fmt.num(a.luz_hora)
-        merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0)
+        merma = Fmt.num(a.merma_pct); bizum = a.bizum; gratis = Fmt.num(a.gratis_g, 0); minimo = Fmt.num(a.pago_minimo)
     }
 
     private func campo(_ titulo: String, _ v: Binding<String>, _ teclado: UIKeyboardType) -> some View {
