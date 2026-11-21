@@ -35,7 +35,11 @@ private struct FormPedido: View {
     @State private var hecho = false
     @FocusState private var foco: Bool
 
-    private var perfilesA1: [Perfil] { (vista?.perfiles ?? []).filter(\.a1mini) }
+    /// primero los hechos para la A1 mini, luego los que le sirven y al final los de otras impresoras
+    private var perfilesVista: [Perfil] { ordenarPerfiles(vista?.perfiles ?? []) }
+    private var nA1: Int { (vista?.perfiles ?? []).filter(\.a1mini).count }
+    /// perfil hecho para otra impresora (P1S, X1…): se puede pedir, pero llega como petición
+    private var otraImpresora: Bool { perfil.map { !$0.a1mini } ?? false }
     private var sinResolver: Bool { lineas.contains { $0.falta != nil && $0.cambio == nil } }
     // la cuenta del taller no tiene regalo: así ve los precios reales
     private var gratis: Double { t.admin ? 0 : gratisRestante(t.pedidos, t.ajustes, uid: t.sesion?.id, nombre: t.sesion?.nombre ?? "") }
@@ -44,7 +48,7 @@ private struct FormPedido: View {
     /// gramos del mes: si con este pedido se pasa, llega como petición
     private var limiteMes: Double { t.admin ? 0 : (t.acceso?.limite_mes_g ?? 0) }
     private var pasaLimite: Bool { limiteMes > 0 && (t.acceso?.usado_mes_g ?? 0) + detalle.gramos > limiteMes }
-    private var esPeticion: Bool { nColores > 4 || pasaLimite }
+    private var esPeticion: Bool { otraImpresora || nColores > 4 || pasaLimite }
     private var listo: Bool { perfil != nil && !lineas.isEmpty && !sinResolver && !enviando }
 
     var body: some View {
@@ -58,7 +62,7 @@ private struct FormPedido: View {
                         .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                if let v = vista, !perfilesA1.isEmpty {
+                if let v = vista, !perfilesVista.isEmpty {
                     figura(v)
                     perfiles
                     colores
@@ -116,7 +120,7 @@ private struct FormPedido: View {
                 }
             }
             .padding(.leading, 14).padding(.trailing, 8).padding(.vertical, 8).tarjeta()
-            Text("Solo modelos de MakerWorld con perfil de impresión para la A1 mini").font(.footnote).foregroundStyle(.secondary)
+            Text("Solo modelos de MakerWorld").font(.footnote).foregroundStyle(.secondary)
         }
     }
 
@@ -135,8 +139,13 @@ private struct FormPedido: View {
                 .frame(width: 76, height: 76).clipShape(RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 4) {
                 Text(v.titulo ?? "Modelo").font(.headline).lineLimit(2)
-                Label("\(perfilesA1.count) perfil\(perfilesA1.count == 1 ? "" : "es") para tu A1 mini", systemImage: "checkmark.seal.fill")
-                    .font(.caption.weight(.semibold)).foregroundStyle(.green)
+                if nA1 > 0 {
+                    Label("\(nA1) perfil\(nA1 == 1 ? "" : "es") para tu A1 mini", systemImage: "checkmark.seal.fill")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.green)
+                } else {
+                    Label("Sin perfil para la A1 mini", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.orange)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -150,7 +159,7 @@ private struct FormPedido: View {
             ScrollViewReader { sv in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(perfilesA1) { p in
+                        ForEach(perfilesVista) { p in
                             Button { elegir(p) } label: { TarjetaPerfil(p: p, elegido: perfil?.id == p.id) }
                                 .buttonStyle(Encoger()).id(p.id)
                         }
@@ -167,7 +176,11 @@ private struct FormPedido: View {
             titulo("Colores")
             if esPeticion {
                 VStack(alignment: .leading, spacing: 4) {
-                    if nColores > 4 {
+                    if otraImpresora {
+                        Label("Este perfil es para la \(perfil?.impresora.isEmpty == false ? perfil!.impresora : "otra impresora")", systemImage: "printer.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
+                        Text("Puede que no quepa en la A1 mini o haya que prepararlo de nuevo. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } else if nColores > 4 {
                         Label("Este modelo lleva \(nColores) colores", systemImage: "paintpalette.fill").font(.subheadline.weight(.bold)).foregroundStyle(.blue)
                         Text("La impresora pone 4 colores a la vez. Puedes enviarlo como petición y el taller te dirá si se puede hacer; mientras tanto no hace falta pagar.")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -249,15 +262,15 @@ private struct FormPedido: View {
         defer { withAnimation { buscando = false } }
         do {
             let v = try await Supa.vistaPrevia(u)
-            let a1 = (v.perfiles ?? []).filter(\.a1mini)
+            let todos = ordenarPerfiles(v.perfiles ?? [])
             withAnimation {
                 vista = v
-                if a1.isEmpty {
-                    fallo = (v.perfiles ?? []).isEmpty ? "Ese modelo no tiene perfil de impresión" : "Ese modelo no tiene perfil para la A1 mini"
+                if todos.isEmpty {
+                    fallo = "Ese modelo no tiene perfil de impresión"
                     perfil = nil; lineas = []
                 }
             }
-            if let p = Perfiles.inicial(a1, url: u) { elegir(p) }
+            if let p = Perfiles.inicial(todos, url: u) { elegir(p) }
             foco = false
         } catch {
             withAnimation { fallo = "No se ha podido leer el modelo. Mira el enlace"; vista = nil }
@@ -280,7 +293,7 @@ private struct FormPedido: View {
         let n = ([notas.trimmingCharacters(in: .whitespacesAndNewlines)] + cambios).filter { !$0.isEmpty }.joined(separator: "\n")
         do {
             let id = try await t.pedir(nombre: t.sesion?.nombre ?? "", url: Perfiles.urlConPerfil(Perfiles.limpiar(enlace), p),
-                                       titulo: v.titulo ?? "", imagen: v.imagen ?? "", lineas: juntarLineas(lineas.map(\.linea)), minutos: minutos, copias: copias, notas: n)
+                                       titulo: v.titulo ?? "", imagen: v.imagen ?? "", lineas: juntarLineas(lineas.map(\.linea)), minutos: minutos, copias: copias, notas: n, otraImpresora: !p.a1mini)
             withAnimation(.spring) { hecho = true }
             try? await Task.sleep(for: .seconds(1.6))
             withAnimation { hecho = false; enlace = ""; vista = nil; perfil = nil; lineas = []; notas = ""; copias = 1 }
@@ -308,7 +321,8 @@ private struct TarjetaPerfil: View {
                 ForEach(Array(p.colores.prefix(6).enumerated()), id: \.offset) { _, c in Muestra(hex: c.color, size: 12) }
                 Spacer()
                 if p.modelo == "N1" { Text("A1 mini").font(.caption2.weight(.bold)).foregroundStyle(.green) }
-                else { Text(p.impresora).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
+                else if p.a1mini { Text(p.impresora).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
+                else { Text("Solo \(p.impresora.isEmpty ? "otra" : p.impresora)").font(.caption2.weight(.bold)).foregroundStyle(.red).lineLimit(1) }
             }
         }
         .padding(12)
@@ -477,4 +491,10 @@ private struct Regalo: View {
         .onAppear { mueve = true }
         .transition(.scale(scale: 0.96).combined(with: .opacity))
     }
+}
+
+/// primero los hechos para la A1 mini, luego los que le sirven y al final los de otras impresoras
+private func ordenarPerfiles(_ ps: [Perfil]) -> [Perfil] {
+    let rango = { (p: Perfil) in p.modelo == "N1" ? 0 : p.a1mini ? 1 : 2 }
+    return ps.enumerated().sorted { (rango($0.element), $0.offset) < (rango($1.element), $1.offset) }.map(\.element)
 }

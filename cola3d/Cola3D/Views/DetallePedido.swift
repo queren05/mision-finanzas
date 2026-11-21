@@ -88,7 +88,12 @@ struct DetallePedido: View {
 
     private func peticion(_ p: Pedido) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            if p.coste_detalle.motivo == "limite" {
+            if p.coste_detalle.motivo == "impresora" {
+                Label("Petición: perfil para otra impresora", systemImage: "printer.fill").font(.headline).foregroundStyle(.blue)
+                Text(t.admin ? "El perfil no es de la A1 mini. Mira si cabe o si hay que prepararlo de nuevo; si se puede, acéptala y entra en la cola."
+                             : "Puede que no quepa en la A1 mini. El taller te dirá si se puede; hasta entonces no hace falta pagar.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            } else if p.coste_detalle.motivo == "limite" {
                 Label("Petición: se pasa de los gramos del mes", systemImage: "scalemass.fill").font(.headline).foregroundStyle(.blue)
                 Text(t.admin ? "Si te parece bien, acéptala y entra en la cola." : "El taller te dirá si se puede; hasta entonces no hace falta pagar.")
                     .font(.subheadline).foregroundStyle(.secondary)

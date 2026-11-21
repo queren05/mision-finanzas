@@ -476,12 +476,13 @@ final class Tienda {
 
     // MARK: pedir y cancelar
 
-    func pedir(nombre: String, url: String, titulo: String, imagen: String, lineas: [Linea], minutos: Int, copias: Int, notas: String) async throws -> String {
-        let p: [String: Any] = [
+    func pedir(nombre: String, url: String, titulo: String, imagen: String, lineas: [Linea], minutos: Int, copias: Int, notas: String, otraImpresora: Bool = false) async throws -> String {
+        var p: [String: Any] = [
             "nombre": nombre, "url": url, "titulo": titulo, "imagen": imagen,
             "lineas": lineas.map { l -> [String: Any] in ["filamento_id": l.filamento_id.map { $0 as Any } ?? NSNull(), "nombre": l.nombre, "color": l.color, "gramos": l.gramos] },
             "minutos": minutos, "copias": copias, "notas": notas,
         ]
+        if otraImpresora { p["otra_impresora"] = true }
         if demo { return "demo" }
         let d = try await Supa.rpc("crear_pedido", ["p": p], token: await token())
         let j = try JSONSerialization.jsonObject(with: d) as? [String: Any]
