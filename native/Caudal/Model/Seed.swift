@@ -3,7 +3,7 @@ import Foundation
 /// Datos de partida: categorías por defecto. Los datos personales (cuentas y movimientos reales) no están en el código:
 /// se leen de `seed-personal.json`, que no se sube a git (ver .gitignore) y GitHub Actions lo pone desde un secreto.
 enum Seed {
-    static let version = 13
+    static let version = 14
 
     static func categories() -> [Category] {
         let e: [(String, String, String, String)] = [
@@ -100,6 +100,19 @@ enum Seed {
             }
             if var j = s.job, j.start <= "2026-10-31" {
                 j.paidMonths = Array(Set((j.paidMonths ?? []) + ["2026-10"])).sorted(); s.job = j
+            }
+        }
+        if s.seed < 14 {
+            // 23-nov-2026: gastos de Revolut que faltaban (20 y 21 de noviembre)
+            let faltan: [Tx] = [
+                Tx(id: "m14_estanco", amount: 7.10, accountId: "a_revolut", categoryId: "c_tabaco", date: "2026-11-20", time: "19:11", title: "Estanco"),
+                Tx(id: "m14_alim1", amount: 3.70, accountId: "a_revolut", categoryId: "c_super", date: "2026-11-20", time: "19:26", title: "Alimentación"),
+                Tx(id: "m14_alim2", amount: 2, accountId: "a_revolut", categoryId: "c_super", date: "2026-11-20", time: "21:12", title: "Alimentación"),
+                Tx(id: "m14_kfc", amount: 20.65, accountId: "a_revolut", categoryId: "c_rest", date: "2026-11-20", time: "22:46", title: "KFC"),
+                Tx(id: "m14_monda", amount: 6.75, accountId: "a_revolut", categoryId: "c_super", date: "2026-11-21", time: "21:46", title: "Monda"),
+            ]
+            for t in faltan where !s.txs.contains(where: { $0.id == t.id || ($0.date == t.date && $0.accountId == t.accountId && abs($0.amount - t.amount) < 0.001 && $0.type == .expense) }) {
+                s.txs.append(t)
             }
         }
         s.seed = version
