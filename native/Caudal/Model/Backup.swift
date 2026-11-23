@@ -23,7 +23,7 @@ extension Store {
     /// al abrir: si es la primera vez y hay copia en el servidor, pregunta si recuperarla
     @MainActor
     func checkBackup() async {
-        if ServerCopy.ready { _ = await backup(); return }
+        if ServerCopy.ready { await mergeServerInbox(); _ = await backup(); return }
         do {
             if let d = try await Store.server.download(), let st = try? JSONDecoder().decode(AppState.self, from: d) {
                 pendingRestore = st
